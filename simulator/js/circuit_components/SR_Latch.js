@@ -3,16 +3,10 @@ import { IC_type, gateType } from "./Enums.js"
 import { Integrated } from "./Integrated.js";
 import { Node } from "./Node.js";
 
-/**
- * @todo TODO
- */
 export class SR_Latch extends Integrated {
-    /**
-     * @todo TODO
-     */
+
     constructor(type) {
         super(type);
-
         this.nodeSet = new Node(this.posX + 5, this.posY + 30);
         this.nodeReset = new Node(this.posX + 5, this.posY + this.height - 30);
         this.nodeQ = new Node(this.posX + this.width - 5, this.posY + 30, true);
@@ -20,9 +14,6 @@ export class SR_Latch extends Integrated {
         this.nodeStartID = this.nodeSet.id;
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         this.nodeSet.destroy();
         this.nodeReset.destroy();
@@ -30,9 +21,6 @@ export class SR_Latch extends Integrated {
         this.nodeNotQ.destroy();
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         super.draw();
         this.generateOutput();
@@ -48,9 +36,6 @@ export class SR_Latch extends Integrated {
         this.nodeNotQ.draw();
     }
 
-    /**
-     * @todo TODO
-     */
     refreshNodes()
     {
         let currentID = this.nodeStartID;
@@ -68,17 +53,11 @@ export class SR_Latch extends Integrated {
 
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() // virtual
     {
         
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         let result = this.isMouseOver();
         result |= this.nodeSet.mouseClicked();
@@ -88,9 +67,6 @@ export class SR_Latch extends Integrated {
         return result;
     }
 
-    /**
-     * @todo TODO
-     */
     static convertToType(str) {
         switch (str) {
             case "NAND":
@@ -102,9 +78,6 @@ export class SR_Latch extends Integrated {
     }
 }
 
-/**
- * @todo TODO
- */
 export class SR_LatchAsync extends SR_Latch {
     constructor(gate, stabilize) {
         super(IC_type.SR_LATCH_ASYNC);
@@ -139,9 +112,6 @@ export class SR_LatchAsync extends SR_Latch {
         }
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         super.destroy();
 
@@ -157,9 +127,6 @@ export class SR_LatchAsync extends SR_Latch {
 
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() {
 
         this.gateSet.input[0].value = this.nodeSet.value;
@@ -177,9 +144,6 @@ export class SR_LatchAsync extends SR_Latch {
 
 }
 
-/**
- * @todo TODO
- */
 export class SR_LatchSync extends SR_Latch {
     constructor(gate, stabilize) {
         super(IC_type.SR_LATCH_SYNC);
@@ -217,9 +181,6 @@ export class SR_LatchSync extends SR_Latch {
         }
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         super.destroy();
         this.nodeClock.destroy();
@@ -228,18 +189,12 @@ export class SR_LatchSync extends SR_Latch {
         this.asyncLatch.destroy();
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         super.draw();
         this.nodeClock.updatePosition(this.posX + 5, this.posY + (this.height / 2));
         this.nodeClock.draw();
     }
 
-    /**
-     * @todo TODO
-     */
     refreshNodes()
     {
         super.refreshNodes();
@@ -247,9 +202,6 @@ export class SR_LatchSync extends SR_Latch {
         this.nodeClock.setID(currentID);
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() {
         this.gateSet.input[0].value = this.nodeSet.value;
         this.gateSet.input[1].value = this.nodeClock.value;
@@ -274,9 +226,6 @@ export class SR_LatchSync extends SR_Latch {
         }
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         let result = super.mouseClicked();
         result |= this.nodeClock.mouseClicked();

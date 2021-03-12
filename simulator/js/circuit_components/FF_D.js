@@ -3,13 +3,7 @@ import { Integrated } from "./Integrated.js";
 import { Node } from "./Node.js";
 import { SR_LatchSync } from "./SR_Latch.js";
 
-/**
- * @todo TODO
- */
 export class FF_D extends Integrated {
-    /**
-     * @todo TODO
-     */
     constructor(type) {
         super(type);
         this.nodeD = new Node(this.posX + 5, this.posY + 30);
@@ -19,9 +13,6 @@ export class FF_D extends Integrated {
         this.nodeStartID = this.nodeD.id;
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         this.nodeD.destroy();
         this.nodeClock.destroy();
@@ -29,9 +20,6 @@ export class FF_D extends Integrated {
         this.nodeNotQ.destroy();
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         super.draw();
         this.generateOutput();
@@ -47,11 +35,7 @@ export class FF_D extends Integrated {
         this.nodeNotQ.draw();
     }
 
-    /**
-     * @todo TODO
-     */
-    refreshNodes()
-    {
+    refreshNodes() {
         let currentID = this.nodeStartID;
 
         this.nodeD.setID(currentID);
@@ -67,17 +51,11 @@ export class FF_D extends Integrated {
 
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() // virtual
     {
 
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         let result = this.isMouseOver();
         result |= this.nodeD.mouseClicked();
@@ -89,9 +67,6 @@ export class FF_D extends Integrated {
 
 }
 
-/**
- * @todo TODO
- */
 export class FF_D_Single extends FF_D {
     constructor() {
         super(IC_type.FF_D_SINGLE);
@@ -102,9 +77,6 @@ export class FF_D_Single extends FF_D {
         this.nodeClock.value = false;
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() {
         this.srLatchSync.nodeSet.value = this.nodeD.value;
         this.srLatchSync.nodeReset.value = !this.nodeD.value;
@@ -117,9 +89,6 @@ export class FF_D_Single extends FF_D {
     }
 }
 
-/**
- * @todo TODO
- */
 export class FF_D_MasterSlave extends FF_D {
     constructor() {
         super(IC_type.FF_D_MASTERSLAVE);
@@ -127,9 +96,6 @@ export class FF_D_MasterSlave extends FF_D {
         this.slave = new FF_D_Single();
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() {
         this.master.nodeD.value = this.nodeD.value;
         this.master.nodeClock.value = this.nodeClock.value;
@@ -145,9 +111,6 @@ export class FF_D_MasterSlave extends FF_D {
         this.nodeNotQ.value = this.slave.nodeNotQ.value;
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         super.draw();
 

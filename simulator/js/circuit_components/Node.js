@@ -3,12 +3,10 @@ import { wireMng } from "../simulator.js";
 
 export let nodeList = [];
 
-let currentID = 0;
+let nextNodeID = 0;
 
-/**
- * @todo TODO
- */
 export class Node {
+
     constructor(posX, posY, isOutput = false, value = false) {
         this.diameter = 10;
         this.value = value;
@@ -23,24 +21,17 @@ export class Node {
         this.isAlive = true; // not destroyed
         this.brotherNode = null; // for short circuit
 
-        this.id = currentID;
-        currentID++;
+        this.id = nextNodeID++;
 
         nodeList[this.id] = this;
         //console.log(nodeList);
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         this.isAlive = false;
         delete nodeList[this.id];
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         fillValue(this.value);
 
@@ -61,76 +52,48 @@ export class Node {
         text(this.id, this.posX - 20, this.posY + 25);*/
     }
 
-    /**
-     * @todo TODO
-     */
-    setID(newID)
-    {
-        delete nodeList[this.id];
+    setID(newID) {
+        if (nodeList[this.id] == this)
+            delete nodeList[this.id];
         this.id = newID;
         nodeList[this.id] = this;
 
         //update max id
-        if(this.id > currentID)
-            currentID = this.id + 1;
+        if (this.id > nextNodeID)
+            nextNodeID = this.id + 1;
     }
 
-    /**
-     * @todo TODO
-     */
     setInputState(state) {
         this.inputState = state;
     }
 
-    /**
-     * @todo TODO
-     */
     setBrother(brotherNode) {
         this.brotherNode = brotherNode;
     }
 
-    /**
-     * @todo TODO
-     */
     getBrother() {
         return this.brotherNode;
     }
 
-    /**
-     * @todo TODO
-     */
     getValue() {
         return this.value;
     }
 
-    /**
-     * @todo TODO
-     */
     setValue(value) {
         this.value = value;
     }
 
-    /**
-     * @todo TODO
-     */
     updatePosition(posX, posY) {
         this.posX = posX;
         this.posY = posY;
     }
 
-    /**
-     * 
-     * 
-     */
     isMouseOver() {
         if (dist(mouseX, mouseY, this.posX, this.posY) < (this.hitRange) / 2)
             return true;
         return false;
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         if (this.isMouseOver() && (this.inputState == INPUT_STATE.FREE || this.isOutput)) {
             wireMng.addNode(this);
@@ -142,10 +105,6 @@ export class Node {
 
 };
 
-/**
- * 
- * @param {*} value 
- */
 export function fillValue(value) {
     if (value)
         fill(255, 193, 7);

@@ -8,12 +8,7 @@ import { colorMouseOver, fileManager } from "../simulator.js";
  */
 export class Wire {
 
-    /**
-     * @constructor Wire
-     * @param {Node} startNode starting node
-     */
     constructor(startNode) {
-
         this.startNode = startNode;
         this.endNode = null;
 
@@ -24,6 +19,10 @@ export class Wire {
         this.endY = mouseY;
 
         this.width = 8;
+    }
+
+    toJSON(key) {
+        return [this.startID, this.endID];
     }
 
     /**
@@ -87,9 +86,6 @@ export class Wire {
         return true;
     }
 
-    /**
-     * @todo TODO
-     */
     generateNodeValue() {
         if ((this.startNode.isOutput && this.endNode.isOutput) ||
             (!this.startNode.isOutput && !this.endNode.isOutput)) {
@@ -173,9 +169,6 @@ export class Wire {
  * @todo Implement class
  */
 class ShortCircuit {
-    /**
-     * @todo TODO
-     */
     constructor(startNode, endNode) {
         this.firstNode = startNode;
         this.secondNode = endNode;
@@ -187,17 +180,11 @@ class ShortCircuit {
         this.secondNode.setInputState(INPUT_STATE.TAKEN);
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         this.inputNode.destroy();
         delete this.inputNode;
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         stroke(0);
         strokeWeight(2);
@@ -217,9 +204,6 @@ class ShortCircuit {
         return true;
     }
 
-    /**
-     * @todo TODO
-     */
     drawShortCircuit() {
         let posCommonNode = [
             this.firstNode.posX - 15,
@@ -235,7 +219,7 @@ class ShortCircuit {
         line(posCommonNode[0], this.firstNode.posY,
             posCommonNode[0], this.secondNode.posY);
     }
-    
+
     /**
      * Function to call whan mouse is clicked
      */
@@ -249,9 +233,6 @@ class ShortCircuit {
  * @classdesc Wire manager
  */
 export class WireManager {
-    /**
-     * @todo TODO
-     */
     constructor() {
         this.wire = [];
         this.shortCircuit = [];
@@ -288,10 +269,6 @@ export class WireManager {
         }
     }
 
-    /**
-     * @todo TODO
-     * @param {Node} node Node to add
-     */
     addNode(node) {
         if (this.isOpened == false) {
             this.wire.push(new Wire(node));

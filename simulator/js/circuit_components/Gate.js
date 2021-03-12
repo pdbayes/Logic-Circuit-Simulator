@@ -32,7 +32,15 @@ export class Gate {
         }
         this.output = new Node(this.posX + this.width, this.posY + this.height / 2, true);
         this.nodeStartID = this.input[0].id;
-    
+
+    }
+
+    toJSON(key) {
+        return {
+            type: this.strType,
+            id: this.nodeStartID,
+            pos: [this.posX, this.posY],
+        }
     }
 
     /**
@@ -65,8 +73,7 @@ export class Gate {
         if (!this.isSpawned) {
             this.posX = mouseX - (this.width / 2);
             this.posY = mouseY - (this.height / 2);
-        }else if(!this.isSaved)
-        {
+        } else if (!this.isSaved) {
             fileManager.saveState();
             this.isSaved = true;
         }
@@ -101,13 +108,11 @@ export class Gate {
         this.output.draw();
     }
 
-    refreshNodes()
-    {
+    refreshNodes() {
         let currentID = this.nodeStartID;
         this.input[0].setID(currentID);
         currentID++;
-        if (this.type != gateType.NOT)
-        {
+        if (this.type != gateType.NOT) {
             this.input[1].setID(currentID);
             currentID++;
         }
@@ -156,7 +161,7 @@ export class Gate {
      * @todo Errore handler  
      */
     convertToType(str) {
-        switch (str) {
+        switch (str.toUpperCase()) {
             case "NOT":
                 return gateType.NOT;
 
@@ -195,7 +200,6 @@ export class Gate {
 
     /**
      * When mouse is pressed if gate is not spawned, spawn it, then return 
-     * 
      */
     mousePressed() {
         if (!this.isSpawned) {
@@ -227,4 +231,4 @@ export class Gate {
         return result;
     }
 
-};
+}

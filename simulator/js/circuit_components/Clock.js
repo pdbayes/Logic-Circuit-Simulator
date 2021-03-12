@@ -6,10 +6,7 @@ import { LogicInput } from "./LogicInput.js";
  * @extends LogicInput
  */
 export class Clock extends LogicInput {
-    /**
-     * @param {*} period TODO
-     * @param {*} dutycycle TODO
-     */
+
     constructor(period, dutycycle) {
         super();
         this.truePeriod = period * dutycycle / 100;

@@ -13,28 +13,18 @@ import { nodeList } from "./circuit_components/Node.js";
 
 let eventHistory = [];
 
-/**
- * @todo TODO
- */
 export class FileManager {
 
-    /**
-     * @todo TODO
-     */
-    constructor()
-    {
+    constructor() {
         this.isLoadingState = false;
     }
 
-    /**
-     * @todo TODO
-     */
     saveState() {
         /* TODO
         if(this.isLoadingState)
             return;
         
-        eventHistory.unshift(FileManager.getJSON_Workspace());
+        eventHistory.unshift(FileManager.getJSON_Workspace("\t"));
         if (eventHistory.length > 10) {
             delete eventHistory[10];
             eventHistory.length = 10;
@@ -42,10 +32,26 @@ export class FileManager {
         console.log(eventHistory);*/
     }
 
-    /**
-     * @todo TODO
-     */
     loadFile(e) {
+
+        //this.e = e;
+
+        let file = e.target.files.item(0);
+
+        let reader = new FileReader();
+
+        const _this = this;
+        reader.onload = function () {
+
+            let contentFile = reader.result;
+            //console.log(contentFile);
+
+            _this.doLoadFromJsonString(contentFile);
+        };
+        reader.readAsText(file);
+    }
+
+    doLoadFromJsonString(content) {
         this.isLoadingState = true;
 
         flipflop.splice(0, flipflop.length);
@@ -57,175 +63,163 @@ export class FileManager {
         logicOutput.splice(0, logicOutput.length);
         nodeList.splice(0, nodeList.length);
 
-        //this.e = e;
+        const parsedContents = JSON.parse(content)
 
-        let file = e.target.files.item(0);
+        // logic input
+        // logicInput.length = 0
+        if ("logicInput" in parsedContents) {
+            for (let i = 0; i < parsedContents.logicInput.length; i++) {
+                let parsedVals = parsedContents.logicInput[i];
 
-        let reader = new FileReader();
-        reader.onload = function () {
+                const newObj = new LogicInput();
+                if (parsedVals.name)
+                    newObj.name = parsedVals.name
+                newObj.posX = parsedVals.pos[0];
+                newObj.posY = parsedVals.pos[1];
+                newObj.value = parsedVals.value
+                newObj.isSpawned = true;
+                newObj.isSaved = true;
+                newObj.nodeStartID = parsedVals.id;
+                newObj.refreshNodes();
 
-            let contentFile = reader.result;
-            //console.log(contentFile);
+                logicInput.push(newObj);
+            }
+        }
 
-            // logic input
-            if ("logicInput" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-                    let objectParsed = JSON.parse(contentFile).logicInput[i];
+        // logic output
+        // logicOutput.length = 0
+        if ("logicOutput" in parsedContents) {
+            for (let i = 0; i < parsedContents.logicOutput.length; i++) {
+                let parsedVals = parsedContents.logicOutput[i];
 
-                    if (objectParsed == undefined)
+                const newObj = new LogicOutput();
+                if (parsedVals.name)
+                    newObj.name = parsedVals.name
+                newObj.posX = parsedVals.pos[0];
+                newObj.posY = parsedVals.pos[1];
+                newObj.value = parsedVals.value
+                newObj.isSpawned = true;
+                newObj.isSaved = true;
+                newObj.nodeStartID = parsedVals.id;
+                newObj.refreshNodes();
+
+                logicOutput.push(newObj);
+            }
+        }
+
+        // logicClock.length = 0
+        if ("logicClock" in parsedContents) {
+            for (let i = 0; i < parsedContents.logicClock.length; i++) {
+                let parsedVals = parsedContents.logicClock[i];
+
+                const newObj = new Clock()
+                Object.assign(newObj, parsedVals); // TODO too generic
+                newObj.refreshNodes();
+
+                logicClock.push(newObj);
+            }
+        }
+
+        // gate.length = 0
+        if ("gate" in parsedContents) {
+            for (let i = 0; i < parsedContents.gate.length; i++) {
+                let parsedVals = parsedContents.gate[i];
+
+                const newObj = new Gate(parsedVals.type)
+                newObj.posX = parsedVals.pos[0];
+                newObj.posY = parsedVals.pos[1];
+                newObj.isSpawned = true;
+                newObj.isSaved = true;
+                newObj.nodeStartID = parsedVals.id;
+                newObj.refreshNodes();
+
+                gate.push(newObj);
+            }
+        }
+
+        // srLatch.length = 0
+        if ("srLatch" in parsedContents) {
+            for (let i = 0; i < parsedContents.srLatch.length; i++) {
+                let parsedVals = parsedContents.srLatch[i];
+
+                let newObj = null;
+                switch (parsedContents.srLatch[i].type) {
+                    case IC_type.SR_LATCH_ASYNC:
+                        newObj = new SR_LatchAsync(parsedVals.gateType,
+                            parsedVals.stabilize)
+                        srLatch.push();
                         break;
+                    case IC_type.SR_LATCH_SYNC:
+                        newObj = new SR_LatchSync(parsedVals.gateType,
+                            parsedVals.stabilize)
+                        break;
+                }
 
-                    console.log(objectParsed);
-                    logicInput.push(new LogicInput());
-                    Object.assign(logicInput[i], objectParsed);
-                    logicInput[i].refreshNodes();
+                if (newObj) {
+                    Object.assign(newObj, parsedVals); // TODO too generic
+                    newObj.refreshNodes();
+
+                    srLatch.push(newObj);
                 }
             }
-            // logic output
-            //console.log(logicOutput);
-            if ("logicOutput" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
+        }
 
-                    let objectParsed = JSON.parse(contentFile).logicOutput[i];
+        // flipflop.length = 0
+        if ("flipflop" in parsedContents) {
+            for (let i = 0; i < parsedContents.flipflop.length; i++) {
+                let parsedVals = parsedContents.flipflop[i];
 
-                    if (objectParsed == undefined)
+                let newObj = null;
+                switch (parsedContents.flipflop[i].type) {
+                    case IC_type.FF_D_SINGLE:
+                        newObj = new FF_D_Single(parsedContents.flipflop[i].type);
                         break;
+                    case IC_type.FF_D_MASTERSLAVE:
+                        newObj = new FF_D_MasterSlave(parsedContents.flipflop[i].type);
+                        break;
+                    case IC_type.FF_T:
+                        newObj = new FF_T(parsedContents.flipflop[i].type);
+                        break;
+                    case IC_type.FF_JK:
+                        newObj = new FF_JK(parsedContents.flipflop[i].type);
+                        break;
+                }
 
-                    console.log(objectParsed);
-                    logicOutput.push(new LogicOutput());
-                    Object.assign(logicOutput[i], objectParsed);
-                    logicOutput[i].refreshNodes();
+                if (newObj) {
+                    Object.assign(newObj, parsedVals); // TODO too generic
+                    newObj.refreshNodes();
+
+                    flipflop.push(newObj);
                 }
             }
+        }
 
-            if ("logicClock" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-
-                    let objectParsed = JSON.parse(contentFile).logicClock[i];
-
-                    if (objectParsed == undefined)
-                        break;
-
-                    console.log(objectParsed);
-                    logicClock.push(new Clock());
-                    Object.assign(logicClock[i], objectParsed);
-                    logicClock[i].refreshNodes();
-                }
+        if ("wire" in parsedContents) {
+            for (let i = 0; i < parsedContents.wire.length; i++) {
+                let parsedVals = parsedContents.wire[i];
+                wireMng.addNode(nodeList[parsedVals[0]]);
+                wireMng.addNode(nodeList[parsedVals[1]]);
             }
-
-            if ("gate" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-
-                    let objectParsed = JSON.parse(contentFile).gate[i];
-
-                    if (objectParsed == undefined)
-                        break;
-
-                    console.log(objectParsed);
-                    gate.push(new Gate(JSON.parse(contentFile).gate[i].strType));
-                    Object.assign(gate[i], objectParsed);
-                    gate[i].refreshNodes();
-                }
-            }
-
-            if ("srLatch" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-
-                    let objectParsed = JSON.parse(contentFile).srLatch[i];
-
-                    if (objectParsed == undefined)
-                        break;
-
-                    console.log(objectParsed);
-
-                    switch (JSON.parse(contentFile).srLatch[i].type) {
-                        case IC_type.SR_LATCH_ASYNC:
-                            srLatch.push(new SR_LatchAsync(JSON.parse(contentFile).srLatch[i].gateType,
-                                JSON.parse(contentFile).srLatch[i].stabilize));
-                            break;
-                        case IC_type.SR_LATCH_SYNC:
-                            srLatch.push(new SR_LatchSync(JSON.parse(contentFile).srLatch[i].gateType,
-                                JSON.parse(contentFile).srLatch[i].stabilize));
-                            break;
-                    }
-                    Object.assign(srLatch[i], objectParsed);
-                    srLatch[i].refreshNodes();
-                }
-            }
-
-            if ("flipflop" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-
-                    let objectParsed = JSON.parse(contentFile).flipflop[i];
-
-                    if (objectParsed == undefined)
-                        break;
-
-                    console.log(objectParsed);
-
-                    switch (JSON.parse(contentFile).flipflop[i].type) {
-                        case IC_type.FF_D_SINGLE:
-                            flipflop.push(new FF_D_Single(JSON.parse(contentFile).flipflop[i].type));
-                            break;
-                        case IC_type.FF_D_MASTERSLAVE:
-                            flipflop.push(new FF_D_MasterSlave(JSON.parse(contentFile).flipflop[i].type));
-                            break;
-                        case IC_type.FF_T:
-                            flipflop.push(new FF_T(JSON.parse(contentFile).flipflop[i].type));
-                            break;
-                        case IC_type.FF_JK:
-                            flipflop.push(new FF_JK(JSON.parse(contentFile).flipflop[i].type));
-                            break;
-                    }
-                    Object.assign(flipflop[i], objectParsed);
-                    flipflop[i].refreshNodes();
-                }
-            }
-
-            if ("wire" in JSON.parse(contentFile)) {
-                for (let i = 0; i < contentFile.length; i++) {
-                    let objectParsed = JSON.parse(contentFile).wire[i];
-
-                    if (objectParsed == undefined)
-                        break;
-
-                    console.log(objectParsed);
-
-                    wireMng.addNode(nodeList[objectParsed.startID]);
-                    wireMng.addNode(nodeList[objectParsed.endID]);
-                    //Object.assign(gate[i], objectParsed);
-                }
-            }
-
-        };
-        reader.readAsText(file);
+        }
     }
 
 
-    /**
-     * @todo TODO
-     */
     saveFile(e) {
-
-        let jsonWorkspace = FileManager.getJSON_Workspace();
+        let jsonWorkspace = FileManager.getJSON_Workspace("\t");
         let blob = new Blob([jsonWorkspace], { type: 'application/json' });
         saveProjectFile.href = URL.createObjectURL(blob);
-        //console.log(jsonWorkspace);
     }
 
-    /**
-     * @todo TODO
-     */
-    static getJSON_Workspace() {
+    static getJSON_Workspace(jsonSep) {
         let workspace = new Object();
 
-        workspace["logicInput"] = logicInput;
-        workspace["logicOutput"] = logicOutput;
-        workspace["flipflop"] = flipflop;
-        workspace["logicClock"] = logicClock;
-        workspace["gate"] = gate;
-        workspace["srLatch"] = srLatch;
-        workspace["wire"] = wireMng.wire;
+        if (logicInput.length) workspace["logicInput"] = logicInput;
+        if (logicOutput.length) workspace["logicOutput"] = logicOutput;
+        if (flipflop.length) workspace["flipflop"] = flipflop;
+        if (logicClock.length) workspace["logicClock"] = logicClock;
+        if (gate.length) workspace["gate"] = gate;
+        if (srLatch.length) workspace["srLatch"] = srLatch;
+        if (wireMng.wire.length) workspace["wire"] = wireMng.wire;
 
         let jsonWorkspace = JSON.stringify(workspace,
             function (key, value) {
@@ -258,7 +252,7 @@ export class FileManager {
 
                 // other things which is not possible to export on JSON
                 return value;
-            }, '\t');
+            }, jsonSep);
         return jsonWorkspace;
     }
 }

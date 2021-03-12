@@ -3,12 +3,11 @@ import { MouseAction } from "./Enums.js";
 import { Node, fillValue } from "./Node.js";
 import { colorMouseOver, fileManager } from "../simulator.js"
 
-/**
- * @todo TODO
- */
 export class LogicOutput {
+    
     constructor() {
         this.value = false;
+        this.name = "";
         this.posX = mouseX;
         this.posY = mouseY;
         this.diameter = 25;
@@ -21,23 +20,26 @@ export class LogicOutput {
         this.isSaved = false;
     }
 
-    /**
-     * @todo TODO
-     */
+    toJSON(key) {
+        return {
+            name: (this.name) ? this.name : undefined,
+            id: this.nodeStartID,
+            pos: [this.posX, this.posY],
+            value: this.value,
+        }
+    }
+
+
     destroy() {
         this.input.destroy();
         delete this.input;
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         if (!this.isSpawned) {
             this.posX = mouseX;
             this.posY = mouseY;
-        }else if(!this.isSaved)
-        {
+        } else if (!this.isSaved) {
             fileManager.saveState();
             this.isSaved = true;
         }
@@ -52,12 +54,12 @@ export class LogicOutput {
         this.value = this.input.getValue();
 
         fillValue(this.value);
-        
-        if(this.isMouseOver())
+
+        if (this.isMouseOver())
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]);
         else
             stroke(0);
-    
+
 
         strokeWeight(4);
         line(this.posX, this.posY, this.posX - 30, this.posY);
@@ -67,44 +69,36 @@ export class LogicOutput {
 
         noStroke();
         fill(0);
-        textSize(12);
-        textStyle(NORMAL);
-        text('SORTIE', this.posX - 20, this.posY + 25);
+        textSize(18);
+        textStyle(ITALIC);
+        textAlign(LEFT, CENTER);
+        if (this.name)
+            text(this.name, this.posX + 21, this.posY);
 
         textSize(18);
-
+        textAlign(CENTER, CENTER);
         if (this.value) {
             textStyle(BOLD);
-            text('1', this.posX - this.diameter / 4, this.posY + this.diameter / 4);
+            text('1', this.posX, this.posY);
         }
         else {
             textStyle(NORMAL);
             fill(255);
-            text('0', this.posX - this.diameter / 4, this.posY + this.diameter / 4);
+            text('0', this.posX, this.posY);
         }
     }
 
-    /**
-     * @todo TODO
-     */
-    refreshNodes()
-    {
+    refreshNodes() {
         let currentID = this.nodeStartID;
         this.input.setID(currentID);
     }
 
-    /**
-     * @todo TODO
-     */
     isMouseOver() {
         if (dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
             return true;
         return false;
     }
 
-    /**
-     * @todo TODO
-     */
     mousePressed() {
         if (!this.isSpawned) {
             this.posX = mouseX;
@@ -121,9 +115,6 @@ export class LogicOutput {
         }
     }
 
-    /**
-     * @todo TODO
-     */
     mouseReleased() {
         if (this.isMoving) {
             this.isMoving = false;
@@ -131,9 +122,6 @@ export class LogicOutput {
 
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         if (this.isMouseOver() || this.input.isMouseOver()) {
             this.input.mouseClicked();

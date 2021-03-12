@@ -3,14 +3,8 @@ import { IC_IMG } from "../simulator.js";
 import { MouseAction } from "./Enums.js";
 import { colorMouseOver, fileManager } from "../simulator.js";
 
-/**
- * @todo TODO
- */
 export class Integrated {
-    /**
-     * 
-     * @param {*} type 
-     */
+
     constructor(type) {
         this.type = type;
         this.width = IC_IMG[this.type].width;
@@ -24,15 +18,11 @@ export class Integrated {
         this.isSaved = false;
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         if (!this.isSpawned) {
             this.posX = mouseX - (this.width / 2);
             this.posY = mouseY - (this.height / 2);
-        }else if(!this.isSaved)
-        {
+        } else if (!this.isSaved) {
             fileManager.saveState();
             this.isSaved = true;
         }
@@ -88,8 +78,7 @@ export class Integrated {
     /**
      * Function to call when mouse is clicked
      */
-    mouseClicked()
-    {
+    mouseClicked() {
         // virtual
     }
 

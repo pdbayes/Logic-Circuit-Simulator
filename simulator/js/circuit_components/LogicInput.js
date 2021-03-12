@@ -8,9 +8,10 @@ import { colorMouseOver, fileManager } from "../simulator.js"
  * @classdesc Generate input for the circuit
  */
 export class LogicInput {
-    constructor() {
 
+    constructor() {
         this.value = false;
+        this.name = "";
         this.posX = mouseX;
         this.posY = mouseY;
         this.diameter = 25;
@@ -22,12 +23,21 @@ export class LogicInput {
         this.nodeStartID = this.output.id;
         this.isSaved = false;
     }
-    
+
+    toJSON(key) {
+        return {
+            name: (this.name) ? this.name : undefined,
+            id: this.nodeStartID,
+            pos: [this.posX, this.posY],
+            value: this.value,
+        }
+    }
+
 
     /**
      * @todo this documentation
      */
-    static from(json){
+    static from(json) {
         return Object.assign(this, json);
     }
 
@@ -46,8 +56,7 @@ export class LogicInput {
         if (!this.isSpawned) {
             this.posX = mouseX;
             this.posY = mouseY;
-        }else if(!this.isSaved)
-        {
+        } else if (!this.isSaved) {
             fileManager.saveState();
             this.isSaved = true;
         }
@@ -59,11 +68,11 @@ export class LogicInput {
             this.posY = mouseY + this.offsetMouseY;
         }
 
-        if(this.isMouseOver())
+        if (this.isMouseOver())
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]);
         else
             stroke(0);
-        
+
         strokeWeight(4);
         line(this.posX, this.posY, this.posX + 30, this.posY);
         circle(this.posX, this.posY, this.diameter);
@@ -76,23 +85,22 @@ export class LogicInput {
         this.printInfo();
 
         textSize(18);
-
+        textAlign(CENTER, CENTER);
         if (this.value) {
             textStyle(BOLD);
-            text('1', this.posX - this.diameter / 4, this.posY + this.diameter / 4);
+            text('1', this.posX, this.posY);
         }
         else {
             textStyle(NORMAL);
             fill(255);
-            text('0', this.posX - this.diameter / 4, this.posY + this.diameter / 4);
+            text('0', this.posX, this.posY);
         }
     }
 
     /**
      * @todo this documentation
      */
-    refreshNodes()
-    {
+    refreshNodes() {
         let currentID = this.nodeStartID;
         this.output.setID(currentID);
     }
@@ -104,9 +112,11 @@ export class LogicInput {
     printInfo() {
         noStroke();
         fill(0);
-        textSize(12);
-        textStyle(NORMAL);
-        text('ENTRÉE', this.posX - 20, this.posY + 25);
+        textSize(18);
+        textStyle(ITALIC);
+        textAlign(RIGHT, CENTER);
+        if (this.name)
+            text(this.name, this.posX - 25, this.posY);
     }
 
     /**
@@ -181,4 +191,3 @@ export class LogicInput {
     }
 
 }
-

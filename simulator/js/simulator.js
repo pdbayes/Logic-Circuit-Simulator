@@ -12,12 +12,12 @@ export let logicClock = [];
 export let srLatch = [];
 export let flipflop = [];
 export let wireMng;
-export let colorMouseOver = [0 ,0x7B, 0xFF];
+export let colorMouseOver = [0, 0x7B, 0xFF];
 export let fileManager = new FileManager();
 
-/**
- * @todo TODO
- */
+let canvasContainer;
+let initialData = null;
+
 export function preload() {
     gateIMG.push(loadImage('simulator/img/LogicInput.svg'));// For testing usage
     gateIMG.push(loadImage('simulator/img/NOT.svg'));
@@ -38,38 +38,119 @@ export function preload() {
 
 }
 
-/**
- * @todo TODO
- */
+
+function getURLParameter(sParam) {
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam) {
+            return sParameterName[1];
+        }
+    }
+    return undefined
+}
+
+function isEmbeddedInIframe() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+}
+
+const PARAM_DATA = "data"
+const PARAM_SHOW_ONLY = "showonly"
+const PARAM_NO_CONTROLS = "nocontrols"
+
 export function setup() {
-    const canvHeight = windowHeight - 90;
-    let canvas = createCanvas(windowWidth - 115, canvHeight, P2D);
+    canvasContainer = document.getElementById("canvas-sim");
+
+    let canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D);
 
     canvas.parent('canvas-sim');
-    document.getElementsByClassName("tools")[0].style.height = canvHeight;
 
     wireMng = new WireManager();
+
+    const leftToolbar = document.getElementById("leftToolbar");
+    const toolbarChildren = leftToolbar.children;
+
+    let showonly = getURLParameter(PARAM_SHOW_ONLY);
+    if (showonly) {
+        showonly = showonly.toUpperCase().split(/[, ]+/).filter(x => x.trim());
+        for (let i = 0; i < toolbarChildren.length; i++) {
+            const child = toolbarChildren[i]
+            const tool = child.getAttribute("tool")
+            if (child.tagName == "BUTTON" && tool && child.getAttribute("isGate") == "true" && !showonly.includes(tool)) {
+                child.style.display = "none";
+            }
+        }
+    } else {
+
+    }
+
+    const data = getURLParameter(PARAM_DATA)
+    if (data) {
+        initialData = data;
+        tryLoadFromData();
+    }
+
+    let showControls = true;
+    const nocontrols = getURLParameter(PARAM_NO_CONTROLS);
+    if (nocontrols && (nocontrols == "1" || nocontrols.toLowerCase() == "true")) {
+        showControls = false;
+    }
+
+    if (showControls) {
+
+        document.getElementById("leftToolbar").style.display = null;
+        const modifButtons = document.querySelectorAll("button.sim-modification-tool");
+        for (let i = 0; i < modifButtons.length; i++) {
+            modifButtons[i].style.display = null;
+        }
+
+        if (!isEmbeddedInIframe()) {
+            const dumpJsonStructure = document.getElementById("dumpJsonStructure")
+            // if (dumpJsonStructure) {
+            dumpJsonStructure.setAttribute("style", "");
+            dumpJsonStructure.addEventListener("click", (e) => {
+                const humanJson = FileManager.getJSON_Workspace("  ");
+                console.log("JSON:\n" + humanJson)
+                const encodedJson = btoa(FileManager.getJSON_Workspace(0)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "%3D");
+                const loc = window.location;
+                window.history.replaceState(null, null, loc.protocol + "//" + loc.host + loc.pathname + "?data=" + encodedJson);
+            }, false);
+        }
+    }
+
+    document.getElementById("rightToolbarContainer").style.visibility = null;
 }
 
-/**
- * @todo TODO
- */
+export function tryLoadFromData() {
+    if (!initialData)
+        return;
+    try {
+        const decodedData = atob(initialData.replaceAll("-", "+").replaceAll("_", "/").replaceAll("%3D", "="));
+        fileManager.doLoadFromJsonString(decodeURIComponent(decodedData));
+    } catch (e) {
+        console.trace(e);
+    }
+}
+
 export function windowResized() {
-    const canvHeight = windowHeight - 90;
-    resizeCanvas(windowWidth - 115, canvHeight);
-    document.getElementsByClassName("tools")[0].style.height = canvHeight;
+    resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight);
+    // document.getElementsByClassName("tools")[0].style.height = canvHeight;
 }
 
-/**
- * @todo TODO
- */
 export function draw() {
     background(0xFF);
-    stroke(0);
-    strokeWeight(4);
-    fill(0xFF)
+    fill(0xFF);
+
+    stroke(200);
+    strokeWeight(2);
     rect(0, 0, width, height);
-    
+
+    stroke(0);
     wireMng.draw();
 
     for (let i = 0; i < gate.length; i++)
@@ -90,7 +171,7 @@ export function draw() {
     for (let i = 0; i < flipflop.length; i++)
         flipflop[i].draw();
 
-    if(fileManager.isLoadingState)
+    if (fileManager.isLoadingState)
         fileManager.isLoadingState = false;
 
 }
@@ -120,9 +201,6 @@ export function mousePressed() {
         flipflop[i].mousePressed();
 }
 
-/**
- * @todo TODO
- */
 export function mouseReleased() {
     for (let i = 0; i < gate.length; i++)
         gate[i].mouseReleased();
@@ -143,9 +221,6 @@ export function mouseReleased() {
         flipflop[i].mouseReleased();
 }
 
-/**
- * @todo TODO
- */
 export function doubleClicked() {
     for (let i = 0; i < logicInput.length; i++)
         logicInput[i].doubleClicked();
@@ -227,6 +302,7 @@ export function mouseClicked() {
             }
         }
     }
+
     wireMng.mouseClicked();
 }
 
@@ -241,13 +317,17 @@ window.mouseClicked = mouseClicked;
 
 window.activeTool = activeTool;
 
-document.getElementById("projectFile").addEventListener("change", fileManager.loadFile, false);
-document.getElementById("saveProjectFile").addEventListener("click", fileManager.saveFile, false);
+const projectFile = document.getElementById("projectFile");
+if (projectFile)
+    projectFile.addEventListener("change", (e) => fileManager.loadFile(e), false);
+
+const saveProjectFile = document.getElementById("saveProjectFile");
+if (saveProjectFile)
+    saveProjectFile.addEventListener("click", (e) => fileManager.saveFile(e), false);
 
 /**
- * Call FileManager.saveFile
- */
-export function saveFile()
-{
+* Call FileManager.saveFile
+*/
+export function saveFile() {
     fileManager.saveFile();
 }

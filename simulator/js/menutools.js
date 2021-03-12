@@ -2,7 +2,7 @@ import { Clock } from "./circuit_components/Clock.js";
 import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js";
 import { FF_JK } from "./circuit_components/FF_JK.js";
 import { FF_T } from "./circuit_components/FF_T.js";
-import { flipflop, logicInput, logicOutput, logicClock, gate, srLatch } from "./simulator.js";
+import { flipflop, logicInput, logicOutput, logicClock, gate, srLatch, tryLoadFromData } from "./simulator.js";
 import { Gate } from "./circuit_components/Gate.js";
 import { LogicInput } from "./circuit_components/LogicInput.js";
 import { LogicOutput } from "./circuit_components/LogicOutput.js";
@@ -11,10 +11,17 @@ import { SR_LatchSync, SR_LatchAsync, SR_Latch } from "./circuit_components/SR_L
 
 export let currMouseAction = MouseAction.EDIT;
 
-/**
- * @todo TODO
- */
+
 export function activeTool(elTool) {
+
+    const tool = elTool.getAttribute("tool")
+
+    switch (tool) {
+        case "Reset":
+            tryLoadFromData();
+            return;
+    }
+
     resetElements();
     if (elTool.getAttribute("isGate") != null) {
         gate.push(new Gate(elTool.getAttribute("tool")));
@@ -23,7 +30,6 @@ export function activeTool(elTool) {
 
     switch (elTool.getAttribute("tool")) {
         case "Edit":
-            resetElements();
             break;
 
         case "Move":
@@ -37,7 +43,7 @@ export function activeTool(elTool) {
 
         case "LogicInput":
             logicInput.push(new LogicInput());
-            console.log(JSON.stringify({ logicInput }, ['logicInput', 'posX', 'posY', 'value']));
+            // console.log(JSON.stringify({ logicInput }, ['logicInput', 'posX', 'posY', 'value']));
             break;
 
         case "LogicOutput":

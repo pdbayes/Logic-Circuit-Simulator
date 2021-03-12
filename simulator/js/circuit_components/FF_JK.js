@@ -4,9 +4,6 @@ import { IC_type } from "./Enums.js";
 import { Integrated } from "./Integrated.js";
 import { Node } from "./Node.js";
 
-/**
- * @todo TODO
- */
 export class FF_JK extends Integrated {
     constructor(isNegativeEdgeTrig) {
         super(IC_type.FF_JK);
@@ -24,9 +21,6 @@ export class FF_JK extends Integrated {
 
     }
 
-    /**
-     * @todo TODO
-     */
     destroy() {
         this.nodeK.destroy();
         this.nodeClock.destroy();
@@ -35,9 +29,6 @@ export class FF_JK extends Integrated {
         this.nodeNotQ.destroy();
     }
 
-    /**
-     * @todo TODO
-     */
     draw() {
         super.draw();
         this.generateOutput();
@@ -62,11 +53,7 @@ export class FF_JK extends Integrated {
         }
     }
 
-    /**
-     * @todo TODO
-     */
-    refreshNodes()
-    {
+    refreshNodes() {
         let currentID = this.nodeStartID;
 
         this.nodeJ.setID(currentID);
@@ -85,9 +72,6 @@ export class FF_JK extends Integrated {
 
     }
 
-    /**
-     * @todo TODO
-     */
     generateOutput() {
         let clockValue = this.isNegativeEdgeTrig ? this.nodeClock.value : !this.nodeClock.value;
 
@@ -113,9 +97,6 @@ export class FF_JK extends Integrated {
         this.nodeNotQ.value = this.ff_D.nodeNotQ.value;
     }
 
-    /**
-     * @todo TODO
-     */
     mouseClicked() {
         let result = this.isMouseOver();
         result |= this.nodeJ.mouseClicked();
