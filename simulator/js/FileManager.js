@@ -76,7 +76,7 @@ export class FileManager {
                     newObj.name = parsedVals.name
                 newObj.posX = parsedVals.pos[0];
                 newObj.posY = parsedVals.pos[1];
-                newObj.value = parsedVals.value
+                newObj.value = !!(parsedVals.val);
                 newObj.isSpawned = true;
                 newObj.isSaved = true;
                 newObj.nodeStartID = parsedVals.id;
@@ -97,7 +97,7 @@ export class FileManager {
                     newObj.name = parsedVals.name
                 newObj.posX = parsedVals.pos[0];
                 newObj.posY = parsedVals.pos[1];
-                newObj.value = parsedVals.value
+                newObj.value = !!(parsedVals.val);
                 newObj.isSpawned = true;
                 newObj.isSaved = true;
                 newObj.nodeStartID = parsedVals.id;

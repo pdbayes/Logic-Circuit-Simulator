@@ -4,7 +4,7 @@ import { Node, fillValue } from "./Node.js";
 import { colorMouseOver, fileManager } from "../simulator.js"
 
 export class LogicOutput {
-    
+
     constructor() {
         this.value = false;
         this.name = "";
@@ -25,7 +25,7 @@ export class LogicOutput {
             name: (this.name) ? this.name : undefined,
             id: this.nodeStartID,
             pos: [this.posX, this.posY],
-            value: this.value,
+            val: this.value ? 1 : 0,
         }
     }
 

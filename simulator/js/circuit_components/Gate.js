@@ -147,7 +147,7 @@ export class Gate {
                 return !(this.input[0].getValue() || this.input[1].getValue());
 
             case gateType.XOR:
-                return this.input[0].getValue() ^ this.input[1].getValue();
+                return !!(this.input[0].getValue() ^ this.input[1].getValue());
 
             case gateType.XNOR:
                 return !(this.input[0].getValue() ^ this.input[1].getValue());

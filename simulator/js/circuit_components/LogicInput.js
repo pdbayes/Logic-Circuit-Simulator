@@ -29,7 +29,7 @@ export class LogicInput {
             name: (this.name) ? this.name : undefined,
             id: this.nodeStartID,
             pos: [this.posX, this.posY],
-            value: this.value,
+            val: this.value ? 1 : 0,
         }
     }
 
@@ -168,7 +168,7 @@ export class LogicInput {
      */
     doubleClicked() {
         if (this.isMouseOver())
-            this.value ^= true;
+            this.value = !this.value;
     }
 
     /**
@@ -187,7 +187,7 @@ export class LogicInput {
      * Function to invert instance value
      */
     toggle() {
-        this.value ^= true;
+        this.value = !this.value;
     }
 
 }

@@ -6,7 +6,7 @@ export let nodeList = [];
 let nextNodeID = 0;
 
 export class Node {
-
+    
     constructor(posX, posY, isOutput = false, value = false) {
         this.diameter = 10;
         this.value = value;
@@ -55,12 +55,13 @@ export class Node {
     setID(newID) {
         if (nodeList[this.id] == this)
             delete nodeList[this.id];
+
         this.id = newID;
-        nodeList[this.id] = this;
+        nodeList[newID] = this;
 
         //update max id
-        if (this.id > nextNodeID)
-            nextNodeID = this.id + 1;
+        if (newID >= nextNodeID)
+            nextNodeID = newID + 1;
     }
 
     setInputState(state) {
