@@ -69,7 +69,7 @@ export class LogicOutput {
         fill(0);
         textSize(12);
         textStyle(NORMAL);
-        text('LOG. OUTPUT', this.posX - 20, this.posY + 25);
+        text('SORTIE', this.posX - 20, this.posY + 25);
 
         textSize(18);
 

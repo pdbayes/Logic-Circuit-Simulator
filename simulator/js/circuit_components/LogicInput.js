@@ -106,7 +106,7 @@ export class LogicInput {
         fill(0);
         textSize(12);
         textStyle(NORMAL);
-        text('LOG. INPUT', this.posX - 20, this.posY + 25);
+        text('ENTRÉE', this.posX - 20, this.posY + 25);
     }
 
     /**
