@@ -10,6 +10,7 @@ import { FF_T } from "./circuit_components/FF_T.js";
 import { FF_JK } from "./circuit_components/FF_JK.js";
 import { SR_LatchAsync, SR_LatchSync, SR_Latch } from "./circuit_components/SR_Latch.js";
 import { nodeList } from "./circuit_components/Node.js";
+import { stringify2 } from "./stringify2.js";
 
 let eventHistory = [];
 
@@ -66,10 +67,9 @@ export class FileManager {
         const parsedContents = JSON.parse(content)
 
         // logic input
-        // logicInput.length = 0
-        if ("logicInput" in parsedContents) {
-            for (let i = 0; i < parsedContents.logicInput.length; i++) {
-                let parsedVals = parsedContents.logicInput[i];
+        if ("in" in parsedContents) {
+            for (let i = 0; i < parsedContents.in.length; i++) {
+                let parsedVals = parsedContents.in[i];
 
                 const newObj = new LogicInput();
                 if (parsedVals.name)
@@ -85,12 +85,12 @@ export class FileManager {
                 logicInput.push(newObj);
             }
         }
+        console.log("logicInput", logicInput)
 
         // logic output
-        // logicOutput.length = 0
-        if ("logicOutput" in parsedContents) {
-            for (let i = 0; i < parsedContents.logicOutput.length; i++) {
-                let parsedVals = parsedContents.logicOutput[i];
+        if ("out" in parsedContents) {
+            for (let i = 0; i < parsedContents.out.length; i++) {
+                let parsedVals = parsedContents.out[i];
 
                 const newObj = new LogicOutput();
                 if (parsedVals.name)
@@ -106,11 +106,11 @@ export class FileManager {
                 logicOutput.push(newObj);
             }
         }
+        console.log("logicOutput", logicOutput)
 
-        // logicClock.length = 0
-        if ("logicClock" in parsedContents) {
-            for (let i = 0; i < parsedContents.logicClock.length; i++) {
-                let parsedVals = parsedContents.logicClock[i];
+        if ("clocks" in parsedContents) {
+            for (let i = 0; i < parsedContents.clocks.length; i++) {
+                let parsedVals = parsedContents.clocks[i];
 
                 const newObj = new Clock()
                 Object.assign(newObj, parsedVals); // TODO too generic
@@ -119,11 +119,11 @@ export class FileManager {
                 logicClock.push(newObj);
             }
         }
+        console.log("logicClock", logicClock)
 
-        // gate.length = 0
-        if ("gate" in parsedContents) {
-            for (let i = 0; i < parsedContents.gate.length; i++) {
-                let parsedVals = parsedContents.gate[i];
+        if ("gates" in parsedContents) {
+            for (let i = 0; i < parsedContents.gates.length; i++) {
+                let parsedVals = parsedContents.gates[i];
 
                 const newObj = new Gate(parsedVals.type)
                 newObj.posX = parsedVals.pos[0];
@@ -136,11 +136,11 @@ export class FileManager {
                 gate.push(newObj);
             }
         }
+        console.log("gate", gate)
 
-        // srLatch.length = 0
-        if ("srLatch" in parsedContents) {
-            for (let i = 0; i < parsedContents.srLatch.length; i++) {
-                let parsedVals = parsedContents.srLatch[i];
+        if ("srLatches" in parsedContents) {
+            for (let i = 0; i < parsedContents.srLatches.length; i++) {
+                let parsedVals = parsedContents.srLatches[i];
 
                 let newObj = null;
                 switch (parsedContents.srLatch[i].type) {
@@ -163,11 +163,11 @@ export class FileManager {
                 }
             }
         }
+        console.log("srLatch", srLatch)
 
-        // flipflop.length = 0
-        if ("flipflop" in parsedContents) {
-            for (let i = 0; i < parsedContents.flipflop.length; i++) {
-                let parsedVals = parsedContents.flipflop[i];
+        if ("flipflops" in parsedContents) {
+            for (let i = 0; i < parsedContents.flipflops.length; i++) {
+                let parsedVals = parsedContents.flipflops[i];
 
                 let newObj = null;
                 switch (parsedContents.flipflop[i].type) {
@@ -188,19 +188,24 @@ export class FileManager {
                 if (newObj) {
                     Object.assign(newObj, parsedVals); // TODO too generic
                     newObj.refreshNodes();
-
                     flipflop.push(newObj);
                 }
             }
         }
+        console.log("flipflop", flipflop)
 
-        if ("wire" in parsedContents) {
-            for (let i = 0; i < parsedContents.wire.length; i++) {
-                let parsedVals = parsedContents.wire[i];
+
+        console.log("nodeList", nodeList)
+
+
+        if ("wires" in parsedContents) {
+            for (let i = 0; i < parsedContents.wires.length; i++) {
+                let parsedVals = parsedContents.wires[i];
                 wireMng.addNode(nodeList[parsedVals[0]]);
                 wireMng.addNode(nodeList[parsedVals[1]]);
             }
         }
+        console.log("wireMng.wire", wireMng.wire)
     }
 
 
@@ -213,16 +218,20 @@ export class FileManager {
     static getJSON_Workspace(jsonSep) {
         let workspace = new Object();
 
-        if (logicInput.length) workspace["logicInput"] = logicInput;
-        if (logicOutput.length) workspace["logicOutput"] = logicOutput;
-        if (flipflop.length) workspace["flipflop"] = flipflop;
-        if (logicClock.length) workspace["logicClock"] = logicClock;
-        if (gate.length) workspace["gate"] = gate;
-        if (srLatch.length) workspace["srLatch"] = srLatch;
-        if (wireMng.wire.length) workspace["wire"] = wireMng.wire;
+        if (logicInput.length) workspace["in"] = logicInput;
+        if (logicOutput.length) workspace["out"] = logicOutput;
+        if (flipflop.length) workspace["flipflops"] = flipflop;
+        if (logicClock.length) workspace["clocks"] = logicClock;
+        if (gate.length) workspace["gates"] = gate;
+        if (srLatch.length) workspace["srLatches"] = srLatch;
+        if (wireMng.wire.length) workspace["wires"] = wireMng.wire;
+
+        console.log(stringify2(workspace));
 
         let jsonWorkspace = JSON.stringify(workspace,
             function (key, value) {
+                // filter out the values of all these keys
+                // TODO: should be done in toJSON() method
                 switch (key) {
                     case "output":
                     case "input":
