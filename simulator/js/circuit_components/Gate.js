@@ -1,8 +1,8 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { gateIMG } from "../simulator.js";
-import { gateType, MouseAction } from "./Enums.js"
+import { gateType, Mode, MouseAction } from "./Enums.js"
 import { Node } from "./Node.js";
-import { colorMouseOver, fileManager } from "../simulator.js";
+import { colorMouseOver, fileManager, mode } from "../simulator.js";
 import { FileManager } from "../FileManager.js";
 
 /**
@@ -24,13 +24,13 @@ export class Gate {
         this.isSaved = false;
 
         this.input = [];
-        this.input.push(new Node(this.posX, this.posY + 15));
+        this.input.push(new Node(this.posX + 2, this.posY + 15));
         if (this.type != gateType.NOT) {
-            this.input.push(new Node(this.posX, this.posY + this.height - 15));
+            this.input.push(new Node(this.posX + 2, this.posY + this.height - 15));
             this.input[0].setBrother(this.input[1]);
             this.input[1].setBrother(this.input[0]);
         }
-        this.output = new Node(this.posX + this.width, this.posY + this.height / 2, true);
+        this.output = new Node(this.posX + this.width - 2, this.posY + this.height / 2, true);
         this.nodeStartID = this.input[0].id;
 
     }
@@ -84,13 +84,13 @@ export class Gate {
         }
 
         if (this.type == gateType.NOT) {
-            this.input[0].updatePosition(this.posX, this.posY + this.height / 2);
+            this.input[0].updatePosition(this.posX + 2, this.posY + this.height / 2);
         } else {
-            this.input[0].updatePosition(this.posX, this.posY + 15);
-            this.input[1].updatePosition(this.posX, this.posY + this.height - 15);
+            this.input[0].updatePosition(this.posX + 2, this.posY + 15);
+            this.input[1].updatePosition(this.posX + 2, this.posY + this.height - 15);
         }
 
-        this.output.updatePosition(this.posX + this.width, this.posY + this.height / 2);
+        this.output.updatePosition(this.posX + this.width - 2, this.posY + this.height / 2);
 
         if (this.isMouseOver()) {
             noFill();
@@ -192,7 +192,7 @@ export class Gate {
      * @returns {Boolean} Boolean value
      */
     isMouseOver() {
-        if (mouseX > this.posX && mouseX < (this.posX + this.width)
+        if (mode >= Mode.CONNECT && mouseX > this.posX && mouseX < (this.posX + this.width)
             && mouseY > this.posY && mouseY < (this.posY + this.height))
             return true;
         return false;

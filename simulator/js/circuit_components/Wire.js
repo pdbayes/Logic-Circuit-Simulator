@@ -1,6 +1,6 @@
 import { currMouseAction } from "../menutools.js"
-import { MouseAction, INPUT_STATE } from "./Enums.js";
-import { colorMouseOver, fileManager } from "../simulator.js";
+import { MouseAction, INPUT_STATE, Mode } from "./Enums.js";
+import { colorMouseOver, fileManager, mode } from "../simulator.js";
 
 /**
  * Rappresent a wire
@@ -44,7 +44,8 @@ export class Wire {
      */
     draw() {
         stroke(0);
-        strokeWeight(this.width / 2);
+        const mainStrokeWidth = this.width / 2;
+        strokeWeight(mainStrokeWidth);
 
         if (this.endNode == null) {
 
@@ -56,28 +57,37 @@ export class Wire {
 
         } else if (this.startNode.isAlive && this.endNode.isAlive) {
 
+            const bezierAnchorPointDist = Math.max(25, (this.endNode.posX - this.startNode.posX) / 3);
+
             //this.endNode.setValue(this.startNode.getValue());
             this.generateNodeValue();
 
             noFill();
-            if (this.isMouseOver())
+            if (this.isMouseOver()) {
+                strokeWeight(mainStrokeWidth + 2);
                 stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]);
-            else
-                stroke(0);
-            bezier(this.startNode.posX, this.startNode.posY,
-                this.startNode.posX + 50, this.startNode.posY,
-                this.endNode.posX - 50, this.endNode.posY,
-                this.endNode.posX, this.endNode.posY);
-            if (this.startNode.getValue() && this.endNode.getValue()) {
-                strokeWeight(1);
-                stroke(255, 193, 7);
-                bezier(this.startNode.posX, this.startNode.posY,
-                    this.startNode.posX + 50, this.startNode.posY,
-                    this.endNode.posX - 50, this.endNode.posY,
-                    this.endNode.posX, this.endNode.posY);
+            } else {
+                stroke(80);
             }
-            //line(this.startNode.posX, this.startNode.posY,
-            //    this.endNode.posX, this.endNode.posY);
+
+            bezier(this.startNode.posX, this.startNode.posY,
+                this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
+                this.endNode.posX - bezierAnchorPointDist, this.endNode.posY,
+                this.endNode.posX, this.endNode.posY);
+
+            strokeWeight(mainStrokeWidth - 2);
+
+            if (this.startNode.getValue() && this.endNode.getValue()) {
+                stroke(255, 193, 7);
+            } else {
+                stroke(80);
+            }
+
+            bezier(this.startNode.posX, this.startNode.posY,
+                this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
+                this.endNode.posX - bezierAnchorPointDist, this.endNode.posY,
+                this.endNode.posX, this.endNode.posY);
+
         } else {
             this.endNode.setValue(false);
             return false; // destroy the wire
@@ -105,7 +115,7 @@ export class Wire {
      */
     isMouseOver() {
 
-        if (!this.startNode.isAlive || !this.endNode.isAlive)
+        if (mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode.isAlive)
             return false;
 
         let distance = [];

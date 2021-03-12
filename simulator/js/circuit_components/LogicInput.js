@@ -1,7 +1,7 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, ElementType } from "./Enums.js";
+import { MouseAction, ElementType, Mode } from "./Enums.js";
 import { Node, fillValue } from "./Node.js";
-import { colorMouseOver, fileManager } from "../simulator.js"
+import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 /**
  * Generate input for the circuit
@@ -124,7 +124,7 @@ export class LogicInput {
      * @returns {Boolean} Boolean Value
      */
     isMouseOver() {
-        if (dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
+        if (mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
             return true;
         return false;
     }

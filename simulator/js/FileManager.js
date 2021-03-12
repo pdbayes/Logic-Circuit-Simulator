@@ -25,7 +25,7 @@ export class FileManager {
         if(this.isLoadingState)
             return;
         
-        eventHistory.unshift(FileManager.getJSON_Workspace("\t"));
+        eventHistory.unshift(FileManager.getJSON_Workspace());
         if (eventHistory.length > 10) {
             delete eventHistory[10];
             eventHistory.length = 10;
@@ -85,7 +85,7 @@ export class FileManager {
                 logicInput.push(newObj);
             }
         }
-        console.log("logicInput", logicInput)
+        // console.log("logicInput", logicInput)
 
         // logic output
         if ("out" in parsedContents) {
@@ -97,7 +97,6 @@ export class FileManager {
                     newObj.name = parsedVals.name
                 newObj.posX = parsedVals.pos[0];
                 newObj.posY = parsedVals.pos[1];
-                newObj.value = !!(parsedVals.val);
                 newObj.isSpawned = true;
                 newObj.isSaved = true;
                 newObj.nodeStartID = parsedVals.id;
@@ -106,7 +105,7 @@ export class FileManager {
                 logicOutput.push(newObj);
             }
         }
-        console.log("logicOutput", logicOutput)
+        // console.log("logicOutput", logicOutput)
 
         if ("clocks" in parsedContents) {
             for (let i = 0; i < parsedContents.clocks.length; i++) {
@@ -119,7 +118,7 @@ export class FileManager {
                 logicClock.push(newObj);
             }
         }
-        console.log("logicClock", logicClock)
+        // console.log("logicClock", logicClock)
 
         if ("gates" in parsedContents) {
             for (let i = 0; i < parsedContents.gates.length; i++) {
@@ -136,7 +135,7 @@ export class FileManager {
                 gate.push(newObj);
             }
         }
-        console.log("gate", gate)
+        // console.log("gate", gate)
 
         if ("srLatches" in parsedContents) {
             for (let i = 0; i < parsedContents.srLatches.length; i++) {
@@ -163,7 +162,7 @@ export class FileManager {
                 }
             }
         }
-        console.log("srLatch", srLatch)
+        // console.log("srLatch", srLatch)
 
         if ("flipflops" in parsedContents) {
             for (let i = 0; i < parsedContents.flipflops.length; i++) {
@@ -192,11 +191,8 @@ export class FileManager {
                 }
             }
         }
-        console.log("flipflop", flipflop)
-
-
-        console.log("nodeList", nodeList)
-
+        // console.log("flipflop", flipflop)
+        // console.log("nodeList", nodeList)
 
         if ("wires" in parsedContents) {
             for (let i = 0; i < parsedContents.wires.length; i++) {
@@ -205,17 +201,17 @@ export class FileManager {
                 wireMng.addNode(nodeList[parsedVals[1]]);
             }
         }
-        console.log("wireMng.wire", wireMng.wire)
+        // console.log("wireMng.wire", wireMng.wire)
     }
 
 
     saveFile(e) {
-        let jsonWorkspace = FileManager.getJSON_Workspace("\t");
+        let jsonWorkspace = FileManager.getJSON_Workspace();
         let blob = new Blob([jsonWorkspace], { type: 'application/json' });
         saveProjectFile.href = URL.createObjectURL(blob);
     }
 
-    static getJSON_Workspace(jsonSep) {
+    static getJSON_Workspace() {
         let workspace = new Object();
 
         if (logicInput.length) workspace["in"] = logicInput;
@@ -226,10 +222,8 @@ export class FileManager {
         if (srLatch.length) workspace["srLatches"] = srLatch;
         if (wireMng.wire.length) workspace["wires"] = wireMng.wire;
 
-        console.log(stringify2(workspace));
-
-        let jsonWorkspace = JSON.stringify(workspace,
-            function (key, value) {
+        return stringify2(workspace, {
+            replacer: function (key, value) {
                 // filter out the values of all these keys
                 // TODO: should be done in toJSON() method
                 switch (key) {
@@ -261,7 +255,7 @@ export class FileManager {
 
                 // other things which is not possible to export on JSON
                 return value;
-            }, jsonSep);
-        return jsonWorkspace;
+            }
+        });
     }
 }

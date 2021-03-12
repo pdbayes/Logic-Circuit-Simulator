@@ -1,7 +1,7 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { IC_IMG } from "../simulator.js";
-import { MouseAction } from "./Enums.js";
-import { colorMouseOver, fileManager } from "../simulator.js";
+import { MouseAction, Mode } from "./Enums.js";
+import { colorMouseOver, fileManager, mode } from "../simulator.js";
 
 export class Integrated {
 
@@ -47,7 +47,7 @@ export class Integrated {
      * @returns {Boolean} Boolean value
      */
     isMouseOver() {
-        if (mouseX > this.posX && mouseX < (this.posX + this.width)
+        if (mode >= Mode.CONNECT && mouseX > this.posX && mouseX < (this.posX + this.width)
             && mouseY > this.posY && mouseY < (this.posY + this.height))
             return true;
         return false;

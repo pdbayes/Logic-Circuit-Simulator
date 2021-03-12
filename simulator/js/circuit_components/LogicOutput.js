@@ -1,7 +1,7 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction } from "./Enums.js";
+import { MouseAction, Mode } from "./Enums.js";
 import { Node, fillValue } from "./Node.js";
-import { colorMouseOver, fileManager } from "../simulator.js"
+import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 export class LogicOutput {
 
@@ -24,8 +24,7 @@ export class LogicOutput {
         return {
             name: (this.name) ? this.name : undefined,
             id: this.nodeStartID,
-            pos: [this.posX, this.posY],
-            val: this.value ? 1 : 0,
+            pos: [this.posX, this.posY]
         }
     }
 
@@ -94,7 +93,7 @@ export class LogicOutput {
     }
 
     isMouseOver() {
-        if (dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
+        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
             return true;
         return false;
     }

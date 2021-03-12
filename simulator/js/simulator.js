@@ -1,6 +1,7 @@
 import { activeTool, currMouseAction } from "./menutools.js"
 import { MouseAction } from "./circuit_components/Enums.js"
 import { WireManager } from "./circuit_components/Wire.js";
+import { Mode } from "./circuit_components/Enums.js"
 import { FileManager } from "./FileManager.js"
 
 export let gateIMG = []; // gates images
@@ -14,6 +15,8 @@ export let flipflop = [];
 export let wireMng;
 export let colorMouseOver = [0, 0x7B, 0xFF];
 export let fileManager = new FileManager();
+
+export let mode = Mode.FULL;
 
 let canvasContainer;
 let initialData = null;
@@ -39,7 +42,7 @@ export function preload() {
 }
 
 
-function getURLParameter(sParam) {
+function getURLParameter(sParam, defaultValue) {
     var sPageURL = window.location.search.substring(1);
     var sURLVariables = sPageURL.split('&');
     for (var i = 0; i < sURLVariables.length; i++) {
@@ -48,7 +51,11 @@ function getURLParameter(sParam) {
             return sParameterName[1];
         }
     }
-    return undefined
+    return defaultValue
+}
+
+function isTruthyString(str) {
+    return str && (str == "1" || str.toLowerCase() == "true")
 }
 
 function isEmbeddedInIframe() {
@@ -61,7 +68,7 @@ function isEmbeddedInIframe() {
 
 const PARAM_DATA = "data"
 const PARAM_SHOW_ONLY = "showonly"
-const PARAM_NO_CONTROLS = "nocontrols"
+const PARAM_MODE = "mode"
 
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim");
@@ -72,22 +79,6 @@ export function setup() {
 
     wireMng = new WireManager();
 
-    const leftToolbar = document.getElementById("leftToolbar");
-    const toolbarChildren = leftToolbar.children;
-
-    let showonly = getURLParameter(PARAM_SHOW_ONLY);
-    if (showonly) {
-        showonly = showonly.toUpperCase().split(/[, ]+/).filter(x => x.trim());
-        for (let i = 0; i < toolbarChildren.length; i++) {
-            const child = toolbarChildren[i]
-            const tool = child.getAttribute("tool")
-            if (child.tagName == "BUTTON" && tool && child.getAttribute("isGate") == "true" && !showonly.includes(tool)) {
-                child.style.display = "none";
-            }
-        }
-    } else {
-
-    }
 
     const data = getURLParameter(PARAM_DATA)
     if (data) {
@@ -95,35 +86,65 @@ export function setup() {
         tryLoadFromData();
     }
 
-    let showControls = true;
-    const nocontrols = getURLParameter(PARAM_NO_CONTROLS);
-    if (nocontrols && (nocontrols == "1" || nocontrols.toLowerCase() == "true")) {
-        showControls = false;
+
+    const maybeMode = getURLParameter(PARAM_MODE, "").toUpperCase()
+    if (maybeMode in Mode) {
+        mode = Mode[maybeMode]
+        console.log("Mode: " + maybeMode)
     }
 
-    if (showControls) {
+    const showReset = mode >= Mode.TRYOUT
+    const showRightEditControls = mode >= Mode.CONNECT
+    const showLeftMenu = mode >= Mode.FULL
+    const showRightMenu = showReset || showRightEditControls
 
-        document.getElementById("leftToolbar").style.display = null;
+    if (!showReset) {
+        document.getElementById("resetToolButton").style.display = "none";
+    }
+
+
+    let showonly = getURLParameter(PARAM_SHOW_ONLY);
+    if (showonly) {
+        showonly = showonly.toUpperCase().split(/[, ]+/).filter(x => x.trim());
+        const leftToolbar = document.getElementById("leftToolbar");
+        const toolbarChildren = leftToolbar.children;
+        for (let i = 0; i < toolbarChildren.length; i++) {
+            const child = toolbarChildren[i]
+            const tool = child.getAttribute("tool")
+            if (child.tagName == "BUTTON" && tool && child.getAttribute("isGate") == "true" && !showonly.includes(tool)) {
+                child.style.display = "none";
+            }
+        }
+    }
+
+    if (showRightEditControls) {
         const modifButtons = document.querySelectorAll("button.sim-modification-tool");
         for (let i = 0; i < modifButtons.length; i++) {
             modifButtons[i].style.display = null;
         }
+    }
 
+
+    if (showLeftMenu) {
+        document.getElementById("leftToolbar").style.display = null;
         if (!isEmbeddedInIframe()) {
             const dumpJsonStructure = document.getElementById("dumpJsonStructure")
             // if (dumpJsonStructure) {
             dumpJsonStructure.setAttribute("style", "");
             dumpJsonStructure.addEventListener("click", (e) => {
-                const humanJson = FileManager.getJSON_Workspace("  ");
-                console.log("JSON:\n" + humanJson)
-                const encodedJson = btoa(FileManager.getJSON_Workspace(0)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "%3D");
+                const json = FileManager.getJSON_Workspace();
+                console.log("JSON:\n" + json)
+                const encodedJson = btoa(json).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "%3D");
                 const loc = window.location;
                 window.history.replaceState(null, null, loc.protocol + "//" + loc.host + loc.pathname + "?data=" + encodedJson);
             }, false);
         }
+
     }
 
-    document.getElementById("rightToolbarContainer").style.visibility = null;
+    if (showRightMenu) {
+        document.getElementById("rightToolbarContainer").style.visibility = null;
+    }
 }
 
 export function tryLoadFromData() {
@@ -148,7 +169,8 @@ export function draw() {
 
     stroke(200);
     strokeWeight(2);
-    rect(0, 0, width, height);
+    if (mode >= Mode.CONNECT)
+        rect(0, 0, width, height);
 
     stroke(0);
     wireMng.draw();

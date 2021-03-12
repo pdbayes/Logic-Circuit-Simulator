@@ -1,3 +1,11 @@
+export const Mode =
+{
+    STATIC: 0,
+    TRYOUT: 1,
+    CONNECT: 2,
+    FULL: 3
+}
+
 export const MouseAction =
 {
     EDIT: 0,

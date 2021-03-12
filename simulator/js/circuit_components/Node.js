@@ -1,5 +1,5 @@
-import { INPUT_STATE } from "./Enums.js";
-import { wireMng } from "../simulator.js";
+import { INPUT_STATE, Mode } from "./Enums.js";
+import { wireMng, mode } from "../simulator.js";
 
 export let nodeList = [];
 
@@ -8,7 +8,7 @@ let nextNodeID = 0;
 export class Node {
     
     constructor(posX, posY, isOutput = false, value = false) {
-        this.diameter = 10;
+        this.diameter = 8;
         this.value = value;
         this.posX = posX;
         this.posY = posY;
@@ -36,7 +36,7 @@ export class Node {
         fillValue(this.value);
 
         stroke(0);
-        strokeWeight(4);
+        strokeWeight(1);
         circle(this.posX, this.posY, this.diameter);
 
         if (this.isMouseOver()) {
@@ -90,7 +90,7 @@ export class Node {
     }
 
     isMouseOver() {
-        if (dist(mouseX, mouseY, this.posX, this.posY) < (this.hitRange) / 2)
+        if (mode >= Mode.CONNECT&& dist(mouseX, mouseY, this.posX, this.posY) < (this.hitRange) / 2)
             return true;
         return false;
     }
