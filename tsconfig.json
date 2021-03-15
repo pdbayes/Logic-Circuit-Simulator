@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "module": "es6",
+        "target": "es5",
+        "outDir": "simulator/js",
+        "lib": [
+            "DOM",
+            "ES2016",
+            "ES2016.Array.Include"
+        ],
+        "sourceMap": true,
+        "rootDir": "simulator/src/",
+        "strict": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "typeRoots": [
+            "../../node_modules",
+            "../../node_modules/@types",
+            "../definitions"
+        ],
+    },
+    "exclude": [
+        "simulator/js",
+        "../../node_modules",
+        ".vscode-test",
+        "webpack.config.js"
+    ]
+}
