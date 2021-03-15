@@ -5,29 +5,43 @@ import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 export class Gate {
-    public type = this.convertToType(this.strType)
-    public width = gateIMG[this.type].width
-    public height = gateIMG[this.type].height
-    public posX = mouseX - (this.width / 2)
-    public posY = mouseY - (this.height / 2)
-    public isSpawned = false
-    public offsetMouseX = 0
-    public offsetMouseY = 0
-    public isMoving = false
-    public isSaved = false
-    public input: Node[] = []
-    public output: Node | undefined
-    public nodeStartID: number
 
-    constructor(public strType: string) {
+    private type = this.convertToType(this.strType)
+    private width = gateIMG[this.type].width
+    private height = gateIMG[this.type].height
+    private posX = mouseX - (this.width / 2)
+    private posY = mouseY - (this.height / 2)
+    private isSpawned = false
+    private offsetMouseX = 0
+    private offsetMouseY = 0
+    private isMoving = false
+    private isSaved = false
+    private input: Node[] = []
+    private output: Node | undefined
+    private nodeStartID: number
+
+    constructor(
+        private strType: string
+    ) {
         this.input.push(new Node(this.posX + 2, this.posY + 15))
         if (this.type !== GateType.NOT) {
             this.input.push(new Node(this.posX + 2, this.posY + this.height - 15))
-            this.input[0].setBrother(this.input[1])
-            this.input[1].setBrother(this.input[0])
+            this.input[0].brotherNode = this.input[1]
+            this.input[1].brotherNode = this.input[0]
         }
         this.output = new Node(this.posX + this.width - 2, this.posY + this.height / 2, true)
         this.nodeStartID = this.input[0].id
+    }
+
+    static from(strType: string, pos: [number, number], nodeStartID: number): Gate {
+        const newObj = new Gate(strType)
+        newObj.posX = pos[0]
+        newObj.posY = pos[1]
+        newObj.isSpawned = true
+        newObj.isSaved = true
+        newObj.nodeStartID = nodeStartID
+        newObj.refreshNodes()
+        return newObj
     }
 
     toJSON() {
@@ -36,6 +50,18 @@ export class Gate {
             id: this.nodeStartID,
             pos: [this.posX, this.posY],
         }
+    }
+
+    public get outputValue(): boolean {
+        return this.output?.value ?? false
+    }
+
+    public set input0(val: boolean) {
+        this.input0 = val
+    }
+
+    public set input1(val: boolean) {
+        this.input1 = val
     }
 
     /**
@@ -62,7 +88,7 @@ export class Gate {
      * If this type is gateType.NOT update input[0] position
      *  Else update input[0] and input[1] postion
      * Update gate output.
-     * If mouse is over, TODO
+     * If mouse is over, frame it.
      * Draw gate image and inputs.
      * Generate output and draw it.
      */
@@ -108,20 +134,22 @@ export class Gate {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-        this.input[0].setID(currentID)
-        currentID++
+        this.input[0].id = currentID++
         if (this.type !== GateType.NOT) {
-            this.input[1].setID(currentID)
-            currentID++
+            this.input[1].id = currentID++
         }
-        this.output?.setID(currentID)
+        if (this.output) {
+            this.output.id = currentID++
+        }
     }
 
     /**
      * Generate gate output
      */
     generateOutput() {
-        this.output?.setValue(this.calculateValue())
+        if (this.output) {
+            this.output.value = this.calculateValue()
+        }
     }
 
     /**
@@ -130,25 +158,25 @@ export class Gate {
     calculateValue(): boolean {
         switch (this.type) {
             case GateType.NOT:
-                return !this.input[0].getValue()
+                return !this.input[0].value
 
             case GateType.AND:
-                return this.input[0].getValue() && this.input[1].getValue()
+                return this.input[0].value && this.input[1].value
 
             case GateType.NAND:
-                return !(this.input[0].getValue() && this.input[1].getValue())
+                return !(this.input[0].value && this.input[1].value)
 
             case GateType.OR:
-                return this.input[0].getValue() || this.input[1].getValue()
+                return this.input[0].value || this.input[1].value
 
             case GateType.NOR:
-                return !(this.input[0].getValue() || this.input[1].getValue())
+                return !(this.input[0].value || this.input[1].value)
 
             case GateType.XOR:
-                return this.input[0].getValue() !== this.input[1].getValue()
+                return this.input[0].value !== this.input[1].value
 
             case GateType.XNOR:
-                return this.input[0].getValue() === this.input[1].getValue()
+                return this.input[0].value === this.input[1].value
         }
 
         return false

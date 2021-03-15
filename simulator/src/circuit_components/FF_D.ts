@@ -40,18 +40,10 @@ export abstract class FF_D extends Integrated {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-
-        this.nodeD.setID(currentID)
-        currentID++
-
-        this.nodeClock.setID(currentID)
-        currentID++
-
-        this.nodeQ.setID(currentID)
-        currentID++
-
-        this.nodeNotQ.setID(currentID)
-
+        this.nodeD.id = currentID++
+        this.nodeClock.id = currentID++
+        this.nodeQ.id = currentID++
+        this.nodeNotQ.id = currentID++
     }
 
     abstract generateOutput(): void

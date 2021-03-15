@@ -1,5 +1,3 @@
-/// <reference lib="dom" />
-
 import * as p5 from "p5"
 
 import { activeTool, currMouseAction } from "./menutools.js"
@@ -12,7 +10,6 @@ import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
 import { SR_Latch } from "./circuit_components/SR_Latch.js"
-import { Integrated } from "./circuit_components/Integrated.js"
 import { FF_D } from "./circuit_components/FF_D.js"
 import { FF_JK } from "./circuit_components/FF_JK.js"
 import { FF_T } from "./circuit_components/FF_T.js"
@@ -54,7 +51,6 @@ export function preload() {
     IC_IMG.push(loadImage('simulator/img/FF_D_MS.svg'))
     IC_IMG.push(loadImage('simulator/img/FF_T.svg'))
     IC_IMG.push(loadImage('simulator/img/FF_JK.svg'))
-
 }
 
 
@@ -273,14 +269,10 @@ export function doubleClicked() {
     }
 }
 
-/**
- * Override mouseClicked Function
- * 
- */
 export function mouseClicked() {
-    //Check current selected option
+    // Check current selected option
     if (currMouseAction === MouseAction.EDIT) {
-        //If action is EDIT, check every class. 
+        // If action is EDIT, check every class. 
         for (let i = 0; i < gate.length; i++) {
             gate[i].mouseClicked()
         }
@@ -301,7 +293,6 @@ export function mouseClicked() {
         }
 
     } else if (currMouseAction === MouseAction.DELETE) {
-        //
         for (let i = 0; i < gate.length; i++) {
             if (gate[i].mouseClicked()) {
                 gate[i].destroy()

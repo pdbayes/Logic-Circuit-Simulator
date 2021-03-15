@@ -3,40 +3,38 @@ import { MouseAction, InputState, Mode } from "./Enums.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
 import { Node } from "./Node.js"
 
-/**
- * Rappresent a wire
- * @classdesc Rappresent a Wire
- */
 export class Wire {
 
-    // TODO check which of these should be private
-    public endNode: Node | null = null
-    public startID = this.startNode.id
-    public endID: number | null = null
-    public endX = mouseX
-    public endY = mouseY
-    public width = 8
+    private _endNode: Node | null = null
+    private startID = this.startNode.id
+    private endID: number | null = null
+    private width = 8
 
     constructor(
-        private startNode: Node
+        private _startNode: Node
     ) { }
 
     toJSON() {
         return [this.startID, this.endID]
     }
 
+    public get startNode(): Node {
+        return this._startNode
+    }
+
+    public get endNode(): Node | null {
+        return this._endNode
+    }
+
     /**
      * Delete the wire and free start node and end node
      */
     destroy() {
-        this.startNode.setInputState(InputState.FREE)
-
-        if (!this.endNode) {
-            return
+        this.startNode.inputState = InputState.FREE
+        if (this.endNode) {
+            this.endNode.value = false
+            this.endNode.inputState = InputState.FREE
         }
-
-        this.endNode.setValue(false)
-        this.endNode.setInputState(InputState.FREE)
     }
 
 
@@ -55,14 +53,13 @@ export class Wire {
                 return false
             }
 
-            line(this.startNode.posX, this.startNode.posY,
-                mouseX, mouseY)
+            line(this.startNode.posX, this.startNode.posY, mouseX, mouseY)
 
         } else if (this.startNode.isAlive && this.endNode.isAlive) {
 
             const bezierAnchorPointDist = Math.max(25, (this.endNode.posX - this.startNode.posX) / 3)
 
-            //this.endNode.setValue(this.startNode.getValue());
+            //this.endNode.setValue(this.startNode.value);
             this.generateNodeValue()
 
             noFill()
@@ -80,7 +77,7 @@ export class Wire {
 
             strokeWeight(mainStrokeWidth - 2)
 
-            if (this.startNode.getValue() && this.endNode.getValue()) {
+            if (this.startNode.value && this.endNode.value) {
                 stroke(255, 193, 7)
             } else {
                 stroke(80)
@@ -92,7 +89,7 @@ export class Wire {
                 this.endNode.posX, this.endNode.posY)
 
         } else {
-            this.endNode.setValue(false)
+            this.endNode.value = false
             return false // destroy the wire
         }
 
@@ -107,12 +104,12 @@ export class Wire {
         if ((this.startNode.isOutput && this.endNode.isOutput) ||
             (!this.startNode.isOutput && !this.endNode.isOutput)) {
             // short circuit         
-            this.startNode.setValue(this.startNode.getValue() ||
-                this.endNode.getValue())
-            this.endNode.setValue(this.startNode.getValue())
+            this.startNode.value = this.startNode.value ||
+                this.endNode.value
+            this.endNode.value = this.startNode.value
 
         } else {
-            this.endNode.setValue(this.startNode.getValue())
+            this.endNode.value = this.startNode.value
         }
     }
 
@@ -138,54 +135,43 @@ export class Wire {
         return false
     }
 
-    /**
-     * Get wire start node
-     */
-    getStartNode() {
-        return this.startNode
-    }
-
-    /**
-     * Change wire end
-     */
-    updateEnd(endX: number, endY: number) {
-        this.endX = endX
-        this.endY = endY
-    }
-
-    /**
-     * Set this wire end node
-     */
-    setEndNode(endNode: Node) {
+    public set endNode(endNode: Node | null) {
+        if (!endNode) {
+            return
+        }
         if (endNode.isOutput) {
-            let tempNode = this.startNode
-            this.startNode = endNode
-            this.endNode = tempNode
-            this.endNode.setInputState(InputState.TAKEN)
+            // set as startNode instead
+            const tempNode = this.startNode
+            this._startNode = endNode
+            this.startID = endNode.id
+            tempNode.inputState = InputState.TAKEN
+            this.endID = tempNode.id
+            this._endNode = tempNode
         } else {
-            this.endNode = endNode
-            this.startNode.setInputState(InputState.TAKEN)
-            this.endNode.setInputState(InputState.TAKEN)
+            this.startNode.inputState = InputState.TAKEN
+            endNode.inputState = InputState.TAKEN
+            this.endID = endNode.id
+            this._endNode = endNode
         }
 
-        this.startID = this.startNode.id
-        this.endID = this.endNode.id
     }
 
 }
 
 /**
  * Implements short circuit
- * @classdesc TODO
- * @todo Implement class
  */
 class ShortCircuit {
+
     public inputNode: Node | undefined = new Node(this.firstNode.posX - 10,
         (this.firstNode.posY + this.secondNode.posY) / 2)
 
-    constructor(public firstNode: Node, public secondNode: Node) {
-        this.firstNode.setInputState(InputState.TAKEN)
-        this.secondNode.setInputState(InputState.TAKEN)
+    constructor(
+        public firstNode: Node,
+        public secondNode: Node
+    ) {
+        this.firstNode.inputState = InputState.TAKEN
+        this.secondNode.inputState = InputState.TAKEN
     }
 
     destroy() {
@@ -204,12 +190,12 @@ class ShortCircuit {
 
             if (this.inputNode) {
                 this.inputNode.draw()
-                this.firstNode.setValue(this.inputNode.getValue())
-                this.secondNode.setValue(this.inputNode.getValue())
+                this.firstNode.value = this.inputNode.value
+                this.secondNode.value = this.inputNode.value
             }
         } else {
-            this.firstNode.setValue(false)
-            this.secondNode.setValue(false)
+            this.firstNode.value = false
+            this.secondNode.value = false
 
             return false // destroy the short circuit
         }
@@ -242,9 +228,9 @@ class ShortCircuit {
 
 /**
  * Wire manager
- * @classdesc Wire manager
  */
 export class WireManager {
+
     public wire: Wire[] = []
     public shortCircuit: ShortCircuit[] = []
     public isOpened = false
@@ -256,14 +242,11 @@ export class WireManager {
      */
     draw() {
         for (let i = 0; i < this.wire.length; i++) {
-            let result = this.wire[i].draw()
-            if (result === false) // wire is not valid
-            {
-                // destroy the wire
+            const result = this.wire[i].draw()
+            if (!result) {
+                // wire is not valid, destroy
                 this.isOpened = false
-                if (this.wire[i] !== null) {
-                    this.wire[i].destroy()
-                }
+                this.wire[i].destroy()
                 delete this.wire[i]
                 this.wire.splice(i, 1)
             }
@@ -271,8 +254,8 @@ export class WireManager {
 
         for (let i = 0; i < this.shortCircuit.length; i++) {
             const result = this.shortCircuit[i].draw()
-            if (!result) { // short circuit is not valid
-                // destroy the short circuit
+            if (!result) { // 
+                // short circuit is not valid, destroy
                 this.isOpened = false
                 this.shortCircuit[i].destroy()
                 delete this.shortCircuit[i]
@@ -289,16 +272,16 @@ export class WireManager {
             canvasSim.style.cursor = "crosshair"
         } else {
             let index = this.wire.length - 1
-            if (node !== this.wire[index].getStartNode() &&
-                (this.wire[index].getStartNode().isOutput !== node.isOutput ||
-                    node.getBrother() === this.wire[index].getStartNode())) {
-                if (node === this.wire[index].getStartNode().getBrother()) {
-                    this.shortCircuit.push(new ShortCircuit(this.wire[index].getStartNode(), node))
+            if (node !== this.wire[index].startNode &&
+                (this.wire[index].startNode.isOutput !== node.isOutput ||
+                    node.brotherNode === this.wire[index].startNode)) {
+                if (node === this.wire[index].startNode.brotherNode) {
+                    this.shortCircuit.push(new ShortCircuit(this.wire[index].startNode, node))
 
                     delete this.wire[index]
                     this.wire.length--
                 } else {
-                    this.wire[index].setEndNode(node)
+                    this.wire[index].endNode = node
                     fileManager.saveState()
                 }
             } else {

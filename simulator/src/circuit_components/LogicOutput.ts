@@ -5,20 +5,32 @@ import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 export class LogicOutput {
 
-    public value = false
-    public name = ""
-    public posX = mouseX
-    public posY = mouseY
-    public diameter = 25
-    public isSpawned = false
-    public isMoving = false
-    public offsetMouseX = 0
-    public offsetMouseY = 0
-    public input: Node | undefined = new Node(this.posX - 30, this.posY, false, this.value)
-    public nodeStartID = this.input!.id
-    public isSaved = false
+    private _value = false
+    private name = ""
+    private posX = mouseX
+    private posY = mouseY
+    private diameter = 25
+    private isSpawned = false
+    private isMoving = false
+    private offsetMouseX = 0
+    private offsetMouseY = 0
+    private input: Node | undefined = new Node(this.posX - 30, this.posY, false, this.value)
+    private nodeStartID = this.input!.id
+    private isSaved = false
 
-    constructor() { }
+    static from(id: number, pos: [number, number], name: string | undefined): LogicOutput {
+        const newObj = new LogicOutput()
+        newObj.posX = pos[0]
+        newObj.posY = pos[1]
+        newObj.isSpawned = true
+        newObj.isSaved = true
+        newObj.nodeStartID = id
+        if (name) {
+            newObj.name = name
+        }
+        newObj.refreshNodes()
+        return newObj
+    }
 
     toJSON() {
         return {
@@ -28,6 +40,9 @@ export class LogicOutput {
         }
     }
 
+    public get value(): boolean {
+        return this._value
+    }
 
     destroy() {
         if (this.input) {
@@ -52,15 +67,13 @@ export class LogicOutput {
 
         if (this.input) {
             this.input.updatePosition(this.posX - 30, this.posY)
-            this.value = this.input.getValue()
+            this._value = this.input.value
         }
 
         fillValue(this.value)
 
-        if (this.isMouseOver())
-            {stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])}
-        else
-            {stroke(0)}
+        if (this.isMouseOver()) { stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]) }
+        else { stroke(0) }
 
 
         strokeWeight(4)
@@ -74,8 +87,7 @@ export class LogicOutput {
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
-        if (this.name)
-            {text(this.name, this.posX + 21, this.posY)}
+        if (this.name) { text(this.name, this.posX + 21, this.posY) }
 
         textSize(18)
         textAlign(CENTER, CENTER)
@@ -92,12 +104,13 @@ export class LogicOutput {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-        this.input?.setID(currentID)
+        if (this.input) {
+            this.input.id = currentID++
+        }
     }
 
     isMouseOver() {
-        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
-            {return true}
+        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2) { return true }
         return false
     }
 

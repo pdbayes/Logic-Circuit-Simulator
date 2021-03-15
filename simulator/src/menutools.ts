@@ -15,8 +15,9 @@ export let currMouseAction = MouseAction.EDIT
 export function activeTool(elTool: HTMLElement) {
 
     const tool = elTool.getAttribute("tool")
-    if (!tool)
-        {return}
+    if (!tool) {
+        return
+    }
 
     switch (tool) {
         case "Reset":
@@ -58,53 +59,40 @@ export function activeTool(elTool: HTMLElement) {
             logicClock.push(new Clock(period, dutycycle))
             break
 
-        case "SR_Latch":
-            {
-                let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
-                const gateType = el.options[el.selectedIndex].text
-                el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
-                const _syncType = el.selectedIndex
-                const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
-                if (_syncType == SyncType.ASYNC)
-                    {srLatch.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize))}
-                else
-                    {srLatch.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize))}
-            }
+        case "SR_Latch": {
+            let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
+            const gateType = el.options[el.selectedIndex].text
+            el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
+            const _syncType = el.selectedIndex
+            const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
+            if (_syncType == SyncType.ASYNC) { srLatch.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize)) }
+            else { srLatch.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize)) }
             break
+        }
 
-        case "FF_D":
-            {
-                let el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
-                const isMasterSlave = el.selectedIndex // because is 0 or 1
-                if (isMasterSlave)
-                    {flipflop.push(new FF_D_MasterSlave())}
-                else
-                    {flipflop.push(new FF_D_Single())}
-            }
+        case "FF_D": {
+            let el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
+            const isMasterSlave = el.selectedIndex // because is 0 or 1
+            if (isMasterSlave) { flipflop.push(new FF_D_MasterSlave()) }
+            else { flipflop.push(new FF_D_Single()) }
             break
+        }
 
-        case "FF_T":
-            {
-                let el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
-                const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-                if (isNegativeEdgeTrig)
-                    {flipflop.push(new FF_T(true))}
-                else
-                    {flipflop.push(new FF_T(false))}
-            }
+        case "FF_T": {
+            let el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
+            const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
+            if (isNegativeEdgeTrig) { flipflop.push(new FF_T(true)) }
+            else { flipflop.push(new FF_T(false)) }
             break
+        }
 
-
-        case "FF_JK":
-            {
-                let el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
-                const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-                if (isNegativeEdgeTrig)
-                    {flipflop.push(new FF_JK(true))}
-                else
-                    {flipflop.push(new FF_JK(false))}
-            }
+        case "FF_JK": {
+            let el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
+            const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
+            if (isNegativeEdgeTrig) { flipflop.push(new FF_JK(true)) }
+            else { flipflop.push(new FF_JK(false)) }
             break
+        }
 
     }
 
@@ -112,9 +100,6 @@ export function activeTool(elTool: HTMLElement) {
 
 }
 
-/**
- * @todo this doc
- */
 function resetElements() {
     currMouseAction = MouseAction.EDIT
     let activeElements = document.getElementsByClassName("active")

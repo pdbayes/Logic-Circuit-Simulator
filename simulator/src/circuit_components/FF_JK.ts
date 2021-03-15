@@ -58,29 +58,29 @@ export class FF_JK extends Integrated {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-        this.nodeJ.setID(currentID++)
-        this.nodeClock.setID(currentID++)
-        this.nodeK.setID(currentID++)
-        this.nodeQ.setID(currentID++)
-        this.nodeNotQ.setID(currentID++)
+        this.nodeJ.id = currentID++
+        this.nodeClock.id = currentID++
+        this.nodeK.id = currentID++
+        this.nodeQ.id = currentID++
+        this.nodeNotQ.id = currentID++
     }
 
     generateOutput() {
         let clockValue = this.isNegativeEdgeTrig ? this.nodeClock.value : !this.nodeClock.value
 
-        this.andGate_NotQ.input[0].value = this.nodeJ.value
-        this.andGate_NotQ.input[1].value = this.ff_D.nodeNotQ.value
-        this.andGate_Q.input[0].value = !this.nodeK.value
+        this.andGate_NotQ.input0 = this.nodeJ.value
+        this.andGate_NotQ.input1 = this.ff_D.nodeNotQ.value
+        this.andGate_Q.input0 = !this.nodeK.value
 
         this.andGate_Q.generateOutput()
         this.andGate_NotQ.generateOutput()
 
-        this.orGate.input[0].value = this.andGate_Q.output?.value ?? false
-        this.orGate.input[1].value = this.andGate_NotQ.output?.value ?? false
+        this.orGate.input0 = this.andGate_Q.outputValue
+        this.orGate.input1 = this.andGate_NotQ.outputValue
 
         this.orGate.generateOutput()
 
-        this.ff_D.nodeD.value = this.orGate.output?.value ?? false
+        this.ff_D.nodeD.value = this.orGate.outputValue
         this.ff_D.nodeClock.value = clockValue
 
         this.ff_D.generateOutput()

@@ -7,32 +7,31 @@ let nextNodeID = 0
 
 export class Node {
 
-    // TODO check which of these should be private
-    public diameter: number = 8
-    public hitRange = this.diameter + 10
-    public inputState: number = InputState.FREE // only once input per node
-    public isAlive = true // not destroyed
-    public brotherNode: Node | null = null // for short circuit
-    public id = nextNodeID++
+    private diameter: number = 8
+    private hitRange = this.diameter + 10
+    private _inputState: number = InputState.FREE // only once input per node
+    private _isAlive = true // not destroyed
+    private _brotherNode: Node | null = null // for short circuit
+    private _id = nextNodeID++
 
     constructor(
-        public posX: number,
-        public posY: number,
-        public isOutput = false,
-        public value = false
+        private _posX: number,
+        private _posY: number,
+        private _isOutput = false,
+        private _value = false
     ) {
-        nodeList[this.id] = this
+        nodeList[this._id] = this
     }
 
     // public get id() { return this._id }
 
     destroy() {
-        this.isAlive = false
-        delete nodeList[this.id]
+        this._isAlive = false
+        delete nodeList[this._id]
     }
 
     draw() {
-        fillValue(this.value)
+        fillValue(this._value)
 
         stroke(0)
         strokeWeight(1)
@@ -51,12 +50,32 @@ export class Node {
         text(this.id, this.posX - 20, this.posY + 25);*/
     }
 
-    setID(newID: number) {
+    public get id() {
+        return this._id
+    }
+
+    public get posX() {
+        return this._posX
+    }
+
+    public get posY() {
+        return this._posY
+    }
+
+    public get isAlive() {
+        return this._isAlive
+    }
+
+    public get isOutput() {
+        return this._isOutput
+    }
+
+    public set id(newID: number) {
         if (nodeList[this.id] === this) {
             delete nodeList[this.id]
         }
 
-        this.id = newID
+        this._id = newID
         nodeList[newID] = this
 
         //update max id
@@ -65,29 +84,33 @@ export class Node {
         }
     }
 
-    setInputState(state: number) {
-        this.inputState = state
+    public get inputState() {
+        return this._inputState
     }
 
-    setBrother(brotherNode: Node) {
-        this.brotherNode = brotherNode
+    public set inputState(state: number) {
+        this._inputState = state
     }
 
-    getBrother() {
-        return this.brotherNode
+    public get brotherNode() {
+        return this._brotherNode
     }
 
-    getValue() {
-        return this.value
+    public set brotherNode(newNode: Node | null) {
+        this._brotherNode = newNode
     }
 
-    setValue(value: boolean) {
-        this.value = value
+    public get value(): boolean {
+        return this._value
+    }
+
+    public set value(val: boolean) {
+        this._value = val
     }
 
     updatePosition(posX: number, posY: number) {
-        this.posX = posX
-        this.posY = posY
+        this._posX = posX
+        this._posY = posY
     }
 
     isMouseOver() {

@@ -4,7 +4,7 @@ import { Integrated } from "./Integrated.js"
 import { Node } from "./Node.js"
 import { any } from "../simulator.js"
 
-export class SR_Latch extends Integrated {
+export abstract class SR_Latch extends Integrated {
 
     public nodeSet = new Node(this.posX + 5, this.posY + 30)
     public nodeReset = new Node(this.posX + 5, this.posY + this.height - 30)
@@ -40,24 +40,13 @@ export class SR_Latch extends Integrated {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-
-        this.nodeSet.setID(currentID)
-        currentID++
-
-        this.nodeReset.setID(currentID)
-        currentID++
-
-        this.nodeQ.setID(currentID)
-        currentID++
-
-        this.nodeNotQ.setID(currentID)
-
+        this.nodeSet.id = currentID++
+        this.nodeReset.id = currentID++
+        this.nodeQ.id = currentID++
+        this.nodeNotQ.id = currentID++
     }
 
-    generateOutput() // virtual
-    {
-
-    }
+    abstract generateOutput(): void
 
     mouseClicked(): boolean {
         return any([
@@ -115,7 +104,7 @@ export class SR_LatchAsync extends SR_Latch {
 
         if (stabilize) {
             // reset
-            this.gateReset.input[0].value = true
+            this.gateReset.input0 = true
             this.gateSet.generateOutput()
             this.gateReset.generateOutput()
         }
@@ -123,40 +112,26 @@ export class SR_LatchAsync extends SR_Latch {
 
     destroy() {
         super.destroy()
-
-        if (this.gateReset) {
-            for (let i = 0; i < this.gateReset.input.length; i++) {
-                this.gateReset.input[i].destroy()
-                delete this.gateReset.input[i]
-            }
-        }
-
-        if (this.gateSet) {
-            for (let i = 0; i < this.gateSet.input.length; i++) {
-                this.gateSet.input[i].destroy()
-                delete this.gateSet.input[i]
-            }
-        }
-
+        this.gateReset?.destroy()
+        this.gateSet?.destroy()
     }
 
     generateOutput() {
-
         if (!this.gateReset || !this.gateSet) {
             return
         }
 
-        this.gateSet.input[0].value = this.nodeSet.value
-        this.gateSet.input[1].value = this.gateReset.output?.value ?? false
+        this.gateSet.input0 = this.nodeSet.value
+        this.gateSet.input1 = this.gateReset.outputValue
 
-        this.gateReset.input[0].value = this.nodeReset.value
-        this.gateReset.input[1].value = this.gateSet.output?.value ?? false
+        this.gateReset.input0 = this.nodeReset.value
+        this.gateReset.input1 = this.gateSet.outputValue
 
         this.gateSet.generateOutput()
         this.gateReset.generateOutput()
 
-        this.nodeQ.value = this.gateReset.output?.value ?? false
-        this.nodeNotQ.value = this.gateSet.output?.value ?? false
+        this.nodeQ.value = this.gateReset.outputValue
+        this.nodeNotQ.value = this.gateSet.outputValue
     }
 
 }
@@ -194,11 +169,11 @@ export class SR_LatchSync extends SR_Latch {
 
         if (stabilize) {
             // reset
-            this.nodeClock.setValue(true)
-            this.nodeReset.setValue(true)
+            this.nodeClock.value = true
+            this.nodeReset.value = true
             this.generateOutput()
-            this.nodeClock.setValue(false)
-            this.nodeReset.setValue(false)
+            this.nodeClock.value = false
+            this.nodeReset.value = false
         }
     }
 
@@ -219,7 +194,7 @@ export class SR_LatchSync extends SR_Latch {
     refreshNodes() {
         super.refreshNodes()
         let currentID = this.nodeStartID + 4
-        this.nodeClock.setID(currentID)
+        this.nodeClock.id = currentID++
     }
 
     generateOutput() {
@@ -227,16 +202,16 @@ export class SR_LatchSync extends SR_Latch {
             return
         }
 
-        this.gateSet.input[0].value = this.nodeSet.value
-        this.gateSet.input[1].value = this.nodeClock.value
-        this.gateReset.input[0].value = this.nodeReset.value
-        this.gateReset.input[1].value = this.nodeClock.value
+        this.gateSet.input0 = this.nodeSet.value
+        this.gateSet.input1 = this.nodeClock.value
+        this.gateReset.input0 = this.nodeReset.value
+        this.gateReset.input1 = this.nodeClock.value
 
         this.gateSet.generateOutput()
         this.gateReset.generateOutput()
 
-        this.asyncLatch.nodeSet.value = this.gateSet.output?.value ?? false
-        this.asyncLatch.nodeReset.value = this.gateReset.output?.value ?? false
+        this.asyncLatch.nodeSet.value = this.gateSet.outputValue
+        this.asyncLatch.nodeReset.value = this.gateReset.outputValue
 
         this.asyncLatch.generateOutput()
 

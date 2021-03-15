@@ -2,10 +2,10 @@ import { LogicInput } from "./LogicInput.js"
 
 export class Clock extends LogicInput {
 
-    public truePeriod: number
-    public falsePeriod: number
-    public strInfo: string
-    public lastTick = new Date().getTime()
+    private truePeriod: number
+    private falsePeriod: number
+    private strInfo: string
+    private lastTick = new Date().getTime()
 
     constructor(period: number, dutycycle: number) {
         super()

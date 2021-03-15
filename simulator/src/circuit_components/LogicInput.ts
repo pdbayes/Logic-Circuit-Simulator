@@ -5,25 +5,36 @@ import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 /**
  * Generate input for the circuit
- * @classdesc Generate input for the circuit
  */
 export class LogicInput {
 
-    // TODO check what must reall be public
-    public value = false
-    public name = ""
-    public posX = mouseX
-    public posY = mouseY
-    public diameter = 25
-    public isSpawned = false
-    public isMoving = false
-    public offsetMouseX = 0
-    public offsetMouseY = 0
-    public output: Node | undefined = new Node(this.posX + 30, this.posY, true, this.value)
-    public nodeStartID = this.output!.id
-    public isSaved = false
+    private _value = false
+    private name = ""
+    protected posX = mouseX
+    protected posY = mouseY
+    private diameter = 25
+    private isSpawned = false
+    private isMoving = false
+    private offsetMouseX = 0
+    private offsetMouseY = 0
+    private output: Node | undefined = new Node(this.posX + 30, this.posY, true, this.value)
+    private nodeStartID = this.output!.id
+    private isSaved = false
 
-    constructor() { }
+    static from(id: number, pos: [number, number], value: boolean, name: string | undefined): LogicInput {
+        const newObj = new LogicInput()
+        newObj.posX = pos[0]
+        newObj.posY = pos[1]
+        newObj._value = value
+        newObj.isSpawned = true
+        newObj.isSaved = true
+        newObj.nodeStartID = id
+        if (name) {
+            newObj.name = name
+        }
+        newObj.refreshNodes()
+        return newObj
+    }
 
     toJSON() {
         return {
@@ -34,6 +45,9 @@ export class LogicInput {
         }
     }
 
+    public get value(): boolean {
+        return this._value
+    }
 
     destroy() {
         if (this.output) {
@@ -58,10 +72,8 @@ export class LogicInput {
             this.posY = mouseY + this.offsetMouseY
         }
 
-        if (this.isMouseOver())
-            {stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])}
-        else
-            {stroke(0)}
+        if (this.isMouseOver()) { stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]) }
+        else { stroke(0) }
 
         strokeWeight(4)
         line(this.posX, this.posY, this.posX + 30, this.posY)
@@ -69,7 +81,7 @@ export class LogicInput {
 
         if (this.output) {
             this.output.updatePosition(this.posX + 30, this.posY)
-            this.output.setValue(this.value)
+            this.output.value = this.value
             this.output.draw()
         }
 
@@ -90,7 +102,9 @@ export class LogicInput {
 
     refreshNodes() {
         let currentID = this.nodeStartID
-        this.output?.setID(currentID)
+        if (this.output) {
+            this.output.id = currentID++
+        }
     }
 
 
@@ -100,16 +114,14 @@ export class LogicInput {
         textSize(18)
         textStyle(ITALIC)
         textAlign(RIGHT, CENTER)
-        if (this.name)
-            {text(this.name, this.posX - 25, this.posY)}
+        if (this.name) { text(this.name, this.posX - 25, this.posY) }
     }
 
     /**
      * Checking if mouse if over the input
      */
     isMouseOver(): boolean {
-        if (mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2)
-            {return true}
+        if (mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2) { return true }
         return false
     }
 
@@ -150,13 +162,13 @@ export class LogicInput {
      * Invert input value 
      */
     doubleClicked() {
-        if (this.isMouseOver())
-            {this.value = !this.value}
+        if (this.isMouseOver()) {
+            this.toggle()
+        }
     }
 
     /**
      * Called when mouse is clicked
-     * @todo this documentation
      */
     mouseClicked() {
         if (this.isMouseOver() || this.output?.isMouseOver()) {
@@ -170,7 +182,7 @@ export class LogicInput {
      * Function to invert instance value
      */
     toggle() {
-        this.value = !this.value
+        this._value = !this._value
     }
 
 }

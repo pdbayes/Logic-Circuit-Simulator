@@ -8,19 +8,12 @@ const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
 export function stringifySmart(passedObj: any, options: { replacer?: (this: any, key: string, value: any) => any, indent?: number | string, maxLength?: number }): string {
 
     options ??= {}
-
-    const indent = JSON.stringify(
-        [1],
-        undefined,
-        options.indent === undefined ? 2 : options.indent
-    ).slice(2, -3)
-
-    const maxLength =
+    const indent: string = JSON.stringify([1], undefined, options.indent ?? 2).slice(2, -3)
+    const maxLength: number =
         indent === ""
             ? Infinity
-            : options.maxLength === undefined
-                ? 80
-                : options.maxLength
+            : options.maxLength ?? 80
+
     let replacer = options.replacer
 
     return (function _stringify(obj: any, currentIndent: string, reserved: number): string {
@@ -48,7 +41,7 @@ export function stringifySmart(passedObj: any, options: { replacer?: (this: any,
             }
         }
 
-        if (replacer != null) {
+        if (replacer !== null) {
             obj = JSON.parse(string)
             replacer = undefined
         }

@@ -3,7 +3,6 @@ import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
 import { Gate } from "./circuit_components/Gate.js"
-import { Integrated } from "./circuit_components/Integrated.js"
 import { ICType } from "./circuit_components/Enums.js"
 import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
 import { FF_T } from "./circuit_components/FF_T.js"
@@ -12,7 +11,7 @@ import { SR_LatchAsync, SR_LatchSync, SR_Latch } from "./circuit_components/SR_L
 import { nodeList } from "./circuit_components/Node.js"
 import { stringifySmart } from "./stringifySmart.js"
 
-let eventHistory = []
+// let eventHistory = []
 
 export class FileManager {
 
@@ -21,16 +20,16 @@ export class FileManager {
     constructor() { }
 
     saveState() {
-        /* TODO
-        if(this.isLoadingState)
-            return
-        
-        eventHistory.unshift(FileManager.getJSON_Workspace())
-        if (eventHistory.length > 10) {
-            delete eventHistory[10]
-            eventHistory.length = 10
-        }
-        console.log(eventHistory)*/
+        // TODO
+        // if(this.isLoadingState)
+        //     return
+
+        // eventHistory.unshift(FileManager.getJSON_Workspace())
+        // if (eventHistory.length > 10) {
+        //     delete eventHistory[10]
+        //     eventHistory.length = 10
+        // }
+        // console.log(eventHistory)
     }
 
     loadFile(e: Event) {
@@ -78,21 +77,13 @@ export class FileManager {
         // logic input
         if ("in" in parsedContents) {
             for (let i = 0; i < parsedContents.in.length; i++) {
-                let parsedVals = parsedContents.in[i]
-
-                const newObj = new LogicInput()
-                if (parsedVals.name) {
-                    newObj.name = parsedVals.name
-                }
-                newObj.posX = parsedVals.pos[0]
-                newObj.posY = parsedVals.pos[1]
-                newObj.value = !!(parsedVals.val)
-                newObj.isSpawned = true
-                newObj.isSaved = true
-                newObj.nodeStartID = parsedVals.id
-                newObj.refreshNodes()
-
-                logicInput.push(newObj)
+                const parsedVals = parsedContents.in[i]
+                logicInput.push(LogicInput.from(
+                    parsedVals.id,
+                    parsedVals.pos,
+                    !!parsedVals.val,
+                    parsedVals.name
+                ))
             }
         }
         // console.log("logicInput", logicInput)
@@ -100,20 +91,12 @@ export class FileManager {
         // logic output
         if ("out" in parsedContents) {
             for (let i = 0; i < parsedContents.out.length; i++) {
-                let parsedVals = parsedContents.out[i]
-
-                const newObj = new LogicOutput()
-                if (parsedVals.name) {
-                    newObj.name = parsedVals.name
-                }
-                newObj.posX = parsedVals.pos[0]
-                newObj.posY = parsedVals.pos[1]
-                newObj.isSpawned = true
-                newObj.isSaved = true
-                newObj.nodeStartID = parsedVals.id
-                newObj.refreshNodes()
-
-                logicOutput.push(newObj)
+                const parsedVals = parsedContents.out[i]
+                logicOutput.push(LogicOutput.from(
+                    parsedVals.id,
+                    parsedVals.pos,
+                    parsedVals.name,
+                ))
             }
         }
         // console.log("logicOutput", logicOutput)
@@ -133,17 +116,12 @@ export class FileManager {
 
         if ("gates" in parsedContents) {
             for (let i = 0; i < parsedContents.gates.length; i++) {
-                let parsedVals = parsedContents.gates[i]
-
-                const newObj = new Gate(parsedVals.type)
-                newObj.posX = parsedVals.pos[0]
-                newObj.posY = parsedVals.pos[1]
-                newObj.isSpawned = true
-                newObj.isSaved = true
-                newObj.nodeStartID = parsedVals.id
-                newObj.refreshNodes()
-
-                gate.push(newObj)
+                const parsedVals = parsedContents.gates[i]
+                gate.push(Gate.from(
+                    parsedVals.type,
+                    parsedVals.pos,
+                    parsedVals.id,
+                ))
             }
         }
         // console.log("gate", gate)
