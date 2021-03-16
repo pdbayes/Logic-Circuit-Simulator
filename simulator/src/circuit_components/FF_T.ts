@@ -61,7 +61,7 @@ export class FF_T extends Integrated {
     }
 
     generateOutput() {
-        let clockValue = this.isNegativeEdgeTrig ? this.nodeClock.value : !this.nodeClock.value
+        const clockValue = this.isNegativeEdgeTrig ? this.nodeClock.value : !this.nodeClock.value
 
         this.andGate_NotQ.input0 = this.nodeT.value
         this.andGate_NotQ.input1 = this.ff_D.nodeNotQ.value

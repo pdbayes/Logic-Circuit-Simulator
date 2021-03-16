@@ -1,4 +1,4 @@
-import { logicInput, logicOutput, gate, flipflop, logicClock, srLatch, wireMng, saveProjectFile } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, isNullOrUndefined } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
@@ -7,17 +7,18 @@ import { ICType } from "./circuit_components/Enums.js"
 import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
 import { FF_T } from "./circuit_components/FF_T.js"
 import { FF_JK } from "./circuit_components/FF_JK.js"
-import { SR_LatchAsync, SR_LatchSync, SR_Latch } from "./circuit_components/SR_Latch.js"
+import { SR_LatchAsync, SR_LatchSync } from "./circuit_components/SR_Latch.js"
 import { nodeList } from "./circuit_components/Node.js"
 import { stringifySmart } from "./stringifySmart.js"
+import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
+import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
+import { Wire } from "./circuit_components/Wire.js"
 
 // let eventHistory = []
 
 export class FileManager {
 
     public isLoadingState = false
-
-    constructor() { }
 
     saveState() {
         // TODO
@@ -39,15 +40,13 @@ export class FileManager {
             return
         }
 
-        let reader = new FileReader()
+        const reader = new FileReader()
 
-        const _this = this
-        reader.onload = function () {
-
-            let contentFile = reader.result
+        reader.onload = () => {
+            const contentFile = reader.result
             //console.log(contentFile);
             if (typeof contentFile === "string") {
-                _this.doLoadFromJsonString(contentFile)
+                this.doLoadFromJsonString(contentFile)
             }
         }
         reader.readAsText(file)
@@ -56,13 +55,13 @@ export class FileManager {
     doLoadFromJsonString(content: string): boolean {
         this.isLoadingState = true
 
-        flipflop.splice(0, flipflop.length)
-        srLatch.splice(0, srLatch.length)
-        gate.splice(0, gate.length)
+        flipflops.splice(0, flipflops.length)
+        srLatches.splice(0, srLatches.length)
+        gates.splice(0, gates.length)
         wireMng.wire.splice(0, wireMng.wire.length)
-        logicClock.splice(0, logicClock.length)
-        logicInput.splice(0, logicInput.length)
-        logicOutput.splice(0, logicOutput.length)
+        clocks.splice(0, clocks.length)
+        logicInputs.splice(0, logicInputs.length)
+        logicOutputs.splice(0, logicOutputs.length)
         nodeList.splice(0, nodeList.length)
 
         let parsedContents: any
@@ -74,11 +73,13 @@ export class FileManager {
             return false
         }
 
-        // logic input
+        type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
+
+
         if ("in" in parsedContents) {
             for (let i = 0; i < parsedContents.in.length; i++) {
-                const parsedVals = parsedContents.in[i]
-                logicInput.push(LogicInput.from(
+                const parsedVals = parsedContents.in[i] as JsonReprOf<LogicInput>
+                logicInputs.push(LogicInput.from(
                     parsedVals.id,
                     parsedVals.pos,
                     !!parsedVals.val,
@@ -86,56 +87,74 @@ export class FileManager {
                 ))
             }
         }
-        // console.log("logicInput", logicInput)
 
-        // logic output
         if ("out" in parsedContents) {
             for (let i = 0; i < parsedContents.out.length; i++) {
-                const parsedVals = parsedContents.out[i]
-                logicOutput.push(LogicOutput.from(
+                const parsedVals = parsedContents.out[i] as JsonReprOf<LogicOutput>
+                logicOutputs.push(LogicOutput.from(
                     parsedVals.id,
                     parsedVals.pos,
                     parsedVals.name,
                 ))
             }
         }
-        // console.log("logicOutput", logicOutput)
+
+        if ("displays" in parsedContents) {
+            for (let i = 0; i < parsedContents.displays.length; i++) {
+                const parsedVals = parsedContents.displays[i] as JsonReprOf<FourBitDisplay>
+                displays.push(FourBitDisplay.from(
+                    parsedVals.id,
+                    parsedVals.pos,
+                    parsedVals.radix,
+                    parsedVals.name
+                ))
+            }
+        }
+
+        if ("displaysA" in parsedContents) {
+            for (let i = 0; i < parsedContents.displaysA.length; i++) {
+                const parsedVals = parsedContents.displaysA[i] as JsonReprOf<AsciiDisplay>
+                displaysA.push(AsciiDisplay.from(
+                    parsedVals.id,
+                    parsedVals.pos,
+                    parsedVals.name
+                ))
+            }
+        }
 
         if ("clocks" in parsedContents) {
             for (let i = 0; i < parsedContents.clocks.length; i++) {
-                let parsedVals = parsedContents.clocks[i]
+                const parsedVals = parsedContents.clocks[i]
 
                 const newObj = new Clock(0, 0)// TODO fill real numbers
                 Object.assign(newObj, parsedVals) // TODO too generic
                 newObj.refreshNodes()
 
-                logicClock.push(newObj)
+                clocks.push(newObj)
             }
         }
-        // console.log("logicClock", logicClock)
 
         if ("gates" in parsedContents) {
             for (let i = 0; i < parsedContents.gates.length; i++) {
-                const parsedVals = parsedContents.gates[i]
-                gate.push(Gate.from(
+                const parsedVals = parsedContents.gates[i] as JsonReprOf<Gate>
+                gates.push(Gate.from(
                     parsedVals.type,
                     parsedVals.pos,
                     parsedVals.id,
                 ))
             }
         }
-        // console.log("gate", gate)
 
         if ("srLatches" in parsedContents) {
             for (let i = 0; i < parsedContents.srLatches.length; i++) {
-                let parsedVals = parsedContents.srLatches[i]
+                const parsedVals = parsedContents.srLatches[i]
 
                 let newObj = null
                 switch (parsedContents.srLatch[i].type) {
                     case ICType.SR_LATCH_ASYNC:
                         newObj = new SR_LatchAsync(parsedVals.gateType,
                             parsedVals.stabilize)
-                        srLatch.push()
+                        srLatches.push()
                         break
                     case ICType.SR_LATCH_SYNC:
                         newObj = new SR_LatchSync(parsedVals.gateType,
@@ -147,15 +166,14 @@ export class FileManager {
                     Object.assign(newObj, parsedVals) // TODO too generic
                     newObj.refreshNodes()
 
-                    srLatch.push(newObj)
+                    srLatches.push(newObj)
                 }
             }
         }
-        // console.log("srLatch", srLatch)
 
         if ("flipflops" in parsedContents) {
             for (let i = 0; i < parsedContents.flipflops.length; i++) {
-                let parsedVals = parsedContents.flipflops[i]
+                const parsedVals = parsedContents.flipflops[i]
 
                 let newObj = null
                 switch (parsedVals.type) {
@@ -176,43 +194,45 @@ export class FileManager {
                 if (newObj) {
                     Object.assign(newObj, parsedVals) // TODO too generic
                     newObj.refreshNodes()
-                    flipflop.push(newObj)
+                    flipflops.push(newObj)
                 }
             }
         }
-        // console.log("flipflop", flipflop)
-        // console.log("nodeList", nodeList)
 
         if ("wires" in parsedContents) {
             for (let i = 0; i < parsedContents.wires.length; i++) {
-                let parsedVals = parsedContents.wires[i]
+                const parsedVals = parsedContents.wires[i] as JsonReprOf<Wire>
+                if (isNullOrUndefined(parsedVals[1])) {
+                    continue
+                }
                 wireMng.addNode(nodeList[parsedVals[0]])
                 wireMng.addNode(nodeList[parsedVals[1]])
             }
         }
-        // console.log("wireMng.wire", wireMng.wire)
 
         return true
     }
 
 
     saveFile() {
-        let jsonWorkspace = FileManager.getJSON_Workspace()
-        let blob = new Blob([jsonWorkspace], { type: 'application/json' })
+        const jsonWorkspace = FileManager.getJSON_Workspace()
+        const blob = new Blob([jsonWorkspace], { type: 'application/json' })
         if (saveProjectFile) {
             saveProjectFile.href = URL.createObjectURL(blob)
         }
     }
 
     static getJSON_Workspace() {
-        let workspace: any = {}
+        const workspace: any = {}
 
-        if (logicInput.length) { workspace["in"] = logicInput }
-        if (logicOutput.length) { workspace["out"] = logicOutput }
-        if (flipflop.length) { workspace["flipflops"] = flipflop }
-        if (logicClock.length) { workspace["clocks"] = logicClock }
-        if (gate.length) { workspace["gates"] = gate }
-        if (srLatch.length) { workspace["srLatches"] = srLatch }
+        if (logicInputs.length) { workspace["in"] = logicInputs }
+        if (logicOutputs.length) { workspace["out"] = logicOutputs }
+        if (displays.length) { workspace["displays"] = displays }
+        if (displaysA.length) { workspace["displaysA"] = displaysA }
+        if (clocks.length) { workspace["clocks"] = clocks }
+        if (flipflops.length) { workspace["flipflops"] = flipflops }
+        if (gates.length) { workspace["gates"] = gates }
+        if (srLatches.length) { workspace["srLatches"] = srLatches }
         if (wireMng.wire.length) { workspace["wires"] = wireMng.wire }
 
         console.log(workspace)

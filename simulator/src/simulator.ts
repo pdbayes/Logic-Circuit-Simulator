@@ -13,54 +13,81 @@ import { SR_Latch } from "./circuit_components/SR_Latch.js"
 import { FF_D } from "./circuit_components/FF_D.js"
 import { FF_JK } from "./circuit_components/FF_JK.js"
 import { FF_T } from "./circuit_components/FF_T.js"
+import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
+import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 
 type Color = [number, number, number]
 type FF = FF_D | FF_JK | FF_T
 
-export let gateIMG: p5.Image[] = [] // gates images
-export let IC_IMG: p5.Image[] = [] // integrated circuits images
-export let gate: Gate[] = []
-export let logicInput: LogicInput[] = []
-export let logicOutput: LogicOutput[] = []
-export let logicClock: Clock[] = []
-export let srLatch: SR_Latch[] = []
-export let flipflop: FF[] = []
-export let wireMng: WireManager
-export let colorMouseOver: Color = [0, 0x7B, 0xFF]
-export let fileManager = new FileManager()
+export const gateImages: p5.Image[] = [] // gates images
+export const ICImages: p5.Image[] = [] // integrated circuits images
+
+export const gates: Gate[] = []
+export const logicInputs: LogicInput[] = []
+export const logicOutputs: LogicOutput[] = []
+export const displays: FourBitDisplay[] = []
+export const displaysA: AsciiDisplay[] = []
+export const clocks: Clock[] = []
+export const srLatches: SR_Latch[] = []
+export const flipflops: FF[] = []
+
+export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, clocks, srLatches, flipflops]
+export const wireMng = new WireManager()
+
+export const colorMouseOver: Color = [0, 0x7B, 0xFF]
+export const fileManager = new FileManager()
 
 export let mode = Mode.FULL
 
 let canvasContainer: HTMLElement
 let initialData: string | undefined = undefined
 
-export function preload() {
-    gateIMG.push(loadImage('simulator/img/LogicInput.svg'))// For testing usage
-    gateIMG.push(loadImage('simulator/img/NOT.svg'))
-    gateIMG.push(loadImage('simulator/img/AND.svg'))
-    gateIMG.push(loadImage('simulator/img/NAND.svg'))
-    gateIMG.push(loadImage('simulator/img/OR.svg'))
-    gateIMG.push(loadImage('simulator/img/NOR.svg'))
-    gateIMG.push(loadImage('simulator/img/XOR.svg'))
-    gateIMG.push(loadImage('simulator/img/XNOR.svg'))
+export const COLOR_FULL: Color = [255, 193, 7]
+export const COLOR_EMPTY: Color = [52, 58, 64]
 
-    IC_IMG.push(loadImage('simulator/img/SR_Latch.svg')) // For testing usage
-    IC_IMG.push(loadImage('simulator/img/SR_Latch.svg'))
-    IC_IMG.push(loadImage('simulator/img/SR_Latch_Sync.svg'))
-    IC_IMG.push(loadImage('simulator/img/FF_D.svg'))
-    IC_IMG.push(loadImage('simulator/img/FF_D_MS.svg'))
-    IC_IMG.push(loadImage('simulator/img/FF_T.svg'))
-    IC_IMG.push(loadImage('simulator/img/FF_JK.svg'))
+export function fillForBoolean(value: boolean): Color {
+    const c = value ? COLOR_FULL : COLOR_EMPTY
+    fill(...c)
+    return c
+}
+
+export function fillForFraction(fraction: number): Color {
+    const c: Color = [
+        (COLOR_FULL[0] - COLOR_EMPTY[0]) * fraction + COLOR_EMPTY[0],
+        (COLOR_FULL[1] - COLOR_EMPTY[1]) * fraction + COLOR_EMPTY[1],
+        (COLOR_FULL[2] - COLOR_EMPTY[2]) * fraction + COLOR_EMPTY[2],
+    ]
+    fill(...c)
+    return c
+}
+
+export function preload() {
+    gateImages.push(loadImage('simulator/img/LogicInput.svg'))// For testing usage
+    gateImages.push(loadImage('simulator/img/NOT.svg'))
+    gateImages.push(loadImage('simulator/img/AND.svg'))
+    gateImages.push(loadImage('simulator/img/NAND.svg'))
+    gateImages.push(loadImage('simulator/img/OR.svg'))
+    gateImages.push(loadImage('simulator/img/NOR.svg'))
+    gateImages.push(loadImage('simulator/img/XOR.svg'))
+    gateImages.push(loadImage('simulator/img/XNOR.svg'))
+
+    ICImages.push(loadImage('simulator/img/SR_Latch.svg')) // For testing usage
+    ICImages.push(loadImage('simulator/img/SR_Latch.svg'))
+    ICImages.push(loadImage('simulator/img/SR_Latch_Sync.svg'))
+    ICImages.push(loadImage('simulator/img/FF_D.svg'))
+    ICImages.push(loadImage('simulator/img/FF_D_MS.svg'))
+    ICImages.push(loadImage('simulator/img/FF_T.svg'))
+    ICImages.push(loadImage('simulator/img/FF_JK.svg'))
 }
 
 
 function getURLParameter<T>(sParam: string, defaultValue: T): string | T
 function getURLParameter(sParam: string, defaultValue?: undefined): string | undefined
 function getURLParameter(sParam: string, defaultValue: any) {
-    var sPageURL = window.location.search.substring(1)
-    var sURLVariables = sPageURL.split('&')
-    for (var i = 0; i < sURLVariables.length; i++) {
-        var sParameterName = sURLVariables[i].split('=')
+    const sPageURL = window.location.search.substring(1)
+    const sURLVariables = sPageURL.split('&')
+    for (let i = 0; i < sURLVariables.length; i++) {
+        const sParameterName = sURLVariables[i].split('=')
         if (sParameterName[0] === sParam) {
             return sParameterName[1]
         }
@@ -69,7 +96,7 @@ function getURLParameter(sParam: string, defaultValue: any) {
 }
 
 function isTruthyString(str: string | null | undefined): boolean {
-    return !!str && (str === "1" || str.toLowerCase() === "true")
+    return !isNullOrUndefined(str) && (str === "1" || str.toLowerCase() === "true")
 }
 
 function isEmbeddedInIframe(): boolean {
@@ -87,15 +114,12 @@ const PARAM_MODE = "mode"
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
 
-    let canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
+    const canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
     canvas.parent('canvas-sim')
 
-    wireMng = new WireManager()
-
-
     const data = getURLParameter(PARAM_DATA)
-    if (data) {
+    if (!isUndefined(data)) {
         initialData = data
         tryLoadFromData()
     }
@@ -117,15 +141,15 @@ export function setup() {
     }
 
 
-    let showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
-    if (showonlyStr) {
+    const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
+    if (!isUndefined(showonlyStr)) {
         const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
         const leftToolbar = document.getElementById("leftToolbar")!
         const toolbarChildren = leftToolbar.children
         for (let i = 0; i < toolbarChildren.length; i++) {
             const child = toolbarChildren[i] as HTMLElement
             const tool = child.getAttribute("tool")
-            if (child.tagName === "BUTTON" && tool && isTruthyString(child.getAttribute("isGate")) && !showonly.includes(tool)) {
+            if (child.tagName === "BUTTON" && !isNullOrUndefined(tool) && isTruthyString(child.getAttribute("isGate")) && !showonly.includes(tool)) {
                 child.style.display = "none"
             }
         }
@@ -146,7 +170,7 @@ export function setup() {
             const dumpJsonStructure = document.getElementById("dumpJsonStructure")!
             // if (dumpJsonStructure) {
             dumpJsonStructure.setAttribute("style", "")
-            dumpJsonStructure.addEventListener("click", (e) => {
+            dumpJsonStructure.addEventListener("click", () => {
                 const json = FileManager.getJSON_Workspace()
                 console.log("JSON:\n" + json)
                 const encodedJson = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
@@ -163,7 +187,7 @@ export function setup() {
 }
 
 export function tryLoadFromData() {
-    if (!initialData) {
+    if (isUndefined(initialData)) {
         return
     }
     try {
@@ -192,23 +216,10 @@ export function draw() {
     stroke(0)
     wireMng.draw()
 
-    for (let i = 0; i < gate.length; i++) {
-        gate[i].draw()
-    }
-    for (let i = 0; i < logicInput.length; i++) {
-        logicInput[i].draw()
-    }
-    for (let i = 0; i < logicOutput.length; i++) {
-        logicOutput[i].draw()
-    }
-    for (let i = 0; i < logicClock.length; i++) {
-        logicClock[i].draw()
-    }
-    for (let i = 0; i < srLatch.length; i++) {
-        srLatch[i].draw()
-    }
-    for (let i = 0; i < flipflop.length; i++) {
-        flipflop[i].draw()
+    for (const elems of allComponents) {
+        for (const elem of elems) {
+            elem.draw()
+        }
     }
     if (fileManager.isLoadingState) {
         fileManager.isLoadingState = false
@@ -216,128 +227,47 @@ export function draw() {
 
 }
 
-/**
- * While mouse is pressed:
- *  
- */
 export function mousePressed() {
-    /** Check gate[] mousePressed funtion*/
-    for (let i = 0; i < gate.length; i++) {
-        gate[i].mousePressed()
-    }
-    for (let i = 0; i < logicInput.length; i++) {
-        logicInput[i].mousePressed()
-    }
-    for (let i = 0; i < logicOutput.length; i++) {
-        logicOutput[i].mousePressed()
-    }
-    for (let i = 0; i < logicClock.length; i++) {
-        logicClock[i].mousePressed()
-    }
-    for (let i = 0; i < srLatch.length; i++) {
-        srLatch[i].mousePressed()
-    }
-    for (let i = 0; i < flipflop.length; i++) {
-        flipflop[i].mousePressed()
+    for (const elems of allComponents) {
+        for (const elem of elems) {
+            elem.mousePressed()
+        }
     }
 }
 
 export function mouseReleased() {
-    for (let i = 0; i < gate.length; i++) {
-        gate[i].mouseReleased()
-    }
-    for (let i = 0; i < logicInput.length; i++) {
-        logicInput[i].mouseReleased()
-    }
-    for (let i = 0; i < logicOutput.length; i++) {
-        logicOutput[i].mouseReleased()
-    }
-    for (let i = 0; i < logicClock.length; i++) {
-        logicClock[i].mouseReleased()
-    }
-    for (let i = 0; i < srLatch.length; i++) {
-        srLatch[i].mouseReleased()
-    }
-    for (let i = 0; i < flipflop.length; i++) {
-        flipflop[i].mouseReleased()
+    for (const elems of allComponents) {
+        for (const elem of elems) {
+            elem.mouseReleased()
+        }
     }
 }
 
 export function doubleClicked() {
-    for (let i = 0; i < logicInput.length; i++) {
-        logicInput[i].doubleClicked()
+    for (const elems of [logicInputs, displays]) {
+        for (const elem of elems) {
+            elem.doubleClicked()
+        }
     }
 }
 
 export function mouseClicked() {
-    // Check current selected option
     if (currMouseAction === MouseAction.EDIT) {
-        // If action is EDIT, check every class. 
-        for (let i = 0; i < gate.length; i++) {
-            gate[i].mouseClicked()
-        }
-        for (let i = 0; i < logicInput.length; i++) {
-            logicInput[i].mouseClicked()
-        }
-        for (let i = 0; i < logicOutput.length; i++) {
-            logicOutput[i].mouseClicked()
-        }
-        for (let i = 0; i < logicClock.length; i++) {
-            logicClock[i].mouseClicked()
-        }
-        for (let i = 0; i < srLatch.length; i++) {
-            srLatch[i].mouseClicked()
-        }
-        for (let i = 0; i < flipflop.length; i++) {
-            flipflop[i].mouseClicked()
+        for (const elems of allComponents) {
+            for (const elem of elems) {
+                elem.mouseClicked()
+            }
         }
 
     } else if (currMouseAction === MouseAction.DELETE) {
-        for (let i = 0; i < gate.length; i++) {
-            if (gate[i].mouseClicked()) {
-                gate[i].destroy()
-                delete gate[i]
-                gate.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < logicInput.length; i++) {
-            if (logicInput[i].mouseClicked()) {
-                logicInput[i].destroy()
-                delete logicInput[i]
-                logicInput.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < logicOutput.length; i++) {
-            if (logicOutput[i].mouseClicked()) {
-                logicOutput[i].destroy()
-                delete logicOutput[i]
-                logicOutput.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < logicClock.length; i++) {
-            if (logicClock[i].mouseClicked()) {
-                logicClock[i].destroy()
-                delete logicClock[i]
-                logicClock.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < srLatch.length; i++) {
-            if (srLatch[i].mouseClicked()) {
-                srLatch[i].destroy()
-                delete srLatch[i]
-                srLatch.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < flipflop.length; i++) {
-            if (flipflop[i].mouseClicked()) {
-                flipflop[i].destroy()
-                delete flipflop[i]
-                flipflop.splice(i, 1)
+        for (const elems of allComponents) {
+            for (let i = 0; i < elems.length; i++) {
+                const elem = elems[i]
+                if (elem.mouseClicked()) {
+                    elem.destroy()
+                    delete elems[i]
+                    elems.splice(i, 1)
+                }
             }
         }
     }
@@ -364,7 +294,7 @@ if (projectFile) {
 
 export const saveProjectFile = document.getElementById("saveProjectFile") as HTMLAnchorElement | null
 if (saveProjectFile) {
-    saveProjectFile.addEventListener("click", (e) => fileManager.saveFile(), false)
+    saveProjectFile.addEventListener("click", () => fileManager.saveFile(), false)
 }
 
 export function saveFile() {
@@ -378,4 +308,12 @@ export function any(bools: boolean[]): boolean {
         }
     }
     return false
+}
+
+export function isUndefined(v: any): v is undefined {
+    return typeof v === "undefined"
+}
+
+export function isNullOrUndefined(v: any): v is null | undefined {
+    return isUndefined(v) || v === null
 }

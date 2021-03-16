@@ -2,12 +2,14 @@ import { Clock } from "./circuit_components/Clock.js"
 import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
 import { FF_JK } from "./circuit_components/FF_JK.js"
 import { FF_T } from "./circuit_components/FF_T.js"
-import { flipflop, logicInput, logicOutput, logicClock, gate, srLatch, tryLoadFromData } from "./simulator.js"
+import { flipflops, logicInputs, logicOutputs, clocks, gates, srLatches, tryLoadFromData, displays, displaysA, isNullOrUndefined } from "./simulator.js"
 import { Gate } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { MouseAction, SyncType } from "./circuit_components/Enums.js"
 import { SR_LatchSync, SR_LatchAsync, SR_Latch } from "./circuit_components/SR_Latch.js"
+import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
+import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 
 export let currMouseAction = MouseAction.EDIT
 
@@ -15,7 +17,7 @@ export let currMouseAction = MouseAction.EDIT
 export function activeTool(elTool: HTMLElement) {
 
     const tool = elTool.getAttribute("tool")
-    if (!tool) {
+    if (isNullOrUndefined(tool)) {
         return
     }
 
@@ -26,8 +28,8 @@ export function activeTool(elTool: HTMLElement) {
     }
 
     resetElements()
-    if (elTool.getAttribute("isGate") != null) {
-        gate.push(new Gate(tool))
+    if (elTool.getAttribute("isGate") !== null) {
+        gates.push(new Gate(tool))
         return
     }
 
@@ -45,19 +47,28 @@ export function activeTool(elTool: HTMLElement) {
             break
 
         case "LogicInput":
-            logicInput.push(new LogicInput())
+            logicInputs.push(new LogicInput())
             // console.log(JSON.stringify({ logicInput }, ['logicInput', 'posX', 'posY', 'value']));
             break
 
         case "LogicOutput":
-            logicOutput.push(new LogicOutput())
+            logicOutputs.push(new LogicOutput())
             break
 
-        case "Clock":
+        case "FourBitDisplay":
+            displays.push(new FourBitDisplay())
+            break
+
+        case "AsciiDisplay":
+            displaysA.push(new AsciiDisplay())
+            break
+
+        case "Clock": {
             const period = parseInt((document.getElementsByClassName("period")[0] as HTMLInputElement).value)
             const dutycycle = parseInt((document.getElementsByClassName("duty-cycle")[0] as HTMLInputElement).value)
-            logicClock.push(new Clock(period, dutycycle))
+            clocks.push(new Clock(period, dutycycle))
             break
+        }
 
         case "SR_Latch": {
             let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
@@ -65,32 +76,35 @@ export function activeTool(elTool: HTMLElement) {
             el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
             const _syncType = el.selectedIndex
             const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
-            if (_syncType == SyncType.ASYNC) { srLatch.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize)) }
-            else { srLatch.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize)) }
+            if (_syncType === SyncType.ASYNC) {
+                srLatches.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize))
+            } else {
+                srLatches.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize))
+            }
             break
         }
 
         case "FF_D": {
-            let el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
+            const el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
             const isMasterSlave = el.selectedIndex // because is 0 or 1
-            if (isMasterSlave) { flipflop.push(new FF_D_MasterSlave()) }
-            else { flipflop.push(new FF_D_Single()) }
+            if (isMasterSlave) { flipflops.push(new FF_D_MasterSlave()) }
+            else { flipflops.push(new FF_D_Single()) }
             break
         }
 
         case "FF_T": {
-            let el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
+            const el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
             const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-            if (isNegativeEdgeTrig) { flipflop.push(new FF_T(true)) }
-            else { flipflop.push(new FF_T(false)) }
+            if (isNegativeEdgeTrig) { flipflops.push(new FF_T(true)) }
+            else { flipflops.push(new FF_T(false)) }
             break
         }
 
         case "FF_JK": {
-            let el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
+            const el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
             const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-            if (isNegativeEdgeTrig) { flipflop.push(new FF_JK(true)) }
-            else { flipflop.push(new FF_JK(false)) }
+            if (isNegativeEdgeTrig) { flipflops.push(new FF_JK(true)) }
+            else { flipflops.push(new FF_JK(false)) }
             break
         }
 
@@ -102,7 +116,7 @@ export function activeTool(elTool: HTMLElement) {
 
 function resetElements() {
     currMouseAction = MouseAction.EDIT
-    let activeElements = document.getElementsByClassName("active")
+    const activeElements = document.getElementsByClassName("active")
 
     for (let i = 0; i < activeElements.length; i++) {
         activeElements[i].classList.remove('active')

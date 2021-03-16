@@ -12,7 +12,7 @@
 	<script src="node_modules/p5/lib/p5.min.js"></script>
 
 	<link rel="stylesheet" href="simulator/css/simstyle.css">
-	<script type="module" src="simulator/js/bundle.js"></script>
+	<script type="module" src="simulator/js/simulator.js"></script>
 
 	<title>Simulateur de système logique</title>
 </head>
@@ -30,6 +30,14 @@
 			<button type="button" tool="LogicOutput" title="Sortie" onclick="activeTool(this)"
 				class="list-group-item list-group-item-action sim-toolbar-button">
 				<img src="simulator/img/LogicOutput.svg" class="" width="32">
+			</button>
+			<button type="button" tool="FourBitDisplay" title="Affichage de 4 bits" onclick="activeTool(this)"
+				class="list-group-item list-group-item-action sim-toolbar-button">
+				<img src="simulator/img/FourBitDisplay.svg" class="" width="32">
+			</button>
+			<button type="button" tool="AsciiDisplay" title="Affichage d’un caractère ASCII" onclick="activeTool(this)"
+				class="list-group-item list-group-item-action sim-toolbar-button">
+				<img src="simulator/img/AsciiDisplay.svg" class="" width="32">
 			</button>
 			<!-- <button type="button" data-target="#ClockSettings" data-toggle="modal" title="Clock"
 						class="list-group-item list-group-item-action ">

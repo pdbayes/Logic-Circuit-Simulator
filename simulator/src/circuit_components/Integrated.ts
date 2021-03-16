@@ -1,12 +1,12 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { IC_IMG } from "../simulator.js"
+import { ICImages } from "../simulator.js"
 import { MouseAction, Mode, ICType } from "./Enums.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
 
 export abstract class Integrated {
 
-    public width = IC_IMG[this.type].width
-    public height = IC_IMG[this.type].height
+    public width = ICImages[this.type].width
+    public height = ICImages[this.type].height
     public posX = mouseX - (this.width / 2)
     public posY = mouseY - (this.height / 2)
     public isSpawned = false
@@ -38,10 +38,10 @@ export abstract class Integrated {
             noFill()
             strokeWeight(2)
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
-            rect(this.posX, this.posY, IC_IMG[this.type].width, IC_IMG[this.type].height)
+            rect(this.posX, this.posY, ICImages[this.type].width, ICImages[this.type].height)
         }
 
-        image(IC_IMG[this.type], this.posX, this.posY)
+        image(ICImages[this.type], this.posX, this.posY)
     }
 
     /**

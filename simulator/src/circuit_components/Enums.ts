@@ -20,7 +20,7 @@ export enum GateType {
     NOR,
     XOR,
     XNOR,
-};
+}
 
 export enum ICType {
     NONE, // for testing usage

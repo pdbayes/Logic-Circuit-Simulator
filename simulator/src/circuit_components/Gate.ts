@@ -1,5 +1,5 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { any, gateIMG } from "../simulator.js"
+import { any, gateImages } from "../simulator.js"
 import { GateType, Mode, MouseAction } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
@@ -7,8 +7,8 @@ import { colorMouseOver, fileManager, mode } from "../simulator.js"
 export class Gate {
 
     private type = this.convertToType(this.strType)
-    private width = gateIMG[this.type].width
-    private height = gateIMG[this.type].height
+    private width = gateImages[this.type].width
+    private height = gateImages[this.type].height
     private posX = mouseX - (this.width / 2)
     private posY = mouseY - (this.height / 2)
     private isSpawned = false
@@ -33,7 +33,7 @@ export class Gate {
         this.nodeStartID = this.input[0].id
     }
 
-    static from(strType: string, pos: [number, number], nodeStartID: number): Gate {
+    static from(strType: string, pos: readonly [number, number], nodeStartID: number): Gate {
         const newObj = new Gate(strType)
         newObj.posX = pos[0]
         newObj.posY = pos[1]
@@ -48,7 +48,7 @@ export class Gate {
         return {
             type: this.strType,
             id: this.nodeStartID,
-            pos: [this.posX, this.posY],
+            pos: [this.posX, this.posY] as const,
         }
     }
 
@@ -122,7 +122,7 @@ export class Gate {
             rect(this.posX, this.posY, this.width, this.height)
         }
 
-        image(gateIMG[this.type], this.posX, this.posY)
+        image(gateImages[this.type], this.posX, this.posY)
 
         for (let i = 0; i < this.input.length; i++) {
             this.input[i].draw()

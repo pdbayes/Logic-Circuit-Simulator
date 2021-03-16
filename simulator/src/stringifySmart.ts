@@ -2,6 +2,9 @@
 // working on the output of `JSON.stringify` we know that only valid strings
 // are present (unless the user supplied a weird `options.indent` but in
 // that case we don’t care since the output would be invalid anyway).
+
+import { isUndefined } from "./simulator"
+
 // eslint-disable-next-line prefer-named-capture-group
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
 
@@ -17,7 +20,7 @@ export function stringifySmart(passedObj: any, options: { replacer?: (this: any,
     let replacer = options.replacer
 
     return (function _stringify(obj: any, currentIndent: string, reserved: number): string {
-        if (obj && typeof obj.toJSON === "function") {
+        if (!isUndefined(obj) && typeof obj.toJSON === "function") {
             obj = obj.toJSON()
         }
 
@@ -33,7 +36,7 @@ export function stringifySmart(passedObj: any, options: { replacer?: (this: any,
             const prettified = string.replace(
                 stringOrChar,
                 function (match, stringLiteral) {
-                    return stringLiteral || match + " "
+                    return stringLiteral ?? match + " "
                 }
             )
             if (prettified.length <= length) {
@@ -91,4 +94,4 @@ export function stringifySmart(passedObj: any, options: { replacer?: (this: any,
 
         return string
     })(passedObj, "", 0)
-};
+}

@@ -15,7 +15,7 @@ export class Wire {
     ) { }
 
     toJSON() {
-        return [this.startID, this.endID]
+        return [this.startID, this.endID] as const
     }
 
     public get startNode(): Node {
@@ -24,6 +24,27 @@ export class Wire {
 
     public get endNode(): Node | null {
         return this._endNode
+    }
+
+    public set endNode(endNode: Node | null) {
+        if (!endNode) {
+            return
+        }
+        if (endNode.isOutput) {
+            // set as startNode instead
+            const tempNode = this.startNode
+            this._startNode = endNode
+            this.startID = endNode.id
+            tempNode.inputState = InputState.TAKEN
+            this.endID = tempNode.id
+            this._endNode = tempNode
+        } else {
+            this.startNode.inputState = InputState.TAKEN
+            endNode.inputState = InputState.TAKEN
+            this.endID = endNode.id
+            this._endNode = endNode
+        }
+
     }
 
     /**
@@ -119,7 +140,7 @@ export class Wire {
             return false
         }
 
-        let distance = []
+        const distance = []
 
         distance.push(dist(this.startNode.posX, this.startNode.posY,
             mouseX, mouseY))
@@ -133,27 +154,6 @@ export class Wire {
             return true
         }
         return false
-    }
-
-    public set endNode(endNode: Node | null) {
-        if (!endNode) {
-            return
-        }
-        if (endNode.isOutput) {
-            // set as startNode instead
-            const tempNode = this.startNode
-            this._startNode = endNode
-            this.startID = endNode.id
-            tempNode.inputState = InputState.TAKEN
-            this.endID = tempNode.id
-            this._endNode = tempNode
-        } else {
-            this.startNode.inputState = InputState.TAKEN
-            endNode.inputState = InputState.TAKEN
-            this.endID = endNode.id
-            this._endNode = endNode
-        }
-
     }
 
 }
@@ -203,7 +203,7 @@ class ShortCircuit {
     }
 
     drawShortCircuit() {
-        let posCommonNode = [
+        const posCommonNode = [
             this.firstNode.posX - 15,
             (this.firstNode.posY + this.secondNode.posY) / 2,
         ]
@@ -235,11 +235,6 @@ export class WireManager {
     public shortCircuit: ShortCircuit[] = []
     public isOpened = false
 
-    constructor() { }
-
-    /**
-     * Function to draw Wires and ShortCircuit
-     */
     draw() {
         for (let i = 0; i < this.wire.length; i++) {
             const result = this.wire[i].draw()
@@ -271,7 +266,7 @@ export class WireManager {
             this.isOpened = true
             canvasSim.style.cursor = "crosshair"
         } else {
-            let index = this.wire.length - 1
+            const index = this.wire.length - 1
             if (node !== this.wire[index].startNode &&
                 (this.wire[index].startNode.isOutput !== node.isOutput ||
                     node.brotherNode === this.wire[index].startNode)) {

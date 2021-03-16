@@ -1,14 +1,15 @@
 import { InputState, Mode } from "./Enums.js"
-import { wireMng, mode } from "../simulator.js"
+import { wireMng, mode, fillForBoolean } from "../simulator.js"
 
-export let nodeList: Node[] = []
+export const nodeList: Node[] = []
 
 let nextNodeID = 0
 
+const DIAMETER = 8
+const HIT_RANGE = DIAMETER + 10
+
 export class Node {
 
-    private diameter: number = 8
-    private hitRange = this.diameter + 10
     private _inputState: number = InputState.FREE // only once input per node
     private _isAlive = true // not destroyed
     private _brotherNode: Node | null = null // for short circuit
@@ -31,16 +32,16 @@ export class Node {
     }
 
     draw() {
-        fillValue(this._value)
+        fillForBoolean(this._value)
 
         stroke(0)
         strokeWeight(1)
-        circle(this.posX, this.posY, this.diameter)
+        circle(this.posX, this.posY, DIAMETER)
 
         if (this.isMouseOver()) {
             fill(128, 128)
             noStroke()
-            circle(this.posX, this.posY, this.hitRange)
+            circle(this.posX, this.posY, HIT_RANGE)
         }
 
         /*noStroke();
@@ -52,6 +53,20 @@ export class Node {
 
     public get id() {
         return this._id
+    }
+
+    public set id(newID: number) {
+        if (nodeList[this.id] === this) {
+            delete nodeList[this.id]
+        }
+
+        this._id = newID
+        nodeList[newID] = this
+
+        //update max id
+        if (newID >= nextNodeID) {
+            nextNodeID = newID + 1
+        }
     }
 
     public get posX() {
@@ -68,20 +83,6 @@ export class Node {
 
     public get isOutput() {
         return this._isOutput
-    }
-
-    public set id(newID: number) {
-        if (nodeList[this.id] === this) {
-            delete nodeList[this.id]
-        }
-
-        this._id = newID
-        nodeList[newID] = this
-
-        //update max id
-        if (newID >= nextNodeID) {
-            nextNodeID = newID + 1
-        }
     }
 
     public get inputState() {
@@ -114,10 +115,7 @@ export class Node {
     }
 
     isMouseOver() {
-        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < (this.hitRange) / 2) {
-            return true
-        }
-        return false
+        return mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < HIT_RANGE / 2
     }
 
     mouseClicked() {
@@ -128,13 +126,4 @@ export class Node {
         return false
     }
 
-
-};
-
-export function fillValue(value: boolean) {
-    if (value) {
-        fill(255, 193, 7)
-    } else {
-        fill(52, 58, 64)
-    }
 }

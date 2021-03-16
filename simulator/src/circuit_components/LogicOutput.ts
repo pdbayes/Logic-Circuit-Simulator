@@ -1,7 +1,7 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
-import { Node, fillValue } from "./Node.js"
-import { colorMouseOver, fileManager, mode } from "../simulator.js"
+import { Node } from "./Node.js"
+import { colorMouseOver, fileManager, fillForBoolean, isUndefined, mode } from "../simulator.js"
 
 export class LogicOutput {
 
@@ -18,14 +18,14 @@ export class LogicOutput {
     private nodeStartID = this.input!.id
     private isSaved = false
 
-    static from(id: number, pos: [number, number], name: string | undefined): LogicOutput {
+    static from(id: number, pos: readonly [number, number], name: string | undefined): LogicOutput {
         const newObj = new LogicOutput()
         newObj.posX = pos[0]
         newObj.posY = pos[1]
         newObj.isSpawned = true
         newObj.isSaved = true
         newObj.nodeStartID = id
-        if (name) {
+        if (!isUndefined(name)) {
             newObj.name = name
         }
         newObj.refreshNodes()
@@ -36,7 +36,7 @@ export class LogicOutput {
         return {
             name: (this.name) ? this.name : undefined,
             id: this.nodeStartID,
-            pos: [this.posX, this.posY],
+            pos: [this.posX, this.posY] as const,
         }
     }
 
@@ -70,10 +70,13 @@ export class LogicOutput {
             this._value = this.input.value
         }
 
-        fillValue(this.value)
+        fillForBoolean(this.value)
 
-        if (this.isMouseOver()) { stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2]) }
-        else { stroke(0) }
+        if (this.isMouseOver()) {
+            stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+        } else {
+            stroke(0)
+        }
 
 
         strokeWeight(4)
@@ -87,7 +90,9 @@ export class LogicOutput {
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
-        if (this.name) { text(this.name, this.posX + 21, this.posY) }
+        if (this.name) {
+            text(this.name, this.posX + 21, this.posY)
+        }
 
         textSize(18)
         textAlign(CENTER, CENTER)
@@ -138,7 +143,7 @@ export class LogicOutput {
     }
 
     mouseClicked() {
-        if (this.isMouseOver() || this.input?.isMouseOver()) {
+        if (this.isMouseOver() || (this.input?.isMouseOver() ?? false)) {
             this.input?.mouseClicked()
             return true
         }

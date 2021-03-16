@@ -3,23 +3,41 @@
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 6,
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": [
+            "./tsconfig.json"
+        ]
     },
     "plugins": [
         "@typescript-eslint"
     ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
     "rules": {
+        "@typescript-eslint/no-non-null-assertion": "off", // TODO set to error at some point
+        "@typescript-eslint/explicit-module-boundary-types": "off",
         "semi": "off",
-        "@typescript-eslint/semi": ["error", "never"],
+        "@typescript-eslint/semi": [
+            "error",
+            "never"
+        ],
+        "@typescript-eslint/no-explicit-any": "off",
         // "@typescript-eslint/class-name-casing": "warn",
         // "@typescript-eslint/explicit-function-return-type": ["error"],
         // "@typescript-eslint/prefer-for-of": "warn",
-        // "@typescript-eslint/switch-exhaustiveness-check": "error",
-        "comma-dangle": ["error", "always-multiline"],
+        "@typescript-eslint/switch-exhaustiveness-check": "error",
+        "comma-dangle": [
+            "error",
+            "always-multiline"
+        ],
         "curly": "warn",
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
-        "prefer-named-capture-group": "warn"
+        "prefer-named-capture-group": "warn",
+        "@typescript-eslint/strict-boolean-expressions": "error"
         // "no-unexpected-multiline": "error"
     }
 }

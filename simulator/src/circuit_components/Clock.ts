@@ -33,4 +33,4 @@ export class Clock extends LogicInput {
         textStyle(NORMAL)
         text(this.strInfo, this.posX - 20, this.posY + 25)
     }
-};
+}
