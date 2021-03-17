@@ -3,7 +3,7 @@
 // are present (unless the user supplied a weird `options.indent` but in
 // that case we don’t care since the output would be invalid anyway).
 
-import { isUndefined } from "./simulator"
+import { isUndefined } from "./simulator.js"
 
 // eslint-disable-next-line prefer-named-capture-group
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g

@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, isNullOrUndefined } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
@@ -13,6 +13,7 @@ import { stringifySmart } from "./stringifySmart.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { Wire } from "./circuit_components/Wire.js"
+import { BarDisplay } from "./circuit_components/BarDisplay.js"
 
 // let eventHistory = []
 
@@ -45,15 +46,28 @@ export class FileManager {
         reader.onload = () => {
             const contentFile = reader.result
             //console.log(contentFile);
-            if (typeof contentFile === "string") {
-                this.doLoadFromJsonString(contentFile)
+            if (isString(contentFile)) {
+                this.doLoadFromJson(contentFile)
             }
         }
         reader.readAsText(file)
     }
 
-    doLoadFromJsonString(content: string): boolean {
+    doLoadFromJson(content: string | any): boolean {
         this.isLoadingState = true
+
+        let parsedContents: any
+        if (!isString(content)) {
+            parsedContents = content
+        } else {
+            try {
+                parsedContents = JSON.parse(content)
+            } catch (err) {
+                console.log("Can't load this JSON, " + err)
+                console.log(content)
+                return false
+            }
+        }
 
         flipflops.splice(0, flipflops.length)
         srLatches.splice(0, srLatches.length)
@@ -64,14 +78,6 @@ export class FileManager {
         logicOutputs.splice(0, logicOutputs.length)
         nodeList.splice(0, nodeList.length)
 
-        let parsedContents: any
-        try {
-            parsedContents = JSON.parse(content)
-        } catch (err) {
-            console.log("Can't load this JSON, " + err)
-            console.log(content)
-            return false
-        }
 
         type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
 
@@ -118,6 +124,17 @@ export class FileManager {
                     parsedVals.id,
                     parsedVals.pos,
                     parsedVals.name
+                ))
+            }
+        }
+
+        if ("displaysB" in parsedContents) {
+            for (let i = 0; i < parsedContents.displaysB.length; i++) {
+                const parsedVals = parsedContents.displaysB[i] as JsonReprOf<BarDisplay>
+                displaysB.push(BarDisplay.from(
+                    parsedVals.id,
+                    parsedVals.pos,
+                    parsedVals.display
                 ))
             }
         }
@@ -229,6 +246,7 @@ export class FileManager {
         if (logicOutputs.length) { workspace["out"] = logicOutputs }
         if (displays.length) { workspace["displays"] = displays }
         if (displaysA.length) { workspace["displaysA"] = displaysA }
+        if (displaysB.length) { workspace["displaysB"] = displaysB }
         if (clocks.length) { workspace["clocks"] = clocks }
         if (flipflops.length) { workspace["flipflops"] = flipflops }
         if (gates.length) { workspace["gates"] = gates }

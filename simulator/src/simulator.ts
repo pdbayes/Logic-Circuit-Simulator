@@ -15,9 +15,10 @@ import { FF_JK } from "./circuit_components/FF_JK.js"
 import { FF_T } from "./circuit_components/FF_T.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
+import { BarDisplay } from "./circuit_components/BarDisplay.js"
 
-type Color = [number, number, number]
-type FF = FF_D | FF_JK | FF_T
+export type Color = [number, number, number]
+export type FF = FF_D | FF_JK | FF_T
 
 export const gateImages: p5.Image[] = [] // gates images
 export const ICImages: p5.Image[] = [] // integrated circuits images
@@ -27,11 +28,13 @@ export const logicInputs: LogicInput[] = []
 export const logicOutputs: LogicOutput[] = []
 export const displays: FourBitDisplay[] = []
 export const displaysA: AsciiDisplay[] = []
+export const displaysB: BarDisplay[] = []
 export const clocks: Clock[] = []
 export const srLatches: SR_Latch[] = []
 export const flipflops: FF[] = []
 
-export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, clocks, srLatches, flipflops]
+export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, displaysB, clocks, srLatches, flipflops]
+export const allComponentsWithDoubleClick = [logicInputs, displays, displaysB]
 export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
@@ -192,7 +195,7 @@ export function tryLoadFromData() {
     }
     try {
         const decodedData = atob(initialData.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
-        fileManager.doLoadFromJsonString(decodeURIComponent(decodedData))
+        fileManager.doLoadFromJson(decodeURIComponent(decodedData))
     } catch (e) {
         console.trace(e)
     }
@@ -244,7 +247,7 @@ export function mouseReleased() {
 }
 
 export function doubleClicked() {
-    for (const elems of [logicInputs, displays]) {
+    for (const elems of allComponentsWithDoubleClick) {
         for (const elem of elems) {
             elem.doubleClicked()
         }
@@ -317,3 +320,16 @@ export function isUndefined(v: any): v is undefined {
 export function isNullOrUndefined(v: any): v is null | undefined {
     return isUndefined(v) || v === null
 }
+
+export function isString(v: any): v is string {
+    return typeof v === "string"
+}
+
+export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
+    const w2 = width / 2
+    const h2 = height / 2
+    return pointX >= centerX - w2 && pointX < centerX + w2 &&
+        pointY >= centerY - h2 && pointY < centerY + h2
+}
+
+window.loadFromJson = (jsonString: any) => fileManager.doLoadFromJson(jsonString)

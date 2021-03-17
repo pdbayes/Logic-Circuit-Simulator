@@ -2,7 +2,7 @@ import { Clock } from "./circuit_components/Clock.js"
 import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
 import { FF_JK } from "./circuit_components/FF_JK.js"
 import { FF_T } from "./circuit_components/FF_T.js"
-import { flipflops, logicInputs, logicOutputs, clocks, gates, srLatches, tryLoadFromData, displays, displaysA, isNullOrUndefined } from "./simulator.js"
+import { flipflops, logicInputs, logicOutputs, clocks, gates, srLatches, tryLoadFromData, displays, displaysA, displaysB, isNullOrUndefined } from "./simulator.js"
 import { Gate } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
@@ -10,6 +10,7 @@ import { MouseAction, SyncType } from "./circuit_components/Enums.js"
 import { SR_LatchSync, SR_LatchAsync, SR_Latch } from "./circuit_components/SR_Latch.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
+import { BarDisplay } from "./circuit_components/BarDisplay.js"
 
 export let currMouseAction = MouseAction.EDIT
 
@@ -61,6 +62,10 @@ export function activeTool(elTool: HTMLElement) {
 
         case "AsciiDisplay":
             displaysA.push(new AsciiDisplay())
+            break
+
+        case "BarDisplay":
+            displaysB.push(new BarDisplay())
             break
 
         case "Clock": {

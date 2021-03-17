@@ -1,13 +1,13 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForFraction, isUndefined, mode } from "../simulator.js"
+import { colorMouseOver, fileManager, fillForFraction, inRect, isUndefined, mode } from "../simulator.js"
 
 const WIDTH = 36
 const HEIGHT = 54
 const INPUT_X_DISTANCE = 15
 const INPUT_Y_SPACING = 15
-const FIRST_Y_OFFSET = INPUT_Y_SPACING * 3 / 2
+const FIRST_Y_OFFSET = -INPUT_Y_SPACING * 3 / 2
 
 const DEFAULT_RADIX = 10
 
@@ -18,18 +18,17 @@ export class FourBitDisplay {
     private radix = DEFAULT_RADIX
     private posX = mouseX
     private posY = mouseY
-    private diameter = 25
     private isSpawned = false
     private isMoving = false
     private offsetMouseX = 0
     private offsetMouseY = 0
     private inputs: [Node, Node, Node, Node] = [
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET - 0 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET - 1 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET - 2 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET - 3 * INPUT_Y_SPACING, false, false),
+        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 0 * INPUT_Y_SPACING, false, false),
+        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 1 * INPUT_Y_SPACING, false, false),
+        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 2 * INPUT_Y_SPACING, false, false),
+        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 3 * INPUT_Y_SPACING, false, false),
     ]
-    private nodeStartID = this.inputs[0]!.id
+    private nodeStartID = this.inputs[0].id
     private isSaved = false
 
     static from(id: number, pos: readonly [number, number], radix: number | undefined, name: string | undefined): FourBitDisplay {
@@ -84,7 +83,7 @@ export class FourBitDisplay {
         let binaryStringRep = ""
         for (const input of this.inputs) {
             input.updatePosition(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + offset)
-            offset -= INPUT_Y_SPACING
+            offset += INPUT_Y_SPACING
             binaryStringRep = +input.value + binaryStringRep
         }
         this._value = parseInt(binaryStringRep, 2)
@@ -140,8 +139,7 @@ export class FourBitDisplay {
     }
 
     isMouseOver() {
-        return mode >= Mode.CONNECT &&
-            dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, WIDTH, HEIGHT, mouseX, mouseY)
     }
 
     mousePressed() {
