@@ -1,7 +1,8 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForFraction, inRect, isUndefined, mode } from "../simulator.js"
+import { colorMouseOver, fileManager, fillForFraction, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
+import { Component } from "./Component.js"
 
 const WIDTH = 36
 const HEIGHT = 54
@@ -11,13 +12,11 @@ const FIRST_Y_OFFSET = -INPUT_Y_SPACING * 3 / 2
 
 const DEFAULT_RADIX = 10
 
-export class FourBitDisplay {
+export class FourBitDisplay extends Component {
 
     private _value = 0
     private name = ""
     private radix = DEFAULT_RADIX
-    private posX = mouseX
-    private posY = mouseY
     private isSpawned = false
     private isMoving = false
     private offsetMouseX = 0
@@ -30,6 +29,10 @@ export class FourBitDisplay {
     ]
     private nodeStartID = this.inputs[0].id
     private isSaved = false
+
+    public constructor() {
+        super()
+    }
 
     static from(id: number, pos: readonly [number, number], radix: number | undefined, name: string | undefined): FourBitDisplay {
         const newObj = new FourBitDisplay()
@@ -69,6 +72,9 @@ export class FourBitDisplay {
         if (!this.isSpawned) {
             this.posX = mouseX
             this.posY = mouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -77,6 +83,9 @@ export class FourBitDisplay {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
         let offset = FIRST_Y_OFFSET

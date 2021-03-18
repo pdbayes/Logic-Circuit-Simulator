@@ -1,7 +1,8 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, inRect, isUndefined, mode } from "../simulator.js"
+import { colorMouseOver, fileManager, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
+import { Component } from "./Component.js"
 
 const WIDTH = 40
 const HEIGHT = 100
@@ -9,12 +10,10 @@ const INPUT_X_DISTANCE = 15
 const INPUT_Y_SPACING = 15
 const FIRST_Y_OFFSET = -INPUT_Y_SPACING * 6 / 2
 
-export class AsciiDisplay {
+export class AsciiDisplay extends Component {
 
     private _value = 0
     private name = ""
-    private posX = mouseX
-    private posY = mouseY
     private isSpawned = false
     private isMoving = false
     private offsetMouseX = 0
@@ -30,6 +29,10 @@ export class AsciiDisplay {
     ]
     private nodeStartID = this.inputs[0].id
     private isSaved = false
+
+    public constructor() {
+        super()
+    }
 
     static from(id: number, pos: readonly [number, number], name: string | undefined): AsciiDisplay {
         const newObj = new AsciiDisplay()
@@ -67,6 +70,9 @@ export class AsciiDisplay {
         if (!this.isSpawned) {
             this.posX = mouseX
             this.posY = mouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -75,6 +81,9 @@ export class AsciiDisplay {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
         let offset = FIRST_Y_OFFSET

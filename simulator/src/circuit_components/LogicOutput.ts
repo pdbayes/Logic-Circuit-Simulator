@@ -1,14 +1,13 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForBoolean, isUndefined, mode } from "../simulator.js"
+import { colorMouseOver, fileManager, fillForBoolean, isCmdDown, isUndefined, mode } from "../simulator.js"
+import { Component } from "./Component.js"
 
-export class LogicOutput {
+export class LogicOutput extends Component {
 
     private _value = false
     private name = ""
-    private posX = mouseX
-    private posY = mouseY
     private diameter = 25
     private isSpawned = false
     private isMoving = false
@@ -17,6 +16,10 @@ export class LogicOutput {
     private input: Node | undefined = new Node(this.posX - 30, this.posY, false, this.value)
     private nodeStartID = this.input!.id
     private isSaved = false
+
+    public constructor() {
+        super()
+    }
 
     static from(id: number, pos: readonly [number, number], name: string | undefined): LogicOutput {
         const newObj = new LogicOutput()
@@ -55,6 +58,9 @@ export class LogicOutput {
         if (!this.isSpawned) {
             this.posX = mouseX
             this.posY = mouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -63,6 +69,9 @@ export class LogicOutput {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
         if (this.input) {

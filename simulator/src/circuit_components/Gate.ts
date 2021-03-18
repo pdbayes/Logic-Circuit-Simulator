@@ -1,16 +1,15 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { any, gateImages } from "../simulator.js"
+import { any, gateImages, isCmdDown } from "../simulator.js"
 import { GateType, Mode, MouseAction } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
+import { Component } from "./Component.js"
 
-export class Gate {
+export class Gate extends Component {
 
     private type = this.convertToType(this.strType)
     private width = gateImages[this.type].width
     private height = gateImages[this.type].height
-    private posX = mouseX - (this.width / 2)
-    private posY = mouseY - (this.height / 2)
     private isSpawned = false
     private offsetMouseX = 0
     private offsetMouseY = 0
@@ -23,6 +22,7 @@ export class Gate {
     constructor(
         private strType: string
     ) {
+        super()
         this.input.push(new Node(this.posX + 2, this.posY + 15))
         if (this.type !== GateType.NOT) {
             this.input.push(new Node(this.posX + 2, this.posY + this.height - 15))
@@ -96,6 +96,9 @@ export class Gate {
         if (!this.isSpawned) {
             this.posX = mouseX - (this.width / 2)
             this.posY = mouseY - (this.height / 2)
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -104,6 +107,9 @@ export class Gate {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
         if (this.type === GateType.NOT) {

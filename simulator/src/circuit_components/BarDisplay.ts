@@ -1,7 +1,8 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, mode, Color, inRect } from "../simulator.js"
+import { colorMouseOver, fileManager, mode, Color, inRect, isCmdDown } from "../simulator.js"
+import { Component } from "./Component.js"
 
 const WIDTH = 100
 const HEIGHT = 20
@@ -12,12 +13,10 @@ export type BarDisplayType = typeof BarDisplayTypes[number]
 
 const DEFAULT_BAR_DISPLAY: BarDisplayType = "h"
 
-export class BarDisplay {
+export class BarDisplay extends Component {
 
     private _value = false
     private display = DEFAULT_BAR_DISPLAY
-    private posX = mouseX
-    private posY = mouseY
     private isSpawned = false
     private isMoving = false
     private offsetMouseX = 0
@@ -25,6 +24,10 @@ export class BarDisplay {
     private input = new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY, false, false)
     private nodeStartID = this.input.id
     private isSaved = false
+
+    public constructor() {
+        super()
+    }
 
     static from(id: number, pos: readonly [number, number], display: BarDisplayType): BarDisplay {
         const newObj = new BarDisplay()
@@ -58,6 +61,9 @@ export class BarDisplay {
         if (!this.isSpawned) {
             this.posX = mouseX
             this.posY = mouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -66,6 +72,9 @@ export class BarDisplay {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
 

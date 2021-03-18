@@ -1,14 +1,13 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { ICImages } from "../simulator.js"
+import { ICImages, isCmdDown } from "../simulator.js"
 import { MouseAction, Mode, ICType } from "./Enums.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
+import { Component } from "./Component.js"
 
-export abstract class Integrated {
+export abstract class Integrated extends Component {
 
     public width = ICImages[this.type].width
     public height = ICImages[this.type].height
-    public posX = mouseX - (this.width / 2)
-    public posY = mouseY - (this.height / 2)
     public isSpawned = false
     public offsetMouseX = 0
     public offsetMouseY = 0
@@ -18,12 +17,16 @@ export abstract class Integrated {
     constructor(
         public type: ICType
     ) {
+        super()
     }
 
     draw() {
         if (!this.isSpawned) {
             this.posX = mouseX - (this.width / 2)
             this.posY = mouseY - (this.height / 2)
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -32,6 +35,9 @@ export abstract class Integrated {
         if (this.isMoving) {
             this.posX = mouseX + this.offsetMouseX
             this.posY = mouseY + this.offsetMouseY
+            if (!isCmdDown) {
+                this.snapToGrid()
+            }
         }
 
         if (this.isMouseOver()) {

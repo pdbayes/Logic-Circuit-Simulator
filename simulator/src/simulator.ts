@@ -41,6 +41,7 @@ export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 export const fileManager = new FileManager()
 
 export let mode = Mode.FULL
+export let isCmdDown = false
 
 let canvasContainer: HTMLElement
 let initialData: string | undefined = undefined
@@ -120,6 +121,12 @@ export function setup() {
     const canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
     canvas.parent('canvas-sim')
+
+    canvasContainer.addEventListener("mousemove", (e) => {
+        if (e.metaKey !== isCmdDown) {
+            isCmdDown = e.metaKey
+        }
+    }, true)
 
     const data = getURLParameter(PARAM_DATA)
     if (!isUndefined(data)) {
