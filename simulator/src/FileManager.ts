@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString, allComponents } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
@@ -69,18 +69,13 @@ export class FileManager {
             }
         }
 
-        flipflops.splice(0, flipflops.length)
-        srLatches.splice(0, srLatches.length)
-        gates.splice(0, gates.length)
+        for (const elems of allComponents) {
+            elems.splice(0, elems.length)
+        }
         wireMng.wire.splice(0, wireMng.wire.length)
-        clocks.splice(0, clocks.length)
-        logicInputs.splice(0, logicInputs.length)
-        logicOutputs.splice(0, logicOutputs.length)
         nodeList.splice(0, nodeList.length)
 
-
         type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
-
 
         if ("in" in parsedContents) {
             for (let i = 0; i < parsedContents.in.length; i++) {

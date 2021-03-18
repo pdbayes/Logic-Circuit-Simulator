@@ -128,7 +128,15 @@ export class FourBitDisplay {
         textStyle(BOLD)
 
         const caption = this.value.toString(this.radix).toUpperCase()
-        text(caption, this.posX, this.posY + WIDTH / 6)
+        const prefix = (() => {
+            switch (this.radix) {
+                case 16: return "0x"
+                case 8: return "0o"
+                case 2: return "0b"
+                default: return ""
+            }
+        })()
+        text(prefix + caption, this.posX, this.posY + WIDTH / 6)
     }
 
     refreshNodes() {

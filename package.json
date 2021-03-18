@@ -17,6 +17,7 @@
     "webpack-cli": "^4.5.0"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "server": "python3 -m http.server --cgi 8088"
   }
 }
