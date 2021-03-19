@@ -4,14 +4,15 @@ import { ICType } from "./Enums.js"
 import { Integrated } from "./Integrated.js"
 import { Node } from "./Node.js"
 import { any } from "../simulator.js"
+import { GRID_STEP } from "./Component.js"
 
 export class FF_JK extends Integrated {
 
-    public nodeJ = new Node(this.posX + 5, this.posY + 30)
-    public nodeClock = new Node(this.posX + 5, this.posY + (this.height / 2))
-    public nodeK = new Node(this.posX + 5, this.posY + this.height - 30)
-    public nodeQ = new Node(this.posX + this.width - 5, this.posY + 30, true)
-    public nodeNotQ = new Node(this.posX + this.width + 5, this.posY + this.height - 30, true)
+    public nodeJ = new Node(this, +5, +3)
+    public nodeClock = new Node(this, +5, (this.height / 2) / GRID_STEP) // TODO y not aligned on grid
+    public nodeK = new Node(this, +5, this.height / GRID_STEP - 3)// TODO y not aligned on grid
+    public nodeQ = new Node(this, +this.width - 5, +3, true)
+    public nodeNotQ = new Node(this, +this.width + 5, this.height / GRID_STEP - 3, true)// TODO y not aligned on grid
     public ff_D = new FF_D_MasterSlave()
     public orGate = new Gate("OR")
     public andGate_Q = new Gate("AND")
@@ -36,11 +37,11 @@ export class FF_JK extends Integrated {
         super.draw()
         this.generateOutput()
 
-        this.nodeJ.updatePosition(this.posX + 5, this.posY + 30)
-        this.nodeClock.updatePosition(this.posX + 5, this.posY + (this.height / 2))
-        this.nodeK.updatePosition(this.posX + 5, this.posY + this.height - 30)
-        this.nodeQ.updatePosition(this.posX + this.width - 5, this.posY + 30)
-        this.nodeNotQ.updatePosition(this.posX + this.width - 5, this.posY + this.height - 30)
+        this.nodeJ.updatePositionFromParent()
+        this.nodeClock.updatePositionFromParent()
+        this.nodeK.updatePositionFromParent()
+        this.nodeQ.updatePositionFromParent()
+        this.nodeNotQ.updatePositionFromParent()
 
         this.nodeJ.draw()
         this.nodeClock.draw()

@@ -3,13 +3,14 @@ import { ICType, GateType } from "./Enums.js"
 import { Integrated } from "./Integrated.js"
 import { Node } from "./Node.js"
 import { any } from "../simulator.js"
+import { GRID_STEP } from "./Component.js"
 
 export abstract class SR_Latch extends Integrated {
 
-    public nodeSet = new Node(this.posX + 5, this.posY + 30)
-    public nodeReset = new Node(this.posX + 5, this.posY + this.height - 30)
-    public nodeQ = new Node(this.posX + this.width - 5, this.posY + 30, true)
-    public nodeNotQ = new Node(this.posX + this.width + 5, this.posY + this.height - 30, true)
+    public nodeSet = new Node(this, +5, +3)
+    public nodeReset = new Node(this, +5, +this.height / GRID_STEP - 3)
+    public nodeQ = new Node(this, +this.width - 5, +3, true)
+    public nodeNotQ = new Node(this, +this.width + 5, +this.height / GRID_STEP - 3, true)
     public nodeStartID = this.nodeSet.id
 
     constructor(type: ICType) {
@@ -27,10 +28,10 @@ export abstract class SR_Latch extends Integrated {
         super.draw()
         this.generateOutput()
 
-        this.nodeSet.updatePosition(this.posX + 5, this.posY + 30)
-        this.nodeReset.updatePosition(this.posX + 5, this.posY + this.height - 30)
-        this.nodeQ.updatePosition(this.posX + this.width - 5, this.posY + 30)
-        this.nodeNotQ.updatePosition(this.posX + this.width - 5, this.posY + this.height - 30)
+        this.nodeSet.updatePositionFromParent()
+        this.nodeReset.updatePositionFromParent()
+        this.nodeQ.updatePositionFromParent()
+        this.nodeNotQ.updatePositionFromParent()
 
         this.nodeSet.draw()
         this.nodeReset.draw()
@@ -138,7 +139,7 @@ export class SR_LatchAsync extends SR_Latch {
 
 export class SR_LatchSync extends SR_Latch {
 
-    public nodeClock = new Node(this.posX + this.width - 5, this.posY + (this.height / 2))
+    public nodeClock = new Node(this, +this.width - 5, (this.height / 2) / GRID_STEP) // TODO y align on grid
     public asyncLatch = new SR_LatchAsync(this.gateType, this.stabilize)
     public gateSet: Gate | null
     public gateReset: Gate | null
@@ -187,7 +188,7 @@ export class SR_LatchSync extends SR_Latch {
 
     draw() {
         super.draw()
-        this.nodeClock.updatePosition(this.posX + 5, this.posY + (this.height / 2))
+        this.nodeClock.updatePositionFromParent()
         this.nodeClock.draw()
     }
 

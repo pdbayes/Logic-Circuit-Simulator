@@ -2,14 +2,10 @@ import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, fillForFraction, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component } from "./Component.js"
+import { Component, GRID_STEP } from "./Component.js"
 
-const WIDTH = 36
-const HEIGHT = 54
-const INPUT_X_DISTANCE = 15
-const INPUT_Y_SPACING = 15
-const FIRST_Y_OFFSET = -INPUT_Y_SPACING * 3 / 2
-
+const GRID_WIDTH = 4
+const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
 export class FourBitDisplay extends Component {
@@ -22,10 +18,10 @@ export class FourBitDisplay extends Component {
     private offsetMouseX = 0
     private offsetMouseY = 0
     private inputs: [Node, Node, Node, Node] = [
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 0 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 1 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 2 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 3 * INPUT_Y_SPACING, false, false),
+        new Node(this, -3, -3),
+        new Node(this, -3, -1),
+        new Node(this, -3, +1),
+        new Node(this, -3, +3),
     ]
     private nodeStartID = this.inputs[0].id
     private isSaved = false
@@ -36,8 +32,7 @@ export class FourBitDisplay extends Component {
 
     static from(id: number, pos: readonly [number, number], radix: number | undefined, name: string | undefined): FourBitDisplay {
         const newObj = new FourBitDisplay()
-        newObj.posX = pos[0]
-        newObj.posY = pos[1]
+        newObj.updatePosition(pos[0], pos[1], false)
         newObj.radix = radix ?? DEFAULT_RADIX
         newObj.isSpawned = true
         newObj.isSaved = true
@@ -70,29 +65,19 @@ export class FourBitDisplay extends Component {
 
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
         }
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
-        let offset = FIRST_Y_OFFSET
         let binaryStringRep = ""
         for (const input of this.inputs) {
-            input.updatePosition(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + offset)
-            offset += INPUT_Y_SPACING
+            input.updatePositionFromParent()
             binaryStringRep = +input.value + binaryStringRep
         }
         this._value = parseInt(binaryStringRep, 2)
@@ -107,10 +92,13 @@ export class FourBitDisplay extends Component {
         }
 
         strokeWeight(4)
-        rect(this.posX - WIDTH / 2, this.posY - HEIGHT / 2, WIDTH, HEIGHT)
+
+        const width = GRID_WIDTH * GRID_STEP
+        const height = GRID_HEIGHT * GRID_STEP
+        rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            line(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, input.posY, this.posX - WIDTH / 2, input.posY)
+            line(input.posX, input.posY, this.posX - width / 2, input.posY)
         }
         for (const input of this.inputs) {
             input.draw()
@@ -122,7 +110,7 @@ export class FourBitDisplay extends Component {
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
         if (this.name) {
-            text(this.name, this.posX + WIDTH / 2 + 5, this.posY)
+            text(this.name, this.posX + width / 2 + 5, this.posY)
         }
 
         const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
@@ -131,7 +119,7 @@ export class FourBitDisplay extends Component {
         textSize(10)
         textAlign(CENTER, CENTER)
         textStyle(NORMAL)
-        text(binaryStringRep, this.posX, this.posY - HEIGHT / 2 + 8)
+        text(binaryStringRep, this.posX, this.posY - height / 2 + 8)
 
         textSize(18)
         textStyle(BOLD)
@@ -145,7 +133,7 @@ export class FourBitDisplay extends Component {
                 default: return ""
             }
         })()
-        text(prefix + caption, this.posX, this.posY + WIDTH / 6)
+        text(prefix + caption, this.posX, this.posY + width / 6)
     }
 
     refreshNodes() {
@@ -156,13 +144,12 @@ export class FourBitDisplay extends Component {
     }
 
     isMouseOver() {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, WIDTH, HEIGHT, mouseX, mouseY)
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
     }
 
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

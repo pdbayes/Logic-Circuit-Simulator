@@ -72,7 +72,7 @@ export class FileManager {
         for (const elems of allComponents) {
             elems.splice(0, elems.length)
         }
-        wireMng.wire.splice(0, wireMng.wire.length)
+        wireMng.wires.splice(0, wireMng.wires.length)
         nodeList.splice(0, nodeList.length)
 
         type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
@@ -246,7 +246,7 @@ export class FileManager {
         if (flipflops.length) { workspace["flipflops"] = flipflops }
         if (gates.length) { workspace["gates"] = gates }
         if (srLatches.length) { workspace["srLatches"] = srLatches }
-        if (wireMng.wire.length) { workspace["wires"] = wireMng.wire }
+        if (wireMng.wires.length) { workspace["wires"] = wireMng.wires }
 
         console.log(workspace)
 

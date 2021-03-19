@@ -16,7 +16,7 @@ export class LogicInput extends Component {
     private isMoving = false
     private offsetMouseX = 0
     private offsetMouseY = 0
-    private output: Node | undefined = new Node(this.posX + 30, this.posY, true, this.value)
+    private output: Node | undefined = new Node(this, +3, 0, true)
     private nodeStartID = this.output!.id
     private isSaved = false
 
@@ -26,8 +26,7 @@ export class LogicInput extends Component {
 
     static from(id: number, pos: readonly [number, number], value: boolean, name: string | undefined): LogicInput {
         const newObj = new LogicInput()
-        newObj.posX = pos[0]
-        newObj.posY = pos[1]
+        newObj.updatePosition(pos[0], pos[1], false)
         newObj._value = value
         newObj.isSpawned = true
         newObj.isSaved = true
@@ -61,11 +60,7 @@ export class LogicInput extends Component {
 
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
@@ -74,11 +69,7 @@ export class LogicInput extends Component {
         fillForBoolean(this.value)
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
         if (this.isMouseOver()) {
@@ -92,7 +83,7 @@ export class LogicInput extends Component {
         circle(this.posX, this.posY, this.diameter)
 
         if (this.output) {
-            this.output.updatePosition(this.posX + 30, this.posY)
+            this.output.updatePositionFromParent()
             this.output.value = this.value
             this.output.draw()
         }
@@ -144,8 +135,7 @@ export class LogicInput extends Component {
      */
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

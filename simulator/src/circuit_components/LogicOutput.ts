@@ -13,7 +13,7 @@ export class LogicOutput extends Component {
     private isMoving = false
     private offsetMouseX = 0
     private offsetMouseY = 0
-    private input: Node | undefined = new Node(this.posX - 30, this.posY, false, this.value)
+    private input: Node | undefined = new Node(this, -3, 0)
     private nodeStartID = this.input!.id
     private isSaved = false
 
@@ -23,8 +23,7 @@ export class LogicOutput extends Component {
 
     static from(id: number, pos: readonly [number, number], name: string | undefined): LogicOutput {
         const newObj = new LogicOutput()
-        newObj.posX = pos[0]
-        newObj.posY = pos[1]
+        newObj.updatePosition(pos[0], pos[1], false)
         newObj.isSpawned = true
         newObj.isSaved = true
         newObj.nodeStartID = id
@@ -56,26 +55,18 @@ export class LogicOutput extends Component {
 
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
         }
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
         if (this.input) {
-            this.input.updatePosition(this.posX - 30, this.posY)
+            this.input.updatePositionFromParent()
             this._value = this.input.value
         }
 
@@ -130,8 +121,7 @@ export class LogicOutput extends Component {
 
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

@@ -22,22 +22,14 @@ export abstract class Integrated extends Component {
 
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX - (this.width / 2)
-            this.posY = mouseY - (this.height / 2)
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
         }
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
         if (this.isMouseOver()) {
@@ -69,8 +61,7 @@ export abstract class Integrated extends Component {
      */
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX - (this.width / 2)
-            this.posY = mouseY - (this.height / 2)
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

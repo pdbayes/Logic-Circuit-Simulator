@@ -1,5 +1,5 @@
 import { currMouseAction, backToEdit } from "../menutools.js"
-import { any, gateImages, isCmdDown } from "../simulator.js"
+import { any, gateImages, inRect, isCmdDown } from "../simulator.js"
 import { GateType, Mode, MouseAction } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, mode } from "../simulator.js"
@@ -23,20 +23,23 @@ export class Gate extends Component {
         private strType: string
     ) {
         super()
-        this.input.push(new Node(this.posX + 2, this.posY + 15))
         if (this.type !== GateType.NOT) {
-            this.input.push(new Node(this.posX + 2, this.posY + this.height - 15))
-            this.input[0].brotherNode = this.input[1]
-            this.input[1].brotherNode = this.input[0]
+            const input1 = new Node(this, -3, -1)
+            const input2 = new Node(this, -3, +1)
+            input1.brotherNode = input2
+            input2.brotherNode = input1
+            this.input.push(input1)
+            this.input.push(input2)
+        } else {
+            this.input.push(new Node(this, -3, 0))
         }
-        this.output = new Node(this.posX + this.width - 2, this.posY + this.height / 2, true)
+        this.output = new Node(this, +3, 0, true)
         this.nodeStartID = this.input[0].id
     }
 
     static from(strType: string, pos: readonly [number, number], nodeStartID: number): Gate {
         const newObj = new Gate(strType)
-        newObj.posX = pos[0]
-        newObj.posY = pos[1]
+        newObj.updatePosition(pos[0], pos[1], false)
         newObj.isSpawned = true
         newObj.isSaved = true
         newObj.nodeStartID = nodeStartID
@@ -94,41 +97,29 @@ export class Gate extends Component {
      */
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX - (this.width / 2)
-            this.posY = mouseY - (this.height / 2)
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
         }
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
-        if (this.type === GateType.NOT) {
-            this.input[0].updatePosition(this.posX + 2, this.posY + this.height / 2)
-        } else {
-            this.input[0].updatePosition(this.posX + 2, this.posY + 15)
-            this.input[1].updatePosition(this.posX + 2, this.posY + this.height - 15)
+        for (const input of this.input) {
+            input.updatePositionFromParent()
         }
-
-        this.output?.updatePosition(this.posX + this.width - 2, this.posY + this.height / 2)
+        this.output?.updatePositionFromParent()
 
         if (this.isMouseOver()) {
             noFill()
             strokeWeight(2)
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
-            rect(this.posX, this.posY, this.width, this.height)
+            rect(this.posX - this.width / 2, this.posY - this.height / 2, this.width, this.height)
         }
 
-        image(gateImages[this.type], this.posX, this.posY)
+        image(gateImages[this.type], this.posX - this.width / 2, this.posY - this.height / 2)
 
         for (let i = 0; i < this.input.length; i++) {
             this.input[i].draw()
@@ -219,11 +210,7 @@ export class Gate extends Component {
      * Check if mouse is over
      */
     isMouseOver(): boolean {
-        if (mode >= Mode.CONNECT && mouseX > this.posX && mouseX < (this.posX + this.width)
-            && mouseY > this.posY && mouseY < (this.posY + this.height)) {
-            return true
-        }
-        return false
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, this.width, this.height, mouseX, mouseY)
     }
 
     /**
@@ -231,8 +218,7 @@ export class Gate extends Component {
      */
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX - (this.width / 2)
-            this.posY = mouseY - (this.height / 2)
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

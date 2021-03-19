@@ -2,13 +2,10 @@ import { currMouseAction, backToEdit } from "../menutools.js"
 import { MouseAction, Mode } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, fileManager, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component } from "./Component.js"
+import { Component, GRID_STEP } from "./Component.js"
 
-const WIDTH = 40
-const HEIGHT = 100
-const INPUT_X_DISTANCE = 15
-const INPUT_Y_SPACING = 15
-const FIRST_Y_OFFSET = -INPUT_Y_SPACING * 6 / 2
+const GRID_WIDTH = 4
+const GRID_HEIGHT = 8
 
 export class AsciiDisplay extends Component {
 
@@ -19,13 +16,13 @@ export class AsciiDisplay extends Component {
     private offsetMouseX = 0
     private offsetMouseY = 0
     private inputs: [Node, Node, Node, Node, Node, Node, Node] = [
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 0 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 1 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 2 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 3 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 4 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 5 * INPUT_Y_SPACING, false, false),
-        new Node(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + FIRST_Y_OFFSET + 6 * INPUT_Y_SPACING, false, false),
+        new Node(this, -3, -3),
+        new Node(this, -3, -2),
+        new Node(this, -3, -1),
+        new Node(this, -3, +0),
+        new Node(this, -3, +1),
+        new Node(this, -3, +2),
+        new Node(this, -3, +3),
     ]
     private nodeStartID = this.inputs[0].id
     private isSaved = false
@@ -36,8 +33,7 @@ export class AsciiDisplay extends Component {
 
     static from(id: number, pos: readonly [number, number], name: string | undefined): AsciiDisplay {
         const newObj = new AsciiDisplay()
-        newObj.posX = pos[0]
-        newObj.posY = pos[1]
+        newObj.updatePosition(pos[0], pos[1], false)
         newObj.isSpawned = true
         newObj.isSaved = true
         newObj.nodeStartID = id
@@ -68,29 +64,19 @@ export class AsciiDisplay extends Component {
 
     draw() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
         } else if (!this.isSaved) {
             fileManager.saveState()
             this.isSaved = true
         }
 
         if (this.isMoving) {
-            this.posX = mouseX + this.offsetMouseX
-            this.posY = mouseY + this.offsetMouseY
-            if (!isCmdDown) {
-                this.snapToGrid()
-            }
+            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
         }
 
-        let offset = FIRST_Y_OFFSET
         let binaryStringRep = ""
         for (const input of this.inputs) {
-            input.updatePosition(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, this.posY + offset)
-            offset += INPUT_Y_SPACING
+            input.updatePositionFromParent()
             binaryStringRep = +input.value + binaryStringRep
         }
         this._value = parseInt(binaryStringRep, 2)
@@ -101,12 +87,15 @@ export class AsciiDisplay extends Component {
             stroke(0)
         }
 
+        const width = GRID_WIDTH * GRID_STEP
+        const height = GRID_HEIGHT * GRID_STEP
+
         strokeWeight(4)
         fill(0xFF)
-        rect(this.posX - WIDTH / 2, this.posY - HEIGHT / 2, WIDTH, HEIGHT)
+        rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            line(this.posX - WIDTH / 2 - INPUT_X_DISTANCE, input.posY, this.posX - WIDTH / 2, input.posY)
+            line(input.posX, input.posY, this.posX - width / 2, input.posY)
         }
         for (const input of this.inputs) {
             input.draw()
@@ -118,7 +107,7 @@ export class AsciiDisplay extends Component {
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
         if (this.name) {
-            text(this.name, this.posX + WIDTH / 2 + 5, this.posY)
+            text(this.name, this.posX + width / 2 + 5, this.posY)
         }
 
         fill(0)
@@ -126,7 +115,7 @@ export class AsciiDisplay extends Component {
         textSize(9)
         textAlign(CENTER, CENTER)
         textStyle(NORMAL)
-        text(binaryStringRep, this.posX, this.posY - HEIGHT / 2 + 10)
+        text(binaryStringRep, this.posX, this.posY - height / 2 + 10)
 
 
         textAlign(CENTER, CENTER)
@@ -151,13 +140,12 @@ export class AsciiDisplay extends Component {
     }
 
     isMouseOver() {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, WIDTH, HEIGHT, mouseX, mouseY)
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
     }
 
     mousePressed() {
         if (!this.isSpawned) {
-            this.posX = mouseX
-            this.posY = mouseY
+            this.updatePosition(mouseX, mouseY, !isCmdDown)
             this.isSpawned = true
             backToEdit()
             return

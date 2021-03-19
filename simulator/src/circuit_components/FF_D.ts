@@ -1,4 +1,5 @@
 import { any } from "../simulator.js"
+import { GRID_STEP } from "./Component.js"
 import { ICType, GateType } from "./Enums.js"
 import { Integrated } from "./Integrated.js"
 import { Node } from "./Node.js"
@@ -6,10 +7,10 @@ import { SR_LatchSync } from "./SR_Latch.js"
 
 export abstract class FF_D extends Integrated {
 
-    public nodeD = new Node(this.posX + 5, this.posY + 30)
-    public nodeClock = new Node(this.posX + 5, this.posY + this.height - 30)
-    public nodeQ = new Node(this.posX + this.width - 5, this.posY + 30, true)
-    public nodeNotQ = new Node(this.posX + this.width + 5, this.posY + this.height - 30, true)
+    public nodeD = new Node(this, +5, +3)
+    public nodeClock = new Node(this, +5, this.height / GRID_STEP - 3) // TODO misaligned y
+    public nodeQ = new Node(this, +this.width - 5, +3, true)
+    public nodeNotQ = new Node(this, this.width + 5, this.height / GRID_STEP - 3, true)// TODO misaligned y
     public nodeStartID = this.nodeD.id
 
     constructor(type: ICType) {
@@ -27,10 +28,10 @@ export abstract class FF_D extends Integrated {
         super.draw()
         this.generateOutput()
 
-        this.nodeD.updatePosition(this.posX + 5, this.posY + 30)
-        this.nodeClock.updatePosition(this.posX + 5, this.posY + this.height - 30)
-        this.nodeQ.updatePosition(this.posX + this.width - 5, this.posY + 30)
-        this.nodeNotQ.updatePosition(this.posX + this.width - 5, this.posY + this.height - 30)
+        this.nodeD.updatePositionFromParent()
+        this.nodeClock.updatePositionFromParent()
+        this.nodeQ.updatePositionFromParent()
+        this.nodeNotQ.updatePositionFromParent()
 
         this.nodeD.draw()
         this.nodeClock.draw()

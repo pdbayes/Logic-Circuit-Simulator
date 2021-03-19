@@ -1,14 +1,15 @@
 import { InputState, Mode } from "./Enums.js"
 import { wireMng, mode, fillForBoolean } from "../simulator.js"
+import { GRID_STEP, HasPosition, PositionSupport } from "./Component.js"
 
 export const nodeList: Node[] = []
 
 let nextNodeID = 0
 
 const DIAMETER = 8
-const HIT_RANGE = DIAMETER + 10
+const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertically if aligned on grid
 
-export class Node {
+export class Node extends PositionSupport {
 
     private _inputState: number = InputState.FREE // only once input per node
     private _isAlive = true // not destroyed
@@ -16,12 +17,15 @@ export class Node {
     private _id = nextNodeID++
 
     constructor(
-        private _posX: number,
-        private _posY: number,
+        private _parent: HasPosition,
+        private _gridOffsetX: number,
+        private _gridOffsetY: number,
         private _isOutput = false,
         private _value = false
     ) {
+        super()
         nodeList[this._id] = this
+        this.updatePositionFromParent()
     }
 
     // public get id() { return this._id }
@@ -41,7 +45,7 @@ export class Node {
         if (this.isMouseOver()) {
             fill(128, 128)
             noStroke()
-            circle(this.posX, this.posY, HIT_RANGE)
+            circle(this.posX, this.posY, DIAMETER * 2)
         }
 
         /*noStroke();
@@ -67,14 +71,6 @@ export class Node {
         if (newID >= nextNodeID) {
             nextNodeID = newID + 1
         }
-    }
-
-    public get posX() {
-        return this._posX
-    }
-
-    public get posY() {
-        return this._posY
     }
 
     public get isAlive() {
@@ -109,9 +105,30 @@ export class Node {
         this._value = val
     }
 
-    updatePosition(posX: number, posY: number) {
-        this._posX = posX
-        this._posY = posY
+    public get gridOffsetX() {
+        return this._gridOffsetX
+    }
+
+    public set gridOffsetX(newVal: number) {
+        this._gridOffsetX = newVal
+        this.updatePositionFromParent()
+    }
+
+    public get gridOffsetY() {
+        return this._gridOffsetY
+    }
+
+    public set gridOffsetY(newVal: number) {
+        this._gridOffsetY = newVal
+        this.updatePositionFromParent()
+    }
+
+    updatePositionFromParent() {
+        return this.updatePosition(
+            this._parent.posX + this._gridOffsetX * GRID_STEP,
+            this._parent.posY + this._gridOffsetY * GRID_STEP,
+            false,
+        )
     }
 
     isMouseOver() {
