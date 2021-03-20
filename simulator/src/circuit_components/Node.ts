@@ -47,12 +47,6 @@ export class Node extends PositionSupport {
             noStroke()
             circle(this.posX, this.posY, DIAMETER * 2)
         }
-
-        /*noStroke();
-        fill(0);
-        textSize(12);
-        textStyle(NORMAL);
-        text(this.id, this.posX - 20, this.posY + 25);*/
     }
 
     public get id() {

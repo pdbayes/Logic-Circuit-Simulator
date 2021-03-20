@@ -16,11 +16,11 @@ import { FF_T } from "./circuit_components/FF_T.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { BarDisplay } from "./circuit_components/BarDisplay.js"
+import { GRID_STEP } from "./circuit_components/Component.js"
 
 export type Color = [number, number, number]
 export type FF = FF_D | FF_JK | FF_T
 
-export const gateImages: p5.Image[] = [] // gates images
 export const ICImages: p5.Image[] = [] // integrated circuits images
 
 export const gates: Gate[] = []
@@ -42,6 +42,14 @@ export const fileManager = new FileManager()
 
 export let mode = Mode.FULL
 export let isCmdDown = false
+let numMoving = 0
+
+export function incNumMoving() {
+    numMoving++
+}
+export function decNumMoving() {
+    numMoving--
+}
 
 let canvasContainer: HTMLElement
 let initialData: string | undefined = undefined
@@ -49,8 +57,12 @@ let initialData: string | undefined = undefined
 export const COLOR_FULL: Color = [255, 193, 7]
 export const COLOR_EMPTY: Color = [52, 58, 64]
 
+export function colorForBoolean(value: boolean): Color {
+    return value ? COLOR_FULL : COLOR_EMPTY
+}
+
 export function fillForBoolean(value: boolean): Color {
-    const c = value ? COLOR_FULL : COLOR_EMPTY
+    const c = colorForBoolean(value)
     fill(...c)
     return c
 }
@@ -66,15 +78,6 @@ export function fillForFraction(fraction: number): Color {
 }
 
 export function preload() {
-    gateImages.push(loadImage('simulator/img/LogicInput.svg'))// For testing usage
-    gateImages.push(loadImage('simulator/img/NOT.svg'))
-    gateImages.push(loadImage('simulator/img/AND.svg'))
-    gateImages.push(loadImage('simulator/img/NAND.svg'))
-    gateImages.push(loadImage('simulator/img/OR.svg'))
-    gateImages.push(loadImage('simulator/img/NOR.svg'))
-    gateImages.push(loadImage('simulator/img/XOR.svg'))
-    gateImages.push(loadImage('simulator/img/XNOR.svg'))
-
     ICImages.push(loadImage('simulator/img/SR_Latch.svg')) // For testing usage
     ICImages.push(loadImage('simulator/img/SR_Latch.svg'))
     ICImages.push(loadImage('simulator/img/SR_Latch_Sync.svg'))
@@ -221,6 +224,17 @@ export function draw() {
     strokeWeight(2)
     if (mode >= Mode.CONNECT) {
         rect(0, 0, width, height)
+    }
+
+    if (numMoving > 0) {
+        stroke(240)
+        strokeWeight(1)
+        for (let x = GRID_STEP; x < width; x += GRID_STEP) {
+            line(x, 0, x, height)
+        }
+        for (let y = GRID_STEP; y < height; y += GRID_STEP) {
+            line(0, y, width, y)
+        }
     }
 
     stroke(0)

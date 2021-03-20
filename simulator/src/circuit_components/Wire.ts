@@ -1,6 +1,6 @@
 import { currMouseAction } from "../menutools.js"
 import { MouseAction, InputState, Mode } from "./Enums.js"
-import { colorMouseOver, fileManager, isUndefined, mode } from "../simulator.js"
+import { colorForBoolean, colorMouseOver, fileManager, isUndefined, mode } from "../simulator.js"
 import { Node } from "./Node.js"
 
 export class Wire {
@@ -80,34 +80,32 @@ export class Wire {
 
             const bezierAnchorPointDist = Math.max(25, (this.endNode.posX - this.startNode.posX) / 3)
 
-            //this.endNode.setValue(this.startNode.value);
             this.generateNodeValue()
 
             noFill()
+
+            // just a straight line if nodes are aligned on X or Y
+            const doDraw = (this.startNode.posX === this.endNode.posX || this.startNode.posY === this.endNode.posY)
+                ? () => line(
+                    this.startNode.posX, this.startNode.posY,
+                    this.endNode!.posX, this.endNode!.posY)
+                : () => bezier(
+                    this.startNode.posX, this.startNode.posY,
+                    this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
+                    this.endNode!.posX - bezierAnchorPointDist, this.endNode!.posY,
+                    this.endNode!.posX, this.endNode!.posY)
+
             if (this.isMouseOver()) {
                 strokeWeight(mainStrokeWidth + 2)
                 stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
             } else {
                 stroke(80)
             }
-
-            bezier(this.startNode.posX, this.startNode.posY,
-                this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
-                this.endNode.posX - bezierAnchorPointDist, this.endNode.posY,
-                this.endNode.posX, this.endNode.posY)
+            doDraw()
 
             strokeWeight(mainStrokeWidth - 2)
-
-            if (this.startNode.value && this.endNode.value) {
-                stroke(255, 193, 7)
-            } else {
-                stroke(80)
-            }
-
-            bezier(this.startNode.posX, this.startNode.posY,
-                this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
-                this.endNode.posX - bezierAnchorPointDist, this.endNode.posY,
-                this.endNode.posX, this.endNode.posY)
+            stroke(...colorForBoolean(this.startNode.value && this.endNode.value))
+            doDraw()
 
         } else {
             this.endNode.value = false
