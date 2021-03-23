@@ -1,6 +1,6 @@
 import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, mode, Color, inRect, isDefined, isNotNull } from "../simulator.js"
+import { colorMouseOver, mode, Color, inRect, isNotNull, wireLine } from "../simulator.js"
 import { ComponentBase, ComponentRepr, GRID_STEP, IDGen, pxToGrid } from "./Component.js"
 
 const GRID_WIDTH = 10
@@ -12,6 +12,7 @@ export type BarDisplayType = typeof BarDisplayTypes[number]
 const DEFAULT_BAR_DISPLAY: BarDisplayType = "h"
 
 export interface BarDisplayRepr extends ComponentRepr {
+    type: "bar"
     display: BarDisplayType
 }
 
@@ -31,8 +32,9 @@ export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
 
     toJSON() {
         return {
-            display: this._display,
+            type: "bar" as const,
             ...super.toJSONBase(),
+            display: this._display,
         }
     }
 
@@ -63,14 +65,14 @@ export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
 
         strokeWeight(4)
 
-        const [inputPosX, inputPosY] = input.updatePositionFromParent()
+        input.updatePositionFromParent()
 
         const backColor: Color = (this._value) ? [20, 255, 20] : [80, 80, 80]
         fill(...backColor)
         const [w, h] = this.getWidthAndHeight()
         rect(this.posX - w / 2, this.posY - h / 2, w, h)
 
-        line(this.posX - w / 2, this.posY, inputPosX, inputPosY)
+        wireLine(input, this.posX - w / 2 - 2, this.posY)
         input.draw()
     }
 

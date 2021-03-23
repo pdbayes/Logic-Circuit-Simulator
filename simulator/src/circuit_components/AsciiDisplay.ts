@@ -6,7 +6,8 @@ import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-interface AsciiDisplayRepr extends ComponentRepr {
+export interface AsciiDisplayRepr extends ComponentRepr {
+    type: "ascii"
     name: string | undefined
 }
 
@@ -24,8 +25,9 @@ export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
 
     toJSON() {
         return {
-            name: this.name,
+            type: "ascii" as const,
             ...this.toJSONBase(),
+            name: this.name,
         }
     }
 
@@ -103,7 +105,7 @@ export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
         } else {
             textSize(18)
             textStyle(BOLD)
-            text("'" + String.fromCharCode(this._value) + "'", this.posX, this.posY)
+            text("‘" + String.fromCharCode(this._value) + "’", this.posX, this.posY)
         }
     }
 
@@ -121,5 +123,9 @@ export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
         }
 
         return didIt || this.isMouseOver()
+    }
+
+    doubleClicked() {
+        // nothing to toggle
     }
 }

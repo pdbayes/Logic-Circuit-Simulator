@@ -3,18 +3,14 @@
 
 ## High priority
 
- * Refactor componen hierarachy, in-memory list and JSON repr
  * Unify click-and-drag also from left buttons instead of click-and-move
  * Optimize draw calls
- * Extract common stuff into Component superclass
- * Align input and output nodes on grid
  * ...
 
 
 ## Medium priority
 
  * Change cursor depending on possible interaction
- * Make 'esc' cancel item placement (wire or component)
  * ...
 
 
@@ -22,3 +18,12 @@
 
  * Insert midpoints for wires to route them better
  * ...
+
+
+### DONE
+
+ * Refactor component hierarachy, in-memory list and JSON repr
+ * Extract common stuff into Component superclass
+ * Align input and output nodes on grid
+ * Connect components with Shift key for overlapping nodes
+ * Make 'esc' cancel item placement (wire or component)

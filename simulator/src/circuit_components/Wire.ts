@@ -1,7 +1,7 @@
 import { currMouseAction } from "../menutools.js"
-import { MouseAction, InputState, Mode } from "./Enums.js"
+import { MouseAction, Mode } from "./Enums.js"
 import { colorForBoolean, colorMouseOver, mode, wireLine } from "../simulator.js"
-import { Node } from "./Node.js"
+import { Node, ConnectionState } from "./Node.js"
 
 const WIRE_WIDTH = 8
 
@@ -36,12 +36,12 @@ export class Wire {
             const tempNode = this.startNode
             this._startNode = endNode
             this.startID = endNode.id
-            tempNode.inputState = InputState.TAKEN
+            tempNode.connectionState = ConnectionState.TAKEN
             this.endID = tempNode.id
             this._endNode = tempNode
         } else {
-            this.startNode.inputState = InputState.TAKEN
-            endNode.inputState = InputState.TAKEN
+            this.startNode.connectionState = ConnectionState.TAKEN
+            endNode.connectionState = ConnectionState.TAKEN
             this.endID = endNode.id
             this._endNode = endNode
         }
@@ -52,10 +52,10 @@ export class Wire {
      * Delete the wire and free start node and end node
      */
     destroy() {
-        this.startNode.inputState = InputState.FREE
+        this.startNode.connectionState = ConnectionState.FREE
         if (this.endNode) {
             this.endNode.value = false
-            this.endNode.inputState = InputState.FREE
+            this.endNode.connectionState = ConnectionState.FREE
         }
     }
 
@@ -150,14 +150,14 @@ export class Wire {
 export class WireManager {
 
     public wires: Wire[] = []
-    private isOpened = false
+    private _isOpened = false
 
     draw() {
         for (let i = 0; i < this.wires.length; i++) {
             const result = this.wires[i].draw()
             if (!result) {
                 // wire is not valid, destroy
-                this.isOpened = false
+                this._isOpened = false
                 this.wires[i].destroy()
                 delete this.wires[i]
                 this.wires.splice(i, 1)
@@ -165,27 +165,42 @@ export class WireManager {
         }
     }
 
-    addNode(node: Node) {
+    addNode(newNode: Node) {
         const canvasSim = document.getElementById("canvas-sim")!
-        if (!this.isOpened) {
+        if (!this._isOpened) {
             // start drawing a new wire
-            this.wires.push(new Wire(node))
-            this.isOpened = true
+            this.wires.push(new Wire(newNode))
+            this._isOpened = true
             canvasSim.style.cursor = "crosshair"
 
         } else {
             // complete the new wire
             const currentWireIndex = this.wires.length - 1
             const currentWire = this.wires[currentWireIndex]
-            if (node !== currentWire.startNode &&
-                currentWire.startNode.isOutput !== node.isOutput) {
-                currentWire.endNode = node
-            } else {
+            let created = false
+            if (newNode !== currentWire.startNode) {
+                if (currentWire.startNode.isOutput !== newNode.isOutput) {
+                    // normal, create
+                    currentWire.endNode = newNode
+                    created = true
+                } else if (newNode.connectionState === ConnectionState.TAKEN) {
+                    // try connect to other end of new node
+                    for (const wire of this.wires) {
+                        if (wire.endNode === newNode) {
+                            currentWire.endNode = wire.startNode
+                            created = true
+                            break
+                        }
+                    }
+                }
+            }
+
+            if (!created) {
                 delete this.wires[currentWireIndex]
                 this.wires.length--
             }
 
-            this.isOpened = false
+            this._isOpened = false
             canvasSim.style.cursor = "default"
         }
     }
@@ -202,4 +217,12 @@ export class WireManager {
             }
         }
     }
+
+    tryCancelWire() {
+        if (this._isOpened) {
+            // adding the start node as end node to trigger deletion
+            this.addNode(this.wires[this.wires.length - 1].startNode)
+        }
+    }
+
 }

@@ -1,7 +1,7 @@
 import { backToEdit, currMouseAction } from "../menutools.js"
-import { isCmdDown, isDefined, isNotNull, isUndefined, mode, NodeArrayOfLength, startedMoving, stoppedMoving } from "../simulator.js"
+import { isCmdDown, isDefined, isNotNull, isUndefined, mode, NodeArrayOfLength, startedMoving, stoppedMoving, wireMng } from "../simulator.js"
 import { Mode, MouseAction } from "./Enums.js"
-import { Node } from "./Node.js"
+import { ConnectionState, Node } from "./Node.js"
 
 export const GRID_STEP = 10
 
@@ -94,6 +94,29 @@ export function findNode(nodeID: number): Node | undefined {
     return allLiveNodes[nodeID]
 }
 
+export function tryConnectNodes() {
+    let exitOnNextComponent = false
+    for (const node of allLiveNodes) {
+        if (node.acceptsMoreConnections) {
+            const component = node.parent
+            if (component.state === ComponentState.SPAWNING || component.isMoving) {
+                exitOnNextComponent = true
+                const nodeX = node.posX
+                const nodeY = node.posY
+                for (const other of allLiveNodes) {
+                    if (other !== node && other.posX === nodeX && other.posY === nodeY && other.acceptsMoreConnections) {
+                        wireMng.addNode(node)
+                        wireMng.addNode(other)
+                        return
+                    }
+                }
+            } else if (exitOnNextComponent) {
+                return
+            }
+        }
+    }
+}
+
 const nodeIDManager = (() => {
     let nextNodeId = 0
     return {
@@ -159,6 +182,14 @@ export abstract class ComponentBase<
 
     private get allNodes(): Node[] {
         return [...this.inputs, ...this.outputs]
+    }
+
+    public get state() {
+        return this._state
+    }
+
+    public get isMoving() {
+        return isDefined(this._isMovingWithMouseOffset)
     }
 
     protected updatePositionIfNeeded(): undefined | [number, number] {

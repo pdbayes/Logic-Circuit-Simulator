@@ -1,23 +1,32 @@
-import { InputState, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { wireMng, mode, fillForBoolean } from "../simulator.js"
-import { addLiveNode, GRID_STEP, HasPosition, PositionSupport, removeLiveNode } from "./Component.js"
+import { addLiveNode, ComponentState, GRID_STEP, HasPosition, PositionSupport, removeLiveNode } from "./Component.js"
 
+
+export enum ConnectionState {
+    FREE,
+    TAKEN,
+}
 
 const DIAMETER = 8
 const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertically if aligned on grid
 
+// This should just be Component, but it then has some cyclic 
+// type definition issue which causes problems
+type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState }
+
 export class Node extends PositionSupport {
 
-    private _inputState: number = InputState.FREE // only once input per node
-    private _isAlive = true // not destroyed
+    private _connectionState = ConnectionState.FREE
+    private _isAlive = true
+    private _value = false
 
     constructor(
         public readonly id: number,
-        private _parent: HasPosition,
+        public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
-        private _isOutput = false,
-        private _value = false
+        public readonly isOutput = false,
     ) {
         super(null)
         addLiveNode(this)
@@ -47,16 +56,12 @@ export class Node extends PositionSupport {
         return this._isAlive
     }
 
-    public get isOutput() {
-        return this._isOutput
+    public get connectionState() {
+        return this._connectionState
     }
 
-    public get inputState() {
-        return this._inputState
-    }
-
-    public set inputState(state: number) {
-        this._inputState = state
+    public set connectionState(state: number) {
+        this._connectionState = state
     }
 
     public get value(): boolean {
@@ -85,10 +90,14 @@ export class Node extends PositionSupport {
         this.updatePositionFromParent()
     }
 
+    public get acceptsMoreConnections() {
+        return this.isOutput || this.connectionState === ConnectionState.FREE
+    }
+
     updatePositionFromParent() {
         return this.setPosition(
-            this._parent.posX + this._gridOffsetX * GRID_STEP,
-            this._parent.posY + this._gridOffsetY * GRID_STEP,
+            this.parent.posX + this._gridOffsetX * GRID_STEP,
+            this.parent.posY + this._gridOffsetY * GRID_STEP,
             false,
         ) ?? [this.posX, this.posY]
     }
@@ -98,7 +107,7 @@ export class Node extends PositionSupport {
     }
 
     mouseClicked() {
-        if (this.isMouseOver() && (this.inputState === InputState.FREE || this.isOutput)) {
+        if (this.isMouseOver() && this.acceptsMoreConnections) {
             wireMng.addNode(this)
             return true
         }

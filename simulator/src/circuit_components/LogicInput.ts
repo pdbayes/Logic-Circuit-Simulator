@@ -23,9 +23,9 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
 
     toJSONBase() {
         return {
+            ...super.toJSONBase(),
             name: this.name,
             val: this.value ? 1 : 0,
-            ...super.toJSONBase(),
         }
     }
 

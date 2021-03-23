@@ -7,19 +7,19 @@ const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
-interface FourBitDisplayRepr extends ComponentRepr {
+export interface NibbleDisplayRepr extends ComponentRepr {
+    type: "nibble"
     name: string | undefined
     radix: number | undefined
 }
 
-
-export class FourBitDisplay extends ComponentBase<4, 0, FourBitDisplayRepr> {
+export class NibbleDisplay extends ComponentBase<4, 0, NibbleDisplayRepr> {
 
     private _value = 0
     private readonly name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
 
-    public constructor(savedData: FourBitDisplayRepr | null) {
+    public constructor(savedData: NibbleDisplayRepr | null) {
         super(savedData)
         if (isNotNull(savedData)) {
             this.name = savedData.name
@@ -29,9 +29,10 @@ export class FourBitDisplay extends ComponentBase<4, 0, FourBitDisplayRepr> {
 
     toJSON() {
         return {
+            type: "nibble" as const,
+            ...this.toJSONBase(),
             name: this.name,
             radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
-            ...this.toJSONBase(),
         }
     }
 

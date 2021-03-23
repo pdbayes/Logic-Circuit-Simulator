@@ -1,15 +1,12 @@
-import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString, allComponents, isUndefined } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, isNullOrUndefined, isString, allComponents, isUndefined } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
-import { Gate, GateBase, GateFactory } from "./circuit_components/Gate.js"
-import { ICType } from "./circuit_components/Enums.js"
+import { Gate, GateFactory } from "./circuit_components/Gate.js"
 import { stringifySmart } from "./stringifySmart.js"
-import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
-import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { Wire } from "./circuit_components/Wire.js"
-import { BarDisplay } from "./circuit_components/BarDisplay.js"
 import { clearLiveNodes, findNode } from "./circuit_components/Component.js"
+import { Display, DisplayFactory } from "./circuit_components/Display.js"
 
 // let eventHistory = []
 
@@ -76,22 +73,8 @@ export class FileManager {
 
         if ("displays" in parsedContents) {
             for (let i = 0; i < parsedContents.displays.length; i++) {
-                const parsedVals = parsedContents.displays[i] as JsonReprOf<FourBitDisplay>
-                displays.push(new FourBitDisplay(parsedVals))
-            }
-        }
-
-        if ("displaysA" in parsedContents) {
-            for (let i = 0; i < parsedContents.displaysA.length; i++) {
-                const parsedVals = parsedContents.displaysA[i] as JsonReprOf<AsciiDisplay>
-                displaysA.push(new AsciiDisplay(parsedVals))
-            }
-        }
-
-        if ("displaysB" in parsedContents) {
-            for (let i = 0; i < parsedContents.displaysB.length; i++) {
-                const parsedVals = parsedContents.displaysB[i] as JsonReprOf<BarDisplay>
-                displaysB.push(new BarDisplay(parsedVals))
+                const parsedVals = parsedContents.displays[i] as JsonReprOf<Display>
+                displays.push(DisplayFactory.make(parsedVals))
             }
         }
 
@@ -197,8 +180,6 @@ export class FileManager {
         if (logicInputs.length) { workspace["in"] = logicInputs }
         if (logicOutputs.length) { workspace["out"] = logicOutputs }
         if (displays.length) { workspace["displays"] = displays }
-        if (displaysA.length) { workspace["displaysA"] = displaysA }
-        if (displaysB.length) { workspace["displaysB"] = displaysB }
         if (clocks.length) { workspace["clocks"] = clocks }
         if (gates.length) { workspace["gates"] = gates }
         // if (flipflops.length) { workspace["flipflops"] = flipflops }
@@ -207,41 +188,7 @@ export class FileManager {
 
         console.log(workspace)
 
-        const jsonStr = stringifySmart(workspace, {
-            replacer: function (key, value) {
-                // filter out the values of all these keys
-                // TODO: should be done in toJSON() method
-                switch (key) {
-                    case "output":
-                    case "input":
-                    case "nodeSet":
-                    case "nodeReset":
-                    case "nodeClock":
-                    case "nodeD":
-                    case "nodeT":
-                    case "nodeJ":
-                    case "nodeK":
-                    case "nodeQ":
-                    case "nodeNotQ":
-                    case "andGate_NotQ":
-                    case "andGate_Q":
-                    case "ff_D":
-                    case "orGate":
-                    case "gateSet":
-                    case "gateReset":
-                    case "asyncLatch":
-                    case "master":
-                    case "slave":
-                    case "srLatchSync":
-                    case "startNode":
-                    case "endNode":
-                        return undefined
-                }
-
-                // other things which is not possible to export on JSON
-                return value
-            },
-        })
+        const jsonStr = stringifySmart(workspace)
 
         console.log(jsonStr)
 

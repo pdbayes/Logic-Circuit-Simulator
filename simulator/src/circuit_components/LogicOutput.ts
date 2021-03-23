@@ -21,8 +21,8 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
 
     toJSON() {
         return {
-            name: this.name,
             ...this.toJSONBase(),
+            name: this.name,
         }
     }
 

@@ -1,8 +1,31 @@
 import { any, inRect, wireLine } from "../simulator.js"
-import { GateType, Gate2Type, Mode, Gate2Types } from "./Enums.js"
+import { Mode, RichStringEnum } from "./Enums.js"
 import { Node } from "./Node.js"
 import { colorMouseOver, mode } from "../simulator.js"
 import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
+
+export const Gate2Types = RichStringEnum.withProps<
+    (in1: boolean, in2: boolean) => boolean
+>()({
+    AND: (in1: boolean, in2: boolean) => in1 && in2,
+    OR: (in1: boolean, in2: boolean) => in1 || in2,
+    XOR: (in1: boolean, in2: boolean) => in1 !== in2,
+    NAND: (in1: boolean, in2: boolean) => !(in1 && in2),
+    NOR: (in1: boolean, in2: boolean) => !(in1 && in2),
+    XNOR: (in1: boolean, in2: boolean) => in1 === in2,
+})
+
+export const GateTypeNot = "NOT"
+
+export type Gate2Type = typeof Gate2Types.type
+
+export type GateType = Gate2Type | typeof GateTypeNot
+export const GateTypes = {
+    isValue: (str: string): str is GateType => {
+        return str === GateTypeNot || Gate2Types.isValue(str)
+    },
+}
+
 
 interface GateMandatoryParams {
     type: GateType

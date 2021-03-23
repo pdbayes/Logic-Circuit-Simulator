@@ -22,9 +22,9 @@ export class Clock extends LogicInputBase<ClockRepr> {
 
     toJSON() {
         return {
+            ...this.toJSONBase(),
             period: this.period,
             dutycycle: this.dutycycle,
-            ...this.toJSONBase(),
         }
     }
 

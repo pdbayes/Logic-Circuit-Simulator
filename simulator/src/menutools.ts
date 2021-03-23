@@ -1,10 +1,10 @@
 import { Clock } from "./circuit_components/Clock.js"
-import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, displaysA, displaysB, isNullOrUndefined } from "./simulator.js"
-import { GateFactory } from "./circuit_components/Gate.js"
+import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, isNullOrUndefined } from "./simulator.js"
+import { GateFactory, GateTypes } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
-import { GateTypes, MouseAction } from "./circuit_components/Enums.js"
-import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
+import { MouseAction } from "./circuit_components/Enums.js"
+import { NibbleDisplay } from "./circuit_components/NibbleDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { BarDisplay } from "./circuit_components/BarDisplay.js"
 
@@ -55,16 +55,16 @@ export function activeTool(elTool: HTMLElement) {
             logicOutputs.push(new LogicOutput(null))
             break
 
-        case "FourBitDisplay":
-            displays.push(new FourBitDisplay(null))
+        case "NibbleDisplay":
+            displays.push(new NibbleDisplay(null))
             break
 
         case "AsciiDisplay":
-            displaysA.push(new AsciiDisplay(null))
+            displays.push(new AsciiDisplay(null))
             break
 
         case "BarDisplay":
-            displaysB.push(new BarDisplay(null))
+            displays.push(new BarDisplay(null))
             break
 
         case "Clock": {

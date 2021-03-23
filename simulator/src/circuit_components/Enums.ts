@@ -67,28 +67,6 @@ export class RichStringEnum<K extends keyof any, P> {
 
 }
 
-export const Gate2Types = RichStringEnum.withProps<
-    (in1: boolean, in2: boolean) => boolean
->()({
-    AND: (in1: boolean, in2: boolean) => in1 && in2,
-    OR: (in1: boolean, in2: boolean) => in1 || in2,
-    XOR: (in1: boolean, in2: boolean) => in1 !== in2,
-    NAND: (in1: boolean, in2: boolean) => !(in1 && in2),
-    NOR: (in1: boolean, in2: boolean) => !(in1 && in2),
-    XNOR: (in1: boolean, in2: boolean) => in1 === in2,
-})
-
-export const GateTypeNot = "NOT"
-
-export type Gate2Type = typeof Gate2Types.type
-
-export type GateType = Gate2Type | typeof GateTypeNot
-export const GateTypes = {
-    isValue: (str: string): str is GateType => {
-        return str === GateTypeNot || Gate2Types.isValue(str)
-    },
-}
-
 export enum Mode {
     STATIC,
     TRYOUT,
@@ -101,9 +79,6 @@ export enum MouseAction {
     MOVE,
     DELETE,
 }
-
-
-
 
 export enum ICType {
     SR_LATCH_ASYNC,
@@ -126,7 +101,3 @@ export enum SyncType {
     SYNC,
 }
 
-export enum InputState {
-    FREE,
-    TAKEN,
-}

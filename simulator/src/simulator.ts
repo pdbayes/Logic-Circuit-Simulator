@@ -9,11 +9,9 @@ import { Gate } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
-import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
-import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
-import { BarDisplay } from "./circuit_components/BarDisplay.js"
 import { Node } from "./circuit_components/Node.js"
-import { Component, GRID_STEP } from "./circuit_components/Component.js"
+import { Component, ComponentState, GRID_STEP, tryConnectNodes } from "./circuit_components/Component.js"
+import { Display } from "./circuit_components/Display.js"
 
 export type Color = [number, number, number]
 // export type FF = FF_D | FF_JK | FF_T
@@ -23,15 +21,13 @@ export const ICImages: p5.Image[] = [] // integrated circuits images
 export const gates: Gate[] = []
 export const logicInputs: LogicInput[] = []
 export const logicOutputs: LogicOutput[] = []
-export const displays: FourBitDisplay[] = []
-export const displaysA: AsciiDisplay[] = []
-export const displaysB: BarDisplay[] = []
+export const displays: Display[] = []
 export const clocks: Clock[] = []
 // export const srLatches: SR_Latch[] = []
 // export const flipflops: FF[] = []
 
-export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, displaysB, clocks/*, srLatches, flipflops*/]
-export const allComponentsWithDoubleClick = [logicInputs, displays, displaysB]
+export const allComponents = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
+export const allComponentsWithDoubleClick = [logicInputs, displays]
 export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
@@ -77,7 +73,7 @@ export function fillForFraction(fraction: number): Color {
 export function wireLine(node: Node, x1: number, y1: number) {
     const x0 = node.posX
     const y0 = node.posY
-    
+
     stroke(80)
     strokeWeight(4)
     line(x0, y0, x1, y1)
@@ -295,19 +291,22 @@ export function mouseClicked() {
         }
 
     } else if (currMouseAction === MouseAction.DELETE) {
-        for (const elems of allComponents) {
-            for (let i = 0; i < elems.length; i++) {
-                const elem = elems[i]
-                if (elem.mouseClicked()) {
-                    elem.destroy()
-                    delete elems[i]
-                    elems.splice(i, 1)
-                }
-            }
-        }
+        tryDeleteComponentsWhere(comp => comp.mouseClicked())
     }
 
     wireMng.mouseClicked()
+}
+
+export function keyUp(e: KeyboardEvent) {
+    switch (e.key) {
+        case "Shift":
+            return tryConnectNodes()
+
+        case "Escape":
+            tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
+            wireMng.tryCancelWire()
+            return
+    }
 }
 
 
@@ -320,6 +319,8 @@ window.mouseReleased = mouseReleased
 window.doubleClicked = doubleClicked
 window.mouseClicked = mouseClicked
 
+window.addEventListener("keyup", keyUp)
+
 window.activeTool = activeTool
 
 const projectFile = document.getElementById("projectFile")
@@ -330,6 +331,19 @@ if (projectFile) {
 export const saveProjectFile = document.getElementById("saveProjectFile") as HTMLAnchorElement | null
 if (saveProjectFile) {
     saveProjectFile.addEventListener("click", () => fileManager.saveFile(), false)
+}
+
+function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
+    for (const elems of allComponents) {
+        for (let i = 0; i < elems.length; i++) {
+            const elem = elems[i]
+            if (cond(elem)) {
+                elem.destroy()
+                delete elems[i]
+                elems.splice(i, 1)
+            }
+        }
+    }
 }
 
 export function saveFile() {
