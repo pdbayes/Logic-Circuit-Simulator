@@ -1,96 +1,63 @@
-import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForBoolean, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component } from "./Component.js"
+import { colorMouseOver, fillForBoolean, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, IDGen, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-export class LogicOutput extends Component {
+interface LogicOutputRepr extends ComponentRepr {
+    name: string | undefined
+}
+
+export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
 
     private _value = false
-    private name = ""
-    private diameter = 25
-    private isSpawned = false
-    private isMoving = false
-    private offsetMouseX = 0
-    private offsetMouseY = 0
-    private input: Node | undefined = new Node(this, -3, 0)
-    private nodeStartID = this.input!.id
-    private isSaved = false
+    private readonly name: string | undefined = undefined
 
-    public constructor() {
-        super()
-    }
-
-    static from(id: number, pos: readonly [number, number], name: string | undefined): LogicOutput {
-        const newObj = new LogicOutput()
-        newObj.updatePosition(pos[0], pos[1], false)
-        newObj.isSpawned = true
-        newObj.isSaved = true
-        newObj.nodeStartID = id
-        if (!isUndefined(name)) {
-            newObj.name = name
+    public constructor(savedData: LogicOutputRepr | null) {
+        super(savedData)
+        if (isNotNull(savedData)) {
+            this.name = savedData.name
         }
-        newObj.refreshNodes()
-        return newObj
     }
 
     toJSON() {
         return {
-            name: (this.name) ? this.name : undefined,
-            id: this.nodeStartID,
-            pos: [this.posX, this.posY] as const,
+            name: this.name,
+            ...this.toJSONBase(),
         }
+    }
+
+    protected makeNodes(genID: IDGen) {
+        return [[new Node(genID(), this, -3, 0)], []] as const
     }
 
     public get value(): boolean {
         return this._value
     }
 
-    destroy() {
-        if (this.input) {
-            this.input.destroy()
-            delete this.input
-        }
-    }
-
     draw() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-        } else if (!this.isSaved) {
-            fileManager.saveState()
-            this.isSaved = true
-        }
+        this.updatePositionIfNeeded()
 
-        if (this.isMoving) {
-            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
-        }
-
-        if (this.input) {
-            this.input.updatePositionFromParent()
-            this._value = this.input.value
-        }
-
-        fillForBoolean(this.value)
+        const input = this.inputs[0]
+        this._value = input.value
+        wireLine(input, this.posX, this.posY)
 
         if (this.isMouseOver()) {
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
         } else {
             stroke(0)
         }
-
-
+        fillForBoolean(this.value)
         strokeWeight(4)
-        line(this.posX, this.posY, this.posX - 30, this.posY)
-        circle(this.posX, this.posY, this.diameter)
+        circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
 
-        this.input?.draw()
+        input.draw()
 
         noStroke()
         fill(0)
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
-        if (this.name) {
+        if (isDefined(this.name)) {
             text(this.name, this.posX + 21, this.posY)
         }
 
@@ -107,43 +74,15 @@ export class LogicOutput extends Component {
         }
     }
 
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        if (this.input) {
-            this.input.id = currentID++
-        }
-    }
-
     isMouseOver() {
-        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2) { return true }
+        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2) { return true }
         return false
     }
 
-    mousePressed() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-            this.isSpawned = true
-            backToEdit()
-            return
-        }
-
-        if (this.isMouseOver() || currMouseAction === MouseAction.MOVE) {
-            this.isMoving = true
-            this.offsetMouseX = this.posX - mouseX
-            this.offsetMouseY = this.posY - mouseY
-        }
-    }
-
-    mouseReleased() {
-        if (this.isMoving) {
-            this.isMoving = false
-        }
-
-    }
-
     mouseClicked() {
-        if (this.isMouseOver() || (this.input?.isMouseOver() ?? false)) {
-            this.input?.mouseClicked()
+        const input = this.inputs[0]
+        if (this.isMouseOver() || input.isMouseOver()) {
+            input.mouseClicked()
             return true
         }
         return false

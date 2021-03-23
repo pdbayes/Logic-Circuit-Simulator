@@ -1,83 +1,58 @@
-import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForFraction, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component, GRID_STEP } from "./Component.js"
+import { colorMouseOver, fillForFraction, inRect, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
-export class FourBitDisplay extends Component {
+interface FourBitDisplayRepr extends ComponentRepr {
+    name: string | undefined
+    radix: number | undefined
+}
+
+
+export class FourBitDisplay extends ComponentBase<4, 0, FourBitDisplayRepr> {
 
     private _value = 0
-    private name = ""
-    private radix = DEFAULT_RADIX
-    private isSpawned = false
-    private isMoving = false
-    private offsetMouseX = 0
-    private offsetMouseY = 0
-    private inputs: [Node, Node, Node, Node] = [
-        new Node(this, -3, -3),
-        new Node(this, -3, -1),
-        new Node(this, -3, +1),
-        new Node(this, -3, +3),
-    ]
-    private nodeStartID = this.inputs[0].id
-    private isSaved = false
+    private readonly name: string | undefined = undefined
+    private _radix = DEFAULT_RADIX
 
-    public constructor() {
-        super()
-    }
-
-    static from(id: number, pos: readonly [number, number], radix: number | undefined, name: string | undefined): FourBitDisplay {
-        const newObj = new FourBitDisplay()
-        newObj.updatePosition(pos[0], pos[1], false)
-        newObj.radix = radix ?? DEFAULT_RADIX
-        newObj.isSpawned = true
-        newObj.isSaved = true
-        newObj.nodeStartID = id
-        newObj.refreshNodes()
-        if (!isUndefined(name)) {
-            newObj.name = name
+    public constructor(savedData: FourBitDisplayRepr | null) {
+        super(savedData)
+        if (isNotNull(savedData)) {
+            this.name = savedData.name
+            this._radix = savedData.radix ?? DEFAULT_RADIX
         }
-        return newObj
     }
 
     toJSON() {
         return {
-            name: (this.name) ? this.name : undefined,
-            id: this.nodeStartID,
-            pos: [this.posX, this.posY] as const,
-            radix: this.radix === DEFAULT_RADIX ? undefined : this.radix,
+            name: this.name,
+            radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
+            ...this.toJSONBase(),
         }
+    }
+
+    protected makeNodes(genID: IDGen) {
+        return [[
+            new Node(genID(), this, -3, -3),
+            new Node(genID(), this, -3, -1),
+            new Node(genID(), this, -3, +1),
+            new Node(genID(), this, -3, +3),
+        ], []] as const
     }
 
     public get value() {
         return this._value
     }
 
-    destroy() {
-        for (const input of this.inputs) {
-            input.destroy()
-        }
-    }
-
     draw() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-        } else if (!this.isSaved) {
-            fileManager.saveState()
-            this.isSaved = true
-        }
-
-        if (this.isMoving) {
-            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
-        }
+        this.updatePositionIfNeeded()
 
         let binaryStringRep = ""
         for (const input of this.inputs) {
-            input.updatePositionFromParent()
             binaryStringRep = +input.value + binaryStringRep
         }
         this._value = parseInt(binaryStringRep, 2)
@@ -98,7 +73,7 @@ export class FourBitDisplay extends Component {
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            line(input.posX, input.posY, this.posX - width / 2, input.posY)
+            wireLine(input, this.posX - width / 2 - 2, input.posY)
         }
         for (const input of this.inputs) {
             input.draw()
@@ -109,7 +84,7 @@ export class FourBitDisplay extends Component {
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
-        if (this.name) {
+        if (isDefined(this.name)) {
             text(this.name, this.posX + width / 2 + 5, this.posY)
         }
 
@@ -124,9 +99,9 @@ export class FourBitDisplay extends Component {
         textSize(18)
         textStyle(BOLD)
 
-        const caption = this.value.toString(this.radix).toUpperCase()
+        const caption = this.value.toString(this._radix).toUpperCase()
         const prefix = (() => {
-            switch (this.radix) {
+            switch (this._radix) {
                 case 16: return "0x"
                 case 8: return "0o"
                 case 2: return "0b"
@@ -136,36 +111,8 @@ export class FourBitDisplay extends Component {
         text(prefix + caption, this.posX, this.posY + width / 6)
     }
 
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        for (const input of this.inputs) {
-            input.id = currentID++
-        }
-    }
-
     isMouseOver() {
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
-    }
-
-    mousePressed() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-            this.isSpawned = true
-            backToEdit()
-            return
-        }
-
-        if (this.isMouseOver() || currMouseAction === MouseAction.MOVE) {
-            this.isMoving = true
-            this.offsetMouseX = this.posX - mouseX
-            this.offsetMouseY = this.posY - mouseY
-        }
-    }
-
-    mouseReleased() {
-        if (this.isMoving) {
-            this.isMoving = false
-        }
     }
 
     mouseClicked() {
@@ -182,7 +129,7 @@ export class FourBitDisplay extends Component {
 
     doubleClicked() {
         if (this.isMouseOver()) {
-            this.radix = this.radix === 10 ? 16 : 10
+            this._radix = this._radix === 10 ? 16 : 10
         }
     }
 

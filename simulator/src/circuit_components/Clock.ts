@@ -1,26 +1,43 @@
-import { LogicInput } from "./LogicInput.js"
+import { LogicInput, LogicInputBase, LogicInputRepr } from "./LogicInput.js"
 
-export class Clock extends LogicInput {
+interface ClockMandatoryParams {
+    period: number
+    dutycycle: number
+}
 
-    private truePeriod: number
-    private falsePeriod: number
-    private strInfo: string
-    private lastTick = new Date().getTime()
+interface ClockRepr extends LogicInputRepr, ClockMandatoryParams {
+}
 
-    constructor(period: number, dutycycle: number) {
-        super()
-        this.truePeriod = period * dutycycle / 100
-        this.falsePeriod = period * (100 - dutycycle) / 100
-        this.strInfo = "CLOCK \nT = " + period + " ms\nD% = " + dutycycle
+export class Clock extends LogicInputBase<ClockRepr> {
+
+    private readonly period: number
+    private readonly dutycycle: number
+    private _lastTick = new Date().getTime()
+
+    constructor(savedData: ClockRepr | ClockMandatoryParams) {
+        super("id" in savedData ? savedData : null)
+        this.period = savedData.period
+        this.dutycycle = savedData.dutycycle
+    }
+
+    toJSON() {
+        return {
+            period: this.period,
+            dutycycle: this.dutycycle,
+            ...this.toJSONBase(),
+        }
     }
 
     draw() {
         const currTick = new Date().getTime()
+        const currentStateDuration =
+            this.period * (
+                (this.value) ? this.dutycycle : (100 - this.dutycycle)
+            ) / 100
 
-        const period = (this.value) ? this.truePeriod : this.falsePeriod
-        if (currTick - this.lastTick > period) {
-            this.toggle()
-            this.lastTick = currTick
+        if (currTick - this._lastTick > currentStateDuration) {
+            this.toggleValue()
+            this._lastTick = currTick
         }
 
         super.draw()
@@ -31,6 +48,6 @@ export class Clock extends LogicInput {
         fill(0)
         textSize(12)
         textStyle(NORMAL)
-        text(this.strInfo, this.posX - 20, this.posY + 25)
+        text("CLOCK \nT = " + this.period + " ms\nD% = " + this.dutycycle, this.posX - 20, this.posY + 25)
     }
 }

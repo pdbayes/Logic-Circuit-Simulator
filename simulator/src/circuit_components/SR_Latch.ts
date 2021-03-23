@@ -1,235 +1,235 @@
-import { Gate } from "./Gate.js"
-import { ICType, GateType } from "./Enums.js"
-import { Integrated } from "./Integrated.js"
-import { Node } from "./Node.js"
-import { any } from "../simulator.js"
-import { GRID_STEP } from "./Component.js"
+// import { GateBase } from "./Gate.js"
+// import { ICType, GateType } from "./Enums.js"
+// import { Integrated } from "./Integrated.js"
+// import { Node } from "./Node.js"
+// import { any } from "../simulator.js"
+// import { GRID_STEP } from "./Component.js"
 
-export abstract class SR_Latch extends Integrated {
+// export abstract class SR_Latch extends Integrated {
 
-    public nodeSet = new Node(this, +5, +3)
-    public nodeReset = new Node(this, +5, +this.height / GRID_STEP - 3)
-    public nodeQ = new Node(this, +this.width - 5, +3, true)
-    public nodeNotQ = new Node(this, +this.width + 5, +this.height / GRID_STEP - 3, true)
-    public nodeStartID = this.nodeSet.id
+//     public nodeSet = new Node(this, +5, +3)
+//     public nodeReset = new Node(this, +5, +this.height / GRID_STEP - 3)
+//     public nodeQ = new Node(this, +this.width - 5, +3, true)
+//     public nodeNotQ = new Node(this, +this.width + 5, +this.height / GRID_STEP - 3, true)
+//     public nodeStartID = this.nodeSet.id
 
-    constructor(type: ICType) {
-        super(type)
-    }
+//     constructor(type: ICType) {
+//         super(type)
+//     }
 
-    destroy() {
-        this.nodeSet.destroy()
-        this.nodeReset.destroy()
-        this.nodeQ.destroy()
-        this.nodeNotQ.destroy()
-    }
+//     destroy() {
+//         this.nodeSet.destroy()
+//         this.nodeReset.destroy()
+//         this.nodeQ.destroy()
+//         this.nodeNotQ.destroy()
+//     }
 
-    draw() {
-        super.draw()
-        this.generateOutput()
+//     draw() {
+//         super.draw()
+//         this.generateOutput()
 
-        this.nodeSet.updatePositionFromParent()
-        this.nodeReset.updatePositionFromParent()
-        this.nodeQ.updatePositionFromParent()
-        this.nodeNotQ.updatePositionFromParent()
+//         this.nodeSet.updatePositionFromParent()
+//         this.nodeReset.updatePositionFromParent()
+//         this.nodeQ.updatePositionFromParent()
+//         this.nodeNotQ.updatePositionFromParent()
 
-        this.nodeSet.draw()
-        this.nodeReset.draw()
-        this.nodeQ.draw()
-        this.nodeNotQ.draw()
-    }
+//         this.nodeSet.draw()
+//         this.nodeReset.draw()
+//         this.nodeQ.draw()
+//         this.nodeNotQ.draw()
+//     }
 
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        this.nodeSet.id = currentID++
-        this.nodeReset.id = currentID++
-        this.nodeQ.id = currentID++
-        this.nodeNotQ.id = currentID++
-    }
+//     refreshNodes() {
+//         let currentID = this.nodeStartID
+//         this.nodeSet.id = currentID++
+//         this.nodeReset.id = currentID++
+//         this.nodeQ.id = currentID++
+//         this.nodeNotQ.id = currentID++
+//     }
 
-    abstract generateOutput(): void
+//     abstract generateOutput(): void
 
-    mouseClicked(): boolean {
-        return any([
-            this.isMouseOver(),
-            this.nodeSet.mouseClicked(),
-            this.nodeReset.mouseClicked(),
-            this.nodeQ.mouseClicked(),
-            this.nodeNotQ.mouseClicked(),
-        ])
-    }
+//     mouseClicked(): boolean {
+//         return any([
+//             this.isMouseOver(),
+//             this.nodeSet.mouseClicked(),
+//             this.nodeReset.mouseClicked(),
+//             this.nodeQ.mouseClicked(),
+//             this.nodeNotQ.mouseClicked(),
+//         ])
+//     }
 
-    static convertToType(str: string): GateType {
-        switch (str) {
-            case "NAND":
-                return GateType.NAND
+//     static convertToType(str: string): GateType {
+//         switch (str) {
+//             case "NAND":
+//                 return GateType.NAND
 
-            case "NOR":
-                return GateType.NOR
-        }
-
-
-        return GateType.NAND
-    }
-}
-
-export class SR_LatchAsync extends SR_Latch {
-
-    public gateSet: Gate | null
-    public gateReset: Gate | null
-
-    constructor(
-        public gateType: GateType,
-        public stabilize: boolean
-    ) {
-        super(ICType.SR_LATCH_ASYNC)
-
-        switch (this.gateType) {
-            case GateType.NAND:
-                this.gateSet = new Gate("NAND")
-                this.gateReset = new Gate("NAND")
-                break
-
-            case GateType.NOR:
-                this.gateSet = new Gate("NOR")
-                this.gateReset = new Gate("NOR")
-                break
-
-            default:
-                this.gateSet = null
-                this.gateReset = null
-                console.log("Gate not supported for this IC " + GateType)
-                return
-        }
+//             case "NOR":
+//                 return GateType.NOR
+//         }
 
 
-        if (stabilize) {
-            // reset
-            this.gateReset.input0 = true
-            this.gateSet.generateOutput()
-            this.gateReset.generateOutput()
-        }
-    }
+//         return GateType.NAND
+//     }
+// }
 
-    destroy() {
-        super.destroy()
-        this.gateReset?.destroy()
-        this.gateSet?.destroy()
-    }
+// export class SR_LatchAsync extends SR_Latch {
 
-    generateOutput() {
-        if (!this.gateReset || !this.gateSet) {
-            return
-        }
+//     public gateSet: GateBase | null
+//     public gateReset: GateBase | null
 
-        this.gateSet.input0 = this.nodeSet.value
-        this.gateSet.input1 = this.gateReset.outputValue
+//     constructor(
+//         public gateType: GateType,
+//         public stabilize: boolean
+//     ) {
+//         super(ICType.SR_LATCH_ASYNC)
 
-        this.gateReset.input0 = this.nodeReset.value
-        this.gateReset.input1 = this.gateSet.outputValue
+//         switch (this.gateType) {
+//             case GateType.NAND:
+//                 this.gateSet = new GateBase("NAND")
+//                 this.gateReset = new GateBase("NAND")
+//                 break
 
-        this.gateSet.generateOutput()
-        this.gateReset.generateOutput()
+//             case GateType.NOR:
+//                 this.gateSet = new GateBase("NOR")
+//                 this.gateReset = new GateBase("NOR")
+//                 break
 
-        this.nodeQ.value = this.gateReset.outputValue
-        this.nodeNotQ.value = this.gateSet.outputValue
-    }
+//             default:
+//                 this.gateSet = null
+//                 this.gateReset = null
+//                 console.log("Gate not supported for this IC " + GateType)
+//                 return
+//         }
 
-}
 
-export class SR_LatchSync extends SR_Latch {
+//         if (stabilize) {
+//             // reset
+//             this.gateReset.input0 = true
+//             this.gateSet.generateOutput()
+//             this.gateReset.generateOutput()
+//         }
+//     }
 
-    public nodeClock = new Node(this, +this.width - 5, (this.height / 2) / GRID_STEP) // TODO y align on grid
-    public asyncLatch = new SR_LatchAsync(this.gateType, this.stabilize)
-    public gateSet: Gate | null
-    public gateReset: Gate | null
+//     destroy() {
+//         super.destroy()
+//         this.gateReset?.destroy()
+//         this.gateSet?.destroy()
+//     }
 
-    constructor(
-        public gateType: GateType,
-        public stabilize: boolean
-    ) {
-        super(ICType.SR_LATCH_SYNC)
+//     generateOutput() {
+//         if (!this.gateReset || !this.gateSet) {
+//             return
+//         }
 
-        switch (this.gateType) {
-            case GateType.NAND:
-                this.gateSet = new Gate("NAND")
-                this.gateReset = new Gate("NAND")
-                break
+//         this.gateSet.input0 = this.nodeSet.value
+//         this.gateSet.input1 = this.gateReset.outputValue
 
-            case GateType.NOR:
-                this.gateSet = new Gate("AND")
-                this.gateReset = new Gate("AND")
-                break
+//         this.gateReset.input0 = this.nodeReset.value
+//         this.gateReset.input1 = this.gateSet.outputValue
 
-            default:
-                this.gateSet = null
-                this.gateReset = null
-                console.log("Gate not supported for this IC")
-                break
-        }
+//         this.gateSet.generateOutput()
+//         this.gateReset.generateOutput()
 
-        if (stabilize) {
-            // reset
-            this.nodeClock.value = true
-            this.nodeReset.value = true
-            this.generateOutput()
-            this.nodeClock.value = false
-            this.nodeReset.value = false
-        }
-    }
+//         this.nodeQ.value = this.gateReset.outputValue
+//         this.nodeNotQ.value = this.gateSet.outputValue
+//     }
 
-    destroy() {
-        super.destroy()
-        this.nodeClock.destroy()
-        this.gateSet?.destroy()
-        this.gateReset?.destroy()
-        this.asyncLatch.destroy()
-    }
+// }
 
-    draw() {
-        super.draw()
-        this.nodeClock.updatePositionFromParent()
-        this.nodeClock.draw()
-    }
+// export class SR_LatchSync extends SR_Latch {
 
-    refreshNodes() {
-        super.refreshNodes()
-        let currentID = this.nodeStartID + 4
-        this.nodeClock.id = currentID++
-    }
+//     public nodeClock = new Node(this, +this.width - 5, (this.height / 2) / GRID_STEP) // TODO y align on grid
+//     public asyncLatch = new SR_LatchAsync(this.gateType, this.stabilize)
+//     public gateSet: GateBase | null
+//     public gateReset: GateBase | null
 
-    generateOutput() {
-        if (!this.gateSet || !this.gateReset) {
-            return
-        }
+//     constructor(
+//         public gateType: GateType,
+//         public stabilize: boolean
+//     ) {
+//         super(ICType.SR_LATCH_SYNC)
 
-        this.gateSet.input0 = this.nodeSet.value
-        this.gateSet.input1 = this.nodeClock.value
-        this.gateReset.input0 = this.nodeReset.value
-        this.gateReset.input1 = this.nodeClock.value
+//         switch (this.gateType) {
+//             case GateType.NAND:
+//                 this.gateSet = new GateBase("NAND")
+//                 this.gateReset = new GateBase("NAND")
+//                 break
 
-        this.gateSet.generateOutput()
-        this.gateReset.generateOutput()
+//             case GateType.NOR:
+//                 this.gateSet = new GateBase("AND")
+//                 this.gateReset = new GateBase("AND")
+//                 break
 
-        this.asyncLatch.nodeSet.value = this.gateSet.outputValue
-        this.asyncLatch.nodeReset.value = this.gateReset.outputValue
+//             default:
+//                 this.gateSet = null
+//                 this.gateReset = null
+//                 console.log("Gate not supported for this IC")
+//                 break
+//         }
 
-        this.asyncLatch.generateOutput()
+//         if (stabilize) {
+//             // reset
+//             this.nodeClock.value = true
+//             this.nodeReset.value = true
+//             this.generateOutput()
+//             this.nodeClock.value = false
+//             this.nodeReset.value = false
+//         }
+//     }
 
-        if (this.gateType === GateType.NOR) {
-            this.nodeQ.value = this.asyncLatch.nodeQ.value
-            this.nodeNotQ.value = this.asyncLatch.nodeNotQ.value
-        } else {
-            // invert if NAND
-            this.nodeNotQ.value = this.asyncLatch.nodeQ.value
-            this.nodeQ.value = this.asyncLatch.nodeNotQ.value
-        }
-    }
+//     destroy() {
+//         super.destroy()
+//         this.nodeClock.destroy()
+//         this.gateSet?.destroy()
+//         this.gateReset?.destroy()
+//         this.asyncLatch.destroy()
+//     }
 
-    mouseClicked(): boolean {
-        return any([
-            super.mouseClicked(),
-            this.nodeClock.mouseClicked(),
-        ])
-    }
-}
+//     draw() {
+//         super.draw()
+//         this.nodeClock.updatePositionFromParent()
+//         this.nodeClock.draw()
+//     }
+
+//     refreshNodes() {
+//         super.refreshNodes()
+//         let currentID = this.nodeStartID + 4
+//         this.nodeClock.id = currentID++
+//     }
+
+//     generateOutput() {
+//         if (!this.gateSet || !this.gateReset) {
+//             return
+//         }
+
+//         this.gateSet.input0 = this.nodeSet.value
+//         this.gateSet.input1 = this.nodeClock.value
+//         this.gateReset.input0 = this.nodeReset.value
+//         this.gateReset.input1 = this.nodeClock.value
+
+//         this.gateSet.generateOutput()
+//         this.gateReset.generateOutput()
+
+//         this.asyncLatch.nodeSet.value = this.gateSet.outputValue
+//         this.asyncLatch.nodeReset.value = this.gateReset.outputValue
+
+//         this.asyncLatch.generateOutput()
+
+//         if (this.gateType === GateType.NOR) {
+//             this.nodeQ.value = this.asyncLatch.nodeQ.value
+//             this.nodeNotQ.value = this.asyncLatch.nodeNotQ.value
+//         } else {
+//             // invert if NAND
+//             this.nodeNotQ.value = this.asyncLatch.nodeQ.value
+//             this.nodeQ.value = this.asyncLatch.nodeNotQ.value
+//         }
+//     }
+
+//     mouseClicked(): boolean {
+//         return any([
+//             super.mouseClicked(),
+//             this.nodeClock.mouseClicked(),
+//         ])
+//     }
+// }

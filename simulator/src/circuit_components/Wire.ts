@@ -1,14 +1,15 @@
 import { currMouseAction } from "../menutools.js"
 import { MouseAction, InputState, Mode } from "./Enums.js"
-import { colorForBoolean, colorMouseOver, fileManager, isUndefined, mode } from "../simulator.js"
+import { colorForBoolean, colorMouseOver, mode, wireLine } from "../simulator.js"
 import { Node } from "./Node.js"
+
+const WIRE_WIDTH = 8
 
 export class Wire {
 
     private _endNode: Node | null = null
     private startID = this.startNode.id
     private endID: number | null = null
-    private width = 8
 
     constructor(
         private _startNode: Node
@@ -64,7 +65,7 @@ export class Wire {
      */
     draw() {
         stroke(0)
-        const mainStrokeWidth = this.width / 2
+        const mainStrokeWidth = WIRE_WIDTH / 2
         strokeWeight(mainStrokeWidth)
 
         if (!this.endNode) {
@@ -74,7 +75,7 @@ export class Wire {
                 return false
             }
 
-            line(this.startNode.posX, this.startNode.posY, mouseX, mouseY)
+            wireLine(this.startNode, mouseX, mouseY)
 
         } else if (this.startNode.isAlive && this.endNode.isAlive) {
 
@@ -119,17 +120,7 @@ export class Wire {
         if (!this.endNode) {
             return
         }
-
-        if ((this.startNode.isOutput && this.endNode.isOutput) ||
-            (!this.startNode.isOutput && !this.endNode.isOutput)) {
-            // short circuit         
-            this.startNode.value = this.startNode.value ||
-                this.endNode.value
-            this.endNode.value = this.startNode.value
-
-        } else {
-            this.endNode.value = this.startNode.value
-        }
+        this.endNode.value = this.startNode.value
     }
 
     isMouseOver(): boolean {
@@ -147,8 +138,8 @@ export class Wire {
         const wireLength = dist(this.startNode.posX, this.startNode.posY,
             this.endNode.posX, this.endNode.posY)
 
-        if (distance[0] + distance[1] >= wireLength - (this.width / (10 * 2)) &&
-            distance[0] + distance[1] <= wireLength + (this.width / (10 * 2))) {
+        if (distance[0] + distance[1] >= wireLength - (WIRE_WIDTH / (10 * 2)) &&
+            distance[0] + distance[1] <= wireLength + (WIRE_WIDTH / (10 * 2))) {
             return true
         }
         return false
@@ -156,88 +147,9 @@ export class Wire {
 
 }
 
-/**
- * Implements short circuit
- */
-class ShortCircuit {
-
-    public inputNode: Node | undefined = new Node(this, -1, 0)
-
-    constructor(
-        public firstNode: Node,
-        public secondNode: Node
-    ) {
-        this.firstNode.inputState = InputState.TAKEN
-        this.secondNode.inputState = InputState.TAKEN
-    }
-
-    public get posX() {
-        return this.firstNode.posX // we assume the second node to be right under
-    }
-
-    public get posY() {
-        return (this.firstNode.posY + this.secondNode.posY) / 2
-    }
-
-    destroy() {
-        if (this.inputNode) {
-            this.inputNode.destroy()
-            delete this.inputNode
-        }
-    }
-
-    draw(): boolean {
-        if (this.firstNode.isAlive && this.secondNode.isAlive) {
-            stroke(0)
-            strokeWeight(2)
-
-            this.drawShortCircuit()
-
-            if (!isUndefined(this.inputNode)) {
-                this.inputNode.draw()
-                this.firstNode.value = this.inputNode.value
-                this.secondNode.value = this.inputNode.value
-            }
-            return true
-
-        } else {
-            this.firstNode.value = false
-            this.secondNode.value = false
-            return false // destroy the short circuit
-        }
-    }
-
-    drawShortCircuit() {
-        if (isUndefined(this.inputNode)) {
-            return
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [nodePosX, nodePosY] = this.inputNode.updatePositionFromParent()
-
-        line(this.firstNode.posX, this.firstNode.posY,
-            nodePosX, this.firstNode.posY)
-        line(this.secondNode.posX, this.secondNode.posY,
-            nodePosX, this.secondNode.posY)
-        line(nodePosX, this.firstNode.posY,
-            nodePosX, this.secondNode.posY)
-    }
-
-    /**
-     * Function to call whan mouse is clicked
-     */
-    mouseClicked() {
-        this.inputNode?.mouseClicked()
-    }
-}
-
-/**
- * Wire manager
- */
 export class WireManager {
 
     public wires: Wire[] = []
-    public shortCircuits: ShortCircuit[] = []
     private isOpened = false
 
     draw() {
@@ -249,17 +161,6 @@ export class WireManager {
                 this.wires[i].destroy()
                 delete this.wires[i]
                 this.wires.splice(i, 1)
-            }
-        }
-
-        for (let i = 0; i < this.shortCircuits.length; i++) {
-            const result = this.shortCircuits[i].draw()
-            if (!result) {
-                // short circuit is not valid, destroy
-                this.isOpened = false
-                this.shortCircuits[i].destroy()
-                delete this.shortCircuits[i]
-                this.shortCircuits.splice(i, 1)
             }
         }
     }
@@ -277,17 +178,8 @@ export class WireManager {
             const currentWireIndex = this.wires.length - 1
             const currentWire = this.wires[currentWireIndex]
             if (node !== currentWire.startNode &&
-                (currentWire.startNode.isOutput !== node.isOutput ||
-                    node.brotherNode === currentWire.startNode)) {
-                if (node === currentWire.startNode.brotherNode) {
-                    this.shortCircuits.push(new ShortCircuit(currentWire.startNode, node))
-
-                    delete this.wires[currentWireIndex]
-                    this.wires.length--
-                } else {
-                    currentWire.endNode = node
-                    fileManager.saveState()
-                }
+                currentWire.startNode.isOutput !== node.isOutput) {
+                currentWire.endNode = node
             } else {
                 delete this.wires[currentWireIndex]
                 this.wires.length--
@@ -298,9 +190,6 @@ export class WireManager {
         }
     }
 
-    /**
-     * Function to call when mouse is clicked
-     */
     mouseClicked(): void {
         if (currMouseAction === MouseAction.DELETE) {
             for (let i = 0; i < this.wires.length; i++) {
@@ -311,12 +200,6 @@ export class WireManager {
                     this.wires.splice(i, 1)
                 }
             }
-        }
-
-        /** For each shortCircuit call mouseClicked*/
-        for (let i = 0; i < this.shortCircuits.length; i++) {
-            //Call mouseClicked Function for each shortCircuit
-            this.shortCircuits[i].mouseClicked()
         }
     }
 }

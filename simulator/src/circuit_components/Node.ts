@@ -1,10 +1,7 @@
 import { InputState, Mode } from "./Enums.js"
 import { wireMng, mode, fillForBoolean } from "../simulator.js"
-import { GRID_STEP, HasPosition, PositionSupport } from "./Component.js"
+import { addLiveNode, GRID_STEP, HasPosition, PositionSupport, removeLiveNode } from "./Component.js"
 
-export const nodeList: Node[] = []
-
-let nextNodeID = 0
 
 const DIAMETER = 8
 const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertically if aligned on grid
@@ -13,26 +10,23 @@ export class Node extends PositionSupport {
 
     private _inputState: number = InputState.FREE // only once input per node
     private _isAlive = true // not destroyed
-    private _brotherNode: Node | null = null // for short circuit
-    private _id = nextNodeID++
 
     constructor(
+        public readonly id: number,
         private _parent: HasPosition,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
         private _isOutput = false,
         private _value = false
     ) {
-        super()
-        nodeList[this._id] = this
+        super(null)
+        addLiveNode(this)
         this.updatePositionFromParent()
     }
 
-    // public get id() { return this._id }
-
     destroy() {
         this._isAlive = false
-        delete nodeList[this._id]
+        removeLiveNode(this)
     }
 
     draw() {
@@ -46,24 +40,6 @@ export class Node extends PositionSupport {
             fill(128, 128)
             noStroke()
             circle(this.posX, this.posY, DIAMETER * 2)
-        }
-    }
-
-    public get id() {
-        return this._id
-    }
-
-    public set id(newID: number) {
-        if (nodeList[this.id] === this) {
-            delete nodeList[this.id]
-        }
-
-        this._id = newID
-        nodeList[newID] = this
-
-        //update max id
-        if (newID >= nextNodeID) {
-            nextNodeID = newID + 1
         }
     }
 
@@ -81,14 +57,6 @@ export class Node extends PositionSupport {
 
     public set inputState(state: number) {
         this._inputState = state
-    }
-
-    public get brotherNode() {
-        return this._brotherNode
-    }
-
-    public set brotherNode(newNode: Node | null) {
-        this._brotherNode = newNode
     }
 
     public get value(): boolean {
@@ -118,11 +86,11 @@ export class Node extends PositionSupport {
     }
 
     updatePositionFromParent() {
-        return this.updatePosition(
+        return this.setPosition(
             this._parent.posX + this._gridOffsetX * GRID_STEP,
             this._parent.posY + this._gridOffsetY * GRID_STEP,
             false,
-        )
+        ) ?? [this.posX, this.posY]
     }
 
     isMouseOver() {

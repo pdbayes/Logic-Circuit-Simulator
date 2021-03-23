@@ -1,38 +1,21 @@
-import { logicInputs, logicOutputs, gates, flipflops, clocks, srLatches, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString, allComponents } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, displaysA, displaysB, isNullOrUndefined, isString, allComponents, isUndefined } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
-import { Gate } from "./circuit_components/Gate.js"
+import { Gate, GateBase, GateFactory } from "./circuit_components/Gate.js"
 import { ICType } from "./circuit_components/Enums.js"
-import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
-import { FF_T } from "./circuit_components/FF_T.js"
-import { FF_JK } from "./circuit_components/FF_JK.js"
-import { SR_LatchAsync, SR_LatchSync } from "./circuit_components/SR_Latch.js"
-import { nodeList } from "./circuit_components/Node.js"
 import { stringifySmart } from "./stringifySmart.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { Wire } from "./circuit_components/Wire.js"
 import { BarDisplay } from "./circuit_components/BarDisplay.js"
+import { clearLiveNodes, findNode } from "./circuit_components/Component.js"
 
 // let eventHistory = []
 
 export class FileManager {
 
     public isLoadingState = false
-
-    saveState() {
-        // TODO
-        // if(this.isLoadingState)
-        //     return
-
-        // eventHistory.unshift(FileManager.getJSON_Workspace())
-        // if (eventHistory.length > 10) {
-        //     delete eventHistory[10]
-        //     eventHistory.length = 10
-        // }
-        // console.log(eventHistory)
-    }
 
     loadFile(e: Event) {
         const sourceElem = e.target as HTMLInputElement
@@ -73,143 +56,112 @@ export class FileManager {
             elems.splice(0, elems.length)
         }
         wireMng.wires.splice(0, wireMng.wires.length)
-        nodeList.splice(0, nodeList.length)
+        clearLiveNodes()
 
         type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
 
         if ("in" in parsedContents) {
             for (let i = 0; i < parsedContents.in.length; i++) {
                 const parsedVals = parsedContents.in[i] as JsonReprOf<LogicInput>
-                logicInputs.push(LogicInput.from(
-                    parsedVals.id,
-                    parsedVals.pos,
-                    !!parsedVals.val,
-                    parsedVals.name
-                ))
+                logicInputs.push(new LogicInput(parsedVals))
             }
         }
 
         if ("out" in parsedContents) {
             for (let i = 0; i < parsedContents.out.length; i++) {
                 const parsedVals = parsedContents.out[i] as JsonReprOf<LogicOutput>
-                logicOutputs.push(LogicOutput.from(
-                    parsedVals.id,
-                    parsedVals.pos,
-                    parsedVals.name,
-                ))
+                logicOutputs.push(new LogicOutput(parsedVals))
             }
         }
 
         if ("displays" in parsedContents) {
             for (let i = 0; i < parsedContents.displays.length; i++) {
                 const parsedVals = parsedContents.displays[i] as JsonReprOf<FourBitDisplay>
-                displays.push(FourBitDisplay.from(
-                    parsedVals.id,
-                    parsedVals.pos,
-                    parsedVals.radix,
-                    parsedVals.name
-                ))
+                displays.push(new FourBitDisplay(parsedVals))
             }
         }
 
         if ("displaysA" in parsedContents) {
             for (let i = 0; i < parsedContents.displaysA.length; i++) {
                 const parsedVals = parsedContents.displaysA[i] as JsonReprOf<AsciiDisplay>
-                displaysA.push(AsciiDisplay.from(
-                    parsedVals.id,
-                    parsedVals.pos,
-                    parsedVals.name
-                ))
+                displaysA.push(new AsciiDisplay(parsedVals))
             }
         }
 
         if ("displaysB" in parsedContents) {
             for (let i = 0; i < parsedContents.displaysB.length; i++) {
                 const parsedVals = parsedContents.displaysB[i] as JsonReprOf<BarDisplay>
-                displaysB.push(BarDisplay.from(
-                    parsedVals.id,
-                    parsedVals.pos,
-                    parsedVals.display
-                ))
+                displaysB.push(new BarDisplay(parsedVals))
             }
         }
 
         if ("clocks" in parsedContents) {
             for (let i = 0; i < parsedContents.clocks.length; i++) {
-                const parsedVals = parsedContents.clocks[i]
-
-                const newObj = new Clock(0, 0)// TODO fill real numbers
-                Object.assign(newObj, parsedVals) // TODO too generic
-                newObj.refreshNodes()
-
-                clocks.push(newObj)
+                const parsedVals = parsedContents.displaysB[i] as JsonReprOf<Clock>
+                clocks.push(new Clock(parsedVals))
             }
         }
 
         if ("gates" in parsedContents) {
             for (let i = 0; i < parsedContents.gates.length; i++) {
                 const parsedVals = parsedContents.gates[i] as JsonReprOf<Gate>
-                gates.push(Gate.from(
-                    parsedVals.type,
-                    parsedVals.pos,
-                    parsedVals.id,
-                ))
+                gates.push(GateFactory.make(parsedVals))
             }
         }
 
-        if ("srLatches" in parsedContents) {
-            for (let i = 0; i < parsedContents.srLatches.length; i++) {
-                const parsedVals = parsedContents.srLatches[i]
+        // if ("srLatches" in parsedContents) {
+        //     for (let i = 0; i < parsedContents.srLatches.length; i++) {
+        //         const parsedVals = parsedContents.srLatches[i]
 
-                let newObj = null
-                switch (parsedContents.srLatch[i].type) {
-                    case ICType.SR_LATCH_ASYNC:
-                        newObj = new SR_LatchAsync(parsedVals.gateType,
-                            parsedVals.stabilize)
-                        srLatches.push()
-                        break
-                    case ICType.SR_LATCH_SYNC:
-                        newObj = new SR_LatchSync(parsedVals.gateType,
-                            parsedVals.stabilize)
-                        break
-                }
+        //         let newObj = null
+        //         switch (parsedContents.srLatch[i].type) {
+        //             case ICType.SR_LATCH_ASYNC:
+        //                 newObj = new SR_LatchAsync(parsedVals.gateType,
+        //                     parsedVals.stabilize)
+        //                 srLatches.push()
+        //                 break
+        //             case ICType.SR_LATCH_SYNC:
+        //                 newObj = new SR_LatchSync(parsedVals.gateType,
+        //                     parsedVals.stabilize)
+        //                 break
+        //         }
 
-                if (newObj) {
-                    Object.assign(newObj, parsedVals) // TODO too generic
-                    newObj.refreshNodes()
+        //         if (newObj) {
+        //             Object.assign(newObj, parsedVals) // TODO too generic
+        //             newObj.refreshNodes()
 
-                    srLatches.push(newObj)
-                }
-            }
-        }
+        //             srLatches.push(newObj)
+        //         }
+        //     }
+        // }
 
-        if ("flipflops" in parsedContents) {
-            for (let i = 0; i < parsedContents.flipflops.length; i++) {
-                const parsedVals = parsedContents.flipflops[i]
+        // if ("flipflops" in parsedContents) {
+        //     for (let i = 0; i < parsedContents.flipflops.length; i++) {
+        //         const parsedVals = parsedContents.flipflops[i]
 
-                let newObj = null
-                switch (parsedVals.type) {
-                    case ICType.FF_D_SINGLE:
-                        newObj = new FF_D_Single()
-                        break
-                    case ICType.FF_D_MASTERSLAVE:
-                        newObj = new FF_D_MasterSlave()
-                        break
-                    case ICType.FF_T:
-                        newObj = new FF_T(parsedVals.isNegativeEdgeTrig)
-                        break
-                    case ICType.FF_JK:
-                        newObj = new FF_JK(parsedVals.isNegativeEdgeTrig)
-                        break
-                }
+        //         let newObj = null
+        //         switch (parsedVals.type) {
+        //             case ICType.FF_D_SINGLE:
+        //                 newObj = new FF_D_Single()
+        //                 break
+        //             case ICType.FF_D_MASTERSLAVE:
+        //                 newObj = new FF_D_MasterSlave()
+        //                 break
+        //             case ICType.FF_T:
+        //                 newObj = new FF_T(parsedVals.isNegativeEdgeTrig)
+        //                 break
+        //             case ICType.FF_JK:
+        //                 newObj = new FF_JK(parsedVals.isNegativeEdgeTrig)
+        //                 break
+        //         }
 
-                if (newObj) {
-                    Object.assign(newObj, parsedVals) // TODO too generic
-                    newObj.refreshNodes()
-                    flipflops.push(newObj)
-                }
-            }
-        }
+        //         if (newObj) {
+        //             Object.assign(newObj, parsedVals) // TODO too generic
+        //             newObj.refreshNodes()
+        //             flipflops.push(newObj)
+        //         }
+        //     }
+        // }
 
         if ("wires" in parsedContents) {
             for (let i = 0; i < parsedContents.wires.length; i++) {
@@ -217,8 +169,13 @@ export class FileManager {
                 if (isNullOrUndefined(parsedVals[1])) {
                     continue
                 }
-                wireMng.addNode(nodeList[parsedVals[0]])
-                wireMng.addNode(nodeList[parsedVals[1]])
+                const node1 = findNode(parsedVals[0])
+                const node2 = findNode(parsedVals[1])
+                if (isUndefined(node1) || isUndefined(node2)) {
+                    continue
+                }
+                wireMng.addNode(node1)
+                wireMng.addNode(node2)
             }
         }
 
@@ -243,9 +200,9 @@ export class FileManager {
         if (displaysA.length) { workspace["displaysA"] = displaysA }
         if (displaysB.length) { workspace["displaysB"] = displaysB }
         if (clocks.length) { workspace["clocks"] = clocks }
-        if (flipflops.length) { workspace["flipflops"] = flipflops }
         if (gates.length) { workspace["gates"] = gates }
-        if (srLatches.length) { workspace["srLatches"] = srLatches }
+        // if (flipflops.length) { workspace["flipflops"] = flipflops }
+        // if (srLatches.length) { workspace["srLatches"] = srLatches }
         if (wireMng.wires.length) { workspace["wires"] = wireMng.wires }
 
         console.log(workspace)

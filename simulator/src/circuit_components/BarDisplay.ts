@@ -1,8 +1,7 @@
-import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, mode, Color, inRect, isCmdDown } from "../simulator.js"
-import { Component, GRID_STEP, pxToGrid } from "./Component.js"
+import { colorMouseOver, mode, Color, inRect, isDefined, isNotNull } from "../simulator.js"
+import { ComponentBase, ComponentRepr, GRID_STEP, IDGen, pxToGrid } from "./Component.js"
 
 const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
@@ -12,40 +11,33 @@ export type BarDisplayType = typeof BarDisplayTypes[number]
 
 const DEFAULT_BAR_DISPLAY: BarDisplayType = "h"
 
-export class BarDisplay extends Component {
+export interface BarDisplayRepr extends ComponentRepr {
+    display: BarDisplayType
+}
+
+export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
 
     private _value = false
     private _display = DEFAULT_BAR_DISPLAY
-    private isSpawned = false
-    private isMoving = false
-    private offsetMouseX = 0
-    private offsetMouseY = 0
-    private input = new Node(this, 0, 0)
-    private nodeStartID = this.input.id
-    private isSaved = false
 
-    public constructor() {
-        super()
-        this.updateInputOffsetX()
-    }
-
-    static from(id: number, pos: readonly [number, number], display: BarDisplayType): BarDisplay {
-        const newObj = new BarDisplay()
-        newObj.updatePosition(pos[0], pos[1], false)
-        newObj.doSetDisplay(display)
-        newObj.isSpawned = true
-        newObj.isSaved = true
-        newObj.nodeStartID = id
-        newObj.refreshNodes()
-        return newObj
+    public constructor(savedData: BarDisplayRepr | null) {
+        super(savedData)
+        if (isNotNull(savedData)) {
+            this.doSetDisplay(savedData.display)
+        } else {
+            this.updateInputOffsetX()
+        }
     }
 
     toJSON() {
         return {
             display: this._display,
-            id: this.nodeStartID,
-            pos: [this.posX, this.posY] as const,
+            ...super.toJSONBase(),
         }
+    }
+
+    protected makeNodes(genID: IDGen) {
+        return [[new Node(genID(), this, 0, 0)], []] as const
     }
 
     public get value() {
@@ -56,24 +48,12 @@ export class BarDisplay extends Component {
         return this._display
     }
 
-    destroy() {
-        this.input.destroy()
-    }
 
     draw() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-        } else if (!this.isSaved) {
-            fileManager.saveState()
-            this.isSaved = true
-        }
+        this.updatePositionIfNeeded()
 
-        if (this.isMoving) {
-            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
-        }
-
-
-        this._value = this.input.value
+        const input = this.inputs[0]
+        this._value = input.value
 
         if (this.isMouseOver()) {
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
@@ -82,7 +62,8 @@ export class BarDisplay extends Component {
         }
 
         strokeWeight(4)
-        const [inputPosX, inputPosY] = this.input.updatePositionFromParent()
+
+        const [inputPosX, inputPosY] = input.updatePositionFromParent()
 
         const backColor: Color = (this._value) ? [20, 255, 20] : [80, 80, 80]
         fill(...backColor)
@@ -90,11 +71,11 @@ export class BarDisplay extends Component {
         rect(this.posX - w / 2, this.posY - h / 2, w, h)
 
         line(this.posX - w / 2, this.posY, inputPosX, inputPosY)
-        this.input.draw()
+        input.draw()
     }
 
     getWidthAndHeight() {
-        switch (this.display) {
+        switch (this._display) {
             case "h":
                 return [GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP] as const
             case "v":
@@ -106,40 +87,15 @@ export class BarDisplay extends Component {
         }
     }
 
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        this.input.id = currentID++
-    }
-
     isMouseOver() {
         const [w, h] = this.getWidthAndHeight()
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, w, h, mouseX, mouseY)
     }
 
-    mousePressed() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-            this.isSpawned = true
-            backToEdit()
-            return
-        }
-
-        if (this.isMouseOver() || currMouseAction === MouseAction.MOVE) {
-            this.isMoving = true
-            this.offsetMouseX = this.posX - mouseX
-            this.offsetMouseY = this.posY - mouseY
-        }
-    }
-
-    mouseReleased() {
-        if (this.isMoving) {
-            this.isMoving = false
-        }
-    }
-
     mouseClicked() {
-        if (this.input.isMouseOver()) {
-            this.input.mouseClicked()
+        const input = this.inputs[0]
+        if (input.isMouseOver()) {
+            input.mouseClicked()
             return true
         }
 
@@ -170,7 +126,7 @@ export class BarDisplay extends Component {
 
     private updateInputOffsetX() {
         const width = this.getWidthAndHeight()[0]
-        this.input.gridOffsetX = -pxToGrid(width / 2) - 2
+        this.inputs[0].gridOffsetX = -pxToGrid(width / 2) - 2
     }
 
 }

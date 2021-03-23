@@ -9,17 +9,14 @@ import { Gate } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
-import { SR_Latch } from "./circuit_components/SR_Latch.js"
-import { FF_D } from "./circuit_components/FF_D.js"
-import { FF_JK } from "./circuit_components/FF_JK.js"
-import { FF_T } from "./circuit_components/FF_T.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { BarDisplay } from "./circuit_components/BarDisplay.js"
-import { GRID_STEP } from "./circuit_components/Component.js"
+import { Node } from "./circuit_components/Node.js"
+import { Component, GRID_STEP } from "./circuit_components/Component.js"
 
 export type Color = [number, number, number]
-export type FF = FF_D | FF_JK | FF_T
+// export type FF = FF_D | FF_JK | FF_T
 
 export const ICImages: p5.Image[] = [] // integrated circuits images
 
@@ -30,10 +27,10 @@ export const displays: FourBitDisplay[] = []
 export const displaysA: AsciiDisplay[] = []
 export const displaysB: BarDisplay[] = []
 export const clocks: Clock[] = []
-export const srLatches: SR_Latch[] = []
-export const flipflops: FF[] = []
+// export const srLatches: SR_Latch[] = []
+// export const flipflops: FF[] = []
 
-export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, displaysB, clocks, srLatches, flipflops]
+export const allComponents = [gates, logicInputs, logicOutputs, displays, displaysA, displaysB, clocks/*, srLatches, flipflops*/]
 export const allComponentsWithDoubleClick = [logicInputs, displays, displaysB]
 export const wireMng = new WireManager()
 
@@ -42,13 +39,13 @@ export const fileManager = new FileManager()
 
 export let mode = Mode.FULL
 export let isCmdDown = false
-let numMoving = 0
+const movingComponents = new Set<Component>()
 
-export function incNumMoving() {
-    numMoving++
+export function startedMoving(comp: Component) {
+    movingComponents.add(comp)
 }
-export function decNumMoving() {
-    numMoving--
+export function stoppedMoving(comp: Component) {
+    movingComponents.delete(comp)
 }
 
 let canvasContainer: HTMLElement
@@ -76,6 +73,20 @@ export function fillForFraction(fraction: number): Color {
     fill(...c)
     return c
 }
+
+export function wireLine(node: Node, x1: number, y1: number) {
+    const x0 = node.posX
+    const y0 = node.posY
+    
+    stroke(80)
+    strokeWeight(4)
+    line(x0, y0, x1, y1)
+
+    stroke(...colorForBoolean(node.value))
+    strokeWeight(2)
+    line(x0, y0, x1, y1)
+}
+
 
 export function preload() {
     ICImages.push(loadImage('simulator/img/SR_Latch.svg')) // For testing usage
@@ -132,7 +143,7 @@ export function setup() {
     }, true)
 
     const data = getURLParameter(PARAM_DATA)
-    if (!isUndefined(data)) {
+    if (isDefined(data)) {
         initialData = data
         tryLoadFromData()
     }
@@ -155,7 +166,7 @@ export function setup() {
 
 
     const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
-    if (!isUndefined(showonlyStr)) {
+    if (isDefined(showonlyStr)) {
         const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
         const leftToolbar = document.getElementById("leftToolbar")!
         const toolbarChildren = leftToolbar.children
@@ -226,7 +237,7 @@ export function draw() {
         rect(0, 0, width, height)
     }
 
-    if (numMoving > 0) {
+    if (movingComponents.size > 0) {
         stroke(240)
         strokeWeight(1)
         for (let x = GRID_STEP; x < width; x += GRID_STEP) {
@@ -338,13 +349,34 @@ export function isUndefined(v: any): v is undefined {
     return typeof v === "undefined"
 }
 
+export function isDefined<T>(v: T | undefined): v is T {
+    return typeof v !== "undefined"
+}
+
 export function isNullOrUndefined(v: any): v is null | undefined {
     return isUndefined(v) || v === null
+}
+
+export function isNotNull<T>(v: T | null): v is T {
+    return v !== null
 }
 
 export function isString(v: any): v is string {
     return typeof v === "string"
 }
+
+export type NodeArrayOfLength<T extends number> =
+    T extends 0 ? readonly []
+    : T extends 1 ? readonly [Node]
+    : T extends 2 ? readonly [Node, Node]
+    : T extends 3 ? readonly [Node, Node, Node]
+    : T extends 4 ? readonly [Node, Node, Node, Node]
+    : T extends 5 ? readonly [Node, Node, Node, Node, Node]
+    : T extends 6 ? readonly [Node, Node, Node, Node, Node, Node]
+    : T extends 7 ? readonly [Node, Node, Node, Node, Node, Node, Node]
+    : T extends 8 ? readonly [Node, Node, Node, Node, Node, Node, Node, Node]
+    : []
+
 
 export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
     const w2 = width / 2

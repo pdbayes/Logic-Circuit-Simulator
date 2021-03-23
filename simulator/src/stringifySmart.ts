@@ -3,7 +3,7 @@
 // are present (unless the user supplied a weird `options.indent` but in
 // that case we don’t care since the output would be invalid anyway).
 
-import { isUndefined } from "./simulator.js"
+import { isDefined } from "./simulator.js"
 
 // eslint-disable-next-line prefer-named-capture-group
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
@@ -20,7 +20,7 @@ export function stringifySmart(passedObj: any, options: { replacer?: (this: any,
     let replacer = options.replacer
 
     return (function _stringify(obj: any, currentIndent: string, reserved: number): string {
-        if (!isUndefined(obj) && typeof obj.toJSON === "function") {
+        if (isDefined(obj) && typeof obj.toJSON === "function") {
             obj = obj.toJSON()
         }
 

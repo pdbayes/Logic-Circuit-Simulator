@@ -1,78 +1,53 @@
-import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, inRect, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component, GRID_STEP } from "./Component.js"
+import { colorMouseOver, inRect, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-export class AsciiDisplay extends Component {
+interface AsciiDisplayRepr extends ComponentRepr {
+    name: string | undefined
+}
+
+export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
 
     private _value = 0
-    private name = ""
-    private isSpawned = false
-    private isMoving = false
-    private offsetMouseX = 0
-    private offsetMouseY = 0
-    private inputs: [Node, Node, Node, Node, Node, Node, Node] = [
-        new Node(this, -3, -3),
-        new Node(this, -3, -2),
-        new Node(this, -3, -1),
-        new Node(this, -3, +0),
-        new Node(this, -3, +1),
-        new Node(this, -3, +2),
-        new Node(this, -3, +3),
-    ]
-    private nodeStartID = this.inputs[0].id
-    private isSaved = false
+    private readonly name: string | undefined = undefined
 
-    public constructor() {
-        super()
-    }
-
-    static from(id: number, pos: readonly [number, number], name: string | undefined): AsciiDisplay {
-        const newObj = new AsciiDisplay()
-        newObj.updatePosition(pos[0], pos[1], false)
-        newObj.isSpawned = true
-        newObj.isSaved = true
-        newObj.nodeStartID = id
-        newObj.refreshNodes()
-        if (!isUndefined(name)) {
-            newObj.name = name
+    public constructor(savedData: AsciiDisplayRepr | null) {
+        super(savedData)
+        if (isNotNull(savedData)) {
+            this.name = savedData.name
         }
-        return newObj
     }
 
     toJSON() {
         return {
-            name: (this.name) ? this.name : undefined,
-            id: this.nodeStartID,
-            pos: [this.posX, this.posY] as const,
+            name: this.name,
+            ...this.toJSONBase(),
         }
+    }
+
+    protected makeNodes(genID: IDGen) {
+        return [[
+            new Node(genID(), this, -3, -3),
+            new Node(genID(), this, -3, -2),
+            new Node(genID(), this, -3, -1),
+            new Node(genID(), this, -3, +0),
+            new Node(genID(), this, -3, +1),
+            new Node(genID(), this, -3, +2),
+            new Node(genID(), this, -3, +3),
+        ], []] as const
     }
 
     public get value() {
         return this._value
     }
 
-    destroy() {
-        for (const input of this.inputs) {
-            input.destroy()
-        }
-    }
 
     draw() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-        } else if (!this.isSaved) {
-            fileManager.saveState()
-            this.isSaved = true
-        }
-
-        if (this.isMoving) {
-            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
-        }
+        this.updatePositionIfNeeded()
 
         let binaryStringRep = ""
         for (const input of this.inputs) {
@@ -95,7 +70,7 @@ export class AsciiDisplay extends Component {
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            line(input.posX, input.posY, this.posX - width / 2, input.posY)
+            wireLine(input, this.posX - width / 2 - 2, input.posY)
         }
         for (const input of this.inputs) {
             input.draw()
@@ -106,7 +81,7 @@ export class AsciiDisplay extends Component {
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
-        if (this.name) {
+        if (isDefined(this.name)) {
             text(this.name, this.posX + width / 2 + 5, this.posY)
         }
 
@@ -132,36 +107,8 @@ export class AsciiDisplay extends Component {
         }
     }
 
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        for (const input of this.inputs) {
-            input.id = currentID++
-        }
-    }
-
     isMouseOver() {
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
-    }
-
-    mousePressed() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-            this.isSpawned = true
-            backToEdit()
-            return
-        }
-
-        if (this.isMouseOver() || currMouseAction === MouseAction.MOVE) {
-            this.isMoving = true
-            this.offsetMouseX = this.posX - mouseX
-            this.offsetMouseY = this.posY - mouseY
-        }
-    }
-
-    mouseReleased() {
-        if (this.isMoving) {
-            this.isMoving = false
-        }
     }
 
     mouseClicked() {

@@ -1,13 +1,9 @@
 import { Clock } from "./circuit_components/Clock.js"
-import { FF_D_Single, FF_D_MasterSlave } from "./circuit_components/FF_D.js"
-import { FF_JK } from "./circuit_components/FF_JK.js"
-import { FF_T } from "./circuit_components/FF_T.js"
-import { flipflops, logicInputs, logicOutputs, clocks, gates, srLatches, tryLoadFromData, displays, displaysA, displaysB, isNullOrUndefined } from "./simulator.js"
-import { Gate } from "./circuit_components/Gate.js"
+import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, displaysA, displaysB, isNullOrUndefined } from "./simulator.js"
+import { GateFactory } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
-import { MouseAction, SyncType } from "./circuit_components/Enums.js"
-import { SR_LatchSync, SR_LatchAsync, SR_Latch } from "./circuit_components/SR_Latch.js"
+import { GateTypes, MouseAction } from "./circuit_components/Enums.js"
 import { FourBitDisplay } from "./circuit_components/FourBitDisplay.js"
 import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
 import { BarDisplay } from "./circuit_components/BarDisplay.js"
@@ -30,7 +26,11 @@ export function activeTool(elTool: HTMLElement) {
 
     resetElements()
     if (elTool.getAttribute("isGate") !== null) {
-        gates.push(new Gate(tool))
+        if (GateTypes.isValue(tool)) {
+            gates.push(GateFactory.make({ type: tool }))
+        } else {
+            console.log(`WARN Tool ${tool} is not a recognized gate type`)
+        }
         return
     }
 
@@ -48,70 +48,69 @@ export function activeTool(elTool: HTMLElement) {
             break
 
         case "LogicInput":
-            logicInputs.push(new LogicInput())
-            // console.log(JSON.stringify({ logicInput }, ['logicInput', 'posX', 'posY', 'value']));
+            logicInputs.push(new LogicInput(null))
             break
 
         case "LogicOutput":
-            logicOutputs.push(new LogicOutput())
+            logicOutputs.push(new LogicOutput(null))
             break
 
         case "FourBitDisplay":
-            displays.push(new FourBitDisplay())
+            displays.push(new FourBitDisplay(null))
             break
 
         case "AsciiDisplay":
-            displaysA.push(new AsciiDisplay())
+            displaysA.push(new AsciiDisplay(null))
             break
 
         case "BarDisplay":
-            displaysB.push(new BarDisplay())
+            displaysB.push(new BarDisplay(null))
             break
 
         case "Clock": {
             const period = parseInt((document.getElementsByClassName("period")[0] as HTMLInputElement).value)
             const dutycycle = parseInt((document.getElementsByClassName("duty-cycle")[0] as HTMLInputElement).value)
-            clocks.push(new Clock(period, dutycycle))
+            clocks.push(new Clock({ period, dutycycle }))
             break
         }
 
-        case "SR_Latch": {
-            let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
-            const gateType = el.options[el.selectedIndex].text
-            el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
-            const _syncType = el.selectedIndex
-            const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
-            if (_syncType === SyncType.ASYNC) {
-                srLatches.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize))
-            } else {
-                srLatches.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize))
-            }
-            break
-        }
+        // case "SR_Latch": {
+        //     let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
+        //     const gateType = el.options[el.selectedIndex].text
+        //     el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
+        //     const _syncType = el.selectedIndex
+        //     const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
+        //     if (_syncType === SyncType.ASYNC) {
+        //         srLatches.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize))
+        //     } else {
+        //         srLatches.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize))
+        //     }
+        //     break
+        // }
 
-        case "FF_D": {
-            const el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
-            const isMasterSlave = el.selectedIndex // because is 0 or 1
-            if (isMasterSlave) { flipflops.push(new FF_D_MasterSlave()) }
-            else { flipflops.push(new FF_D_Single()) }
-            break
-        }
+        // case "FF_D": {
+        //     const el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
+        //     const isMasterSlave = el.selectedIndex // because is 0 or 1
+        //     if (isMasterSlave) { flipflops.push(new FF_D_MasterSlave()) }
+        //     else { flipflops.push(new FF_D_Single()) }
+        //     break
+        // }
 
-        case "FF_T": {
-            const el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
-            const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-            if (isNegativeEdgeTrig) { flipflops.push(new FF_T(true)) }
-            else { flipflops.push(new FF_T(false)) }
-            break
-        }
+        // case "FF_T": {
+        //     const el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
+        //     const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
+        //     if (isNegativeEdgeTrig) { flipflops.push(new FF_T(true)) }
+        //     else { flipflops.push(new FF_T(false)) }
+        //     break
+        // }
 
-        case "FF_JK": {
-            const el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
-            const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-            if (isNegativeEdgeTrig) { flipflops.push(new FF_JK(true)) }
-            else { flipflops.push(new FF_JK(false)) }
-            break
-        }
+        // case "FF_JK": {
+        //     const el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
+        //     const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
+        //     if (isNegativeEdgeTrig) { flipflops.push(new FF_JK(true)) }
+        //     else { flipflops.push(new FF_JK(false)) }
+        //     break
+        // }
 
     }
 

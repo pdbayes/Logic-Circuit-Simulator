@@ -1,115 +1,78 @@
-import { currMouseAction, backToEdit } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { Mode } from "./Enums.js"
 import { Node } from "./Node.js"
-import { colorMouseOver, fileManager, fillForBoolean, isCmdDown, isUndefined, mode } from "../simulator.js"
-import { Component } from "./Component.js"
+import { colorMouseOver, fillForBoolean, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, IDGen, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-/**
- * Generate input for the circuit
- */
-export class LogicInput extends Component {
+export interface LogicInputRepr extends ComponentRepr {
+    val: number
+    name: string | undefined
+}
+
+export abstract class LogicInputBase<Repr extends LogicInputRepr> extends ComponentBase<0, 1, Repr> {
 
     private _value = false
-    private name = ""
-    private diameter = 25
-    private isSpawned = false
-    private isMoving = false
-    private offsetMouseX = 0
-    private offsetMouseY = 0
-    private output: Node | undefined = new Node(this, +3, 0, true)
-    private nodeStartID = this.output!.id
-    private isSaved = false
+    protected readonly name: string | undefined = undefined
 
-    public constructor() {
-        super()
-    }
-
-    static from(id: number, pos: readonly [number, number], value: boolean, name: string | undefined): LogicInput {
-        const newObj = new LogicInput()
-        newObj.updatePosition(pos[0], pos[1], false)
-        newObj._value = value
-        newObj.isSpawned = true
-        newObj.isSaved = true
-        newObj.nodeStartID = id
-        if (!isUndefined(name)) {
-            newObj.name = name
+    public constructor(savedData: Repr | null) {
+        super(savedData)
+        if (isNotNull(savedData)) {
+            this._value = !!savedData.val
+            this.name = savedData.name
         }
-        newObj.refreshNodes()
-        return newObj
     }
 
-    toJSON() {
+    toJSONBase() {
         return {
-            name: (this.name) ? this.name : undefined,
-            id: this.nodeStartID,
-            pos: [this.posX, this.posY] as const,
+            name: this.name,
             val: this.value ? 1 : 0,
+            ...super.toJSONBase(),
         }
+    }
+
+    protected makeNodes(genID: IDGen) {
+        return [[], [
+            new Node(genID(), this, +3, 0, true),
+        ]] as const
     }
 
     public get value(): boolean {
         return this._value
     }
 
-    destroy() {
-        if (this.output) {
-            this.output.destroy()
-            delete this.output
-        }
+    toggleValue() {
+        this._value = !this._value
     }
 
     draw() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-        } else if (!this.isSaved) {
-            fileManager.saveState()
-            this.isSaved = true
-        }
+        this.updatePositionIfNeeded()
 
-        fillForBoolean(this.value)
-
-        if (this.isMoving) {
-            this.updatePosition(mouseX + this.offsetMouseX, mouseY + this.offsetMouseY, !isCmdDown)
-        }
+        const output = this.outputs[0]
+        output.value = this.value
+        wireLine(output, this.posX, this.posY)
 
         if (this.isMouseOver()) {
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
         } else {
             stroke(0)
         }
-
+        fillForBoolean(this.value)
         strokeWeight(4)
-        line(this.posX, this.posY, this.posX + 30, this.posY)
-        circle(this.posX, this.posY, this.diameter)
+        circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
 
-        if (this.output) {
-            this.output.updatePositionFromParent()
-            this.output.value = this.value
-            this.output.draw()
-        }
+        output.draw()
 
         this.printInfo()
-
         textSize(18)
         textAlign(CENTER, CENTER)
         if (this.value) {
             textStyle(BOLD)
             text('1', this.posX, this.posY)
-        }
-        else {
-            textStyle(NORMAL)
+        } else {
             fill(255)
+            textStyle(NORMAL)
             text('0', this.posX, this.posY)
         }
     }
-
-    refreshNodes() {
-        let currentID = this.nodeStartID
-        if (this.output) {
-            this.output.id = currentID++
-        }
-    }
-
 
     printInfo() {
         noStroke()
@@ -117,68 +80,36 @@ export class LogicInput extends Component {
         textSize(18)
         textStyle(ITALIC)
         textAlign(RIGHT, CENTER)
-        if (this.name) { text(this.name, this.posX - 25, this.posY) }
+        if (isDefined(this.name)) {
+            text(this.name, this.posX - 25, this.posY)
+        }
     }
 
-    /**
-     * Checking if mouse if over the input
-     */
     isMouseOver(): boolean {
-        if (mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < this.diameter / 2) { return true }
-        return false
+        return mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    /**
-     * Called when mouse is pressed
-     * If the element is not spawned, it will be spawned.
-     * Then if mouse is over OR the current action is MOVE then move it
-     */
-    mousePressed() {
-        if (!this.isSpawned) {
-            this.updatePosition(mouseX, mouseY, !isCmdDown)
-            this.isSpawned = true
-            backToEdit()
-            return
-        }
-
-        if (mode >= Mode.CONNECT && this.isMouseOver() || currMouseAction === MouseAction.MOVE) {
-            this.isMoving = true
-            this.offsetMouseX = this.posX - mouseX
-            this.offsetMouseY = this.posY - mouseY
-        }
-    }
-
-    /**
-     * Called when mouse is released
-     * If the element was moving, release it. 
-     */
-    mouseReleased() {
-        if (this.isMoving) {
-            this.isMoving = false
-        }
-    }
-
-    /**
-     * Called when mouse is double clicked
-     * If mouse is over this instance
-     * Invert input value 
-     */
     doubleClicked() {
         if (this.isMouseOver()) {
-            this.toggle()
+            this.toggleValue()
         }
     }
 
     mouseClicked() {
-        if (this.isMouseOver() || (this.output?.isMouseOver() ?? false)) {
-            this.output?.mouseClicked()
+        const output = this.outputs[0]
+        if (this.isMouseOver() || output.isMouseOver()) {
+            output.mouseClicked()
             return true
         }
         return false
     }
 
-    toggle() {
-        this._value = !this._value
+}
+
+export class LogicInput extends LogicInputBase<LogicInputRepr> {
+
+    toJSON() {
+        return this.toJSONBase()
     }
 
 }
