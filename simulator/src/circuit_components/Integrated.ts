@@ -3,6 +3,20 @@
 // import { colorMouseOver, mode } from "../simulator.js"
 // import { ComponentBase } from "./Component.js"
 
+export enum ICType {
+    SR_LATCH_ASYNC,
+    SR_LATCH_SYNC,
+    FF_D_SINGLE,
+    FF_D_MASTERSLAVE,
+    FF_T,
+    FF_JK,
+}
+
+export enum SyncType {
+    ASYNC,
+    SYNC,
+}
+
 // export abstract class Integrated extends ComponentBase {
 
 //     public width = ICImages[this.type].width

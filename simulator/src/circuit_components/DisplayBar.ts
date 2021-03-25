@@ -1,28 +1,28 @@
-import { Mode } from "./Enums.js"
-import { Node } from "./Node.js"
-import { colorMouseOver, mode, Color, inRect, isNotNull, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, GRID_STEP, IDGen, pxToGrid } from "./Component.js"
+import { Expand, isNotNull, isUnset, Mode, TriState } from "../utils.js"
+import { colorMouseOver, mode, Color, inRect, wireLine, COLOR_UNSET } from "../simulator.js"
+import { ComponentBase, ComponentRepr } from "./Component.js"
+import { GRID_STEP, pxToGrid } from "./Position.js"
 
 const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
 
-export const BarDisplayTypes = ["v", "h", "px", "PX"] as const
-export type BarDisplayType = typeof BarDisplayTypes[number]
+export const DisplayBarTypes = ["v", "h", "px", "PX"] as const
+export type DisplayBarType = typeof DisplayBarTypes[number]
 
-const DEFAULT_BAR_DISPLAY: BarDisplayType = "h"
+const DEFAULT_BAR_DISPLAY: DisplayBarType = "h"
 
-export interface BarDisplayRepr extends ComponentRepr {
+export type DisplayBarRepr = Expand<ComponentRepr<1, 0> & {
     type: "bar"
-    display: BarDisplayType
-}
+    display: DisplayBarType
+}>
 
-export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
+export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr> {
 
-    private _value = false
+    private _value: TriState = false
     private _display = DEFAULT_BAR_DISPLAY
 
-    public constructor(savedData: BarDisplayRepr | null) {
-        super(savedData)
+    public constructor(savedData: DisplayBarRepr | null) {
+        super(savedData, { inOffsets: [[0, 0]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
         } else {
@@ -36,10 +36,6 @@ export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
             ...super.toJSONBase(),
             display: this._display,
         }
-    }
-
-    protected makeNodes(genID: IDGen) {
-        return [[new Node(genID(), this, 0, 0)], []] as const
     }
 
     public get value() {
@@ -65,9 +61,7 @@ export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
 
         strokeWeight(4)
 
-        input.updatePositionFromParent()
-
-        const backColor: Color = (this._value) ? [20, 255, 20] : [80, 80, 80]
+        const backColor: Color = isUnset(this._value) ? COLOR_UNSET : (this._value) ? [20, 255, 20] : [80, 80, 80]
         fill(...backColor)
         const [w, h] = this.getWidthAndHeight()
         rect(this.posX - w / 2, this.posY - h / 2, w, h)
@@ -121,7 +115,7 @@ export class BarDisplay extends ComponentBase<1, 0, BarDisplayRepr> {
         }
     }
 
-    private doSetDisplay(newDisplay: BarDisplayType) {
+    private doSetDisplay(newDisplay: DisplayBarType) {
         this._display = newDisplay
         this.updateInputOffsetX()
     }

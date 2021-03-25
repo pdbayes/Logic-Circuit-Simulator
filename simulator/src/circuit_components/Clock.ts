@@ -1,12 +1,12 @@
-import { LogicInput, LogicInputBase, LogicInputRepr } from "./LogicInput.js"
+import { Expand } from "../utils.js"
+import { LogicInputBase, LogicInputRepr } from "./LogicInput.js"
 
-interface ClockMandatoryParams {
+type ClockMandatoryParams = {
     period: number
     dutycycle: number
 }
 
-interface ClockRepr extends LogicInputRepr, ClockMandatoryParams {
-}
+type ClockRepr = Expand<LogicInputRepr & ClockMandatoryParams>
 
 export class Clock extends LogicInputBase<ClockRepr> {
 
@@ -32,7 +32,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         const currTick = new Date().getTime()
         const currentStateDuration =
             this.period * (
-                (this.value) ? this.dutycycle : (100 - this.dutycycle)
+                (this.value === true) ? this.dutycycle : (100 - this.dutycycle)
             ) / 100
 
         if (currTick - this._lastTick > currentStateDuration) {

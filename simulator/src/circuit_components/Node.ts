@@ -1,6 +1,8 @@
-import { Mode } from "./Enums.js"
-import { wireMng, mode, fillForBoolean } from "../simulator.js"
-import { addLiveNode, ComponentState, GRID_STEP, HasPosition, PositionSupport, removeLiveNode } from "./Component.js"
+import { isDefined, Mode, toTriState, TriState, Unset } from "../utils.js"
+import { wireMng, mode, fillForBoolean, modifierKeys } from "../simulator.js"
+import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component.js"
+import { GRID_STEP, HasPosition, PositionSupport } from "./Position.js"
+import { NodeManager } from "../NodeManager.js"
 
 
 export enum ConnectionState {
@@ -17,32 +19,43 @@ type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState }
 
 export class Node extends PositionSupport {
 
+    public readonly id: number
     private _connectionState = ConnectionState.FREE
     private _isAlive = true
-    private _value = false
+    private _value: TriState = false
+    private _forceValue: TriState | undefined
 
     constructor(
-        public readonly id: number,
+        nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
-        public readonly isOutput = false,
+        public readonly isOutput: boolean,
     ) {
         super(null)
-        addLiveNode(this)
+        this.id = nodeSpec.id
+        if ("force" in nodeSpec) {
+            this._forceValue = toTriState(nodeSpec.force)
+        }
+        NodeManager.addLiveNode(this)
         this.updatePositionFromParent()
     }
 
     destroy() {
         this._isAlive = false
-        removeLiveNode(this)
+        NodeManager.removeLiveNode(this)
     }
 
     draw() {
-        fillForBoolean(this._value)
+        fillForBoolean(this.value)
 
-        stroke(0)
-        strokeWeight(1)
+        const [circleColor, thickness] =
+            isDefined(this._forceValue) && mode >= Mode.FULL
+                ? [[180, 0, 0], 3]
+                : [[0, 0, 0], 1]
+
+        stroke(circleColor)
+        strokeWeight(thickness)
         circle(this.posX, this.posY, DIAMETER)
 
         if (this.isMouseOver()) {
@@ -64,12 +77,16 @@ export class Node extends PositionSupport {
         this._connectionState = state
     }
 
-    public get value(): boolean {
-        return this._value
+    public get value(): TriState {
+        return isDefined(this._forceValue) ? this._forceValue : this._value
     }
 
-    public set value(val: boolean) {
+    public set value(val: TriState) {
         this._value = val
+    }
+
+    public get forceValue() {
+        return this._forceValue
     }
 
     public get gridOffsetX() {
@@ -112,6 +129,19 @@ export class Node extends PositionSupport {
             return true
         }
         return false
+    }
+
+    doubleClicked() {
+        if (modifierKeys.isOptionDown && this.isMouseOver() && this.isOutput) {
+            this._forceValue = (() => {
+                switch (this._forceValue) {
+                    case undefined: return Unset
+                    case Unset: return false
+                    case false: return true
+                    case true: return undefined
+                }
+            })()
+        }
     }
 
 }

@@ -27,3 +27,6 @@
  * Align input and output nodes on grid
  * Connect components with Shift key for overlapping nodes
  * Make 'esc' cancel item placement (wire or component)
+ * Allow forcing output nodes to a predefined value
+ * Allow inputs to be undetermined ('?')
+ * Allow gates to be drawn in an undetermined shape

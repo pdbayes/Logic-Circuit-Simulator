@@ -1,19 +1,18 @@
-import { Mode } from "./Enums.js"
-import { Node } from "./Node.js"
-import { colorMouseOver, fillForBoolean, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, IDGen, INPUT_OUTPUT_DIAMETER } from "./Component.js"
+import { isDefined, isNotNull, Mode, TriState } from "../utils.js"
+import { colorMouseOver, fillForBoolean, mode, roundValue, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-interface LogicOutputRepr extends ComponentRepr {
+interface LogicOutputRepr extends ComponentRepr<1, 0> {
     name: string | undefined
 }
 
 export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
 
-    private _value = false
+    private _value: TriState = false
     private readonly name: string | undefined = undefined
 
     public constructor(savedData: LogicOutputRepr | null) {
-        super(savedData)
+        super(savedData, { inOffsets: [[-3, 0]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
         }
@@ -26,11 +25,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
         }
     }
 
-    protected makeNodes(genID: IDGen) {
-        return [[new Node(genID(), this, -3, 0)], []] as const
-    }
-
-    public get value(): boolean {
+    public get value(): TriState {
         return this._value
     }
 
@@ -61,17 +56,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
             text(this.name, this.posX + 21, this.posY)
         }
 
-        textSize(18)
-        textAlign(CENTER, CENTER)
-        if (this.value) {
-            textStyle(BOLD)
-            text('1', this.posX, this.posY)
-        }
-        else {
-            textStyle(NORMAL)
-            fill(255)
-            text('0', this.posX, this.posY)
-        }
+        roundValue(this)
     }
 
     isMouseOver() {

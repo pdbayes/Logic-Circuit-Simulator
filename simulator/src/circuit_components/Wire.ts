@@ -1,5 +1,5 @@
 import { currMouseAction } from "../menutools.js"
-import { MouseAction, Mode } from "./Enums.js"
+import { MouseAction, Mode } from "../utils.js"
 import { colorForBoolean, colorMouseOver, mode, wireLine } from "../simulator.js"
 import { Node, ConnectionState } from "./Node.js"
 
@@ -179,14 +179,16 @@ export class WireManager {
             const currentWire = this.wires[currentWireIndex]
             let created = false
             if (newNode !== currentWire.startNode) {
-                if (currentWire.startNode.isOutput !== newNode.isOutput) {
+                if (currentWire.startNode.isOutput !== newNode.isOutput && newNode.acceptsMoreConnections) {
                     // normal, create
                     currentWire.endNode = newNode
                     created = true
                 } else if (newNode.connectionState === ConnectionState.TAKEN) {
                     // try connect to other end of new node
                     for (const wire of this.wires) {
-                        if (wire.endNode === newNode) {
+                        if (wire.endNode === newNode &&
+                            currentWire.startNode.isOutput !== wire.startNode.isOutput &&
+                            wire.startNode.acceptsMoreConnections) {
                             currentWire.endNode = wire.startNode
                             created = true
                             break

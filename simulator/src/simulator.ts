@@ -1,17 +1,19 @@
 import * as p5 from "p5"
 
 import { activeTool, currMouseAction } from "./menutools.js"
-import { MouseAction } from "./circuit_components/Enums.js"
+import { isDefined, isNullOrUndefined, isUndefined, isUnset, MouseAction } from "./utils.js"
 import { WireManager } from "./circuit_components/Wire.js"
-import { Mode } from "./circuit_components/Enums.js"
-import { FileManager } from "./FileManager.js"
+import { Mode, TriState } from "./utils.js"
+import { PersistenceManager } from "./PersistenceManager.js"
 import { Gate } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
 import { Node } from "./circuit_components/Node.js"
-import { Component, ComponentState, GRID_STEP, tryConnectNodes } from "./circuit_components/Component.js"
+import { Component, ComponentState } from "./circuit_components/Component.js"
 import { Display } from "./circuit_components/Display.js"
+import { GRID_STEP, HasPosition } from "./circuit_components/Position.js"
+import { NodeManager } from "./NodeManager.js"
 
 export type Color = [number, number, number]
 // export type FF = FF_D | FF_JK | FF_T
@@ -26,15 +28,18 @@ export const clocks: Clock[] = []
 // export const srLatches: SR_Latch[] = []
 // export const flipflops: FF[] = []
 
-export const allComponents = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
-export const allComponentsWithDoubleClick = [logicInputs, displays]
+export const allComponents: Component[][] = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
 export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
-export const fileManager = new FileManager()
 
 export let mode = Mode.FULL
-export let isCmdDown = false
+export const modifierKeys = {
+    isShiftDown: false,
+    isCommandDown: false,
+    isOptionDown: false,
+    isControlDown: false,
+}
 const movingComponents = new Set<Component>()
 
 export function startedMoving(comp: Component) {
@@ -49,12 +54,13 @@ let initialData: string | undefined = undefined
 
 export const COLOR_FULL: Color = [255, 193, 7]
 export const COLOR_EMPTY: Color = [52, 58, 64]
+export const COLOR_UNSET: Color = [152, 158, 164]
 
-export function colorForBoolean(value: boolean): Color {
-    return value ? COLOR_FULL : COLOR_EMPTY
+export function colorForBoolean(value: TriState): Color {
+    return isUnset(value) ? COLOR_UNSET : value ? COLOR_FULL : COLOR_EMPTY
 }
 
-export function fillForBoolean(value: boolean): Color {
+export function fillForBoolean(value: TriState): Color {
     const c = colorForBoolean(value)
     fill(...c)
     return c
@@ -81,6 +87,25 @@ export function wireLine(node: Node, x1: number, y1: number) {
     stroke(...colorForBoolean(node.value))
     strokeWeight(2)
     line(x0, y0, x1, y1)
+}
+
+export function roundValue(comp: HasPosition & { value: TriState }) {
+    const value = comp.value
+    textSize(18)
+    textAlign(CENTER, CENTER)
+
+    if (isUnset(value)) {
+        fill(255)
+        textStyle(BOLD)
+        text('?', comp.posX, comp.posY)
+    } else if (value) {
+        textStyle(BOLD)
+        text('1', comp.posX, comp.posY)
+    } else {
+        fill(255)
+        textStyle(NORMAL)
+        text('0', comp.posX, comp.posY)
+    }
 }
 
 
@@ -132,18 +157,11 @@ export function setup() {
 
     canvas.parent('canvas-sim')
 
-    canvasContainer.addEventListener("mousemove", (e) => {
-        if (e.metaKey !== isCmdDown) {
-            isCmdDown = e.metaKey
-        }
-    }, true)
-
     const data = getURLParameter(PARAM_DATA)
     if (isDefined(data)) {
         initialData = data
         tryLoadFromData()
     }
-
 
     const maybeMode = getURLParameter(PARAM_MODE, "").toUpperCase()
     if (maybeMode in Mode) {
@@ -191,7 +209,7 @@ export function setup() {
             // if (dumpJsonStructure) {
             dumpJsonStructure.setAttribute("style", "")
             dumpJsonStructure.addEventListener("click", () => {
-                const json = FileManager.getJSON_Workspace()
+                const json = PersistenceManager.buildWorkspaceJSON()
                 console.log("JSON:\n" + json)
                 const encodedJson = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
                 const loc = window.location
@@ -212,9 +230,9 @@ export function tryLoadFromData() {
     }
     try {
         const decodedData = atob(initialData.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
-        fileManager.doLoadFromJson(decodeURIComponent(decodedData))
+        PersistenceManager.doLoadFromJson(decodeURIComponent(decodedData))
     } catch (e) {
-        console.trace(e)
+        console.log(e)
     }
 }
 
@@ -252,10 +270,6 @@ export function draw() {
             elem.draw()
         }
     }
-    if (fileManager.isLoadingState) {
-        fileManager.isLoadingState = false
-    }
-
 }
 
 export function mousePressed() {
@@ -275,7 +289,7 @@ export function mouseReleased() {
 }
 
 export function doubleClicked() {
-    for (const elems of allComponentsWithDoubleClick) {
+    for (const elems of allComponents) {
         for (const elem of elems) {
             elem.doubleClicked()
         }
@@ -297,16 +311,23 @@ export function mouseClicked() {
     wireMng.mouseClicked()
 }
 
-export function keyUp(e: KeyboardEvent) {
+function keyUp(e: KeyboardEvent) {
     switch (e.key) {
         case "Shift":
-            return tryConnectNodes()
+            return NodeManager.tryConnectNodes()
 
         case "Escape":
             tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
             wireMng.tryCancelWire()
             return
     }
+}
+
+function modifierKeyWatcher(e: KeyboardEvent) {
+    modifierKeys.isShiftDown = e.shiftKey
+    modifierKeys.isCommandDown = e.metaKey
+    modifierKeys.isOptionDown = e.altKey
+    modifierKeys.isControlDown = e.ctrlKey
 }
 
 
@@ -321,16 +342,19 @@ window.mouseClicked = mouseClicked
 
 window.addEventListener("keyup", keyUp)
 
+window.addEventListener("keydown", modifierKeyWatcher)
+window.addEventListener("keyup", modifierKeyWatcher)
+
 window.activeTool = activeTool
 
 const projectFile = document.getElementById("projectFile")
 if (projectFile) {
-    projectFile.addEventListener("change", (e) => fileManager.loadFile(e), false)
+    projectFile.addEventListener("change", (e) => PersistenceManager.loadFile(e), false)
 }
 
 export const saveProjectFile = document.getElementById("saveProjectFile") as HTMLAnchorElement | null
 if (saveProjectFile) {
-    saveProjectFile.addEventListener("click", () => fileManager.saveFile(), false)
+    saveProjectFile.addEventListener("click", () => PersistenceManager.saveFile(), false)
 }
 
 function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
@@ -346,52 +370,6 @@ function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
     }
 }
 
-export function saveFile() {
-    fileManager.saveFile()
-}
-
-export function any(bools: boolean[]): boolean {
-    for (let i = 0; i < bools.length; i++) {
-        if (bools[i]) {
-            return true
-        }
-    }
-    return false
-}
-
-export function isUndefined(v: any): v is undefined {
-    return typeof v === "undefined"
-}
-
-export function isDefined<T>(v: T | undefined): v is T {
-    return typeof v !== "undefined"
-}
-
-export function isNullOrUndefined(v: any): v is null | undefined {
-    return isUndefined(v) || v === null
-}
-
-export function isNotNull<T>(v: T | null): v is T {
-    return v !== null
-}
-
-export function isString(v: any): v is string {
-    return typeof v === "string"
-}
-
-export type NodeArrayOfLength<T extends number> =
-    T extends 0 ? readonly []
-    : T extends 1 ? readonly [Node]
-    : T extends 2 ? readonly [Node, Node]
-    : T extends 3 ? readonly [Node, Node, Node]
-    : T extends 4 ? readonly [Node, Node, Node, Node]
-    : T extends 5 ? readonly [Node, Node, Node, Node, Node]
-    : T extends 6 ? readonly [Node, Node, Node, Node, Node, Node]
-    : T extends 7 ? readonly [Node, Node, Node, Node, Node, Node, Node]
-    : T extends 8 ? readonly [Node, Node, Node, Node, Node, Node, Node, Node]
-    : []
-
-
 export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
     const w2 = width / 2
     const h2 = height / 2
@@ -399,4 +377,29 @@ export function inRect(centerX: number, centerY: number, width: number, height: 
         pointY >= centerY - h2 && pointY < centerY + h2
 }
 
-window.loadFromJson = (jsonString: any) => fileManager.doLoadFromJson(jsonString)
+window.loadFromJson = (jsonString: any) => PersistenceManager.doLoadFromJson(jsonString)
+
+const menu = document.querySelector('.menu') as HTMLElement
+
+function showMenu(x: number, y: number) {
+    menu.style.left = x + 'px'
+    menu.style.top = y + 'px'
+    menu.classList.add('show-menu')
+}
+
+function hideMenu() {
+    menu.classList.remove('show-menu')
+}
+
+function onContextMenu(e: MouseEvent) {
+    e.preventDefault()
+    showMenu(e.pageX, e.pageY)
+    document.addEventListener('click', onClick, false)
+}
+
+function onClick() {
+    hideMenu()
+    document.removeEventListener('click', onClick)
+}
+
+document.addEventListener('contextmenu', onContextMenu, false)

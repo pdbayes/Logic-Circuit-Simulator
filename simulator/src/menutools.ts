@@ -1,12 +1,12 @@
 import { Clock } from "./circuit_components/Clock.js"
-import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, isNullOrUndefined } from "./simulator.js"
+import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays } from "./simulator.js"
 import { GateFactory, GateTypes } from "./circuit_components/Gate.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
-import { MouseAction } from "./circuit_components/Enums.js"
-import { NibbleDisplay } from "./circuit_components/NibbleDisplay.js"
-import { AsciiDisplay } from "./circuit_components/AsciiDisplay.js"
-import { BarDisplay } from "./circuit_components/BarDisplay.js"
+import { isNullOrUndefined, MouseAction } from "./utils.js"
+import { DisplayNibble } from "./circuit_components/DisplayNibble.js"
+import { DisplayAscii } from "./circuit_components/DisplayAscii.js"
+import { DisplayBar } from "./circuit_components/DisplayBar.js"
 
 export let currMouseAction = MouseAction.EDIT
 
@@ -56,15 +56,15 @@ export function activeTool(elTool: HTMLElement) {
             break
 
         case "NibbleDisplay":
-            displays.push(new NibbleDisplay(null))
+            displays.push(new DisplayNibble(null))
             break
 
         case "AsciiDisplay":
-            displays.push(new AsciiDisplay(null))
+            displays.push(new DisplayAscii(null))
             break
 
         case "BarDisplay":
-            displays.push(new BarDisplay(null))
+            displays.push(new DisplayBar(null))
             break
 
         case "Clock": {

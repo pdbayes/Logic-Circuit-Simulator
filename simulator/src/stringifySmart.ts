@@ -3,12 +3,19 @@
 // are present (unless the user supplied a weird `options.indent` but in
 // that case we don’t care since the output would be invalid anyway).
 
-import { isDefined } from "./simulator.js"
+import { isDefined } from "./utils.js"
 
 // eslint-disable-next-line prefer-named-capture-group
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
 
-export function stringifySmart(passedObj: any, options?: { replacer?: (this: any, key: string, value: any) => any, indent?: number | string, maxLength?: number }): string {
+export function stringifySmart(
+    passedObj: any,
+    options?: {
+        replacer?: (this: any, key: string, value: any) => any,
+        indent?: number | string,
+        maxLength?: number
+    }
+): string {
 
     options ??= {}
     const indent: string = JSON.stringify([1], undefined, options.indent ?? 2).slice(2, -3)

@@ -1,23 +1,26 @@
-import { Mode } from "./Enums.js"
-import { Node } from "./Node.js"
-import { colorMouseOver, inRect, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
+import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
+import { colorMouseOver, inRect, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr } from "./Component.js"
+import { displayValuesFromInputs } from "./Display.js"
+import { GRID_STEP } from "./Position.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-export interface AsciiDisplayRepr extends ComponentRepr {
+export interface DisplayAsciiRepr extends ComponentRepr<7, 0> {
     type: "ascii"
     name: string | undefined
 }
 
-export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
+export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
 
-    private _value = 0
+    private _value: number | unset = 0
     private readonly name: string | undefined = undefined
 
-    public constructor(savedData: AsciiDisplayRepr | null) {
-        super(savedData)
+    public constructor(savedData: DisplayAsciiRepr | null) {
+        super(savedData, {
+            inOffsets: [[-3, -3], [-3, -2], [-3, -1], [-3, 0], [-3, +1], [-3, +2], [-3, +3]],
+        })
         if (isNotNull(savedData)) {
             this.name = savedData.name
         }
@@ -31,32 +34,15 @@ export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
         }
     }
 
-    protected makeNodes(genID: IDGen) {
-        return [[
-            new Node(genID(), this, -3, -3),
-            new Node(genID(), this, -3, -2),
-            new Node(genID(), this, -3, -1),
-            new Node(genID(), this, -3, +0),
-            new Node(genID(), this, -3, +1),
-            new Node(genID(), this, -3, +2),
-            new Node(genID(), this, -3, +3),
-        ], []] as const
-    }
-
     public get value() {
         return this._value
     }
 
-
     draw() {
         this.updatePositionIfNeeded()
 
-        let binaryStringRep = ""
-        for (const input of this.inputs) {
-            input.updatePositionFromParent()
-            binaryStringRep = +input.value + binaryStringRep
-        }
-        this._value = parseInt(binaryStringRep, 2)
+        const [binaryStringRep, value] = displayValuesFromInputs(this.inputs)
+        this._value = value
 
         if (this.isMouseOver()) {
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
@@ -96,16 +82,22 @@ export class AsciiDisplay extends ComponentBase<7, 0, AsciiDisplayRepr> {
 
 
         textAlign(CENTER, CENTER)
-        if (this._value < 32) {
+
+        if (isUnset(value)) {
+            textSize(18)
+            textStyle(BOLD)
+            text("?", this.posX, this.posY)
+
+        } else if (value < 32) {
             // non-printable
             textSize(16)
             textStyle(NORMAL)
-            text("\\" + this._value, this.posX, this.posY)
+            text("\\" + value, this.posX, this.posY)
 
         } else {
             textSize(18)
             textStyle(BOLD)
-            text("‘" + String.fromCharCode(this._value) + "’", this.posX, this.posY)
+            text("‘" + String.fromCharCode(value) + "’", this.posX, this.posY)
         }
     }
 

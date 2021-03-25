@@ -1,0 +1,200 @@
+export type Dict<T> = Record<string, T | undefined>
+
+// Better types for an Object.keys() replacement
+export function keysOf<K extends keyof any>(d: Record<K, any>): K[]
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function keysOf<K extends {}>(o: K): (keyof K)[]
+export function keysOf(o: any) {
+    return Object.keys(o)
+}
+
+// Allows nice definitions of enums with associated data
+export class RichStringEnum<K extends keyof any, P> {
+
+    static withProps<P0>() {
+        return function <K0 extends keyof any>(defs: Record<K0, P0>) {
+            return new RichStringEnum<K0, P0>(defs)
+        }
+    }
+
+    private _values: Array<K>
+
+    private constructor(private props: Record<K, P>) {
+        this._values = keysOf(props)
+        for (let i = 0; i < this._values.length; i++) {
+            this[i] = this._values[i]
+        }
+    }
+
+    get type(): K {
+        throw new Error()
+    }
+
+    get values(): Array<K> {
+        return this._values
+    }
+
+    get length(): number {
+        return this._values.length
+    }
+
+    get definitions(): Array<[K, P]> {
+        const defs: Array<[K, P]> = []
+        for (const i of this._values) {
+            defs.push([i, this.props[i]])
+        }
+        return defs
+    }
+
+    isValue(val: string | number | symbol): val is K {
+        return this.values.includes(val as any)
+    }
+
+    indexOf(val: K): number {
+        return this.values.indexOf(val)
+    }
+
+    propsOf(key: K): P {
+        return this.props[key]
+    }
+
+    [i: number]: K
+
+    *[Symbol.iterator]() {
+        for (const i of this._values) {
+            yield i
+        }
+    }
+
+}
+
+// Utility types to force the evaluation of computed types
+// See: https://stackoverflow.com/a/57683652/390581
+
+// expands object types one level deep
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
+
+// expands object types recursively
+export type ExpandRecursively<T> = T extends Record<string, unknown>
+    ? T extends infer O ? { [K in keyof O]: ExpandRecursively<O[K]> } : never
+    : T
+
+
+// Series of type-assertion functions
+
+export function isUndefined(v: any): v is undefined {
+    return typeof v === "undefined"
+}
+
+export function isDefined<T>(v: T | undefined): v is T {
+    return typeof v !== "undefined"
+}
+
+export function isNullOrUndefined(v: any): v is null | undefined {
+    return isUndefined(v) || v === null
+}
+
+export function isNotNull<T>(v: T | null): v is T {
+    return v !== null
+}
+
+export function isString(v: any): v is string {
+    return typeof v === "string"
+}
+
+export function isArray(arg: any): arg is ReadonlyArray<any> {
+    return Array.isArray(arg)
+}
+
+export function isNumber(arg: any): arg is number {
+    return typeof arg === "number"
+}
+
+
+// Fixed-size arrays up to 8 to model inputs statically
+
+export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
+export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
+
+export type FixedArray<T, N extends FixedArraySize> =
+    N extends 0 ? readonly []
+    : N extends 1 ? readonly [T]
+    : N extends 2 ? readonly [T, T]
+    : N extends 3 ? readonly [T, T, T]
+    : N extends 4 ? readonly [T, T, T, T]
+    : N extends 5 ? readonly [T, T, T, T, T]
+    : N extends 6 ? readonly [T, T, T, T, T, T]
+    : N extends 7 ? readonly [T, T, T, T, T, T, T]
+    : /*N extends 8 ? */readonly [T, T, T, T, T, T, T, T]
+
+// This seemingly identity function allows to convert back from a fixed-size tuple
+// to a regular array. It is a safe type cast, in a way, and allows to see the
+// regular array methods as well as to use the for-of iteration on these tuples
+export function asArray<T, N extends FixedArraySize>(tuple: FixedArray<T, N>): ReadonlyArray<T> {
+    return tuple
+}
+
+
+// More general-purpose utility functions
+
+export function any(bools: boolean[]): boolean {
+    for (let i = 0; i < bools.length; i++) {
+        if (bools[i]) {
+            return true
+        }
+    }
+    return false
+}
+
+
+// Unset; TriState
+
+export const Unset = "?" as const
+export type unset = typeof Unset
+
+export function isUnset<T>(v: T | unset): v is unset {
+    return v === Unset
+}
+
+export type TriState = boolean | unset
+export type TriStateRepr = 0 | 1 | unset
+
+export function toTriStateRepr(v: TriState): TriStateRepr
+export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined
+export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined {
+    switch (v) {
+        case true: return 1
+        case false: return 0
+        case Unset: return Unset
+        case undefined: return undefined
+    }
+}
+
+export function toTriState(v: TriStateRepr): TriState
+export function toTriState(v: TriStateRepr | undefined): TriState | undefined
+export function toTriState(v: TriStateRepr | undefined): TriState | undefined {
+    switch (v) {
+        case 1: return true
+        case 0: return false
+        case Unset: return Unset
+        case undefined: return undefined
+    }
+}
+
+
+// Enums or RichEnums used in several files
+
+export enum Mode {
+    STATIC,
+    TRYOUT,
+    CONNECT,
+    FULL,
+}
+
+export enum MouseAction {
+    EDIT,
+    MOVE,
+    DELETE,
+}
+

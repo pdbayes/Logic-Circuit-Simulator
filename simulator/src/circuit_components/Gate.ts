@@ -1,8 +1,8 @@
-import { any, inRect, wireLine } from "../simulator.js"
-import { Mode, RichStringEnum } from "./Enums.js"
-import { Node } from "./Node.js"
+import { COLOR_UNSET, inRect, modifierKeys, wireLine } from "../simulator.js"
+import { any, asArray, Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils.js"
 import { colorMouseOver, mode } from "../simulator.js"
-import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
+import { ComponentBase, ComponentRepr } from "./Component.js"
+import { GRID_STEP } from "./Position.js"
 
 export const Gate2Types = RichStringEnum.withProps<
     (in1: boolean, in2: boolean) => boolean
@@ -26,50 +26,33 @@ export const GateTypes = {
     },
 }
 
-
-interface GateMandatoryParams {
+type GateMandatoryParams = {
     type: GateType
 }
 
-interface Gate2MandatoryParams {
-    type: Gate2Type
-}
-
-interface GateRepr extends ComponentRepr, GateMandatoryParams { }
-
-
-interface Gate2Repr extends ComponentRepr, Gate2MandatoryParams { }
+type GateRepr<N extends FixedArraySize> = ComponentRepr<N, 1> & GateMandatoryParams
 
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 4
 
-export type Gate = GateBase<any>
+export type Gate = GateBase<any, GateRepr<any>>
 
-export abstract class GateBase<NumInput extends number> extends ComponentBase<NumInput, 1, GateRepr> {
-
-    toJSON() {
-        return {
-            type: this.type,
-            ...this.toJSONBase(),
-        }
-    }
+export abstract class GateBase<NumInput extends FixedArraySize, Repr extends GateRepr<NumInput>> extends ComponentBase<NumInput, 1, Repr> {
 
     abstract get type(): GateType
 
-    public get outputValue(): boolean {
+    public get outputValue(): TriState {
         return this.outputs[0].value
     }
 
-    public get inputs_(): Node[] {
-        return this.inputs
-    }
-
     draw() {
-        this.drawGate(this.type)
+        this.drawGate(this.showAsUnknown ? Unset : this.type)
     }
 
-    protected drawGate(type: GateType) {
+    protected abstract get showAsUnknown(): boolean
+
+    protected drawGate(type: GateType | unset) {
         this.updatePositionIfNeeded()
         const output = this.outputs[0]
         output.value = this.calculateValue()
@@ -106,7 +89,7 @@ export abstract class GateBase<NumInput extends number> extends ComponentBase<Nu
             gateRight += 4
         }
         const wireEnds = () => {
-            for (const input of this.inputs_) {
+            for (const input of asArray(this.inputs)) {
                 wireLine(input, gateLeft - 2, input.posY)
             }
             wireLine(output, gateRight + 2, this.posY)
@@ -154,15 +137,29 @@ export abstract class GateBase<NumInput extends number> extends ComponentBase<Nu
                 }
                 wireEnds()
                 break
+
+            case "?":
+                stroke(COLOR_UNSET)
+                line(gateLeft, top, gateRight, top)
+                line(gateLeft, bottom, gateRight, bottom)
+                line(gateLeft, top, gateLeft, bottom)
+                line(gateRight, top, gateRight, bottom)
+                textAlign(CENTER, CENTER)
+                textStyle(BOLD)
+                strokeWeight(0)
+                fill(COLOR_UNSET)
+                text('?', this.posX, this.posY)
+                wireEnds()
+                break
         }
 
-        for (const input of this.inputs_) {
+        for (const input of asArray(this.inputs)) {
             input.draw()
         }
         output.draw()
     }
 
-    protected abstract calculateValue(): boolean
+    protected abstract calculateValue(): TriState
 
     isMouseOver(): boolean {
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
@@ -172,7 +169,7 @@ export abstract class GateBase<NumInput extends number> extends ComponentBase<Nu
         const results = [
             this.isMouseOver(),
         ]
-        for (const input of this.inputs_) {
+        for (const input of asArray(this.inputs)) {
             results.push(input.mouseClicked())
         }
         results.push(this.outputs[0].mouseClicked())
@@ -184,60 +181,101 @@ export abstract class GateBase<NumInput extends number> extends ComponentBase<Nu
 
 
 
-export class Gate2 extends GateBase<2> {
+type Gate2MandatoryParams = {
+    type: Gate2Type
+}
+type Gate2Repr = Expand<ComponentRepr<2, 1> & Gate2MandatoryParams & {
+    showAsUnknown?: boolean
+}>
+
+export class Gate2 extends GateBase<2, Gate2Repr> {
 
     public readonly type: Gate2Type
+    private _showAsUnknown = false
 
     constructor(savedData: Gate2Repr | Gate2MandatoryParams) {
-        super("id" in savedData ? savedData : null)
+        super("in" in savedData ? savedData : null, {
+            inOffsets: [[-4, -1], [-4, +1]],
+            outOffsets: [[+4, 0]],
+        })
         this.type = savedData.type
+        if ("in" in savedData) {
+            // it's a Gate2Repr
+            if (isDefined(savedData.showAsUnknown)) {
+                this._showAsUnknown = savedData.showAsUnknown
+            }
+        }
     }
 
-    protected makeNodes(genID: IDGen) {
-        const input1 = new Node(genID(), this, -4, -1)
-        const input2 = new Node(genID(), this, -4, +1)
-        return [[
-            input1, input2,
-        ], [
-            new Node(genID(), this, +4, 0, true),
-        ]] as const
+    toJSON() {
+        return {
+            type: this.type,
+            ...super.toJSONBase(),
+            showAsUnknown: (this._showAsUnknown) ? true : undefined,
+        }
     }
 
-    protected calculateValue(): boolean {
+    protected get showAsUnknown() {
+        return this._showAsUnknown
+    }
+
+    protected calculateValue(): TriState {
+        const in1 = this.inputs[0].value
+        const in2 = this.inputs[1].value
+        if (isUnset(in1) || isUnset(in2)) {
+            return Unset
+        }
         const calcOut = Gate2Types.propsOf(this.type)
-        return calcOut(this.inputs[0].value, this.inputs[1].value)
+        return calcOut(in1, in2)
     }
 
-
+    doubleClicked() {
+        super.doubleClicked()
+        if (modifierKeys.isOptionDown && this.isMouseOver()) {
+            this._showAsUnknown = !this._showAsUnknown
+        }
+    }
 }
 
-export class Gate1Inverter extends GateBase<1> {
+type GateRepr1 = Expand<GateRepr<1>>
 
-    constructor(savedData: GateRepr | GateMandatoryParams) {
-        super("id" in savedData ? savedData : null)
+export class Gate1Inverter extends GateBase<1, GateRepr1> {
+
+    constructor(savedData: GateRepr1 | GateMandatoryParams) {
+        super("in" in savedData ? savedData : null, {
+            inOffsets: [[-4, 0]],
+            outOffsets: [[+4, 0]],
+        })
+    }
+
+    toJSON() {
+        return {
+            type: this.type,
+            ...super.toJSONBase(),
+        }
     }
 
     get type() {
         return "NOT" as const
     }
 
-    protected makeNodes(genID: IDGen) {
-        return [[
-            new Node(genID(), this, -4, 0),
-        ], [
-            new Node(genID(), this, +4, 0, true),
-        ]] as const
+    get showAsUnknown() {
+        return false
     }
 
-    protected calculateValue(): boolean {
-        return !this.inputs[0].value
+    protected calculateValue(): TriState {
+        const in0 = this.inputs[0].value
+        if (isUnset(in0)) {
+            return Unset
+        }
+        return in0!
     }
 
 }
 
 export const GateFactory = {
 
-    make: (savedData: GateRepr | GateMandatoryParams) => {
+    make: <N extends FixedArraySize>(savedData: GateRepr<N> | GateMandatoryParams) => {
         if (savedData.type === "NOT") {
             return new Gate1Inverter(savedData)
         } else {

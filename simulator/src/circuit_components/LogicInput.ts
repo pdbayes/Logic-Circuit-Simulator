@@ -1,22 +1,21 @@
-import { Mode } from "./Enums.js"
-import { Node } from "./Node.js"
-import { colorMouseOver, fillForBoolean, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, IDGen, INPUT_OUTPUT_DIAMETER } from "./Component.js"
+import { isDefined, isNotNull, isUnset, Mode, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
+import { colorMouseOver, fillForBoolean, roundValue, modifierKeys, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-export interface LogicInputRepr extends ComponentRepr {
-    val: number
+export interface LogicInputRepr extends ComponentRepr<0, 1> {
+    val: TriStateRepr
     name: string | undefined
 }
 
 export abstract class LogicInputBase<Repr extends LogicInputRepr> extends ComponentBase<0, 1, Repr> {
 
-    private _value = false
+    private _value: TriState = false
     protected readonly name: string | undefined = undefined
 
     public constructor(savedData: Repr | null) {
-        super(savedData)
+        super(savedData, { outOffsets: [[+3, 0]] })
         if (isNotNull(savedData)) {
-            this._value = !!savedData.val
+            this._value = isUnset(savedData.val) ? Unset : !!savedData.val
             this.name = savedData.name
         }
     }
@@ -25,22 +24,16 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
         return {
             ...super.toJSONBase(),
             name: this.name,
-            val: this.value ? 1 : 0,
+            val: toTriStateRepr(this._value),
         }
     }
 
-    protected makeNodes(genID: IDGen) {
-        return [[], [
-            new Node(genID(), this, +3, 0, true),
-        ]] as const
-    }
-
-    public get value(): boolean {
+    public get value(): TriState {
         return this._value
     }
 
     toggleValue() {
-        this._value = !this._value
+        this._value = isUnset(this._value) ? true : !this._value
     }
 
     draw() {
@@ -62,16 +55,8 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
         output.draw()
 
         this.printInfo()
-        textSize(18)
-        textAlign(CENTER, CENTER)
-        if (this.value) {
-            textStyle(BOLD)
-            text('1', this.posX, this.posY)
-        } else {
-            fill(255)
-            textStyle(NORMAL)
-            text('0', this.posX, this.posY)
-        }
+
+        roundValue(this)
     }
 
     printInfo() {
@@ -91,7 +76,13 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
 
     doubleClicked() {
         if (this.isMouseOver()) {
-            this.toggleValue()
+            this._value = (() => {
+                switch (this._value) {
+                    case true: return (modifierKeys.isOptionDown) ? Unset : false
+                    case false: return (modifierKeys.isOptionDown) ? Unset : true
+                    case Unset: return false
+                }
+            })()
         }
     }
 

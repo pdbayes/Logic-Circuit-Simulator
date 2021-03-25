@@ -1,26 +1,27 @@
-import { Mode } from "./Enums.js"
-import { Node } from "./Node.js"
-import { colorMouseOver, fillForFraction, inRect, isDefined, isNotNull, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, GRID_STEP, IDGen } from "./Component.js"
+import { Expand, isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
+import { colorMouseOver, COLOR_UNSET, fillForFraction, inRect, mode, wireLine } from "../simulator.js"
+import { ComponentBase, ComponentRepr } from "./Component.js"
+import { displayValuesFromInputs } from "./Display.js"
+import { GRID_STEP } from "./Position.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
-export interface NibbleDisplayRepr extends ComponentRepr {
+export type DisplayNibbleRepr = Expand<ComponentRepr<4, 0> & {
     type: "nibble"
     name: string | undefined
     radix: number | undefined
-}
+}>
 
-export class NibbleDisplay extends ComponentBase<4, 0, NibbleDisplayRepr> {
+export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
 
-    private _value = 0
+    private _value: number | unset = 0
     private readonly name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
 
-    public constructor(savedData: NibbleDisplayRepr | null) {
-        super(savedData)
+    public constructor(savedData: DisplayNibbleRepr | null) {
+        super(savedData, { inOffsets: [[-3, -3], [-3, -1], [-3, +1], [-3, +3]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX
@@ -36,15 +37,6 @@ export class NibbleDisplay extends ComponentBase<4, 0, NibbleDisplayRepr> {
         }
     }
 
-    protected makeNodes(genID: IDGen) {
-        return [[
-            new Node(genID(), this, -3, -3),
-            new Node(genID(), this, -3, -1),
-            new Node(genID(), this, -3, +1),
-            new Node(genID(), this, -3, +3),
-        ], []] as const
-    }
-
     public get value() {
         return this._value
     }
@@ -52,14 +44,11 @@ export class NibbleDisplay extends ComponentBase<4, 0, NibbleDisplayRepr> {
     draw() {
         this.updatePositionIfNeeded()
 
-        let binaryStringRep = ""
-        for (const input of this.inputs) {
-            binaryStringRep = +input.value + binaryStringRep
-        }
-        this._value = parseInt(binaryStringRep, 2)
+        const [binaryStringRep, value] = displayValuesFromInputs(this.inputs)
+        this._value = value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = fillForFraction(this._value / maxValue)
+        const backColor = isUnset(this._value) ? COLOR_UNSET : fillForFraction(this._value / maxValue)
 
         if (this.isMouseOver()) {
             stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])

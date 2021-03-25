@@ -1,18 +1,15 @@
-import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, isNullOrUndefined, isString, allComponents, isUndefined } from "./simulator.js"
+import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, allComponents } from "./simulator.js"
 import { LogicInput } from "./circuit_components/LogicInput.js"
 import { LogicOutput } from "./circuit_components/LogicOutput.js"
 import { Clock } from "./circuit_components/Clock.js"
 import { Gate, GateFactory } from "./circuit_components/Gate.js"
 import { stringifySmart } from "./stringifySmart.js"
 import { Wire } from "./circuit_components/Wire.js"
-import { clearLiveNodes, findNode } from "./circuit_components/Component.js"
 import { Display, DisplayFactory } from "./circuit_components/Display.js"
+import { NodeManager } from "./NodeManager.js"
+import { isNullOrUndefined, isString, isUndefined } from "./utils.js"
 
-// let eventHistory = []
-
-export class FileManager {
-
-    public isLoadingState = false
+class _PersistenceManager {
 
     loadFile(e: Event) {
         const sourceElem = e.target as HTMLInputElement
@@ -34,8 +31,6 @@ export class FileManager {
     }
 
     doLoadFromJson(content: string | any): boolean {
-        this.isLoadingState = true
-
         let parsedContents: any
         if (!isString(content)) {
             parsedContents = content
@@ -53,7 +48,7 @@ export class FileManager {
             elems.splice(0, elems.length)
         }
         wireMng.wires.splice(0, wireMng.wires.length)
-        clearLiveNodes()
+        NodeManager.clearLiveNodes()
 
         type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
 
@@ -152,8 +147,8 @@ export class FileManager {
                 if (isNullOrUndefined(parsedVals[1])) {
                     continue
                 }
-                const node1 = findNode(parsedVals[0])
-                const node2 = findNode(parsedVals[1])
+                const node1 = NodeManager.findNode(parsedVals[0])
+                const node2 = NodeManager.findNode(parsedVals[1])
                 if (isUndefined(node1) || isUndefined(node2)) {
                     continue
                 }
@@ -165,16 +160,15 @@ export class FileManager {
         return true
     }
 
-
     saveFile() {
-        const jsonWorkspace = FileManager.getJSON_Workspace()
+        const jsonWorkspace = this.buildWorkspaceJSON()
         const blob = new Blob([jsonWorkspace], { type: 'application/json' })
         if (saveProjectFile) {
             saveProjectFile.href = URL.createObjectURL(blob)
         }
     }
 
-    static getJSON_Workspace() {
+    buildWorkspaceJSON() {
         const workspace: any = {}
 
         if (logicInputs.length) { workspace["in"] = logicInputs }
@@ -186,12 +180,10 @@ export class FileManager {
         // if (srLatches.length) { workspace["srLatches"] = srLatches }
         if (wireMng.wires.length) { workspace["wires"] = wireMng.wires }
 
-        console.log(workspace)
-
-        const jsonStr = stringifySmart(workspace)
-
-        console.log(jsonStr)
-
+        const jsonStr = stringifySmart(workspace, { maxLength: 85 })
+        // console.log(jsonStr)
         return jsonStr
     }
 }
+
+export const PersistenceManager = new _PersistenceManager()
