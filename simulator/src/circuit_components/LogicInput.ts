@@ -78,9 +78,9 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
         if (this.isMouseOver()) {
             this._value = (() => {
                 switch (this._value) {
-                    case true: return (modifierKeys.isOptionDown) ? Unset : false
-                    case false: return (modifierKeys.isOptionDown) ? Unset : true
-                    case Unset: return false
+                    case true: return (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) ? Unset : false
+                    case false: return (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) ? Unset : true
+                    case Unset: return mode >= Mode.DESIGN_FULL ? false : Unset
                 }
             })()
         }

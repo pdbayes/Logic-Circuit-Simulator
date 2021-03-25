@@ -1,7 +1,7 @@
 import * as p5 from "p5"
 
 import { activeTool, currMouseAction } from "./menutools.js"
-import { isDefined, isNullOrUndefined, isUndefined, isUnset, MouseAction } from "./utils.js"
+import { getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, isUnset, MouseAction } from "./utils.js"
 import { WireManager } from "./circuit_components/Wire.js"
 import { Mode, TriState } from "./utils.js"
 import { PersistenceManager } from "./PersistenceManager.js"
@@ -33,7 +33,7 @@ export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 
-export let mode = Mode.FULL
+export let mode = isEmbeddedInIframe() ? Mode.DESIGN : Mode.DESIGN_FULL
 export const modifierKeys = {
     isShiftDown: false,
     isCommandDown: false,
@@ -120,24 +120,6 @@ export function preload() {
 }
 
 
-function getURLParameter<T>(sParam: string, defaultValue: T): string | T
-function getURLParameter(sParam: string, defaultValue?: undefined): string | undefined
-function getURLParameter(sParam: string, defaultValue: any) {
-    const sPageURL = window.location.search.substring(1)
-    const sURLVariables = sPageURL.split('&')
-    for (let i = 0; i < sURLVariables.length; i++) {
-        const sParameterName = sURLVariables[i].split('=')
-        if (sParameterName[0] === sParam) {
-            return sParameterName[1]
-        }
-    }
-    return defaultValue
-}
-
-function isTruthyString(str: string | null | undefined): boolean {
-    return !isNullOrUndefined(str) && (str === "1" || str.toLowerCase() === "true")
-}
-
 function isEmbeddedInIframe(): boolean {
     try {
         return window.self !== window.top
@@ -171,7 +153,8 @@ export function setup() {
 
     const showReset = mode >= Mode.TRYOUT
     const showRightEditControls = mode >= Mode.CONNECT
-    const showLeftMenu = mode >= Mode.FULL
+    const showLeftMenu = mode >= Mode.DESIGN
+    const showDumpStructureButton = showLeftMenu && mode >= Mode.DESIGN_FULL
     const showRightMenu = showReset || showRightEditControls
 
     if (!showReset) {
@@ -204,7 +187,7 @@ export function setup() {
 
     if (showLeftMenu) {
         document.getElementById("leftToolbar")!.style.removeProperty("display")
-        if (!isEmbeddedInIframe()) {
+        if (showDumpStructureButton) {
             const dumpJsonStructure = document.getElementById("dumpJsonStructure")!
             // if (dumpJsonStructure) {
             dumpJsonStructure.setAttribute("style", "")

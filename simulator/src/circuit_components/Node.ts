@@ -50,9 +50,9 @@ export class Node extends PositionSupport {
         fillForBoolean(this.value)
 
         const [circleColor, thickness] =
-            isDefined(this._forceValue) && mode >= Mode.FULL
-                ? [[180, 0, 0], 3]
-                : [[0, 0, 0], 1]
+            isDefined(this._forceValue) && mode >= Mode.DESIGN_FULL
+                ? [[180, 0, 0], 3] // show forced nodes with red border if not in teacher mode
+                : [[0, 0, 0], 1]   // show normally
 
         stroke(circleColor)
         strokeWeight(thickness)
@@ -132,7 +132,7 @@ export class Node extends PositionSupport {
     }
 
     doubleClicked() {
-        if (modifierKeys.isOptionDown && this.isMouseOver() && this.isOutput) {
+        if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown && this.isOutput && this.isMouseOver()) {
             this._forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset

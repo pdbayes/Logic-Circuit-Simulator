@@ -231,7 +231,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
 
     doubleClicked() {
         super.doubleClicked()
-        if (modifierKeys.isOptionDown && this.isMouseOver()) {
+        if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown && this.isMouseOver()) {
             this._showAsUnknown = !this._showAsUnknown
         }
     }

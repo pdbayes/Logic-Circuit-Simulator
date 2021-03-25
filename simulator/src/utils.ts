@@ -135,6 +135,24 @@ export function asArray<T, N extends FixedArraySize>(tuple: FixedArray<T, N>): R
     return tuple
 }
 
+export function isTruthyString(str: string | null | undefined): boolean {
+    return !isNullOrUndefined(str) && (str === "1" || str.toLowerCase() === "true")
+}
+
+export function getURLParameter<T>(sParam: string, defaultValue: T): string | T
+export function getURLParameter(sParam: string, defaultValue?: undefined): string | undefined
+export function getURLParameter(sParam: string, defaultValue: any) {
+    const sPageURL = window.location.search.substring(1)
+    const sURLVariables = sPageURL.split('&')
+    for (let i = 0; i < sURLVariables.length; i++) {
+        const sParameterName = sURLVariables[i].split('=')
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1]
+        }
+    }
+    return defaultValue
+}
+
 
 // More general-purpose utility functions
 
@@ -186,10 +204,11 @@ export function toTriState(v: TriStateRepr | undefined): TriState | undefined {
 // Enums or RichEnums used in several files
 
 export enum Mode {
-    STATIC,
-    TRYOUT,
-    CONNECT,
-    FULL,
+    STATIC,      // cannot interact in any way
+    TRYOUT,      // can change inputs on predefined circuit
+    CONNECT,     // can additionnally move preexisting components around and connect them
+    DESIGN,      // can additionally add components from left menu
+    DESIGN_FULL, // can additionally force output nodes to 'unset' state and draw undetermined dates
 }
 
 export enum MouseAction {

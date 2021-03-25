@@ -55,15 +55,15 @@ export function activeTool(elTool: HTMLElement) {
             logicOutputs.push(new LogicOutput(null))
             break
 
-        case "NibbleDisplay":
+        case "DisplayNibble":
             displays.push(new DisplayNibble(null))
             break
 
-        case "AsciiDisplay":
+        case "DisplayAscii":
             displays.push(new DisplayAscii(null))
             break
 
-        case "BarDisplay":
+        case "DisplayBar":
             displays.push(new DisplayBar(null))
             break
 
