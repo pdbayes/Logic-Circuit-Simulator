@@ -11,8 +11,12 @@ export const Gate2Types = RichStringEnum.withProps<
     OR: (in1: boolean, in2: boolean) => in1 || in2,
     XOR: (in1: boolean, in2: boolean) => in1 !== in2,
     NAND: (in1: boolean, in2: boolean) => !(in1 && in2),
-    NOR: (in1: boolean, in2: boolean) => !(in1 && in2),
+    NOR: (in1: boolean, in2: boolean) => !(in1 || in2),
     XNOR: (in1: boolean, in2: boolean) => in1 === in2,
+    IMPLY: (in1: boolean, in2: boolean) => !in1 || in2,
+    RIMPLY: (in1: boolean, in2: boolean) => in1 || !in2,
+    NIMPLY: (in1: boolean, in2: boolean) => in1 && !in2,
+    RNIMPLY: (in1: boolean, in2: boolean) => !in1 && in2,
 })
 
 export const GateTypeNot = "NOT"
@@ -88,9 +92,14 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             arc(gateRight, this.posY, 8, 8, 0, 0)
             gateRight += 4
         }
-        const wireEnds = () => {
-            for (const input of asArray(this.inputs)) {
-                wireLine(input, gateLeft - 2, input.posY)
+        const leftCircle = (up: boolean) => {
+            arc(gateLeft - 5, this.posY - (up ? 1 : -1) * GRID_STEP, 8, 8, 0, 0)
+        }
+        const wireEnds = (shortUp = false, shortDown = false) => {
+            for (let i = 0; i < this.inputs.length; i++) {
+                const input = this.inputs[i]
+                const short = i === 0 ? shortUp : shortDown
+                wireLine(input, gateLeft - 2 - (short ? 9 : 0), input.posY)
             }
             wireLine(output, gateRight + 2, this.posY)
         }
@@ -106,6 +115,8 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
 
             case "AND":
             case "NAND":
+            case "NIMPLY":
+            case "RNIMPLY": {
                 line(gateLeft, bottom, this.posX, bottom)
                 line(gateLeft, top, this.posX, top)
                 line(gateLeft, top, gateLeft, bottom)
@@ -113,13 +124,24 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 if (this.type === "NAND") {
                     rightCircle()
                 }
-                wireEnds()
+                let shortUp = false, shortDown = false
+                if (this.type === "NIMPLY") {
+                    leftCircle(false)
+                    shortDown = true
+                } else if (this.type === "RNIMPLY") {
+                    leftCircle(true)
+                    shortUp = true
+                }
+                wireEnds(shortUp, shortDown)
                 break
+            }
 
             case "OR":
             case "NOR":
             case "XOR":
             case "XNOR":
+            case "IMPLY":
+            case "RIMPLY": {
                 arc(gateLeft - 35, this.posY, 75, 75, -.55, .55)
                 gateLeft -= 3
                 line(gateLeft, top, this.posX - 15, top)
@@ -128,15 +150,28 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                     gateRight - 5, this.posY - 8, gateRight, this.posY)
                 bezier(this.posX - 15, bottom, this.posX + 10, bottom,
                     gateRight - 5, this.posY + 8, gateRight, this.posY)
-                if (this.type === "XOR" || this.type === "XNOR") {
-                    arc(gateLeft - 38, this.posY, 75, 75, -.55, .55)
-                }
+                const savedGateLeft = gateLeft
                 gateLeft += 4
                 if (this.type === "NOR" || this.type === "XNOR") {
                     rightCircle()
                 }
-                wireEnds()
+                let shortUp = false, shortDown = false
+                if (this.type === "IMPLY") {
+                    leftCircle(true)
+                    shortUp = true
+                } else if (this.type === "RIMPLY") {
+                    leftCircle(false)
+                    shortDown = true
+                }
+                wireEnds(shortUp, shortDown)
+                if (this.type === "XOR" || this.type === "XNOR") {
+                    gateLeft = savedGateLeft
+                    stroke(0)
+                    strokeWeight(3)
+                    arc(gateLeft - 38, this.posY, 75, 75, -.55, .55)
+                }
                 break
+            }
 
             case "?":
                 stroke(COLOR_UNSET)
@@ -190,7 +225,7 @@ type Gate2Repr = Expand<ComponentRepr<2, 1> & Gate2MandatoryParams & {
 
 export class Gate2 extends GateBase<2, Gate2Repr> {
 
-    public readonly type: Gate2Type
+    private _type: Gate2Type
     private _showAsUnknown = false
 
     constructor(savedData: Gate2Repr | Gate2MandatoryParams) {
@@ -198,7 +233,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
             inOffsets: [[-4, -1], [-4, +1]],
             outOffsets: [[+4, 0]],
         })
-        this.type = savedData.type
+        this._type = savedData.type
         if ("in" in savedData) {
             // it's a Gate2Repr
             if (isDefined(savedData.showAsUnknown)) {
@@ -215,6 +250,10 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         }
     }
 
+    public get type() {
+        return this._type
+    }
+
     protected get showAsUnknown() {
         return this._showAsUnknown
     }
@@ -225,14 +264,28 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         if (isUnset(in1) || isUnset(in2)) {
             return Unset
         }
-        const calcOut = Gate2Types.propsOf(this.type)
+        const calcOut = Gate2Types.propsOf(this._type)
         return calcOut(in1, in2)
     }
 
     doubleClicked() {
         super.doubleClicked()
-        if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown && this.isMouseOver()) {
-            this._showAsUnknown = !this._showAsUnknown
+
+        if (this.isMouseOver()) {
+            if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) {
+                this._showAsUnknown = !this._showAsUnknown
+            } else if (mode >= Mode.DESIGN) {
+                // switch to IMPLY / NIMPLY variant
+                this._type = (() => {
+                    switch (this._type) {
+                        case "IMPLY": return "RIMPLY"
+                        case "RIMPLY": return "IMPLY"
+                        case "NIMPLY": return "RNIMPLY"
+                        case "RNIMPLY": return "NIMPLY"
+                        default: return this._type
+                    }
+                })()
+            }
         }
     }
 }
