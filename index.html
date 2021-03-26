@@ -131,37 +131,76 @@
 			</div>
 
 			<!-- In-Canvas Toolbar -->
-			<div style="background: rgba(136,136,136,0.5); box-shadow: 0px 0px 10px 1px rgb(201, 201, 201); padding: 5px;
- 					position: absolute; top: 10px; right: 10px; border-radius: 5px; visibility: hidden;" id="rightToolbarContainer">
-				<div class="btn-group-vertical">
-					<button type="button"
-						class="btn btn-sm btn-outline-light sim-toolbar-button-right Edit active sim-modification-tool"
-						tool="Edit" onclick="activeTool(this)" id="editToolButton"
-						title="Compose ou modifie le schéma logique" style="display:none">
-						<i class="fa fa-edit"></i>
-						Concevoir
-					</button>
-					<button type="button"
-						class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool"
-						tool="Delete" onclick="activeTool(this)" title="Supprime des éléments du schéma logique"
-						style="display:none">
-						<i class="fa fa-trash-o"></i>
-						Supprimer
-					</button>
-					<button type="button"
-						class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool" tool="Move"
-						onclick="activeTool(this)" title="Déplace tout le schéma logique" style="display:none">
-						<i class="fa fa-arrows"></i>
-						Déplacer
-					</button>
-					<button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right" tool="Reset"
-						onclick="activeTool(this)" id="resetToolButton"
-						title="Réinitialise l’état de ce schéma logique">
-						<i class="fa fa-undo"></i>
-						Réinitialiser
-					</button>
+			<div style="padding: 5px;
+			position: absolute; top: 10px; right: 10px;display:flex; flex-direction: column; align-items: flex-end;">
+				<div class="sim-toolbar-right" style="visibility: hidden;" id="rightToolbarContainer">
+					<div class="btn-group-vertical">
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right Edit active sim-modification-tool"
+							tool="Edit" onclick="activeTool(this)" id="editToolButton"
+							title="Compose ou modifie le schéma logique" style="display:none">
+							<i class="fa fa-edit"></i>
+							Concevoir
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool"
+							tool="Delete" onclick="activeTool(this)" title="Supprime des éléments du schéma logique"
+							style="display:none">
+							<i class="fa fa-trash-o"></i>
+							Supprimer
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool"
+							tool="Move" onclick="activeTool(this)" title="Déplace tout le schéma logique"
+							style="display:none">
+							<i class="fa fa-arrows"></i>
+							Déplacer
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right" tool="Reset"
+							onclick="activeTool(this)" id="resetToolButton"
+							title="Réinitialise l’état de ce schéma logique">
+							<i class="fa fa-undo"></i>
+							Réinitialiser
+						</button>
+					</div>
+
+
 				</div>
 
+				<div class="sim-toolbar-right" style="margin-top: 15px; visibility: hidden;" id="modeChangeMenu">
+					<div class="btn-group-vertical">
+						<div
+							style="text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;">
+							Mode</div>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
+							mode="DESIGN_FULL" onclick="setModeClicked(this)" title="En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées">
+							Admin
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
+							mode="DESIGN" onclick="setModeClicked(this)" title="La totalité des actions de conception d’un circuit sont possible">
+							Complet
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
+							mode="CONNECT" onclick="setModeClicked(this)" title="Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)">
+							Connexion
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
+							mode="TRYOUT" onclick="setModeClicked(this)" title="Il est seulement possible de changer les entrées pour tester un circuit préétabli">
+							Test
+						</button>
+						<button type="button"
+							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
+							mode="STATIC" onclick="setModeClicked(this)" title="Les éléments sont juste affichés; aucune interaction n’est possible">
+							Statique
+						</button>
+					</div>
+
+
+				</div>
 
 			</div>
 

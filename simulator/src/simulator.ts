@@ -33,7 +33,9 @@ export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 
-export let mode = isEmbeddedInIframe() ? Mode.DESIGN : Mode.DESIGN_FULL
+export let upperMode: Mode = isEmbeddedInIframe() ? Mode.DESIGN : Mode.DESIGN_FULL
+export let mode: Mode = upperMode
+
 export const modifierKeys = {
     isShiftDown: false,
     isCommandDown: false,
@@ -86,7 +88,8 @@ export function wireLine(node: Node, x1: number, y1: number) {
 
     stroke(...colorForBoolean(node.value))
     strokeWeight(2)
-    line(x0, y0, x1, y1)
+    const f = x0 < x1 ? 1 : -1
+    line(x0 - f, y0, x1 + f, y1)
 }
 
 export function roundValue(comp: HasPosition & { value: TriState }) {
@@ -132,6 +135,24 @@ const PARAM_DATA = "data"
 const PARAM_SHOW_ONLY = "showonly"
 const PARAM_MODE = "mode"
 
+function trySetMode(wantedMode: Mode) {
+    const wantedModeStr = Mode[wantedMode]
+    if (wantedMode <= upperMode) {
+        mode = wantedMode
+        console.log(`Display/interaction is ${wantedModeStr}`)
+        document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
+            if (elem.getAttribute("mode") === wantedModeStr) {
+                elem.classList.add("active")
+            } else {
+                elem.classList.remove("active")
+            }
+        })
+    } else {
+        console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[upperMode]}`)
+    }
+
+}
+
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
 
@@ -147,15 +168,16 @@ export function setup() {
 
     const maybeMode = getURLParameter(PARAM_MODE, "").toUpperCase()
     if (maybeMode in Mode) {
-        mode = (Mode as any)[maybeMode]
-        console.log("Mode: " + maybeMode)
+        upperMode = (Mode as any)[maybeMode]
     }
+    trySetMode(upperMode)
 
     const showReset = mode >= Mode.TRYOUT
     const showRightEditControls = mode >= Mode.CONNECT
     const showLeftMenu = mode >= Mode.DESIGN
     const showDumpStructureButton = showLeftMenu && mode >= Mode.DESIGN_FULL
     const showRightMenu = showReset || showRightEditControls
+    const showModeChange = upperMode >= Mode.DESIGN_FULL
 
     if (!showReset) {
         document.getElementById("resetToolButton")!.style.display = "none"
@@ -205,6 +227,10 @@ export function setup() {
     if (showRightMenu) {
         document.getElementById("rightToolbarContainer")!.style.removeProperty("visibility")
     }
+
+    if (showModeChange) {
+        document.getElementById("modeChangeMenu")!.style.removeProperty("visibility")
+    }
 }
 
 export function tryLoadFromData() {
@@ -225,6 +251,8 @@ export function windowResized() {
 }
 
 export function draw() {
+    strokeCap(PROJECT)
+
     background(0xFF)
     fill(0xFF)
 
@@ -329,6 +357,14 @@ window.addEventListener("keydown", modifierKeyWatcher)
 window.addEventListener("keyup", modifierKeyWatcher)
 
 window.activeTool = activeTool
+
+window.setModeClicked = function setModeClicked(e: HTMLElement) {
+    const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"
+    if (buttonModeStr in Mode) {
+        const wantedMode = (Mode as any)[buttonModeStr]
+        trySetMode(wantedMode)
+    }
+}
 
 const projectFile = document.getElementById("projectFile")
 if (projectFile) {

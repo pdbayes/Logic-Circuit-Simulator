@@ -128,10 +128,6 @@ function resetElements() {
     document.getElementById("canvas-sim")!.style.cursor = "default"
 }
 
-/**
- * Reset Element
- * then set current action to EDIT 
- */
 export function backToEdit() {
     resetElements()
     document.getElementsByClassName("Edit")[0].classList.add("active")

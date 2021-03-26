@@ -1,4 +1,4 @@
-import { isDefined, Mode, toTriState, TriState, Unset } from "../utils.js"
+import { isDefined, isUnset, Mode, toTriState, TriState, Unset } from "../utils.js"
 import { wireMng, mode, fillForBoolean, modifierKeys } from "../simulator.js"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component.js"
 import { GRID_STEP, HasPosition, PositionSupport } from "./Position.js"
@@ -47,6 +47,10 @@ export class Node extends PositionSupport {
     }
 
     draw() {
+        if (mode < Mode.CONNECT) {
+            return
+        }
+
         fillForBoolean(this.value)
 
         const [circleColor, thickness] =
@@ -58,9 +62,18 @@ export class Node extends PositionSupport {
         strokeWeight(thickness)
         circle(this.posX, this.posY, DIAMETER)
 
+        noStroke()
+        if (mode >= Mode.DESIGN_FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
+            // forced value to something that is contrary to normal output
+            textAlign(CENTER, CENTER)
+            fill(circleColor)
+            textSize(14)
+            textStyle(BOLD)
+            text("!", this.posX, this.posY - 12)
+        }
+
         if (this.isMouseOver()) {
             fill(128, 128)
-            noStroke()
             circle(this.posX, this.posY, DIAMETER * 2)
         }
     }
