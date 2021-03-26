@@ -1,12 +1,12 @@
-import { Clock } from "./circuit_components/Clock.js"
+import { Clock } from "./components/Clock.js"
 import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays } from "./simulator.js"
-import { GateFactory, GateTypes } from "./circuit_components/Gate.js"
-import { LogicInput } from "./circuit_components/LogicInput.js"
-import { LogicOutput } from "./circuit_components/LogicOutput.js"
+import { GateFactory, GateTypes } from "./components/Gate.js"
+import { LogicInput } from "./components/LogicInput.js"
+import { LogicOutput } from "./components/LogicOutput.js"
 import { isNullOrUndefined, MouseAction } from "./utils.js"
-import { DisplayNibble } from "./circuit_components/DisplayNibble.js"
-import { DisplayAscii } from "./circuit_components/DisplayAscii.js"
-import { DisplayBar } from "./circuit_components/DisplayBar.js"
+import { DisplayNibble } from "./components/DisplayNibble.js"
+import { DisplayAscii } from "./components/DisplayAscii.js"
+import { DisplayBar } from "./components/DisplayBar.js"
 
 export let currMouseAction = MouseAction.EDIT
 

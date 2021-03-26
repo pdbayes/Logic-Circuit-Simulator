@@ -105,7 +105,7 @@ export class Wire {
             doDraw()
 
             strokeWeight(mainStrokeWidth - 2)
-            stroke(...colorForBoolean(this.startNode.value && this.endNode.value))
+            stroke(...colorForBoolean(this.startNode.value))
             doDraw()
 
         } else {

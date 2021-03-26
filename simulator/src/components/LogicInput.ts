@@ -1,11 +1,11 @@
-import { isDefined, isNotNull, isUnset, Mode, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
+import { Expand, isDefined, isNotNull, isUnset, Mode, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
 import { colorMouseOver, fillForBoolean, roundValue, modifierKeys, mode, wireLine } from "../simulator.js"
 import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-export interface LogicInputRepr extends ComponentRepr<0, 1> {
+export type LogicInputRepr = Expand<ComponentRepr<0, 1> & {
     val: TriStateRepr
     name: string | undefined
-}
+}>
 
 export abstract class LogicInputBase<Repr extends LogicInputRepr> extends ComponentBase<0, 1, Repr> {
 

@@ -1,10 +1,10 @@
-import { isDefined, isNotNull, Mode, TriState } from "../utils.js"
+import { Expand, isDefined, isNotNull, Mode, TriState } from "../utils.js"
 import { colorMouseOver, fillForBoolean, mode, roundValue, wireLine } from "../simulator.js"
 import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
 
-interface LogicOutputRepr extends ComponentRepr<1, 0> {
+export type LogicOutputRepr = Expand<ComponentRepr<1, 0> & {
     name: string | undefined
-}
+}>
 
 export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
 

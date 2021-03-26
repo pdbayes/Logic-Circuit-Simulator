@@ -16,7 +16,7 @@ export interface HasPosition {
 }
 
 // for compact JSON repr, pos is an array
-export interface PositionSupportRepr {
+export type PositionSupportRepr = {
     readonly pos: readonly [number, number]
 }
 

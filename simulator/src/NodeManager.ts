@@ -1,6 +1,6 @@
 import { wireMng } from "./simulator.js"
-import { ComponentState } from "./circuit_components/Component.js"
-import { Node } from "./circuit_components/Node.js"
+import { ComponentState } from "./components/Component.js"
+import { Node } from "./components/Node.js"
 
 
 export const NodeManager = (() => {
