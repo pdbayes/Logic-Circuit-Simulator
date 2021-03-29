@@ -1,8 +1,9 @@
 import { isNotNull, isUnset, Mode, TriState } from "../utils.js"
-import { colorMouseOver, mode, Color, inRect, wireLine, COLOR_UNSET } from "../simulator.js"
 import { ComponentBase, defineComponent } from "./Component.js"
 import { GRID_STEP, pxToGrid } from "./Position.js"
 import * as t from "io-ts"
+import { COLOR_UNSET, wireLine, inRect, COLOR_MOUSE_OVER, Color } from "../drawutils.js"
+import { mode } from "../simulator.js"
 
 
 export const DisplayBarTypes = {
@@ -65,7 +66,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr> {
         this._value = input.value
 
         if (this.isMouseOver()) {
-            stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+            stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
         }

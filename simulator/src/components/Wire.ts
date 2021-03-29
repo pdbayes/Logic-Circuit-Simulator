@@ -1,9 +1,10 @@
 import { currMouseAction } from "../menutools.js"
 import { MouseAction, Mode, int } from "../utils.js"
-import { clearToolCursor, colorForBoolean, colorMouseOver, mode, setToolCursor, wireLine } from "../simulator.js"
+import { clearToolCursor, mode, setToolCursor } from "../simulator.js"
 import { Node, ConnectionState } from "./Node.js"
 import * as t from "io-ts"
 import { NodeID } from "./Component.js"
+import { wireLine, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils.js"
 
 export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
 export type WireRepr = t.TypeOf<typeof WireRepr>
@@ -104,7 +105,7 @@ export class Wire {
 
             if (this.isMouseOver()) {
                 strokeWeight(mainStrokeWidth + 2)
-                stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+                stroke(...COLOR_MOUSE_OVER)
             } else {
                 stroke(80)
             }

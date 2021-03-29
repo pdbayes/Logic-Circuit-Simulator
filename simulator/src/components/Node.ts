@@ -1,8 +1,9 @@
 import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, unset } from "../utils.js"
-import { wireMng, mode, fillForBoolean, modifierKeys } from "../simulator.js"
+import { wireMng, mode, modifierKeys } from "../simulator.js"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component.js"
 import { GRID_STEP, HasPosition, PositionSupport } from "./Position.js"
 import { NodeManager } from "../NodeManager.js"
+import { fillForBoolean } from "../drawutils.js"
 
 
 export enum ConnectionState {

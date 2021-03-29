@@ -28,16 +28,20 @@ export function isNode(obj: any): obj is Node {
 }
 
 export function applyModifierTo(parent: Element, modifier: Modifier): void {
-    if (isNode(modifier)) { parent.appendChild(modifier) }
-    else if (isModifierObject(modifier)) { modifier.applyTo(parent) }
-    else {
+    if (isNode(modifier)) {
+        parent.appendChild(modifier)
+    } else if (isModifierObject(modifier)) {
+        modifier.applyTo(parent)
+    } else {
         const text = "" + modifier
         parent.appendChild(document.createTextNode(text))
     }
 }
 
 export function applyModifiersTo(parent: Element, modifiers: Modifier[]): void {
-    for (const mod of modifiers) { applyModifierTo(parent, mod) }
+    for (const mod of modifiers) {
+        applyModifierTo(parent, mod)
+    }
 }
 
 export function elemBuilder<K extends keyof HTMLElementTagNameMap>(tagName: K): (...modifiers: Modifier[]) => ElemRenderer<HTMLElementTagNameMap[K]> {

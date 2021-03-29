@@ -1,9 +1,10 @@
 import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
-import { colorMouseOver, COLOR_UNSET, fillForFraction, inRect, mode, wireLine } from "../simulator.js"
 import { ComponentBase, defineComponent, typeOrUndefined } from "./Component.js"
 import { GRID_STEP } from "./Position.js"
 import * as t from "io-ts"
 import { displayValuesFromInputs } from "./Node.js"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, inRect, wireLine } from "../drawutils.js"
+import { mode } from "../simulator.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -55,7 +56,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
         const backColor = isUnset(this._value) ? COLOR_UNSET : fillForFraction(this._value / maxValue)
 
         if (this.isMouseOver()) {
-            stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+            stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
         }

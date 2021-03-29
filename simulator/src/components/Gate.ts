@@ -1,9 +1,9 @@
-import { COLOR_UNSET, inRect, modifierKeys, wireLine } from "../simulator.js"
 import { any, asArray, Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils.js"
-import { colorMouseOver, mode } from "../simulator.js"
 import { ComponentBase, ComponentRepr, defineComponent } from "./Component.js"
 import { GRID_STEP } from "./Position.js"
 import * as t from "io-ts"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, inRect, wireLine } from "../drawutils.js"
+import { mode, modifierKeys } from "../simulator.js"
 
 
 const Gate2Types_ = {
@@ -87,7 +87,7 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             const frameWidth = 2
             const frameMargin = 2
             strokeWeight(frameWidth)
-            stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+            stroke(...COLOR_MOUSE_OVER)
             rect(
                 left - frameWidth - frameMargin,
                 top - frameWidth - frameMargin,

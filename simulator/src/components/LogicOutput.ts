@@ -1,7 +1,8 @@
 import { isDefined, isNotNull, Mode, TriState } from "../utils.js"
-import { colorMouseOver, fillForBoolean, mode, roundValue, wireLine } from "../simulator.js"
 import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component.js"
 import * as t from "io-ts"
+import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils.js"
+import { mode } from "../simulator.js"
 
 
 export const LogicOutputDef =
@@ -42,7 +43,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
         wireLine(input, this.posX, this.posY)
 
         if (this.isMouseOver()) {
-            stroke(colorMouseOver[0], colorMouseOver[1], colorMouseOver[2])
+            stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
         }

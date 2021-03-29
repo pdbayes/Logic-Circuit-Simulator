@@ -1,22 +1,21 @@
 import * as p5 from "p5"
 
 import { activeTool, currMouseAction } from "./menutools.js"
-import { copyToClipboard, getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, isUnset, MouseAction } from "./utils.js"
+import { copyToClipboard, getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, MouseAction } from "./utils.js"
 import { WireManager } from "./components/Wire.js"
-import { Mode, TriState } from "./utils.js"
+import { Mode } from "./utils.js"
 import { PersistenceManager } from "./PersistenceManager.js"
 import { Gate } from "./components/Gate.js"
 import { LogicInput } from "./components/LogicInput.js"
 import { LogicOutput } from "./components/LogicOutput.js"
 import { Clock } from "./components/Clock.js"
-import { Node } from "./components/Node.js"
 import { Component, ComponentState } from "./components/Component.js"
 import { Display } from "./components/Display.js"
-import { GRID_STEP, HasPosition } from "./components/Position.js"
+import { GRID_STEP } from "./components/Position.js"
 import { NodeManager } from "./NodeManager.js"
 import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen.js"
+import { guessCanvasHeight } from "./drawutils.js"
 
-export type Color = [number, number, number]
 // export type FF = FF_D | FF_JK | FF_T
 
 export const ICImages: p5.Image[] = [] // integrated circuits images
@@ -31,8 +30,6 @@ export const clocks: Clock[] = []
 
 export const allComponents: Component[][] = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
 export const wireMng = new WireManager()
-
-export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 
 const MaxMode = Mode.FULL
 const MaxEmbeddedMode = Mode.DESIGN
@@ -68,62 +65,6 @@ export function clearToolCursor() {
 let canvasContainer: HTMLElement
 let initialData: string | undefined = undefined
 
-export const COLOR_FULL: Color = [255, 193, 7]
-export const COLOR_EMPTY: Color = [52, 58, 64]
-export const COLOR_UNSET: Color = [152, 158, 164]
-
-export function colorForBoolean(value: TriState): Color {
-    return isUnset(value) ? COLOR_UNSET : value ? COLOR_FULL : COLOR_EMPTY
-}
-
-export function fillForBoolean(value: TriState): Color {
-    const c = colorForBoolean(value)
-    fill(...c)
-    return c
-}
-
-export function fillForFraction(fraction: number): Color {
-    const c: Color = [
-        (COLOR_FULL[0] - COLOR_EMPTY[0]) * fraction + COLOR_EMPTY[0],
-        (COLOR_FULL[1] - COLOR_EMPTY[1]) * fraction + COLOR_EMPTY[1],
-        (COLOR_FULL[2] - COLOR_EMPTY[2]) * fraction + COLOR_EMPTY[2],
-    ]
-    fill(...c)
-    return c
-}
-
-export function wireLine(node: Node, x1: number, y1: number) {
-    const x0 = node.posX
-    const y0 = node.posY
-
-    stroke(80)
-    strokeWeight(4)
-    line(x0, y0, x1, y1)
-
-    stroke(...colorForBoolean(node.value))
-    strokeWeight(2)
-    const f = x0 < x1 ? 1 : -1
-    line(x0 - f, y0, x1 + f, y1)
-}
-
-export function roundValue(comp: HasPosition & { value: TriState }) {
-    const value = comp.value
-    textSize(18)
-    textAlign(CENTER, CENTER)
-
-    if (isUnset(value)) {
-        fill(255)
-        textStyle(BOLD)
-        text('?', comp.posX, comp.posY)
-    } else if (value) {
-        textStyle(BOLD)
-        text('1', comp.posX, comp.posY)
-    } else {
-        fill(255)
-        textStyle(NORMAL)
-        text('0', comp.posX, comp.posY)
-    }
-}
 
 
 export function preload() {
@@ -319,7 +260,6 @@ export function tryLoadFromData() {
 
 export function windowResized() {
     resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
-    // document.getElementsByClassName("tools")[0].style.height = canvHeight;
 }
 
 export function draw() {
@@ -363,7 +303,7 @@ export function draw() {
         }
     }
 
-    document.getElementById("canvas-sim")!.style.cursor = newCursor ?? "default"
+    canvasContainer.style.cursor = newCursor ?? "default"
 }
 
 export function mousePressed() {
@@ -459,21 +399,6 @@ if (saveProjectFile) {
     saveProjectFile.addEventListener("click", () => PersistenceManager.saveFile(), false)
 }
 
-function guessCanvasHeight(): number {
-    let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            const y = elem.posY
-            if (y > lowestY) {
-                lowestY = y
-            }
-            if (y < highestY) {
-                highestY = y
-            }
-        }
-    }
-    return highestY + lowestY // add lower margin equal to top margin
-}
 
 function copyLinkForMode(mode: Mode) {
     if (mode > MaxEmbeddedMode) {
@@ -524,12 +449,6 @@ function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
     }
 }
 
-export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
-    const w2 = width / 2
-    const h2 = height / 2
-    return pointX >= centerX - w2 && pointX < centerX + w2 &&
-        pointY >= centerY - h2 && pointY < centerY + h2
-}
 
 window.loadFromJson = (jsonString: any) => PersistenceManager.doLoadFromJson(jsonString)
 
