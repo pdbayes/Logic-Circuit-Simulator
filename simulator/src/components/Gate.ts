@@ -1,12 +1,12 @@
 import { COLOR_UNSET, inRect, modifierKeys, wireLine } from "../simulator.js"
 import { any, asArray, Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils.js"
 import { colorMouseOver, mode } from "../simulator.js"
-import { ComponentBase, ComponentRepr } from "./Component.js"
+import { ComponentBase, ComponentRepr, defineComponent } from "./Component.js"
 import { GRID_STEP } from "./Position.js"
+import * as t from "io-ts"
 
-export const Gate2Types = RichStringEnum.withProps<
-    (in1: boolean, in2: boolean) => boolean
->()({
+
+const Gate2Types_ = {
     AND: (in1: boolean, in2: boolean) => in1 && in2,
     OR: (in1: boolean, in2: boolean) => in1 || in2,
     XOR: (in1: boolean, in2: boolean) => in1 !== in2,
@@ -17,7 +17,11 @@ export const Gate2Types = RichStringEnum.withProps<
     RIMPLY: (in1: boolean, in2: boolean) => in1 || !in2,
     NIMPLY: (in1: boolean, in2: boolean) => in1 && !in2,
     RNIMPLY: (in1: boolean, in2: boolean) => !in1 && in2,
-})
+} as const
+
+export const Gate2Types = RichStringEnum.withProps<
+    (in1: boolean, in2: boolean) => boolean
+>()(Gate2Types_)
 
 export const GateTypeNot = "NOT"
 
@@ -30,12 +34,22 @@ export const GateTypes = {
     },
 }
 
-type GateMandatoryParams = {
-    type: GateType
-}
+const GateMandatoryParams = t.type({
+    type: t.union([t.keyof(Gate2Types_,), t.literal(GateTypeNot)], "GateType"),
+}, "Gate")
+type GateMandatoryParams = t.TypeOf<typeof GateMandatoryParams>
+
+
+const Gate2Def = defineComponent(2, 1, GateMandatoryParams)
+const Gate1Def = defineComponent(1, 1, GateMandatoryParams)
+
+export const GateDef = t.union([
+    Gate2Def.repr,
+    Gate1Def.repr,
+], "Gate")
+
 
 type GateRepr<N extends FixedArraySize> = ComponentRepr<N, 1> & GateMandatoryParams
-
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 4

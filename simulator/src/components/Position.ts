@@ -1,4 +1,5 @@
 import { isNotNull } from "../utils.js"
+import * as t from "io-ts"
 
 export const GRID_STEP = 10
 
@@ -16,9 +17,10 @@ export interface HasPosition {
 }
 
 // for compact JSON repr, pos is an array
-export type PositionSupportRepr = {
-    readonly pos: readonly [number, number]
-}
+export const PositionSupportRepr = t.type({
+    pos: t.readonly(t.tuple([t.number, t.number])),
+})
+export type PositionSupportRepr = t.TypeOf<typeof PositionSupportRepr>
 
 export abstract class PositionSupport implements HasPosition {
 

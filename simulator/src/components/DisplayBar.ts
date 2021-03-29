@@ -1,20 +1,31 @@
-import { Expand, isNotNull, isUnset, Mode, TriState } from "../utils.js"
+import { isNotNull, isUnset, Mode, TriState } from "../utils.js"
 import { colorMouseOver, mode, Color, inRect, wireLine, COLOR_UNSET } from "../simulator.js"
-import { ComponentBase, ComponentRepr } from "./Component.js"
+import { ComponentBase, defineComponent } from "./Component.js"
 import { GRID_STEP, pxToGrid } from "./Position.js"
+import * as t from "io-ts"
 
+
+export const DisplayBarTypes = {
+    v: null,
+    h: null,
+    px: null,
+    PX: null,
+} as const
+
+type DisplayBarType = keyof typeof DisplayBarTypes
+
+const DEFAULT_BAR_DISPLAY: DisplayBarType = "h"
 const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
 
-export const DisplayBarTypes = ["v", "h", "px", "PX"] as const
-export type DisplayBarType = typeof DisplayBarTypes[number]
 
-const DEFAULT_BAR_DISPLAY: DisplayBarType = "h"
+export const DisplayBarDef =
+    defineComponent(1, 0, t.type({
+        type: t.literal("bar"),
+        display: t.keyof(DisplayBarTypes, "DisplayBarType"),
+    }, "DisplayBar"))
 
-export type DisplayBarRepr = Expand<ComponentRepr<1, 0> & {
-    type: "bar"
-    display: DisplayBarType
-}>
+type DisplayBarRepr = typeof DisplayBarDef.reprType
 
 export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr> {
 

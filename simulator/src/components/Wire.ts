@@ -1,22 +1,28 @@
 import { currMouseAction } from "../menutools.js"
-import { MouseAction, Mode } from "../utils.js"
+import { MouseAction, Mode, int } from "../utils.js"
 import { colorForBoolean, colorMouseOver, mode, wireLine } from "../simulator.js"
 import { Node, ConnectionState } from "./Node.js"
+import * as t from "io-ts"
+import { NodeID } from "./Component.js"
+
+export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
+export type WireRepr = t.TypeOf<typeof WireRepr>
 
 const WIRE_WIDTH = 8
 
 export class Wire {
 
     private _endNode: Node | null = null
-    private startID = this.startNode.id
-    private endID: number | null = null
+    private startID: NodeID = this.startNode.id
+    private endID: NodeID | null = null
 
     constructor(
         private _startNode: Node
     ) { }
 
-    toJSON() {
-        return [this.startID, this.endID] as const
+    toJSON(): WireRepr {
+        const endID = this.endID ?? -1 as int
+        return [this.startID, endID]
     }
 
     public get startNode(): Node {

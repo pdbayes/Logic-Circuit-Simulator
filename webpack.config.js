@@ -7,8 +7,12 @@ module.exports = {
         path: path.resolve(__dirname, 'simulator', 'js'),
     },
 
+    optimization: {
+        minimize: false
+    },
+
     // devtool: 'inline-source-map',
-    mode: 'production',
+    mode: 'development',
     module: {
         rules: [
             {

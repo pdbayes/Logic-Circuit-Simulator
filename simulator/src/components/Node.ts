@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, toTriState, TriState, Unset } from "../utils.js"
+import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, unset } from "../utils.js"
 import { wireMng, mode, fillForBoolean, modifierKeys } from "../simulator.js"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component.js"
 import { GRID_STEP, HasPosition, PositionSupport } from "./Position.js"
@@ -19,7 +19,7 @@ type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState }
 
 export class Node extends PositionSupport {
 
-    public readonly id: number
+    public readonly id: int
     private _connectionState = ConnectionState.FREE
     private _isAlive = true
     private _value: TriState = false
@@ -157,4 +157,20 @@ export class Node extends PositionSupport {
         }
     }
 
+}
+
+
+export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
+    let binaryStringRep = ""
+    let hasUnset = false
+    for (const input of inputs) {
+        if (isUnset(input.value)) {
+            hasUnset = true
+            binaryStringRep = Unset + binaryStringRep
+        } else {
+            binaryStringRep = +input.value + binaryStringRep
+        }
+    }
+    const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
+    return [binaryStringRep, value]
 }

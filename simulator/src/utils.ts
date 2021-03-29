@@ -82,7 +82,7 @@ export type ExpandRecursively<T> = T extends Record<string, unknown>
 
 // Series of type-assertion functions
 
-export function isUndefined(v: any): v is undefined {
+export function isUndefined(v: unknown): v is undefined {
     return typeof v === "undefined"
 }
 
@@ -90,7 +90,7 @@ export function isDefined<T>(v: T | undefined): v is T {
     return typeof v !== "undefined"
 }
 
-export function isNullOrUndefined(v: any): v is null | undefined {
+export function isNullOrUndefined(v: unknown): v is null | undefined {
     return isUndefined(v) || v === null
 }
 
@@ -98,17 +98,27 @@ export function isNotNull<T>(v: T | null): v is T {
     return v !== null
 }
 
-export function isString(v: any): v is string {
+export function isString(v: unknown): v is string {
     return typeof v === "string"
 }
 
-export function isArray(arg: any): arg is ReadonlyArray<any> {
+export function isArray(arg: unknown): arg is ReadonlyArray<any> {
     return Array.isArray(arg)
 }
 
-export function isNumber(arg: any): arg is number {
+export function isNumber(arg: unknown): arg is number {
     return typeof arg === "number"
 }
+
+export function isBoolean(arg: unknown): arg is boolean {
+    return typeof arg === "boolean"
+}
+
+import * as t from "io-ts"
+
+export type int = t.TypeOf<typeof t.Int>
+
+export const isInt = t.Int.is
 
 
 // Fixed-size arrays up to 8 to model inputs statically
@@ -166,17 +176,46 @@ export function any(bools: boolean[]): boolean {
 }
 
 
+// io-ts utils
+
+export function forceTypeOf<U, V, W>(tpe: t.Type<U, V, W>) {
+    return {
+        toMoreSpecific: function <UU extends U>() {
+            return tpe as unknown as t.Type<UU, V, W>
+        },
+    }
+}
+
+export type ReprType<Repr extends t.Mixed> = Expand<t.TypeOf<Repr>>
+
+
 // Unset; TriState
 
 export const Unset = "?" as const
 export type unset = typeof Unset
-
 export function isUnset<T>(v: T | unset): v is unset {
     return v === Unset
 }
+export const TUnset = new t.Type<unset>(
+    "unset",
+    isUnset,
+    (input, context) => isUnset(input) ? t.success(input) : t.failure(input, context),
+    t.identity,
+)
 
 export type TriState = boolean | unset
+
 export type TriStateRepr = 0 | 1 | unset
+export const TriStateRepr = new t.Type<TriStateRepr>(
+    "0|1|'?'",
+    (v: unknown): v is TriStateRepr => isUnset(v) || v === 1 || v === 0,
+    (input, context) => isUnset(input) ? t.success(input) :
+        input === 1 ? t.success(1) :
+            input === 0 ? t.success(0) :
+                t.failure(input, context),
+    t.identity,
+)
+
 
 export function toTriStateRepr(v: TriState): TriStateRepr
 export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined
@@ -217,3 +256,32 @@ export enum MouseAction {
     DELETE,
 }
 
+export function copyToClipboard(textToCopy: string): boolean {
+    function isOS() {
+        //can use a better detection logic here
+        return navigator.userAgent.match(/ipad|iphone/i)
+    }
+
+    const textArea = document.createElement('textArea') as unknown as HTMLTextAreaElement
+    textArea.readOnly = true
+    textArea.contentEditable = "true"
+    textArea.value = textToCopy
+    document.body.appendChild(textArea)
+
+    if (isOS()) {
+        const range = document.createRange()
+        range.selectNodeContents(textArea)
+        const selection = window.getSelection()
+        if (isNotNull(selection)) {
+            selection.removeAllRanges()
+            selection.addRange(range)
+            textArea.setSelectionRange(0, 999999)
+        }
+    } else {
+        textArea.select()
+    }
+
+    const ok = document.execCommand('copy')
+    document.body.removeChild(textArea)
+    return ok
+}

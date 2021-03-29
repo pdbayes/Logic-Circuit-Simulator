@@ -1,13 +1,15 @@
 import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, allComponents } from "./simulator.js"
-import { LogicInput } from "./components/LogicInput.js"
-import { LogicOutput } from "./components/LogicOutput.js"
-import { Clock } from "./components/Clock.js"
-import { Gate, GateFactory } from "./components/Gate.js"
+import { LogicInput, LogicInputDef } from "./components/LogicInput.js"
+import { LogicOutput, LogicOutputDef } from "./components/LogicOutput.js"
+import { Clock, ClockDef } from "./components/Clock.js"
+import { GateDef, GateFactory } from "./components/Gate.js"
 import { stringifySmart } from "./stringifySmart.js"
-import { Wire } from "./components/Wire.js"
-import { Display, DisplayFactory } from "./components/Display.js"
+import { WireRepr } from "./components/Wire.js"
+import { DisplayDef, DisplayFactory } from "./components/Display.js"
 import { NodeManager } from "./NodeManager.js"
-import { isNullOrUndefined, isString, isUndefined } from "./utils.js"
+import { isArray, isString, isUndefined, keysOf } from "./utils.js"
+import * as t from "io-ts"
+import { PathReporter } from 'io-ts/PathReporter'
 
 class _PersistenceManager {
 
@@ -50,111 +52,64 @@ class _PersistenceManager {
         wireMng.wires.splice(0, wireMng.wires.length)
         NodeManager.clearLiveNodes()
 
-        type JsonReprOf<T extends { toJSON(): any }> = ReturnType<T["toJSON"]>
-
-        if ("in" in parsedContents) {
-            for (let i = 0; i < parsedContents.in.length; i++) {
-                const parsedVals = parsedContents.in[i] as JsonReprOf<LogicInput>
-                logicInputs.push(new LogicInput(parsedVals))
+        function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
+            if (!(fieldName in parsedContents)) {
+                return
             }
-        }
+            const fieldValues = parsedContents[fieldName]
+            delete parsedContents[fieldName]
 
-        if ("out" in parsedContents) {
-            for (let i = 0; i < parsedContents.out.length; i++) {
-                const parsedVals = parsedContents.out[i] as JsonReprOf<LogicOutput>
-                logicOutputs.push(new LogicOutput(parsedVals))
+            if (!isArray(fieldValues)) {
+                return
             }
-        }
-
-        if ("displays" in parsedContents) {
-            for (let i = 0; i < parsedContents.displays.length; i++) {
-                const parsedVals = parsedContents.displays[i] as JsonReprOf<Display>
-                displays.push(DisplayFactory.make(parsedVals))
+            if ("repr" in repr) {
+                repr = repr.repr
             }
-        }
-
-        if ("clocks" in parsedContents) {
-            for (let i = 0; i < parsedContents.clocks.length; i++) {
-                const parsedVals = parsedContents.displaysB[i] as JsonReprOf<Clock>
-                clocks.push(new Clock(parsedVals))
-            }
-        }
-
-        if ("gates" in parsedContents) {
-            for (let i = 0; i < parsedContents.gates.length; i++) {
-                const parsedVals = parsedContents.gates[i] as JsonReprOf<Gate>
-                gates.push(GateFactory.make(parsedVals))
-            }
-        }
-
-        // if ("srLatches" in parsedContents) {
-        //     for (let i = 0; i < parsedContents.srLatches.length; i++) {
-        //         const parsedVals = parsedContents.srLatches[i]
-
-        //         let newObj = null
-        //         switch (parsedContents.srLatch[i].type) {
-        //             case ICType.SR_LATCH_ASYNC:
-        //                 newObj = new SR_LatchAsync(parsedVals.gateType,
-        //                     parsedVals.stabilize)
-        //                 srLatches.push()
-        //                 break
-        //             case ICType.SR_LATCH_SYNC:
-        //                 newObj = new SR_LatchSync(parsedVals.gateType,
-        //                     parsedVals.stabilize)
-        //                 break
-        //         }
-
-        //         if (newObj) {
-        //             Object.assign(newObj, parsedVals) // TODO too generic
-        //             newObj.refreshNodes()
-
-        //             srLatches.push(newObj)
-        //         }
-        //     }
-        // }
-
-        // if ("flipflops" in parsedContents) {
-        //     for (let i = 0; i < parsedContents.flipflops.length; i++) {
-        //         const parsedVals = parsedContents.flipflops[i]
-
-        //         let newObj = null
-        //         switch (parsedVals.type) {
-        //             case ICType.FF_D_SINGLE:
-        //                 newObj = new FF_D_Single()
-        //                 break
-        //             case ICType.FF_D_MASTERSLAVE:
-        //                 newObj = new FF_D_MasterSlave()
-        //                 break
-        //             case ICType.FF_T:
-        //                 newObj = new FF_T(parsedVals.isNegativeEdgeTrig)
-        //                 break
-        //             case ICType.FF_JK:
-        //                 newObj = new FF_JK(parsedVals.isNegativeEdgeTrig)
-        //                 break
-        //         }
-
-        //         if (newObj) {
-        //             Object.assign(newObj, parsedVals) // TODO too generic
-        //             newObj.refreshNodes()
-        //             flipflops.push(newObj)
-        //         }
-        //     }
-        // }
-
-        if ("wires" in parsedContents) {
-            for (let i = 0; i < parsedContents.wires.length; i++) {
-                const parsedVals = parsedContents.wires[i] as JsonReprOf<Wire>
-                if (isNullOrUndefined(parsedVals[1])) {
-                    continue
+            for (const someDefinition of fieldValues) {
+                const validated = repr.decode(someDefinition)
+                switch (validated._tag) {
+                    case "Left":
+                        console.log(`ERROR while parsing ${repr.name} from %o -> %s: `, someDefinition, PathReporter.report(validated).join("; "))
+                        break
+                    case "Right":
+                        process(validated.right)
+                        break
                 }
-                const node1 = NodeManager.findNode(parsedVals[0])
-                const node2 = NodeManager.findNode(parsedVals[1])
-                if (isUndefined(node1) || isUndefined(node2)) {
-                    continue
-                }
+            }
+        }
+
+        loadField("in", LogicInputDef, (d) =>
+            logicInputs.push(new LogicInput(d))
+        )
+
+        loadField("out", LogicOutputDef, (d) =>
+            logicOutputs.push(new LogicOutput(d))
+        )
+
+        loadField("displays", DisplayDef, (d) =>
+            displays.push(DisplayFactory.make(d))
+        )
+
+        loadField("clocks", ClockDef, (d) =>
+            clocks.push(new Clock(d))
+        )
+
+        loadField("gates", GateDef, (d) =>
+            gates.push(GateFactory.make(d))
+        )
+
+        loadField("wires", WireRepr, ([nodeID1, nodeID2]) => {
+            const node1 = NodeManager.findNode(nodeID1)
+            const node2 = NodeManager.findNode(nodeID2)
+            if (!isUndefined(node1) && !isUndefined(node2)) {
                 wireMng.addNode(node1)
                 wireMng.addNode(node2)
             }
+        })
+
+        const unhandledData = keysOf(parsedContents)
+        if (unhandledData.length !== 0) {
+            console.log("Unloaded data fields: " + unhandledData.join(", "))
         }
 
         return true

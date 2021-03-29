@@ -1,18 +1,22 @@
-import { Expand, isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
+import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
 import { colorMouseOver, COLOR_UNSET, fillForFraction, inRect, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr } from "./Component.js"
-import { displayValuesFromInputs } from "./Display.js"
+import { ComponentBase, defineComponent, typeOrUndefined } from "./Component.js"
 import { GRID_STEP } from "./Position.js"
+import * as t from "io-ts"
+import { displayValuesFromInputs } from "./Node.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
-export type DisplayNibbleRepr = Expand<ComponentRepr<4, 0> & {
-    type: "nibble"
-    name: string | undefined
-    radix: number | undefined
-}>
+export const DisplayNibbleDef =
+    defineComponent(4, 0, t.type({
+        type: t.literal("nibble"),
+        name: typeOrUndefined(t.string),
+        radix: typeOrUndefined(t.number),
+    }, "DisplayNibble"))
+
+type DisplayNibbleRepr = typeof DisplayNibbleDef.reprType
 
 export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
 

@@ -1,23 +1,47 @@
 import { backToEdit, currMouseAction } from "../menutools.js"
 import { mode, modifierKeys, startedMoving, stoppedMoving } from "../simulator.js"
-import { asArray, FixedArray, FixedArraySize, FixedArraySizeNonZero, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, MouseAction, toTriStateRepr, TriStateRepr } from "../utils.js"
+import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, MouseAction, toTriStateRepr, TriStateRepr } from "../utils.js"
 import { Node } from "./Node.js"
 import { NodeManager } from "../NodeManager.js"
 import { PositionSupport, PositionSupportRepr } from "./Position.js"
+import * as t from "io-ts"
+
+export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
+    return t.union([tpe, t.undefined], tpe.name + " | undefined")
+}
+
+// type HashSize1 = { readonly HasSize1: unique symbol }
+// type H<N extends number, T> = { [K in `HasSize${N}`]: T }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface HasSizeNBrand<N extends number> {
+    readonly HasSizeN: unique symbol // TODO check unique per N
+}
+
+const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, n: N) =>
+    t.brand(
+        t.array(tpe, `array of size ${n}`),
+        (arr): arr is t.Branded<[t.TypeOf<T>], HasSizeNBrand<N>> => arr.length === n,
+        "HasSizeN"
+    )
 
 
 // Node IDs are just represented by a non-negative number
-type NodeID = number
+export const NodeID = t.Int
+export type NodeID = t.TypeOf<typeof NodeID>
 
 // Input nodes are represented by just the ID; output nodes can be forced
 // to a given value to bypass their naturally computed value
-export type InputNodeRepr = { id: NodeID }
-export type OutputNodeRepr = { id: NodeID, force?: TriStateRepr | undefined }
+export const InputNodeRepr = t.type({ id: NodeID }, "InputNode")
+export type InputNodeRepr = t.TypeOf<typeof InputNodeRepr>
+export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({ force: TriStateRepr })], "OutputNode")
+export type OutputNodeRepr = t.TypeOf<typeof OutputNodeRepr>
 
 // Allows collapsing an array of 1 element into the element itself,
 // used for compact JSON representation. Does not work well if T itself is
 // an array
-type FixedArrayOrDirect<T, N extends FixedArraySizeNonZero> =
+export const FixedArrayOrDirect = <T extends t.Mixed, N extends FixedArraySizeNonZero>(tpe: T, n: N) =>
+    (n === 1) ? tpe : FixedArray<T, N>(tpe, n)
+export type FixedArrayOrDirect<T, N extends FixedArraySizeNonZero> =
     N extends 1 ? T : FixedArray<T, N>
 
 
@@ -26,8 +50,21 @@ type FixedArrayOrDirect<T, N extends FixedArraySizeNonZero> =
 // If both inputs and outputs are present, we have separate "in" and "out" fields.
 
 // These are just 3 intermediate types
-type OnlyInNodeIds<N extends FixedArraySizeNonZero> = { id: FixedArrayOrDirect<NodeID | InputNodeRepr, N> }
-type OnlyOutNodeIds<N extends FixedArraySizeNonZero> = { id: FixedArrayOrDirect<NodeID | OutputNodeRepr, N> }
+const OnlyInNodeIds = <N extends FixedArraySizeNonZero>(n: N) =>
+    t.type({ id: FixedArrayOrDirect(t.union([NodeID, InputNodeRepr]), n) })
+type OnlyInNodeIds<N extends FixedArraySizeNonZero> =
+    { id: FixedArrayOrDirect<NodeID | InputNodeRepr, N> }
+
+const OnlyOutNodeIds = <N extends FixedArraySizeNonZero>(n: N) =>
+    t.type({ id: FixedArrayOrDirect(t.union([NodeID, OutputNodeRepr]), n) })
+type OnlyOutNodeIds<N extends FixedArraySizeNonZero> =
+    { id: FixedArrayOrDirect<NodeID | OutputNodeRepr, N> }
+
+const InAndOutNodeIds = <N extends FixedArraySizeNonZero, M extends FixedArraySizeNonZero>(n: N, m: M) =>
+    t.type({
+        in: FixedArrayOrDirect(t.union([NodeID, InputNodeRepr]), n),
+        out: FixedArrayOrDirect(t.union([NodeID, OutputNodeRepr]), m),
+    })
 type InAndOutNodeIds<N extends FixedArraySizeNonZero, M extends FixedArraySizeNonZero> = {
     in: FixedArrayOrDirect<NodeID | InputNodeRepr, N>
     out: FixedArrayOrDirect<NodeID | OutputNodeRepr, M>
@@ -35,6 +72,19 @@ type InAndOutNodeIds<N extends FixedArraySizeNonZero, M extends FixedArraySizeNo
 
 // This is the final conditional type showing what the JSON representation
 // will look like depending on number of inputs and outputs
+export const NodeIDsRepr = <NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>(numInputs: NumInputs, numOutputs: NumOutputs) =>
+    numInputs > 0
+        ? /* NumInputs != 0 */ (
+            numOutputs > 0
+                ? /* NumInputs != 0, NumOutputs != 0 */ InAndOutNodeIds(numInputs as FixedArraySizeNonZero, numOutputs as FixedArraySizeNonZero)
+                : /* NumInputs != 0, NumOutputs == 0 */ OnlyInNodeIds(numInputs as FixedArraySizeNonZero)
+        )
+        : /* NumInputs == 0 */  (
+            numOutputs > 0
+                ? /* NumInputs == 0, NumOutputs != 0 */ OnlyOutNodeIds(numOutputs as FixedArraySizeNonZero)
+                // eslint-disable-next-line @typescript-eslint/ban-types
+                : /* NumInputs == 0, NumOutputs == 0 */ t.type({})
+        )
 export type NodeIDsRepr<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize> =
     NumInputs extends FixedArraySizeNonZero
     ? /* NumInputs != 0 */ (
@@ -65,6 +115,15 @@ export type NodeIDsRepr<NumInputs extends FixedArraySize, NumOutputs extends Fix
 // and the representation of its nodes
 export type ComponentRepr<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize> =
     PositionSupportRepr & NodeIDsRepr<NumInputs, NumOutputs>
+
+export const ComponentRepr = <NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>(numInputs: NumInputs, numOutputs: NumOutputs) =>
+    forceTypeOf(
+        t.intersection([PositionSupportRepr, NodeIDsRepr(numInputs, numOutputs)], `Component(numInputs=${numInputs}, numOutputs=${numOutputs})`)
+    ).toMoreSpecific<ComponentRepr<NumInputs, NumOutputs>>()
+
+export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, T extends t.Mixed>(n: NumInputs, m: NumOutputs, savedData: T) {
+    return t.intersection([ComponentRepr(n, m), savedData], savedData.name)
+}
 
 // Node offsets are not stored in JSON, but provided by the concrete
 // subclasses to the Component superclass to indicate where to place
@@ -179,7 +238,7 @@ export abstract class ComponentBase<
             // the next two functions take either a single ID or an array of them and
             // generate the corresponding node specs from it
             const genOutSpecs = function (outReprs: FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero>) {
-                const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(isNumber(outRepr)
+                const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(t.Int.is(outRepr)
                     ? { id: outRepr }
                     : { id: outRepr.id, force: outRepr.force }
                 )
@@ -379,5 +438,26 @@ export abstract class ComponentBase<
     }
 
 }
+
+export function defineComponent<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, T extends t.Mixed>(numInputs: NumInputs, numOutputs: NumOutputs, type: T) {
+    const repr = t.intersection([ComponentRepr(numInputs, numOutputs), type], type.name)
+    return {
+        numInputs,
+        numOutputs,
+        repr,
+        get reprType(): Expand<t.TypeOf<typeof repr>> { throw new Error() },
+    } as const
+}
+
+export function extendComponent<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, T extends t.Mixed, U extends t.Mixed>(superDef: { numInputs: NumInputs, numOutputs: NumOutputs, repr: T }, subType: U) {
+    const repr = t.intersection([superDef.repr, subType], subType.name)
+    return {
+        numInputs: superDef.numInputs,
+        numOutputs: superDef.numOutputs,
+        repr,
+        get reprType(): Expand<t.TypeOf<typeof repr>> { throw new Error() },
+    } as const
+}
+
 
 export const INPUT_OUTPUT_DIAMETER = 25

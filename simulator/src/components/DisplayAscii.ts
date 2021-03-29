@@ -1,16 +1,21 @@
-import { Expand, isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
+import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
 import { colorMouseOver, inRect, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr } from "./Component.js"
-import { displayValuesFromInputs } from "./Display.js"
+import { ComponentBase, defineComponent, typeOrUndefined } from "./Component.js"
 import { GRID_STEP } from "./Position.js"
+import * as t from "io-ts"
+import { displayValuesFromInputs } from "./Node.js"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-export type DisplayAsciiRepr = Expand<ComponentRepr<7, 0> & {
-    type: "ascii"
-    name: string | undefined
-}>
+
+export const DisplayAsciiDef =
+    defineComponent(7, 0, t.type({
+        type: t.literal("ascii"),
+        name: typeOrUndefined(t.string),
+    }, "DisplayAscii"))
+
+type DisplayAsciiRepr = typeof DisplayAsciiDef.reprType
 
 export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
 

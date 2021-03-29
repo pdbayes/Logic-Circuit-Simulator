@@ -1,10 +1,15 @@
-import { Expand, isDefined, isNotNull, Mode, TriState } from "../utils.js"
+import { isDefined, isNotNull, Mode, TriState } from "../utils.js"
 import { colorMouseOver, fillForBoolean, mode, roundValue, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
+import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component.js"
+import * as t from "io-ts"
 
-export type LogicOutputRepr = Expand<ComponentRepr<1, 0> & {
-    name: string | undefined
-}>
+
+export const LogicOutputDef =
+    defineComponent(1, 0, t.type({
+        name: typeOrUndefined(t.string),
+    }, "LogicOutput"))
+
+type LogicOutputRepr = typeof LogicOutputDef.reprType
 
 export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
 

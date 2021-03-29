@@ -1,12 +1,17 @@
-import { unset, isUnset, Unset } from "../utils.js"
-import { DisplayAscii, DisplayAsciiRepr } from "./DisplayAscii.js"
-import { DisplayBar, DisplayBarRepr } from "./DisplayBar.js"
-import { DisplayNibble, DisplayNibbleRepr } from "./DisplayNibble.js"
-import { Node } from "./Node.js"
+import { DisplayAscii, DisplayAsciiDef } from "./DisplayAscii.js"
+import { DisplayBar, DisplayBarDef } from "./DisplayBar.js"
+import { DisplayNibble, DisplayNibbleDef } from "./DisplayNibble.js"
+import * as t from "io-ts"
 
 export type Display = DisplayNibble | DisplayAscii | DisplayBar
 
-export type DisplayRepr = DisplayNibbleRepr | DisplayAsciiRepr | DisplayBarRepr
+export const DisplayDef = t.union([
+    DisplayNibbleDef.repr,
+    DisplayAsciiDef.repr,
+    DisplayBarDef.repr,
+], "Display")
+
+type DisplayRepr = t.TypeOf<typeof DisplayDef>
 
 export const DisplayFactory = {
 
@@ -23,17 +28,3 @@ export const DisplayFactory = {
 
 }
 
-export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
-    let binaryStringRep = ""
-    let hasUnset = false
-    for (const input of inputs) {
-        if (isUnset(input.value)) {
-            hasUnset = true
-            binaryStringRep = Unset + binaryStringRep
-        } else {
-            binaryStringRep = +input.value + binaryStringRep
-        }
-    }
-    const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
-    return [binaryStringRep, value]
-}

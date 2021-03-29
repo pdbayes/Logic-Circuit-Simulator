@@ -1,12 +1,18 @@
-import { Expand } from "../utils.js"
-import { LogicInputBase, LogicInputRepr } from "./LogicInput.js"
+import { LogicInputBase, LogicInputDef } from "./LogicInput.js"
+import * as t from "io-ts"
+import { extendComponent } from "./Component.js"
 
-type ClockMandatoryParams = {
-    period: number
-    dutycycle: number
-}
 
-type ClockRepr = Expand<LogicInputRepr & ClockMandatoryParams>
+const ClockMandatoryParams = t.type({
+    period: t.number,
+    dutycycle: t.number,
+}, "Clock")
+type ClockMandatoryParams = t.TypeOf<typeof ClockMandatoryParams>
+
+export const ClockDef =
+    extendComponent(LogicInputDef, ClockMandatoryParams)
+
+export type ClockRepr = typeof ClockDef.reprType
 
 export class Clock extends LogicInputBase<ClockRepr> {
 

@@ -1,13 +1,17 @@
-import { Expand, isDefined, isNotNull, isUnset, Mode, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
+import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
 import { colorMouseOver, fillForBoolean, roundValue, modifierKeys, mode, wireLine } from "../simulator.js"
-import { ComponentBase, ComponentRepr, INPUT_OUTPUT_DIAMETER } from "./Component.js"
+import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component.js"
+import * as t from "io-ts"
 
-export type LogicInputRepr = Expand<ComponentRepr<0, 1> & {
-    val: TriStateRepr
-    name: string | undefined
-}>
+export const LogicInputDef =
+    defineComponent(0, 1, t.type({
+        val: TriStateRepr,
+        name: typeOrUndefined(t.string),
+    }, "LogicInput"))
 
-export abstract class LogicInputBase<Repr extends LogicInputRepr> extends ComponentBase<0, 1, Repr> {
+export type LogicInputRepr = typeof LogicInputDef.reprType
+
+export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType> extends ComponentBase<0, 1, Repr> {
 
     private _value: TriState = false
     protected readonly name: string | undefined = undefined
@@ -15,7 +19,7 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
     public constructor(savedData: Repr | null) {
         super(savedData, { outOffsets: [[+3, 0]] })
         if (isNotNull(savedData)) {
-            this._value = isUnset(savedData.val) ? Unset : !!savedData.val
+            this._value = toTriState(savedData.val)
             this.name = savedData.name
         }
     }
@@ -97,7 +101,7 @@ export abstract class LogicInputBase<Repr extends LogicInputRepr> extends Compon
 
 }
 
-export class LogicInput extends LogicInputBase<LogicInputRepr> {
+export class LogicInput extends LogicInputBase<typeof LogicInputDef.reprType> {
 
     toJSON() {
         return this.toJSONBase()
