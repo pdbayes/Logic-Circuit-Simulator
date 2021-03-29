@@ -98,11 +98,6 @@
 				<span class="gate-label">NON-IMPL.</span>
 			</button>
 
-			<button type="button" id="dumpJsonStructure" style="display: none;"
-				class="list-group-item list-group-item-action sim-toolbar-button">
-				<span class="gate-label">Save to URL &amp; Dump</span>
-			</button>
-
 
 			<!-- <button type="button" data-target="#SR_LatchSettings" title="Latch SR NOR-NAND Sync-Async"
 						data-toggle="modal" class="list-group-item list-group-item-action sim-toolbar-button">
@@ -131,7 +126,11 @@
 			<!-- In-Canvas Toolbar -->
 			<div style="padding: 5px;
 			position: absolute; top: 10px; right: 10px;display:flex; flex-direction: column; align-items: flex-end;">
+				<div class="sim-toolbar-right" style="margin-bottom: 15px; visibility: hidden;" id="modeChangeMenu">
+				</div>
+
 				<div class="sim-toolbar-right" style="visibility: hidden;" id="rightToolbarContainer">
+
 					<div class="btn-group-vertical">
 						<button type="button"
 							class="btn btn-sm btn-outline-light sim-toolbar-button-right Edit active sim-modification-tool"
@@ -165,40 +164,6 @@
 
 				</div>
 
-				<div class="sim-toolbar-right" style="margin-top: 15px; visibility: hidden;" id="modeChangeMenu">
-					<div class="btn-group-vertical">
-						<div
-							style="text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;">
-							Mode</div>
-						<button type="button"
-							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
-							mode="DESIGN_FULL" onclick="setModeClicked(this)" title="En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées">
-							Admin
-						</button>
-						<button type="button"
-							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
-							mode="DESIGN" onclick="setModeClicked(this)" title="La totalité des actions de conception d’un circuit sont possible">
-							Complet
-						</button>
-						<button type="button"
-							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
-							mode="CONNECT" onclick="setModeClicked(this)" title="Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)">
-							Connexion
-						</button>
-						<button type="button"
-							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
-							mode="TRYOUT" onclick="setModeClicked(this)" title="Il est seulement possible de changer les entrées pour tester un circuit préétabli">
-							Test
-						</button>
-						<button type="button"
-							class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"
-							mode="STATIC" onclick="setModeClicked(this)" title="Les éléments sont juste affichés; aucune interaction n’est possible">
-							Statique
-						</button>
-					</div>
-
-
-				</div>
 
 			</div>
 

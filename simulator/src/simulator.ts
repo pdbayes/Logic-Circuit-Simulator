@@ -1,7 +1,7 @@
 import * as p5 from "p5"
 
 import { activeTool, currMouseAction } from "./menutools.js"
-import { getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, isUnset, MouseAction } from "./utils.js"
+import { copyToClipboard, getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, isUnset, MouseAction } from "./utils.js"
 import { WireManager } from "./components/Wire.js"
 import { Mode, TriState } from "./utils.js"
 import { PersistenceManager } from "./PersistenceManager.js"
@@ -14,6 +14,7 @@ import { Component, ComponentState } from "./components/Component.js"
 import { Display } from "./components/Display.js"
 import { GRID_STEP, HasPosition } from "./components/Position.js"
 import { NodeManager } from "./NodeManager.js"
+import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen.js"
 
 export type Color = [number, number, number]
 // export type FF = FF_D | FF_JK | FF_T
@@ -33,7 +34,10 @@ export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 
-export let upperMode: Mode = isEmbeddedInIframe() ? Mode.DESIGN : Mode.DESIGN_FULL
+const MaxMode = Mode.DESIGN_FULL
+const MaxEmbeddedMode = Mode.DESIGN
+
+export let upperMode: Mode = isEmbeddedInIframe() ? MaxEmbeddedMode : MaxMode
 export let mode: Mode = upperMode
 
 export const modifierKeys = {
@@ -140,6 +144,8 @@ function trySetMode(wantedMode: Mode) {
     if (wantedMode <= upperMode) {
         mode = wantedMode
         console.log(`Display/interaction is ${wantedModeStr}`)
+
+        // update mode active button
         document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
             if (elem.getAttribute("mode") === wantedModeStr) {
                 elem.classList.add("active")
@@ -147,6 +153,56 @@ function trySetMode(wantedMode: Mode) {
                 elem.classList.remove("active")
             }
         })
+
+        const showReset = mode >= Mode.TRYOUT
+        const showRightEditControls = mode >= Mode.CONNECT
+        const showLeftMenu = mode >= Mode.DESIGN
+        const showRightMenu = showReset || showRightEditControls
+
+        if (!showReset) {
+            document.getElementById("resetToolButton")!.style.display = "none"
+        } else {
+            document.getElementById("resetToolButton")!.style.removeProperty("display")
+        }
+
+
+        const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
+        if (isDefined(showonlyStr)) {
+            const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
+            const leftToolbar = document.getElementById("leftToolbar")!
+            const toolbarChildren = leftToolbar.children
+            for (let i = 0; i < toolbarChildren.length; i++) {
+                const child = toolbarChildren[i] as HTMLElement
+                const tool = child.getAttribute("tool")
+                if (child.tagName === "BUTTON" && !isNullOrUndefined(tool) && isTruthyString(child.getAttribute("isGate")) && !showonly.includes(tool)) {
+                    child.style.display = "none"
+                }
+            }
+        }
+
+        const modifButtons = document.querySelectorAll("button.sim-modification-tool")
+        for (let i = 0; i < modifButtons.length; i++) {
+            const but = modifButtons[i] as HTMLElement
+            if (showRightEditControls) {
+                but.style.removeProperty("display")
+            } else {
+                but.style.display = "none"
+            }
+        }
+
+        if (showLeftMenu) {
+            document.getElementById("leftToolbar")!.style.removeProperty("display")
+        } else {
+            document.getElementById("leftToolbar")!.style.display = "none"
+        }
+
+
+        if (showRightMenu) {
+            document.getElementById("rightToolbarContainer")!.style.removeProperty("visibility")
+        } else {
+            document.getElementById("rightToolbarContainer")!.style.visibility = "hidden"
+        }
+
     } else {
         console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[upperMode]}`)
     }
@@ -170,67 +226,58 @@ export function setup() {
     if (maybeMode in Mode) {
         upperMode = (Mode as any)[maybeMode]
     }
-    trySetMode(upperMode)
 
-    const showReset = mode >= Mode.TRYOUT
-    const showRightEditControls = mode >= Mode.CONNECT
-    const showLeftMenu = mode >= Mode.DESIGN
-    const showDumpStructureButton = showLeftMenu && mode >= Mode.DESIGN_FULL
-    const showRightMenu = showReset || showRightEditControls
     const showModeChange = upperMode >= Mode.DESIGN_FULL
 
-    if (!showReset) {
-        document.getElementById("resetToolButton")!.style.display = "none"
-    }
-
-
-    const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
-    if (isDefined(showonlyStr)) {
-        const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
-        const leftToolbar = document.getElementById("leftToolbar")!
-        const toolbarChildren = leftToolbar.children
-        for (let i = 0; i < toolbarChildren.length; i++) {
-            const child = toolbarChildren[i] as HTMLElement
-            const tool = child.getAttribute("tool")
-            if (child.tagName === "BUTTON" && !isNullOrUndefined(tool) && isTruthyString(child.getAttribute("isGate")) && !showonly.includes(tool)) {
-                child.style.display = "none"
-            }
-        }
-    }
-
-    if (showRightEditControls) {
-        const modifButtons = document.querySelectorAll("button.sim-modification-tool")
-        for (let i = 0; i < modifButtons.length; i++) {
-            const but = modifButtons[i] as HTMLElement
-            but.style.removeProperty("display")
-        }
-    }
-
-
-    if (showLeftMenu) {
-        document.getElementById("leftToolbar")!.style.removeProperty("display")
-        if (showDumpStructureButton) {
-            const dumpJsonStructure = document.getElementById("dumpJsonStructure")!
-            // if (dumpJsonStructure) {
-            dumpJsonStructure.setAttribute("style", "")
-            dumpJsonStructure.addEventListener("click", () => {
-                const json = PersistenceManager.buildWorkspaceJSON()
-                console.log("JSON:\n" + json)
-                const encodedJson = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
-                const loc = window.location
-                history.replaceState(null, "", loc.protocol + "//" + loc.host + loc.pathname + "?data=" + encodedJson)
-            }, false)
-        }
-
-    }
-
-    if (showRightMenu) {
-        document.getElementById("rightToolbarContainer")!.style.removeProperty("visibility")
-    }
-
     if (showModeChange) {
-        document.getElementById("modeChangeMenu")!.style.removeProperty("visibility")
+        const modeChangeMenu = document.getElementById("modeChangeMenu")!
+
+        div(cls("btn-group-vertical"),
+            div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
+                "Mode",
+            ),
+            ...[Mode.DESIGN_FULL, Mode.DESIGN, Mode.CONNECT, Mode.TRYOUT, Mode.STATIC].map((buttonMode) => {
+                const [modeTitle, expl] = (() => {
+                    switch (buttonMode) {
+                        case Mode.DESIGN_FULL: return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées"]
+                        case Mode.DESIGN: return ["Complet", "La totalité des actions de conception d’un circuit sont possible"]
+                        case Mode.CONNECT: return ["Connexion", "Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)"]
+                        case Mode.TRYOUT: return ["Test", "Il est seulement possible de changer les entrées pour tester un circuit préétabli"]
+                        case Mode.STATIC: return ["Statique", "Les éléments sont juste affichés; aucune interaction n’est possible"]
+                    }
+                })()
+
+                const copyLinkDiv =
+                    div(cls("sim-mode-link"),
+                        title("Copie un lien vers ce contenu dans ce mode"),
+                        faglyph("link")
+                    ).render()
+
+                copyLinkDiv.addEventListener("click", () => {
+                    copyLinkForMode(buttonMode)
+                })
+
+                const switchToModeDiv =
+                    div(cls("btn btn-sm btn-outline-light sim-toolbar-button-right sim-mode-tool"),
+                        style("display: flex; justify-content: space-between; align-items: center"),
+                        attrBuilder("mode")(Mode[buttonMode]),
+                        title(expl),
+                        modeTitle,
+                        copyLinkDiv
+                    ).render()
+
+                switchToModeDiv.addEventListener("click", () => trySetMode(buttonMode))
+
+                return switchToModeDiv
+            })
+        ).applyTo(modeChangeMenu)
+
+
+        modeChangeMenu.style.removeProperty("visibility")
     }
+
+    trySetMode(upperMode)
+
 }
 
 export function tryLoadFromData() {
@@ -376,6 +423,60 @@ if (saveProjectFile) {
     saveProjectFile.addEventListener("click", () => PersistenceManager.saveFile(), false)
 }
 
+function maxComponentY(): [number, number] {
+    let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
+    for (const elems of allComponents) {
+        for (const elem of elems) {
+            const y = elem.posY
+            if (y > lowestY) {
+                lowestY = y
+            }
+            if (y < highestY) {
+                highestY = y
+            }
+        }
+    }
+    return [highestY, lowestY]
+}
+
+function copyLinkForMode(mode: Mode) {
+    if (mode > MaxEmbeddedMode) {
+        mode = MaxEmbeddedMode
+    }
+    const modeStr = Mode[mode].toLowerCase()
+    const json = PersistenceManager.buildWorkspaceJSON()
+    console.log("JSON:\n" + json)
+    const encodedJson = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
+
+    function linkForMode(mode: Mode): string {
+        const loc = window.location
+        return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + encodedJson
+    }
+    const fullUrl = linkForMode(mode)
+    console.log("Link: " + fullUrl)
+
+    const modeParam = mode === MaxEmbeddedMode ? "" : `:mode: ${modeStr}\n`
+
+    const [highestY, lowestY] = maxComponentY()
+    console.log([highestY, lowestY])
+    const embedHeight = lowestY + highestY // add lower margin equal to top margin
+
+    const block = `\`\`\`{logic}
+:height: ${embedHeight}
+${modeParam}
+${json}
+\`\`\``
+
+    console.log(block)
+
+    if (copyToClipboard(block)) {
+        console.log("  -> Copied!")
+    } else {
+        console.log("  -> Could not copy!")
+    }
+    history.replaceState(null, "", linkForMode(MaxMode))
+}
+
 function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
     for (const elems of allComponents) {
         for (let i = 0; i < elems.length; i++) {
@@ -422,3 +523,4 @@ function onClick() {
 }
 
 document.addEventListener('contextmenu', onContextMenu, false)
+

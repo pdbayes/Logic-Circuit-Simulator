@@ -113,9 +113,9 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
-                wireLine(input, gateLeft - 2 - (short ? 9 : 0), input.posY)
+                wireLine(input, gateLeft - 3 - (short ? 9 : 0), input.posY)
             }
-            wireLine(output, gateRight + 2, this.posY)
+            wireLine(output, gateRight + 3, this.posY)
         }
 
         switch (type) {
@@ -335,7 +335,7 @@ export class Gate1Inverter extends GateBase<1, GateRepr1> {
         if (isUnset(in0)) {
             return Unset
         }
-        return in0!
+        return !in0
     }
 
 }
