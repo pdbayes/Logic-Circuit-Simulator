@@ -34,7 +34,7 @@ export const wireMng = new WireManager()
 
 export const colorMouseOver: Color = [0, 0x7B, 0xFF]
 
-const MaxMode = Mode.DESIGN_FULL
+const MaxMode = Mode.FULL
 const MaxEmbeddedMode = Mode.DESIGN
 
 export let upperMode: Mode = isEmbeddedInIframe() ? MaxEmbeddedMode : MaxMode
@@ -54,6 +54,16 @@ export function startedMoving(comp: Component) {
 export function stoppedMoving(comp: Component) {
     movingComponents.delete(comp)
 }
+
+let toolCursor: string | undefined = undefined
+export function setToolCursor(cursor: string) {
+    toolCursor = cursor
+}
+export function clearToolCursor() {
+    toolCursor = undefined
+}
+
+
 
 let canvasContainer: HTMLElement
 let initialData: string | undefined = undefined
@@ -154,9 +164,14 @@ function trySetMode(wantedMode: Mode) {
             }
         })
 
+        type LeftMenuDisplay = "show" | "hide" | "inactive"
+
         const showReset = mode >= Mode.TRYOUT
         const showRightEditControls = mode >= Mode.CONNECT
-        const showLeftMenu = mode >= Mode.DESIGN
+        const showLeftMenu: LeftMenuDisplay =
+            (upperMode !== Mode.FULL)
+                ? (mode >= Mode.DESIGN) ? "show" : "hide"
+                : (mode >= Mode.DESIGN) ? "show" : "inactive"
         const showRightMenu = showReset || showRightEditControls
 
         if (!showReset) {
@@ -190,10 +205,20 @@ function trySetMode(wantedMode: Mode) {
             }
         }
 
-        if (showLeftMenu) {
-            document.getElementById("leftToolbar")!.style.removeProperty("display")
-        } else {
-            document.getElementById("leftToolbar")!.style.display = "none"
+        const leftToolbar = document.getElementById("leftToolbar")!
+        switch (showLeftMenu) {
+            case "hide":
+                leftToolbar.style.removeProperty("visibility")
+                leftToolbar.style.display = "none"
+                break
+            case "show":
+                leftToolbar.style.removeProperty("visibility")
+                leftToolbar.style.removeProperty("display")
+                break
+            case "inactive":
+                leftToolbar.style.visibility = "hidden"
+                leftToolbar.style.removeProperty("display")
+                break
         }
 
 
@@ -227,7 +252,7 @@ export function setup() {
         upperMode = (Mode as any)[maybeMode]
     }
 
-    const showModeChange = upperMode >= Mode.DESIGN_FULL
+    const showModeChange = upperMode >= Mode.FULL
 
     if (showModeChange) {
         const modeChangeMenu = document.getElementById("modeChangeMenu")!
@@ -236,10 +261,10 @@ export function setup() {
             div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
                 "Mode",
             ),
-            ...[Mode.DESIGN_FULL, Mode.DESIGN, Mode.CONNECT, Mode.TRYOUT, Mode.STATIC].map((buttonMode) => {
+            ...[Mode.FULL, Mode.DESIGN, Mode.CONNECT, Mode.TRYOUT, Mode.STATIC].map((buttonMode) => {
                 const [modeTitle, expl] = (() => {
                     switch (buttonMode) {
-                        case Mode.DESIGN_FULL: return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées"]
+                        case Mode.FULL: return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées"]
                         case Mode.DESIGN: return ["Complet", "La totalité des actions de conception d’un circuit sont possible"]
                         case Mode.CONNECT: return ["Connexion", "Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)"]
                         case Mode.TRYOUT: return ["Test", "Il est seulement possible de changer les entrées pour tester un circuit préétabli"]
@@ -305,11 +330,18 @@ export function draw() {
 
     stroke(200)
     strokeWeight(2)
-    if (mode >= Mode.CONNECT) {
+    if (mode >= Mode.CONNECT || upperMode === MaxMode) {
         rect(0, 0, width, height)
+        if (upperMode === MaxMode && mode < upperMode) {
+            const h = guessCanvasHeight()
+            line(0, h, width, h)
+            fill(0xEE)
+            rect(0, h, width, height - h)
+        }
     }
 
-    if (movingComponents.size > 0) {
+    const isMovingComponent = movingComponents.size > 0
+    if (isMovingComponent) {
         stroke(240)
         strokeWeight(1)
         for (let x = GRID_STEP; x < width; x += GRID_STEP) {
@@ -323,11 +355,15 @@ export function draw() {
     stroke(0)
     wireMng.draw()
 
+    let newCursor: string | undefined = isMovingComponent ? "grabbing" : toolCursor
     for (const elems of allComponents) {
         for (const elem of elems) {
             elem.draw()
+            newCursor ??= elem.cursor
         }
     }
+
+    document.getElementById("canvas-sim")!.style.cursor = newCursor ?? "default"
 }
 
 export function mousePressed() {
@@ -423,7 +459,7 @@ if (saveProjectFile) {
     saveProjectFile.addEventListener("click", () => PersistenceManager.saveFile(), false)
 }
 
-function maxComponentY(): [number, number] {
+function guessCanvasHeight(): number {
     let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
     for (const elems of allComponents) {
         for (const elem of elems) {
@@ -436,7 +472,7 @@ function maxComponentY(): [number, number] {
             }
         }
     }
-    return [highestY, lowestY]
+    return highestY + lowestY // add lower margin equal to top margin
 }
 
 function copyLinkForMode(mode: Mode) {
@@ -457,9 +493,7 @@ function copyLinkForMode(mode: Mode) {
 
     const modeParam = mode === MaxEmbeddedMode ? "" : `:mode: ${modeStr}\n`
 
-    const [highestY, lowestY] = maxComponentY()
-    console.log([highestY, lowestY])
-    const embedHeight = lowestY + highestY // add lower margin equal to top margin
+    const embedHeight = guessCanvasHeight()
 
     const block = `\`\`\`{logic}
 :height: ${embedHeight}

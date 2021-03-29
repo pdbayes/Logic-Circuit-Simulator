@@ -3,6 +3,7 @@
 
 ## High priority
 
+ * Support touch events
  * Unify click-and-drag also from left buttons instead of click-and-move
  * Optimize draw calls
  * ...
@@ -10,8 +11,7 @@
 
 ## Medium priority
 
- * Change cursor depending on possible interaction
- * ...
+ * Add contextual menu
 
 
 ## Low priority
@@ -30,3 +30,7 @@
  * Allow forcing output nodes to a predefined value
  * Allow inputs to be undetermined ('?')
  * Allow gates to be drawn in an undetermined shape
+ * Change cursor depending on possible interaction
+ * Validate JSON when loaded, define JSON types in a smart way
+ * Allow changing modes, add admin mode to force nodes in states
+ * Generate links or Markdown blocks with given diagram

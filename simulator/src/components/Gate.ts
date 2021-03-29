@@ -286,7 +286,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         super.doubleClicked()
 
         if (this.isMouseOver()) {
-            if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) {
+            if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
                 this._showAsUnknown = !this._showAsUnknown
             } else if (mode >= Mode.DESIGN) {
                 // switch to IMPLY / NIMPLY variant

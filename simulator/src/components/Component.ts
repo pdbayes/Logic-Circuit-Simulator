@@ -365,6 +365,13 @@ export abstract class ComponentBase<
         return isDefined(this._isMovingWithMouseOffset)
     }
 
+    public get cursor(): string | undefined {
+        if (mode >= Mode.CONNECT && this.isMouseOver()) {
+            return "grab"
+        }
+        return undefined
+    }
+
     protected updatePositionIfNeeded(): undefined | [number, number] {
         const newPos = this.updateSelfPositionIfNeeded()
         const posChanged = isDefined(newPos)

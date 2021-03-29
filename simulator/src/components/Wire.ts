@@ -1,6 +1,6 @@
 import { currMouseAction } from "../menutools.js"
 import { MouseAction, Mode, int } from "../utils.js"
-import { colorForBoolean, colorMouseOver, mode, wireLine } from "../simulator.js"
+import { clearToolCursor, colorForBoolean, colorMouseOver, mode, setToolCursor, wireLine } from "../simulator.js"
 import { Node, ConnectionState } from "./Node.js"
 import * as t from "io-ts"
 import { NodeID } from "./Component.js"
@@ -172,12 +172,11 @@ export class WireManager {
     }
 
     addNode(newNode: Node) {
-        const canvasSim = document.getElementById("canvas-sim")!
         if (!this._isOpened) {
             // start drawing a new wire
             this.wires.push(new Wire(newNode))
             this._isOpened = true
-            canvasSim.style.cursor = "crosshair"
+            setToolCursor("crosshair")
 
         } else {
             // complete the new wire
@@ -209,7 +208,7 @@ export class WireManager {
             }
 
             this._isOpened = false
-            canvasSim.style.cursor = "default"
+            clearToolCursor()
         }
     }
 

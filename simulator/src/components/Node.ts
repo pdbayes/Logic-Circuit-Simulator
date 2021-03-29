@@ -54,7 +54,7 @@ export class Node extends PositionSupport {
         fillForBoolean(this.value)
 
         const [circleColor, thickness] =
-            isDefined(this._forceValue) && mode >= Mode.DESIGN_FULL
+            isDefined(this._forceValue) && mode >= Mode.FULL
                 ? [[180, 0, 0], 3] // show forced nodes with red border if not in teacher mode
                 : [[0, 0, 0], 1]   // show normally
 
@@ -63,7 +63,7 @@ export class Node extends PositionSupport {
         circle(this.posX, this.posY, DIAMETER)
 
         noStroke()
-        if (mode >= Mode.DESIGN_FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
+        if (mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
             // forced value to something that is contrary to normal output
             textAlign(CENTER, CENTER)
             fill(circleColor)
@@ -145,7 +145,7 @@ export class Node extends PositionSupport {
     }
 
     doubleClicked() {
-        if (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown && this.isOutput && this.isMouseOver()) {
+        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && this.isMouseOver()) {
             this._forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset

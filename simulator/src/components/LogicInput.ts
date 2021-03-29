@@ -82,9 +82,9 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         if (this.isMouseOver()) {
             this._value = (() => {
                 switch (this._value) {
-                    case true: return (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) ? Unset : false
-                    case false: return (mode >= Mode.DESIGN_FULL && modifierKeys.isOptionDown) ? Unset : true
-                    case Unset: return mode >= Mode.DESIGN_FULL ? false : Unset
+                    case true: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : false
+                    case false: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : true
+                    case Unset: return mode >= Mode.FULL ? false : Unset
                 }
             })()
         }

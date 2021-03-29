@@ -243,11 +243,11 @@ export function toTriState(v: TriStateRepr | undefined): TriState | undefined {
 // Enums or RichEnums used in several files
 
 export enum Mode {
-    STATIC,      // cannot interact in any way
-    TRYOUT,      // can change inputs on predefined circuit
-    CONNECT,     // can additionnally move preexisting components around and connect them
-    DESIGN,      // can additionally add components from left menu
-    DESIGN_FULL, // can additionally force output nodes to 'unset' state and draw undetermined dates
+    STATIC,  // cannot interact in any way
+    TRYOUT,  // can change inputs on predefined circuit
+    CONNECT, // can additionnally move preexisting components around and connect them
+    DESIGN,  // can additionally add components from left menu
+    FULL,    // can additionally force output nodes to 'unset' state and draw undetermined dates
 }
 
 export enum MouseAction {

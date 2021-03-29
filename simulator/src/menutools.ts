@@ -1,5 +1,5 @@
 import { Clock } from "./components/Clock.js"
-import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays } from "./simulator.js"
+import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, clearToolCursor, setToolCursor } from "./simulator.js"
 import { GateFactory, GateTypes } from "./components/Gate.js"
 import { LogicInput } from "./components/LogicInput.js"
 import { LogicOutput } from "./components/LogicOutput.js"
@@ -40,7 +40,7 @@ export function activeTool(elTool: HTMLElement) {
 
         case "Move":
             currMouseAction = MouseAction.MOVE
-            document.getElementById("canvas-sim")!.style.cursor = "move"
+            setToolCursor("move")
             break
 
         case "Delete":
@@ -125,7 +125,7 @@ function resetElements() {
     for (let i = 0; i < activeElements.length; i++) {
         activeElements[i].classList.remove('active')
     }
-    document.getElementById("canvas-sim")!.style.cursor = "default"
+    clearToolCursor()
 }
 
 export function backToEdit() {
