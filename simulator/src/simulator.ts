@@ -133,11 +133,20 @@ function trySetMode(wantedMode: Mode) {
                 ? (mode >= Mode.DESIGN) ? "show" : "hide"
                 : (mode >= Mode.DESIGN) ? "show" : "inactive"
         const showRightMenu = showReset || showRightEditControls
+        const showOnlyReset = showReset && !showRightEditControls
 
         if (!showReset) {
             document.getElementById("resetToolButton")!.style.display = "none"
         } else {
             document.getElementById("resetToolButton")!.style.removeProperty("display")
+        }
+
+        if (showOnlyReset) {
+            document.getElementById("resetToolButtonCaption")!.style.display = "none"
+            document.getElementById("resetToolButtonDummyCaption")!.style.removeProperty("display")
+        } else {
+            document.getElementById("resetToolButtonCaption")!.style.removeProperty("display")
+            document.getElementById("resetToolButtonDummyCaption")!.style.display = "none"
         }
 
 
@@ -486,18 +495,27 @@ export function setup() {
 
     canvasContainer.addEventListener("touchstart", (e) => {
         // console.log("touchstart %o %o", offsetXY(e), e)
-        e.preventDefault()
+        if (mode >= Mode.CONNECT) {
+            // prevent scrolling when we can connect
+            e.preventDefault()
+        }
         mouseDownTouchStart(e)
     })
     canvasContainer.addEventListener("touchmove", (e) => {
         // console.log("touchmove %o %o", offsetXY(e), e)
-        e.preventDefault()
+        if (mode >= Mode.CONNECT) {
+            // prevent scrolling when we can connect
+            e.preventDefault()
+        }
         mouseMoveTouchMove(e)
     })
 
     canvasContainer.addEventListener("touchend", (e) => {
         // console.log("touchend %o %o", offsetXY(e), e, e.detail)
-        e.preventDefault()
+        if (mode >= Mode.CONNECT) {
+            // prevent scrolling when we can connect
+            e.preventDefault()
+        }
         mouseUpTouchEnd(e)
         setCurrentMouseOverComp(null)
     })

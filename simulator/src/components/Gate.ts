@@ -256,7 +256,6 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
     }
 
     protected doRecalcValue(): TriState {
-        console.log("reaclcuating fgate")
         const in1 = this.inputs[0].value
         const in2 = this.inputs[1].value
         if (isUnset(in1) || isUnset(in2)) {
