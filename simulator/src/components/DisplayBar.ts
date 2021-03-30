@@ -94,7 +94,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, w, h, x, y)
     }
 
-    mouseDoubleClick(__: MouseEvent) {
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
         this.doSetDisplay((() => {
             switch (this.display) {
                 case "h":

@@ -1,5 +1,5 @@
 import { Mode, int, isNull, isNotNull, isDefined } from "../utils"
-import { mode, setToolCursor } from "../simulator"
+import { mode, setCanvasNeedsRedraw, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -215,6 +215,7 @@ export class WireManager {
             this._isAddingWire = false
             setToolCursor(null)
         }
+        setCanvasNeedsRedraw()
     }
 
     deleteWire(wire: Wire) {

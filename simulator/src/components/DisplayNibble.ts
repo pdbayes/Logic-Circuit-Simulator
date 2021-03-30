@@ -103,7 +103,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
-    mouseDoubleClick(__: MouseEvent) {
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
         this._radix = this._radix === 10 ? 16 : 10
         this.setNeedsRedraw()
     }

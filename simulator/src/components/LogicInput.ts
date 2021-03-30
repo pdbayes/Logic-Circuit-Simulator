@@ -79,7 +79,7 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    mouseDoubleClick(__: MouseEvent) {
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
         this.doSetValue((() => {
             switch (this.value) {
                 case true: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : false

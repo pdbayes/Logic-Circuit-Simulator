@@ -266,7 +266,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return calcOut(in1, in2)
     }
 
-    mouseDoubleClick(__: MouseEvent) {
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
         if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
             this._showAsUnknown = !this._showAsUnknown
             this.setNeedsRedraw()

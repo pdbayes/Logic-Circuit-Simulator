@@ -1,4 +1,4 @@
-import { addComponentNeedingRecalc, mode, modifierKeys, setComponentMoving, setComponentStoppedMoving } from "../simulator"
+import { addComponentNeedingRecalc, mode, modifierKeys, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
 import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
@@ -420,7 +420,7 @@ export abstract class ComponentBase<
         addComponentNeedingRecalc(this)
     }
 
-    private updatePositionIfNeeded(e: MouseEvent): undefined | [number, number] {
+    private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const newPos = this.updateSelfPositionIfNeeded(e)
         const posChanged = isDefined(newPos)
         if (posChanged) {
@@ -433,9 +433,8 @@ export abstract class ComponentBase<
         return newPos
     }
 
-    private updateSelfPositionIfNeeded(e: MouseEvent): undefined | [number, number] {
-        const x = e.offsetX
-        const y = e.offsetY
+    private updateSelfPositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
+        const [x, y] = offsetXY(e)
         const snapToGrid = !modifierKeys.isCommandDown
         if (this._state === ComponentState.SPAWNING) {
             return this.setPosition(x, y, snapToGrid)
@@ -448,22 +447,24 @@ export abstract class ComponentBase<
         return undefined
     }
 
-    mouseDown(e: MouseEvent) {
+    mouseDown(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
             if (isUndefined(this._isMovingWithMouseOffset)) {
-                this._isMovingWithMouseOffset = [this.posX - e.offsetX, this.posY - e.offsetY]
+                const [offsetX, offsetY] = offsetXY(e)
+                this._isMovingWithMouseOffset = [this.posX - offsetX, this.posY - offsetY]
             }
         }
+        return { lockMouseOver: true }
     }
 
-    mouseDragged(e: MouseEvent) {
+    mouseDragged(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
             this.updatePositionIfNeeded(e)
             setComponentMoving(this)
         }
     }
 
-    mouseUp(__: MouseEvent) {
+    mouseUp(__: MouseEvent | TouchEvent) {
         if (this._state === ComponentState.SPAWNING) {
             // const snapToGrid = !modifierKeys.isCommandDown
             // this.setPosition(e.offsetX, e.offsetY, snapToGrid)

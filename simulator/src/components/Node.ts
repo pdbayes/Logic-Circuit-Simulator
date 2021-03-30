@@ -150,7 +150,7 @@ abstract class NodeBase extends DrawableWithPosition {
         return "crosshair"
     }
 
-    mouseDoubleClick(__: MouseEvent) {
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
         if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput) {
             const oldVisibleValue = this.value
             this._forceValue = (() => {
@@ -166,7 +166,12 @@ abstract class NodeBase extends DrawableWithPosition {
         }
     }
 
-    mouseUp(__: MouseEvent) {
+    mouseDown(__: MouseEvent | TouchEvent) {
+        wireMgr.addNode(this.asNode)
+        return { lockMouseOver: false }
+    }
+
+    mouseUp(__: MouseEvent | TouchEvent) {
         wireMgr.addNode(this.asNode)
     }
 

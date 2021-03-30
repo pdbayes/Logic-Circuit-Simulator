@@ -212,7 +212,7 @@ let _currentMouseOverComp: Drawable | null = null
 let _currentMouseDownComp: Drawable | Element | null = null
 let _startDragTimeoutHandle: number | null = null
 
-function setStartDragTimeout(comp: Drawable, e: MouseEvent) {
+function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
     _startDragTimeoutHandle = setTimeout(function () {
         comp.mouseDragged(e)
     }, 300)
@@ -225,12 +225,17 @@ function clearStartDragTimeout() {
     }
 }
 
-function updateMouseOver(e: MouseEvent) {
+function setCurrentMouseOverComp(comp: Drawable | null) {
+    if (comp !== _currentMouseOverComp) {
+        _currentMouseOverComp = comp
+        setCanvasNeedsRedraw()
+        // console.log("Over component: ", newMouseOverComp)
+    }
+}
+
+function updateMouseOver([x, y]: [number, number]) {
     function findMouseOver(): Drawable | null {
         if (mode > Mode.STATIC) {
-            const x = e.offsetX
-            const y = e.offsetY
-
             for (const elems of allComponents) {
                 for (const elem of elems) {
                     let nodeOver: Node | null = null
@@ -259,12 +264,7 @@ function updateMouseOver(e: MouseEvent) {
         return null
     }
 
-    const newMouseOverComp = findMouseOver()
-    if (newMouseOverComp !== _currentMouseOverComp) {
-        _currentMouseOverComp = newMouseOverComp
-        setCanvasNeedsRedraw()
-        // console.log("Over component: ", newMouseOverComp)
-    }
+    setCurrentMouseOverComp(findMouseOver())
 }
 
 function updateCursor() {
@@ -285,41 +285,44 @@ export function createdNewComponent<C extends Component>(comp: C, array: C[]) {
 
 
 abstract class ToolHandlers {
-    mouseDownOn(__comp: Drawable, __e: MouseEvent) {
+    mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+        return { lockMouseOver: true }
+    }
+    mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDraggedOn(__comp: Drawable, __e: MouseEvent) {
+    mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseUpOn(__comp: Drawable, __e: MouseEvent) {
+    mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent) {
+    mouseDownOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDownOnBackground(__e: MouseEvent) {
+    mouseDraggedOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDraggedOnBackground(__e: MouseEvent) {
-        // empty
-    }
-    mouseUpOnBackground(__e: MouseEvent) {
+    mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
 }
 
 class _EditHandlers extends ToolHandlers {
-    mouseDownOn(comp: Drawable, e: MouseEvent) {
-        comp.mouseDown(e)
+    mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+        return comp.mouseDown(e)
     }
-    mouseDraggedOn(comp: Drawable, e: MouseEvent) {
+    mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDragged(e)
     }
-    mouseUpOn(comp: Drawable, e: MouseEvent) {
+    mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseUp(e)
     }
-    mouseDoubleClickedOn(comp: Drawable, e: MouseEvent) {
+    mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDoubleClick(e)
+    }
+    mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
+        wireMgr.tryCancelWire()
     }
 }
 
@@ -338,7 +341,6 @@ class _DeleteHandlers extends ToolHandlers {
         } else if (comp instanceof Wire) {
             wireMgr.deleteWire(comp)
         }
-        console.log("would now delete", comp)
     }
 }
 
@@ -380,6 +382,40 @@ export function setHandlersFor(action: MouseAction) {
     })()
 }
 
+export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
+    if ("offsetX" in e) {
+        return [e.offsetX, e.offsetY]
+    } else {
+        const rect = (e.target as HTMLElement).getBoundingClientRect()
+        const bodyRect = document.body.getBoundingClientRect()
+        const touch = e.changedTouches[0]
+        const x = touch.pageX - (rect.left - bodyRect.left)
+        const y = touch.pageY - (rect.top - bodyRect.top)
+        return [x, y]
+    }
+}
+
+let _lastTouchEnd: [Drawable, number] | undefined = undefined
+function isDoubleClick(clickedComp: Drawable, e: MouseEvent | TouchEvent) {
+    if ("offsetX" in e) {
+        return e.detail === 2
+    } else {
+        const oldLastTouchEnd = _lastTouchEnd
+        const now = new Date().getTime()
+        _lastTouchEnd = [clickedComp, now]
+        if (!isDefined(oldLastTouchEnd)) {
+            return false
+        }
+        const [lastComp, lastTime] = oldLastTouchEnd
+        const elapsedTimeMillis = now - lastTime
+        const isDoubleTouch = lastComp === clickedComp && elapsedTimeMillis > 0 && elapsedTimeMillis < 300
+        if (isDoubleTouch) {
+            _lastTouchEnd = undefined
+        }
+        return isDoubleTouch
+    }
+}
+
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
 
@@ -387,14 +423,16 @@ export function setup() {
 
     p5canvas.parent('canvas-sim')
 
-    canvasContainer.addEventListener("mousedown", (e) => {
+    const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
         if (isNull(_currentMouseDownComp)) {
-            updateMouseOver(e)
+            updateMouseOver(offsetXY(e))
             if (isNotNull(_currentMouseOverComp)) {
                 // mouse down on component
-                _currentMouseDownComp = _currentMouseOverComp
-                _currentHandlers.mouseDownOn(_currentMouseDownComp, e)
-                setStartDragTimeout(_currentMouseDownComp, e)
+                const { lockMouseOver } = _currentHandlers.mouseDownOn(_currentMouseOverComp, e)
+                if (lockMouseOver) {
+                    _currentMouseDownComp = _currentMouseOverComp
+                    setStartDragTimeout(_currentMouseDownComp, e)
+                }
                 setCanvasNeedsRedraw()
             } else {
                 // mouse down on background
@@ -406,9 +444,9 @@ export function setup() {
             // we got a mousedown while a component had programmatically
             // been determined as being mousedown'd; ignore
         }
-    })
+    }
 
-    canvasContainer.addEventListener("mousemove", (e) => {
+    const mouseMoveTouchMove = (e: MouseEvent | TouchEvent) => {
         if (isNotNull(_currentMouseDownComp)) {
             if (_currentMouseDownComp instanceof Drawable) {
                 // dragging component
@@ -419,32 +457,70 @@ export function setup() {
                 _currentHandlers.mouseDraggedOnBackground(e)
             }
         } else {
-            // moving
-            updateMouseOver(e)
+            // moving mouse or dragging without a locked component 
+            updateMouseOver(offsetXY(e))
         }
+    }
+
+    const mouseUpTouchEnd = (e: MouseEvent | TouchEvent) => {
+        // our target is either the locked component that
+        // was clicked or the latest mouse over component
+        const mouseUpTarget = _currentMouseDownComp ?? _currentMouseOverComp
+        if (mouseUpTarget instanceof Drawable) {
+            // mouseup on component
+            if (isNotNull(_startDragTimeoutHandle)) {
+                clearTimeout(_startDragTimeoutHandle)
+                _startDragTimeoutHandle = null
+            }
+            _currentHandlers.mouseUpOn(mouseUpTarget, e)
+            if (isDoubleClick(mouseUpTarget, e)) {
+                _currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+            }
+        } else {
+            // mouseup on background
+            _currentHandlers.mouseUpOnBackground(e)
+        }
+        _currentMouseDownComp = null
+        setCanvasNeedsRedraw()
+    }
+
+    canvasContainer.addEventListener("touchstart", (e) => {
+        // console.log("touchstart %o %o", offsetXY(e), e)
+        e.preventDefault()
+        mouseDownTouchStart(e)
+    })
+    canvasContainer.addEventListener("touchmove", (e) => {
+        // console.log("touchmove %o %o", offsetXY(e), e)
+        e.preventDefault()
+        mouseMoveTouchMove(e)
+    })
+
+    canvasContainer.addEventListener("touchend", (e) => {
+        // console.log("touchend %o %o", offsetXY(e), e, e.detail)
+        e.preventDefault()
+        mouseUpTouchEnd(e)
+        setCurrentMouseOverComp(null)
+    })
+
+    canvasContainer.addEventListener("touchcancel", (e) => {
+        console.log("touchcancel %o %o", offsetXY(e), e)
+    })
+
+    canvasContainer.addEventListener("mousedown", (e) => {
+        // console.log("mousedown %o", e)
+        mouseDownTouchStart(e)
+    })
+
+    canvasContainer.addEventListener("mousemove", (e) => {
+        // console.log("mousemove %o", e)
+        mouseMoveTouchMove(e)
         updateCursor()
     })
 
     canvasContainer.addEventListener("mouseup", (e) => {
-        if (isNotNull(_currentMouseDownComp)) {
-            if (_currentMouseDownComp instanceof Drawable) {
-                // mouseup on component
-                if (isNotNull(_startDragTimeoutHandle)) {
-                    clearTimeout(_startDragTimeoutHandle)
-                    _startDragTimeoutHandle = null
-                }
-                _currentHandlers.mouseUpOn(_currentMouseDownComp, e)
-                if (e.detail === 2) {
-                    _currentHandlers.mouseDoubleClickedOn(_currentMouseDownComp, e)
-                }
-            } else {
-                // mouseup on background
-                _currentHandlers.mouseUpOnBackground(e)
-            }
-            _currentMouseDownComp = null
-            setCanvasNeedsRedraw()
-        }
-        updateMouseOver(e)
+        // console.log("mouseup %o", e)
+        mouseUpTouchEnd(e)
+        updateMouseOver([e.offsetX, e.offsetY])
         updateCursor()
     })
 
