@@ -1,10 +1,9 @@
-import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
-import { ComponentBase, defineComponent, typeOrUndefined } from "./Component.js"
-import { GRID_STEP } from "./Position.js"
+import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils"
+import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { displayValuesFromInputs } from "./Node.js"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, inRect, wireLine } from "../drawutils.js"
-import { mode } from "../simulator.js"
+import { displayValuesFromInputs } from "./Node"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, GRID_STEP, inRect, wireLine } from "../drawutils"
+import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -19,14 +18,13 @@ export const DisplayNibbleDef =
 
 type DisplayNibbleRepr = typeof DisplayNibbleDef.reprType
 
-export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
+export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [string, number | unset]> {
 
-    private _value: number | unset = 0
     private readonly name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
 
     public constructor(savedData: DisplayNibbleRepr | null) {
-        super(savedData, { inOffsets: [[-3, -3], [-3, -1], [-3, +1], [-3, +3]] })
+        super(["0000", 0], savedData, { inOffsets: [[-3, -3], [-3, -1], [-3, +1], [-3, +3]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX
@@ -42,20 +40,18 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
         }
     }
 
-    public get value() {
-        return this._value
+    protected doRecalcValue() {
+        return displayValuesFromInputs(this.inputs)
     }
 
-    draw() {
-        this.updatePositionIfNeeded()
+    doDraw(isMouseOver: boolean) {
 
-        const [binaryStringRep, value] = displayValuesFromInputs(this.inputs)
-        this._value = value
+        const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnset(this._value) ? COLOR_UNSET : fillForFraction(this._value / maxValue)
+        const backColor = isUnset(value) ? COLOR_UNSET : fillForFraction(value / maxValue)
 
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -69,9 +65,6 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
 
         for (const input of this.inputs) {
             wireLine(input, this.posX - width / 2 - 2, input.posY)
-        }
-        for (const input of this.inputs) {
-            input.draw()
         }
 
         noStroke()
@@ -94,7 +87,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
         textSize(18)
         textStyle(BOLD)
 
-        const caption = this.value.toString(this._radix).toUpperCase()
+        const caption = value.toString(this._radix).toUpperCase()
         const prefix = (() => {
             switch (this._radix) {
                 case 16: return "0x"
@@ -106,26 +99,13 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr> {
         text(prefix + caption, this.posX, this.posY + width / 6)
     }
 
-    isMouseOver() {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
-    mouseClicked() {
-        let didIt = false
-        for (const input of this.inputs) {
-            if (input.isMouseOver()) {
-                input.mouseClicked()
-                didIt = true
-            }
-        }
-
-        return didIt || this.isMouseOver()
-    }
-
-    doubleClicked() {
-        if (this.isMouseOver()) {
-            this._radix = this._radix === 10 ? 16 : 10
-        }
+    mouseDoubleClick(__: MouseEvent) {
+        this._radix = this._radix === 10 ? 16 : 10
+        this.setNeedsRedraw()
     }
 
 }

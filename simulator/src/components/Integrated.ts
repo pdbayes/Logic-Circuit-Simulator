@@ -1,7 +1,7 @@
-// import { ICImages } from "../simulator.js"
-// import { Mode, ICType } from "./Enums.js"
-// import { colorMouseOver, mode } from "../simulator.js"
-// import { ComponentBase } from "./Component.js"
+// import { ICImages } from "../simulator"
+// import { Mode, ICType } from "./Enums"
+// import { colorMouseOver, mode } from "../simulator"
+// import { ComponentBase } from "./Component"
 
 export enum ICType {
     SR_LATCH_ASYNC,
@@ -28,7 +28,7 @@ export enum SyncType {
 //         super()
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         this.updatePositionIfNeeded()
 
 //         if (this.isMouseOver()) {

@@ -1,6 +1,6 @@
-import { DisplayAscii, DisplayAsciiDef } from "./DisplayAscii.js"
-import { DisplayBar, DisplayBarDef } from "./DisplayBar.js"
-import { DisplayNibble, DisplayNibbleDef } from "./DisplayNibble.js"
+import { DisplayAscii, DisplayAsciiDef } from "./DisplayAscii"
+import { DisplayBar, DisplayBarDef } from "./DisplayBar"
+import { DisplayNibble, DisplayNibbleDef } from "./DisplayNibble"
 import * as t from "io-ts"
 
 export type Display = DisplayNibble | DisplayAscii | DisplayBar

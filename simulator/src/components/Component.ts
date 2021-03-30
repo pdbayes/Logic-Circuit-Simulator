@@ -1,9 +1,8 @@
-import { backToEdit, currMouseAction } from "../menutools.js"
-import { mode, modifierKeys, startedMoving, stoppedMoving } from "../simulator.js"
-import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, MouseAction, toTriStateRepr, TriStateRepr } from "../utils.js"
-import { Node } from "./Node.js"
-import { NodeManager } from "../NodeManager.js"
-import { PositionSupport, PositionSupportRepr } from "./Position.js"
+import { addComponentNeedingRecalc, mode, modifierKeys, setComponentMoving, setComponentStoppedMoving } from "../simulator"
+import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
+import { Node, NodeIn, NodeOut } from "./Node"
+import { NodeManager } from "../NodeManager"
+import { DrawableWithPosition, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 
 export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
@@ -12,8 +11,7 @@ export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface HasSizeNBrand<N extends number> {
+interface HasSizeNBrand<__ extends number> {
     readonly HasSizeN: unique symbol // TODO check unique per N
 }
 
@@ -143,20 +141,24 @@ export enum ComponentState {
 }
 
 // Simplified, generics-free representation of a component
-export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>>
+export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>, unknown>
 
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs
     NumOutputs extends FixedArraySize, // statically know the number of outputs
-    Repr extends ComponentRepr<NumInputs, NumOutputs> // JSON representation, varies according to input/output number
-    > extends PositionSupport {
+    Repr extends ComponentRepr<NumInputs, NumOutputs>, // JSON representation, varies according to input/output number
+    Value // usually TriState or number
+    > extends DrawableWithPosition {
 
     private _state: ComponentState
     private _isMovingWithMouseOffset: undefined | [number, number] = undefined
-    protected readonly inputs: FixedArray<Node, NumInputs>
-    protected readonly outputs: FixedArray<Node, NumOutputs>
+    protected readonly inputs: FixedArray<NodeIn, NumInputs>
+    protected readonly outputs: FixedArray<NodeOut, NumOutputs>
 
-    protected constructor(savedData: Repr | null, nodeOffsets: NodeOffsets<NumInputs, NumOutputs>) {
+    protected constructor(
+        private _value: Value,
+        savedData: Repr | null,
+        nodeOffsets: NodeOffsets<NumInputs, NumOutputs>) {
         super(savedData)
 
         // hack to get around the inOffsets and outOffsets properties
@@ -183,15 +185,22 @@ export abstract class ComponentBase<
         } else {
             // newly placed
             this._state = ComponentState.SPAWNING
-            startedMoving(this)
+            setComponentMoving(this)
         }
 
         // build node specs either from scratch if new or from saved data
         const [inputSpecs, outputSpecs] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
 
         // generate the input and output nodes
-        this.inputs = this.makeNodes(inOffsets, inputSpecs, false) as FixedArray<Node, NumInputs>
-        this.outputs = this.makeNodes(outOffsets, outputSpecs, true) as FixedArray<Node, NumOutputs>
+        this.inputs = this.makeNodes(inOffsets, inputSpecs, NodeIn) as FixedArray<NodeIn, NumInputs>
+        this.outputs = this.makeNodes(outOffsets, outputSpecs, NodeOut) as FixedArray<NodeOut, NumOutputs>
+
+        // both propagateNewValue and setNeedsRecalc are needed:
+        // * propagateNewValue allows the current value (e.g. for LogicInputs)
+        //   to be set to the outputs
+        // * setNeedsRecalc schedules a recalculation (e.g. for Gates)
+        this.propagateNewValue(_value)
+        this.setNeedsRecalc()
     }
 
     public abstract toJSON(): Repr
@@ -207,11 +216,19 @@ export abstract class ComponentBase<
 
     // creates the input/output nodes based on array of offsets (provided
     // by subclass) and spec (either loaded from JSON repr or newly generated)
-    private makeNodes(offsets: readonly [number, number][], specs: readonly (InputNodeRepr | OutputNodeRepr)[], isOutput: boolean): readonly Node[] {
-        const nodes: Node[] = []
+    private makeNodes<N extends Node>(
+        offsets: readonly [number, number][],
+        specs: readonly (InputNodeRepr | OutputNodeRepr)[], node: new (
+            nodeSpec: InputNodeRepr | OutputNodeRepr,
+            parent: Component,
+            _gridOffsetX: number,
+            _gridOffsetY: number,
+        ) => N): readonly N[] {
+
+        const nodes: N[] = []
         for (let i = 0; i < offsets.length; i++) {
             const gridOffset = offsets[i]
-            nodes.push(new Node(specs[i], this, gridOffset[0], gridOffset[1], isOutput))
+            nodes.push(new node(specs[i], this, gridOffset[0], gridOffset[1]))
         }
         return nodes
     }
@@ -353,10 +370,6 @@ export abstract class ComponentBase<
         return result
     }
 
-    private get allNodes(): Node[] {
-        return [...this.inputs, ...this.outputs]
-    }
-
     public get state() {
         return this._state
     }
@@ -365,83 +378,112 @@ export abstract class ComponentBase<
         return isDefined(this._isMovingWithMouseOffset)
     }
 
-    public get cursor(): string | undefined {
-        if (mode >= Mode.CONNECT && this.isMouseOver()) {
-            return "grab"
+    public forEachNode(f: (node: Node) => boolean): void {
+        for (const node of this.inputs) {
+            const goOn = f(node)
+            if (!goOn) {
+                return
+            }
         }
-        return undefined
+        for (const node of this.outputs) {
+            const goOn = f(node)
+            if (!goOn) {
+                return
+            }
+        }
     }
 
-    protected updatePositionIfNeeded(): undefined | [number, number] {
-        const newPos = this.updateSelfPositionIfNeeded()
+    public get value(): Value {
+        return this._value
+    }
+
+    protected doSetValue(newValue: Value) {
+        const oldValue = this._value
+        if (newValue !== oldValue) {
+            this._value = newValue
+            this.setNeedsRedraw()
+            this.propagateNewValue(newValue)
+        }
+    }
+
+    public recalcValue() {
+        this.doSetValue(this.doRecalcValue())
+    }
+
+    protected abstract doRecalcValue(): Value
+
+    protected propagateNewValue(__newValue: Value) {
+        // by default, do nothing
+    }
+
+    public setNeedsRecalc() {
+        addComponentNeedingRecalc(this)
+    }
+
+    private updatePositionIfNeeded(e: MouseEvent): undefined | [number, number] {
+        const newPos = this.updateSelfPositionIfNeeded(e)
         const posChanged = isDefined(newPos)
         if (posChanged) {
-            for (const node of this.allNodes) {
+            this.setNeedsRedraw()
+            this.forEachNode((node) => {
                 node.updatePositionFromParent()
-            }
+                return true
+            })
         }
         return newPos
     }
 
-    private updateSelfPositionIfNeeded(): undefined | [number, number] {
+    private updateSelfPositionIfNeeded(e: MouseEvent): undefined | [number, number] {
+        const x = e.offsetX
+        const y = e.offsetY
         const snapToGrid = !modifierKeys.isCommandDown
         if (this._state === ComponentState.SPAWNING) {
-            return this.setPosition(mouseX, mouseY, snapToGrid)
+            return this.setPosition(x, y, snapToGrid)
         }
         if (isDefined(this._isMovingWithMouseOffset)) {
             const [mouseOffsetX, mouseOffsetY] = this._isMovingWithMouseOffset
-            const changedPos = this.setPosition(mouseX + mouseOffsetX, mouseY + mouseOffsetY, snapToGrid)
-            if (isDefined(changedPos)) {
-                startedMoving(this)
-            }
+            const changedPos = this.setPosition(x + mouseOffsetX, y + mouseOffsetY, snapToGrid)
             return changedPos
         }
         return undefined
     }
 
-    mousePressed() {
-        if (this._state === ComponentState.SPAWNING) {
-            const snapToGrid = !modifierKeys.isCommandDown
-            this.setPosition(mouseX, mouseY, snapToGrid)
-            this._state = ComponentState.SPAWNED
-            stoppedMoving(this)
-            backToEdit()
-            return
-        }
-
-        if (mode >= Mode.CONNECT && (currMouseAction === MouseAction.MOVE || this.isMouseOver())) {
+    mouseDown(e: MouseEvent) {
+        if (mode >= Mode.CONNECT) {
             if (isUndefined(this._isMovingWithMouseOffset)) {
-                this._isMovingWithMouseOffset = [this.posX - mouseX, this.posY - mouseY]
+                this._isMovingWithMouseOffset = [this.posX - e.offsetX, this.posY - e.offsetY]
             }
         }
     }
 
-    mouseReleased() {
-        if (isDefined(this._isMovingWithMouseOffset)) {
-            this._isMovingWithMouseOffset = undefined
-            stoppedMoving(this)
+    mouseDragged(e: MouseEvent) {
+        if (mode >= Mode.CONNECT) {
+            this.updatePositionIfNeeded(e)
+            setComponentMoving(this)
         }
+    }
+
+    mouseUp(__: MouseEvent) {
+        if (this._state === ComponentState.SPAWNING) {
+            // const snapToGrid = !modifierKeys.isCommandDown
+            // this.setPosition(e.offsetX, e.offsetY, snapToGrid)
+            this._state = ComponentState.SPAWNED
+        } else if (isDefined(this._isMovingWithMouseOffset)) {
+            this._isMovingWithMouseOffset = undefined
+        }
+        setComponentStoppedMoving(this)
     }
 
     destroy() {
         this._state = ComponentState.DEAD
-        for (const node of this.allNodes) {
+        this.forEachNode((node) => {
             node.destroy()
-        }
+            return true
+        })
     }
 
-    public abstract draw(): void
-
-    public abstract isMouseOver(): boolean
-
-    // TODO implement mouseClicked here?
-    public abstract mouseClicked(): boolean
-
-    public doubleClicked() {
-        // forward to output nodes
-        for (const node of asArray(this.outputs)) {
-            node.doubleClicked()
-        }
+    get cursorWhenMouseover() {
+        return "grab"
     }
 
 }

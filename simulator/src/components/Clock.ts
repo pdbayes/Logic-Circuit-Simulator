@@ -1,6 +1,7 @@
-import { LogicInputBase, LogicInputDef } from "./LogicInput.js"
+import { LogicInputBase, LogicInputDef } from "./LogicInput"
 import * as t from "io-ts"
-import { extendComponent } from "./Component.js"
+import { extendComponent } from "./Component"
+import { TriState, Unset } from "../utils"
 
 
 const ClockMandatoryParams = t.type({
@@ -34,19 +35,19 @@ export class Clock extends LogicInputBase<ClockRepr> {
         }
     }
 
-    draw() {
-        const currTick = new Date().getTime()
-        const currentStateDuration =
-            this.period * (
-                (this.value === true) ? this.dutycycle : (100 - this.dutycycle)
-            ) / 100
+    protected doRecalcValue(): TriState {
+        return Unset // TODO periodic on and off
 
-        if (currTick - this._lastTick > currentStateDuration) {
-            this.toggleValue()
-            this._lastTick = currTick
-        }
+        // const currTick = new Date().getTime()
+        // const currentStateDuration =
+        //     this.period * (
+        //         (this.value === true) ? this.dutycycle : (100 - this.dutycycle)
+        //     ) / 100
 
-        super.draw()
+        // if (currTick - this._lastTick > currentStateDuration) {
+        //     this.toggleValue()
+        //     this._lastTick = currTick
+        // }
     }
 
     printInfo() {

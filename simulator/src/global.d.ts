@@ -7,6 +7,6 @@ declare global {
         draw(): void
         activeTool(e: HTMLElement): void
         setModeClicked(e: HTMLElement): void
-        loadFromJson(jsonString: string): boolean
+        load(jsonString: string): boolean
     }
 }

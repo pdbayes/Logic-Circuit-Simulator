@@ -5,7 +5,6 @@
 
  * Support touch events
  * Unify click-and-drag also from left buttons instead of click-and-move
- * Optimize draw calls
  * ...
 
 
@@ -34,3 +33,4 @@
  * Validate JSON when loaded, define JSON types in a smart way
  * Allow changing modes, add admin mode to force nodes in states
  * Generate links or Markdown blocks with given diagram
+ * Optimize draw calls

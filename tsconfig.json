@@ -9,6 +9,7 @@
             "ES2016",
             "ES2016.Array.Include"
         ],
+        "downlevelIteration": true,
         "sourceMap": true,
         "rootDir": "simulator/src/",
         "strict": true,

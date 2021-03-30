@@ -17,6 +17,13 @@
         "plugin:@typescript-eslint/recommended"
     ],
     "rules": {
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "varsIgnorePattern": "__",
+                "argsIgnorePattern": "__"
+            }
+        ],
         "@typescript-eslint/no-non-null-assertion": "off", // TODO set to error at some point
         "@typescript-eslint/explicit-module-boundary-types": "off",
         "semi": "off",

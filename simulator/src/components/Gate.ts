@@ -1,9 +1,8 @@
-import { any, asArray, Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils.js"
-import { ComponentBase, ComponentRepr, defineComponent } from "./Component.js"
-import { GRID_STEP } from "./Position.js"
+import { Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
+import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, inRect, wireLine } from "../drawutils.js"
-import { mode, modifierKeys } from "../simulator.js"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, inRect, wireLine } from "../drawutils"
+import { mode, modifierKeys } from "../simulator"
 
 
 const Gate2Types_ = {
@@ -56,24 +55,22 @@ const GRID_HEIGHT = 4
 
 export type Gate = GateBase<any, GateRepr<any>>
 
-export abstract class GateBase<NumInput extends FixedArraySize, Repr extends GateRepr<NumInput>> extends ComponentBase<NumInput, 1, Repr> {
+export abstract class GateBase<NumInput extends FixedArraySize, Repr extends GateRepr<NumInput>> extends ComponentBase<NumInput, 1, Repr, TriState> {
 
     abstract get type(): GateType
 
-    public get outputValue(): TriState {
-        return this.outputs[0].value
+    protected propagateNewValue(newValue: TriState) {
+        this.outputs[0].value = newValue
     }
 
-    draw() {
-        this.drawGate(this.showAsUnknown ? Unset : this.type)
+    doDraw(isMouseOver: boolean) {
+        this.drawGate(this.showAsUnknown ? Unset : this.type, isMouseOver)
     }
 
     protected abstract get showAsUnknown(): boolean
 
-    protected drawGate(type: GateType | unset) {
-        this.updatePositionIfNeeded()
+    protected drawGate(type: GateType | unset, isMouseOver: boolean) {
         const output = this.outputs[0]
-        output.value = this.calculateValue()
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
@@ -83,7 +80,7 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
         const pi2 = Math.PI / 2
 
         noFill()
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             const frameWidth = 2
             const frameMargin = 2
             strokeWeight(frameWidth)
@@ -201,28 +198,10 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 wireEnds()
                 break
         }
-
-        for (const input of asArray(this.inputs)) {
-            input.draw()
-        }
-        output.draw()
     }
 
-    protected abstract calculateValue(): TriState
-
-    isMouseOver(): boolean {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
-    }
-
-    mouseClicked() {
-        const results = [
-            this.isMouseOver(),
-        ]
-        for (const input of asArray(this.inputs)) {
-            results.push(input.mouseClicked())
-        }
-        results.push(this.outputs[0].mouseClicked())
-        return any(results)
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
 }
@@ -243,7 +222,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
     private _showAsUnknown = false
 
     constructor(savedData: Gate2Repr | Gate2MandatoryParams) {
-        super("in" in savedData ? savedData : null, {
+        super(false, "in" in savedData ? savedData : null, {
             inOffsets: [[-4, -1], [-4, +1]],
             outOffsets: [[+4, 0]],
         })
@@ -268,11 +247,16 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return this._type
     }
 
+    protected toStringDetails(): string {
+        return this.type
+    }
+
     protected get showAsUnknown() {
         return this._showAsUnknown
     }
 
-    protected calculateValue(): TriState {
+    protected doRecalcValue(): TriState {
+        console.log("reaclcuating fgate")
         const in1 = this.inputs[0].value
         const in2 = this.inputs[1].value
         if (isUnset(in1) || isUnset(in2)) {
@@ -282,26 +266,25 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return calcOut(in1, in2)
     }
 
-    doubleClicked() {
-        super.doubleClicked()
-
-        if (this.isMouseOver()) {
-            if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
-                this._showAsUnknown = !this._showAsUnknown
-            } else if (mode >= Mode.DESIGN) {
-                // switch to IMPLY / NIMPLY variant
-                this._type = (() => {
-                    switch (this._type) {
-                        case "IMPLY": return "RIMPLY"
-                        case "RIMPLY": return "IMPLY"
-                        case "NIMPLY": return "RNIMPLY"
-                        case "RNIMPLY": return "NIMPLY"
-                        default: return this._type
-                    }
-                })()
-            }
+    mouseDoubleClick(__: MouseEvent) {
+        if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
+            this._showAsUnknown = !this._showAsUnknown
+            this.setNeedsRedraw()
+        } else if (mode >= Mode.DESIGN) {
+            // switch to IMPLY / NIMPLY variant
+            this._type = (() => {
+                switch (this._type) {
+                    case "IMPLY": return "RIMPLY"
+                    case "RIMPLY": return "IMPLY"
+                    case "NIMPLY": return "RNIMPLY"
+                    case "RNIMPLY": return "NIMPLY"
+                    default: return this._type
+                }
+            })()
+            this.setNeedsRedraw()
         }
     }
+
 }
 
 type GateRepr1 = Expand<GateRepr<1>>
@@ -309,7 +292,7 @@ type GateRepr1 = Expand<GateRepr<1>>
 export class Gate1Inverter extends GateBase<1, GateRepr1> {
 
     constructor(savedData: GateRepr1 | GateMandatoryParams) {
-        super("in" in savedData ? savedData : null, {
+        super(false, "in" in savedData ? savedData : null, {
             inOffsets: [[-4, 0]],
             outOffsets: [[+4, 0]],
         })
@@ -330,7 +313,7 @@ export class Gate1Inverter extends GateBase<1, GateRepr1> {
         return false
     }
 
-    protected calculateValue(): TriState {
+    protected doRecalcValue(): TriState {
         const in0 = this.inputs[0].value
         if (isUnset(in0)) {
             return Unset

@@ -1,7 +1,13 @@
-import { HasPosition } from "./components/Position"
+import { HasPosition } from "./components/Drawable"
 import { isUnset, TriState } from "./utils"
 import { Node } from "./components/Node"
 import { allComponents } from "./simulator"
+
+export const GRID_STEP = 10
+
+export function pxToGrid(x: number) {
+    return Math.round(x / GRID_STEP)
+}
 
 export type Color = [number, number, number]
 

@@ -103,8 +103,7 @@ export function mods(...modifiers: Modifier[]): Modifier {
 }
 
 export const emptyMod: Modifier = {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    applyTo: p => undefined, // do nothing
+    applyTo: __ => undefined, // do nothing
 }
 
 export function faglyph(glyphName: string) {

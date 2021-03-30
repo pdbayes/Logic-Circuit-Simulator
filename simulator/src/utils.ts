@@ -94,6 +94,10 @@ export function isNullOrUndefined(v: unknown): v is null | undefined {
     return isUndefined(v) || v === null
 }
 
+export function isNull<T>(v: T | null): v is null {
+    return v === null
+}
+
 export function isNotNull<T>(v: T | null): v is T {
     return v !== null
 }
@@ -248,12 +252,6 @@ export enum Mode {
     CONNECT, // can additionnally move preexisting components around and connect them
     DESIGN,  // can additionally add components from left menu
     FULL,    // can additionally force output nodes to 'unset' state and draw undetermined dates
-}
-
-export enum MouseAction {
-    EDIT,
-    MOVE,
-    DELETE,
 }
 
 export function copyToClipboard(textToCopy: string): boolean {

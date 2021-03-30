@@ -1,7 +1,7 @@
-import { wireMng } from "./simulator.js"
-import { int } from "./utils.js"
-import { ComponentState } from "./components/Component.js"
-import { Node } from "./components/Node.js"
+import { int } from "./utils"
+import { ComponentState } from "./components/Component"
+import { Node } from "./components/Node"
+import { wireMgr } from "./simulator"
 
 
 export const NodeManager = (() => {
@@ -37,7 +37,7 @@ export const NodeManager = (() => {
             usedIDs.delete(node.id)
         },
 
-        clearLiveNodes: function () {
+        clearAllLiveNodes: function () {
             allLiveNodes.splice(0, allLiveNodes.length)
             usedIDs.clear()
             lastGivenNodeID = -1
@@ -58,8 +58,8 @@ export const NodeManager = (() => {
                         const nodeY = node.posY
                         for (const other of allLiveNodes) {
                             if (other !== node && other.posX === nodeX && other.posY === nodeY) {
-                                wireMng.addNode(node)
-                                wireMng.addNode(other)
+                                wireMgr.addNode(node)
+                                wireMgr.addNode(other)
                                 return
                             }
                         }

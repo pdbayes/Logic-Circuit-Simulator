@@ -1,13 +1,13 @@
-import { logicInputs, logicOutputs, gates, clocks, wireMng, saveProjectFile, displays, allComponents } from "./simulator.js"
-import { LogicInput, LogicInputDef } from "./components/LogicInput.js"
-import { LogicOutput, LogicOutputDef } from "./components/LogicOutput.js"
-import { Clock, ClockDef } from "./components/Clock.js"
-import { GateDef, GateFactory } from "./components/Gate.js"
-import { stringifySmart } from "./stringifySmart.js"
-import { WireRepr } from "./components/Wire.js"
-import { DisplayDef, DisplayFactory } from "./components/Display.js"
-import { NodeManager } from "./NodeManager.js"
-import { isArray, isString, isUndefined, keysOf } from "./utils.js"
+import { logicInputs, logicOutputs, gates, clocks, saveProjectFile, displays, allComponents, wireMgr, recalculate } from "./simulator"
+import { LogicInput, LogicInputDef } from "./components/LogicInput"
+import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
+import { Clock, ClockDef } from "./components/Clock"
+import { GateDef, GateFactory } from "./components/Gate"
+import { stringifySmart } from "./stringifySmart"
+import { WireRepr } from "./components/Wire"
+import { DisplayDef, DisplayFactory } from "./components/Display"
+import { NodeManager } from "./NodeManager"
+import { isArray, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 
@@ -49,8 +49,8 @@ class _PersistenceManager {
         for (const elems of allComponents) {
             elems.splice(0, elems.length)
         }
-        wireMng.wires.splice(0, wireMng.wires.length)
-        NodeManager.clearLiveNodes()
+        wireMgr.clearAllWires()
+        NodeManager.clearAllLiveNodes()
 
         function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
             if (!(fieldName in parsedContents)) {
@@ -98,12 +98,18 @@ class _PersistenceManager {
             gates.push(GateFactory.make(d))
         )
 
+        // recalculating all the unconnected gates here allows
+        // to avoid spurious circular dependency messages, as right
+        // now all components are marked as needing recalculating
+        recalculate()
+
         loadField("wires", WireRepr, ([nodeID1, nodeID2]) => {
             const node1 = NodeManager.findNode(nodeID1)
             const node2 = NodeManager.findNode(nodeID2)
             if (!isUndefined(node1) && !isUndefined(node2)) {
-                wireMng.addNode(node1)
-                wireMng.addNode(node2)
+                wireMgr.addNode(node1)
+                wireMgr.addNode(node2)
+                recalculate()
             }
         })
 
@@ -126,14 +132,20 @@ class _PersistenceManager {
     buildWorkspaceJSON() {
         const workspace: any = {}
 
-        if (logicInputs.length) { workspace["in"] = logicInputs }
-        if (logicOutputs.length) { workspace["out"] = logicOutputs }
-        if (displays.length) { workspace["displays"] = displays }
-        if (clocks.length) { workspace["clocks"] = clocks }
-        if (gates.length) { workspace["gates"] = gates }
-        // if (flipflops.length) { workspace["flipflops"] = flipflops }
-        // if (srLatches.length) { workspace["srLatches"] = srLatches }
-        if (wireMng.wires.length) { workspace["wires"] = wireMng.wires }
+        function add(array: readonly any[], fieldName: string) {
+            if (array.length !== 0) {
+                workspace[fieldName] = array
+            }
+        }
+
+        add(logicInputs, "in")
+        add(logicOutputs, "out")
+        add(displays, "displays")
+        add(clocks, "clocks")
+        add(gates, "gates")
+        // add(flipflops, "flipflops")
+        // add(srLatches, "srLatches")
+        add(wireMgr.wires, "wires")
 
         const jsonStr = stringifySmart(workspace, { maxLength: 85 })
         // console.log(jsonStr)

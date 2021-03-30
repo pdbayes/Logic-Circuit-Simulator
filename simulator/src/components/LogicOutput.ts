@@ -1,8 +1,8 @@
-import { isDefined, isNotNull, Mode, TriState } from "../utils.js"
-import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component.js"
+import { isDefined, isNotNull, Mode, TriState } from "../utils"
+import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils.js"
-import { mode } from "../simulator.js"
+import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { mode } from "../simulator"
 
 
 export const LogicOutputDef =
@@ -12,13 +12,12 @@ export const LogicOutputDef =
 
 type LogicOutputRepr = typeof LogicOutputDef.reprType
 
-export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
+export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> {
 
-    private _value: TriState = false
     private readonly name: string | undefined = undefined
 
     public constructor(savedData: LogicOutputRepr | null) {
-        super(savedData, { inOffsets: [[-3, 0]] })
+        super(false, savedData, { inOffsets: [[-3, 0]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
         }
@@ -31,18 +30,20 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
         }
     }
 
-    public get value(): TriState {
-        return this._value
+    protected toStringDetails(): string {
+        return "" + this.value
     }
 
-    draw() {
-        this.updatePositionIfNeeded()
+    protected doRecalcValue(): TriState {
+        return this.inputs[0].value
+    }
+
+    doDraw(isMouseOver: boolean) {
 
         const input = this.inputs[0]
-        this._value = input.value
         wireLine(input, this.posX, this.posY)
 
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -50,8 +51,6 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
         fillForBoolean(this.value)
         strokeWeight(4)
         circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
-
-        input.draw()
 
         noStroke()
         fill(0)
@@ -65,17 +64,8 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr> {
         roundValue(this)
     }
 
-    isMouseOver() {
-        if (mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2) { return true }
-        return false
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    mouseClicked() {
-        const input = this.inputs[0]
-        if (this.isMouseOver() || input.isMouseOver()) {
-            input.mouseClicked()
-            return true
-        }
-        return false
-    }
 }

@@ -1,27 +1,24 @@
-import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, unset } from "../utils.js"
-import { wireMng, mode, modifierKeys } from "../simulator.js"
-import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component.js"
-import { GRID_STEP, HasPosition, PositionSupport } from "./Position.js"
-import { NodeManager } from "../NodeManager.js"
-import { fillForBoolean } from "../drawutils.js"
+import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, unset, isNull, isNotNull } from "../utils"
+import { mode, modifierKeys, wireMgr } from "../simulator"
+import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
+import { HasPosition, DrawableWithPosition } from "./Drawable"
+import { NodeManager } from "../NodeManager"
+import { fillForBoolean, GRID_STEP } from "../drawutils"
+import { Wire } from "./Wire"
 
-
-export enum ConnectionState {
-    FREE,
-    TAKEN,
-}
 
 const DIAMETER = 8
 const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertically if aligned on grid
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems
-type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState }
+type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void }
 
-export class Node extends PositionSupport {
+export type Node = NodeIn | NodeOut
+
+abstract class NodeBase extends DrawableWithPosition {
 
     public readonly id: int
-    private _connectionState = ConnectionState.FREE
     private _isAlive = true
     private _value: TriState = false
     private _forceValue: TriState | undefined
@@ -31,23 +28,30 @@ export class Node extends PositionSupport {
         public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
-        public readonly isOutput: boolean,
     ) {
         super(null)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
             this._forceValue = toTriState(nodeSpec.force)
         }
-        NodeManager.addLiveNode(this)
+        NodeManager.addLiveNode(this.asNode)
         this.updatePositionFromParent()
+    }
+
+    private get asNode(): Node {
+        return this as unknown as Node
+    }
+
+    get isOutput(): boolean {
+        return Node.isOutput(this.asNode)
     }
 
     destroy() {
         this._isAlive = false
-        NodeManager.removeLiveNode(this)
+        NodeManager.removeLiveNode(this.asNode)
     }
 
-    draw() {
+    doDraw(isMouseOver: boolean) {
         if (mode < Mode.CONNECT) {
             return
         }
@@ -73,7 +77,7 @@ export class Node extends PositionSupport {
             text("!", this.posX, this.posY - 12)
         }
 
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             fill(128, 128)
             circle(this.posX, this.posY, DIAMETER * 2)
         }
@@ -83,21 +87,26 @@ export class Node extends PositionSupport {
         return this._isAlive
     }
 
-    public get connectionState() {
-        return this._connectionState
-    }
-
-    public set connectionState(state: number) {
-        this._connectionState = state
-    }
-
     public get value(): TriState {
         return isDefined(this._forceValue) ? this._forceValue : this._value
     }
 
     public set value(val: TriState) {
-        this._value = val
+        const oldVisibleValue = this.value
+        if (val !== this._value) {
+            this._value = val
+            this.propagateNewValueIfNecessary(oldVisibleValue)
+        }
     }
+
+    private propagateNewValueIfNecessary(oldVisibleValue: TriState) {
+        const newVisibleValue = this.value
+        if (newVisibleValue !== oldVisibleValue) {
+            this.propagateNewValue(newVisibleValue)
+        }
+    }
+
+    protected abstract propagateNewValue(newValue: TriState): void
 
     public get forceValue() {
         return this._forceValue
@@ -121,9 +130,7 @@ export class Node extends PositionSupport {
         this.updatePositionFromParent()
     }
 
-    public get acceptsMoreConnections() {
-        return this.isOutput || this.connectionState === ConnectionState.FREE
-    }
+    public abstract get acceptsMoreConnections(): boolean
 
     updatePositionFromParent() {
         return this.setPosition(
@@ -133,20 +140,19 @@ export class Node extends PositionSupport {
         ) ?? [this.posX, this.posY]
     }
 
-    isMouseOver() {
-        return mode >= Mode.CONNECT && dist(mouseX, mouseY, this.posX, this.posY) < HIT_RANGE / 2
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT
+            && this.acceptsMoreConnections
+            && dist(x, y, this.posX, this.posY) < HIT_RANGE / 2
     }
 
-    mouseClicked() {
-        if (this.isMouseOver() && this.acceptsMoreConnections) {
-            wireMng.addNode(this)
-            return true
-        }
-        return false
+    get cursorWhenMouseover() {
+        return "crosshair"
     }
 
-    doubleClicked() {
-        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && this.isMouseOver()) {
+    mouseDoubleClick(__: MouseEvent) {
+        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput) {
+            const oldVisibleValue = this.value
             this._forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset
@@ -155,11 +161,83 @@ export class Node extends PositionSupport {
                     case true: return undefined
                 }
             })()
+            this.propagateNewValueIfNecessary(oldVisibleValue)
+            this.setNeedsRedraw()
+        }
+    }
+
+    mouseUp(__: MouseEvent) {
+        wireMgr.addNode(this.asNode)
+    }
+
+}
+
+export class NodeIn extends NodeBase {
+
+    public readonly _tag = "_nodein"
+
+    private _incomingWire: Wire | null = null
+
+    get incomingWire() {
+        return this._incomingWire
+    }
+
+    set incomingWire(wire: Wire | null) {
+        this._incomingWire = wire
+        if (isNull(wire)) {
+            this.value = false
+        } else {
+            this.value = wire.startNode.value
+        }
+    }
+
+    get acceptsMoreConnections() {
+        return isNull(this._incomingWire)
+    }
+
+    protected propagateNewValue(__newValue: TriState) {
+        this.parent.setNeedsRecalc()
+    }
+
+}
+
+
+export class NodeOut extends NodeBase {
+
+    public readonly _tag = "_nodeout"
+
+    private readonly _outgoingWires: Wire[] = []
+
+    addOutgoingWire(wire: Wire) {
+        this._outgoingWires.push(wire)
+    }
+
+    removeOutgoingWire(wire: Wire) {
+        const i = this._outgoingWires.indexOf(wire)
+        if (i !== -1) {
+            this._outgoingWires.splice(i, 1)
+        }
+    }
+
+    get acceptsMoreConnections() {
+        return true
+    }
+
+    protected propagateNewValue(newValue: TriState) {
+        for (const wire of this._outgoingWires) {
+            if (isNotNull(wire.endNode)) {
+                wire.endNode.value = newValue
+            }
         }
     }
 
 }
 
+export const Node = {
+    isOutput(node: Node): node is NodeOut {
+        return node._tag === "_nodeout"
+    },
+}
 
 export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
     let binaryStringRep = ""

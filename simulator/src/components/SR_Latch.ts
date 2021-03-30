@@ -1,9 +1,9 @@
-// import { GateBase } from "./Gate.js"
-// import { ICType, GateType } from "./Enums.js"
-// import { Integrated } from "./Integrated.js"
-// import { Node } from "./Node.js"
-// import { any } from "../simulator.js"
-// import { GRID_STEP } from "./Component.js"
+// import { GateBase } from "./Gate"
+// import { ICType, GateType } from "./Enums"
+// import { Integrated } from "./Integrated"
+// import { Node } from "./Node"
+// import { any } from "../simulator"
+// import { GRID_STEP } from "./Component"
 
 // export abstract class SR_Latch extends Integrated {
 
@@ -24,7 +24,7 @@
 //         this.nodeNotQ.destroy()
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         super.draw()
 //         this.generateOutput()
 
@@ -186,7 +186,7 @@
 //         this.asyncLatch.destroy()
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         super.draw()
 //         this.nodeClock.updatePositionFromParent()
 //         this.nodeClock.draw()

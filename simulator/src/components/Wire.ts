@@ -1,29 +1,29 @@
-import { currMouseAction } from "../menutools.js"
-import { MouseAction, Mode, int } from "../utils.js"
-import { clearToolCursor, mode, setToolCursor } from "../simulator.js"
-import { Node, ConnectionState } from "./Node.js"
+import { Mode, int, isNull, isNotNull, isDefined } from "../utils"
+import { mode, setToolCursor } from "../simulator"
+import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
-import { NodeID } from "./Component.js"
-import { wireLine, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils.js"
+import { NodeID } from "./Component"
+import { wireLine, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils"
+import { Drawable } from "./Drawable"
 
 export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
 export type WireRepr = t.TypeOf<typeof WireRepr>
 
 const WIRE_WIDTH = 8
 
-export class Wire {
+export class Wire extends Drawable {
 
-    private _endNode: Node | null = null
-    private startID: NodeID = this.startNode.id
-    private endID: NodeID | null = null
+    private _endNode: NodeIn | null = null
 
     constructor(
         private _startNode: Node
-    ) { }
+    ) {
+        super()
+    }
 
     toJSON(): WireRepr {
-        const endID = this.endID ?? -1 as int
-        return [this.startID, endID]
+        const endID = this._endNode?.id ?? -1 as int
+        return [this._startNode.id, endID]
     }
 
     public get startNode(): Node {
@@ -34,61 +34,65 @@ export class Wire {
         return this._endNode
     }
 
-    public set endNode(endNode: Node | null) {
-        if (!endNode) {
+    public setSecondNode(secondNode: Node | null) {
+        // not the same as setting endNode; this may change startNode as well
+        // if we need to reverse input and output
+
+        if (!secondNode) {
             return
         }
-        if (endNode.isOutput) {
-            // set as startNode instead
-            const tempNode = this.startNode
-            this._startNode = endNode
-            this.startID = endNode.id
-            tempNode.connectionState = ConnectionState.TAKEN
-            this.endID = tempNode.id
-            this._endNode = tempNode
+        if (!Node.isOutput(secondNode)) {
+            if (!Node.isOutput(this._startNode)) {
+                console.log("WARN connecting two input nodes")
+                return
+            }
+            this._endNode = secondNode
+
         } else {
-            this.startNode.connectionState = ConnectionState.TAKEN
-            endNode.connectionState = ConnectionState.TAKEN
-            this.endID = endNode.id
-            this._endNode = endNode
+            if (Node.isOutput(this._startNode)) {
+                console.log("WARN connecting two output nodes")
+                return
+            }
+
+            // switch nodes
+            const tempNode = this._startNode
+            this._startNode = secondNode
+            this._endNode = tempNode
         }
 
+        this._startNode.addOutgoingWire(this)
+        this._endNode.incomingWire = this
+        this._endNode.value = this.startNode.value
     }
 
-    /**
-     * Delete the wire and free start node and end node
-     */
     destroy() {
-        this.startNode.connectionState = ConnectionState.FREE
-        if (this.endNode) {
-            this.endNode.value = false
-            this.endNode.connectionState = ConnectionState.FREE
+        if (Node.isOutput(this._startNode)) {
+            this._startNode.removeOutgoingWire(this)
+        }
+        if (isNotNull(this._endNode)) {
+            this._endNode.incomingWire = null
         }
     }
 
+    get isAlive() {
+        // the start node should be alive and the end node
+        // should either be null (wire being drawn) or alive
+        // (wire set) for the wire to be alive
+        return this.startNode.isAlive &&
+            (isNull(this.endNode) || this.endNode.isAlive)
+    }
 
-    /**
-     * Function to draw wire
-     */
-    draw() {
+    doDraw(isMouseOver: boolean) {
         stroke(0)
         const mainStrokeWidth = WIRE_WIDTH / 2
         strokeWeight(mainStrokeWidth)
 
-        if (!this.endNode) {
-
-            if (!this.startNode.isAlive) {
-                // destroy the wire
-                return false
-            }
-
+        if (isNull(this.endNode)) {
+            // draw to mouse position
             wireLine(this.startNode, mouseX, mouseY)
 
-        } else if (this.startNode.isAlive && this.endNode.isAlive) {
-
+        } else {
             const bezierAnchorPointDist = Math.max(25, (this.endNode.posX - this.startNode.posX) / 3)
-
-            this.generateNodeValue()
 
             noFill()
 
@@ -103,7 +107,7 @@ export class Wire {
                     this.endNode!.posX - bezierAnchorPointDist, this.endNode!.posY,
                     this.endNode!.posX, this.endNode!.posY)
 
-            if (this.isMouseOver()) {
+            if (isMouseOver) {
                 strokeWeight(mainStrokeWidth + 2)
                 stroke(...COLOR_MOUSE_OVER)
             } else {
@@ -115,23 +119,10 @@ export class Wire {
             stroke(...colorForBoolean(this.startNode.value))
             doDraw()
 
-        } else {
-            this.endNode.value = false
-            return false // destroy the wire
         }
-
-        return true
     }
 
-    generateNodeValue() {
-        if (!this.endNode) {
-            return
-        }
-        this.endNode.value = this.startNode.value
-    }
-
-    isMouseOver(): boolean {
-
+    isOver(x: number, y: number): boolean {
         if (mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode || !this.endNode.isAlive) {
             return false
         }
@@ -139,9 +130,9 @@ export class Wire {
         const distance = []
 
         distance.push(dist(this.startNode.posX, this.startNode.posY,
-            mouseX, mouseY))
+            x, y))
         distance.push(dist(this.endNode.posX, this.endNode.posY,
-            mouseX, mouseY))
+            x, y))
         const wireLength = dist(this.startNode.posX, this.startNode.posY,
             this.endNode.posX, this.endNode.posY)
 
@@ -156,80 +147,97 @@ export class Wire {
 
 export class WireManager {
 
-    public wires: Wire[] = []
-    private _isOpened = false
+    private readonly _wires: Wire[] = []
+    private _isAddingWire = false
 
-    draw() {
-        for (let i = 0; i < this.wires.length; i++) {
-            const result = this.wires[i].draw()
-            if (!result) {
-                // wire is not valid, destroy
-                this._isOpened = false
-                this.wires[i].destroy()
-                delete this.wires[i]
-                this.wires.splice(i, 1)
+    public get wires(): readonly Wire[] {
+        return this._wires
+    }
+
+    public get isAddingWire() {
+        return this._isAddingWire
+    }
+
+    draw(mouseOverComp: Drawable | null) {
+        this.removeDeadWires()
+        for (const wire of this._wires) {
+            wire.draw(mouseOverComp)
+        }
+    }
+
+    private removeDeadWires() {
+        let i = 0
+        while (i < this._wires.length) {
+            const wire = this._wires[i]
+            if (!wire.isAlive) {
+                wire.destroy()
+                this._wires.splice(i, 1)
+            } else {
+                i++
             }
         }
     }
 
     addNode(newNode: Node) {
-        if (!this._isOpened) {
+        if (!this._isAddingWire) {
             // start drawing a new wire
-            this.wires.push(new Wire(newNode))
-            this._isOpened = true
+            this._wires.push(new Wire(newNode))
+            this._isAddingWire = true
             setToolCursor("crosshair")
 
         } else {
             // complete the new wire
-            const currentWireIndex = this.wires.length - 1
-            const currentWire = this.wires[currentWireIndex]
+            const currentWireIndex = this._wires.length - 1
+            const currentWire = this._wires[currentWireIndex]
             let created = false
             if (newNode !== currentWire.startNode) {
                 if (currentWire.startNode.isOutput !== newNode.isOutput && newNode.acceptsMoreConnections) {
                     // normal, create
-                    currentWire.endNode = newNode
+                    currentWire.setSecondNode(newNode)
                     created = true
-                } else if (newNode.connectionState === ConnectionState.TAKEN) {
-                    // try connect to other end of new node
-                    for (const wire of this.wires) {
-                        if (wire.endNode === newNode &&
-                            currentWire.startNode.isOutput !== wire.startNode.isOutput &&
-                            wire.startNode.acceptsMoreConnections) {
-                            currentWire.endNode = wire.startNode
-                            created = true
-                            break
-                        }
+                } else if (!Node.isOutput(newNode)) {
+                    const otherStartNode = newNode.incomingWire?.startNode
+                    if (isDefined(otherStartNode)
+                        && otherStartNode.acceptsMoreConnections
+                        && otherStartNode.isOutput !== currentWire.startNode.isOutput) {
+                        // create new connection with other end of this node
+                        currentWire.setSecondNode(otherStartNode)
+                        created = true
                     }
                 }
             }
 
             if (!created) {
-                delete this.wires[currentWireIndex]
-                this.wires.length--
+                delete this._wires[currentWireIndex]
+                this._wires.length--
             }
 
-            this._isOpened = false
-            clearToolCursor()
+            this._isAddingWire = false
+            setToolCursor(null)
         }
     }
 
-    mouseClicked(): void {
-        if (currMouseAction === MouseAction.DELETE) {
-            for (let i = 0; i < this.wires.length; i++) {
-                if (this.wires[i].isMouseOver()) {
-                    // destroy the wire
-                    this.wires[i].destroy()
-                    delete this.wires[i]
-                    this.wires.splice(i, 1)
-                }
+    deleteWire(wire: Wire) {
+        wire.destroy()
+        for (let i = 0; i < this._wires.length; i++) {
+            if (this._wires[i] === wire) {
+                this._wires.splice(i, 1)
+                break
             }
         }
+    }
+
+    clearAllWires() {
+        for (const wire of this._wires) {
+            wire.destroy()
+        }
+        this._wires.splice(0, this._wires.length)
     }
 
     tryCancelWire() {
-        if (this._isOpened) {
+        if (this._isAddingWire) {
             // adding the start node as end node to trigger deletion
-            this.addNode(this.wires[this.wires.length - 1].startNode)
+            this.addNode(this._wires[this._wires.length - 1].startNode)
         }
     }
 

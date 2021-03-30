@@ -1,14 +1,42 @@
-import { Clock } from "./components/Clock.js"
-import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, clearToolCursor, setToolCursor } from "./simulator.js"
-import { GateFactory, GateTypes } from "./components/Gate.js"
-import { LogicInput } from "./components/LogicInput.js"
-import { LogicOutput } from "./components/LogicOutput.js"
-import { isNullOrUndefined, MouseAction } from "./utils.js"
-import { DisplayNibble } from "./components/DisplayNibble.js"
-import { DisplayAscii } from "./components/DisplayAscii.js"
-import { DisplayBar } from "./components/DisplayBar.js"
+import { Clock } from "./components/Clock"
+import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, setToolCursor, createdNewComponent, setHandlersFor } from "./simulator"
+import { GateFactory, GateTypes } from "./components/Gate"
+import { LogicInput } from "./components/LogicInput"
+import { LogicOutput } from "./components/LogicOutput"
+import { isNullOrUndefined, RichStringEnum } from "./utils"
+import { DisplayNibble } from "./components/DisplayNibble"
+import { DisplayAscii } from "./components/DisplayAscii"
+import { DisplayBar } from "./components/DisplayBar"
 
-export let currMouseAction = MouseAction.EDIT
+
+export const MouseActions = RichStringEnum.withProps<{
+    cursor: string | null
+}>()({
+    edit: { cursor: null },
+    move: { cursor: "move" },
+    delete: { cursor: "not-allowed" },
+})
+export type MouseAction = typeof MouseActions.type
+
+export let _currentMouseAction: MouseAction = "edit"
+
+export function setCurrentMouseAction(action: MouseAction) {
+    _currentMouseAction = action
+    setToolCursor(MouseActions.propsOf(action).cursor)
+
+    const toolButtons = document.getElementsByClassName("sim-modification-tool")
+    for (let i = 0; i < toolButtons.length; i++) {
+        const toolButton = toolButtons[i] as HTMLElement
+        const setActive = toolButton.getAttribute("tool") === action
+        if (setActive) {
+            toolButton.classList.add("active")
+        } else {
+            toolButton.classList.remove("active")
+        }
+    }
+
+    setHandlersFor(action)
+}
 
 
 export function activeTool(elTool: HTMLElement) {
@@ -18,16 +46,22 @@ export function activeTool(elTool: HTMLElement) {
         return
     }
 
-    switch (tool) {
-        case "Reset":
-            tryLoadFromData()
-            return
+    // Main edit buttons on the right
+    if (MouseActions.isValue(tool)) {
+        setCurrentMouseAction(tool)
+        return
     }
 
-    resetElements()
+    setCurrentMouseAction("edit")
+    if (tool === "Reset") {
+        tryLoadFromData()
+        return
+    }
+
+    // Gates and other components
     if (elTool.getAttribute("isGate") !== null) {
         if (GateTypes.isValue(tool)) {
-            gates.push(GateFactory.make({ type: tool }))
+            createdNewComponent(GateFactory.make({ type: tool }), gates)
         } else {
             console.log(`WARN Tool ${tool} is not a recognized gate type`)
         }
@@ -35,42 +69,30 @@ export function activeTool(elTool: HTMLElement) {
     }
 
     switch (tool) {
-        case "Edit":
-            break
-
-        case "Move":
-            currMouseAction = MouseAction.MOVE
-            setToolCursor("move")
-            break
-
-        case "Delete":
-            currMouseAction = MouseAction.DELETE
-            break
-
         case "LogicInput":
-            logicInputs.push(new LogicInput(null))
+            createdNewComponent(new LogicInput(null), logicInputs)
             break
 
         case "LogicOutput":
-            logicOutputs.push(new LogicOutput(null))
+            createdNewComponent(new LogicOutput(null), logicOutputs)
             break
 
         case "DisplayNibble":
-            displays.push(new DisplayNibble(null))
+            createdNewComponent(new DisplayNibble(null), displays)
             break
 
         case "DisplayAscii":
-            displays.push(new DisplayAscii(null))
+            createdNewComponent(new DisplayAscii(null), displays)
             break
 
         case "DisplayBar":
-            displays.push(new DisplayBar(null))
+            createdNewComponent(new DisplayBar(null), displays)
             break
 
         case "Clock": {
             const period = parseInt((document.getElementsByClassName("period")[0] as HTMLInputElement).value)
             const dutycycle = parseInt((document.getElementsByClassName("duty-cycle")[0] as HTMLInputElement).value)
-            clocks.push(new Clock({ period, dutycycle }))
+            createdNewComponent(new Clock({ period, dutycycle }), clocks)
             break
         }
 
@@ -114,22 +136,4 @@ export function activeTool(elTool: HTMLElement) {
 
     }
 
-    elTool.classList.add('active')
-
-}
-
-function resetElements() {
-    currMouseAction = MouseAction.EDIT
-    const activeElements = document.getElementsByClassName("active")
-
-    for (let i = 0; i < activeElements.length; i++) {
-        activeElements[i].classList.remove('active')
-    }
-    clearToolCursor()
-}
-
-export function backToEdit() {
-    resetElements()
-    document.getElementsByClassName("Edit")[0].classList.add("active")
-    currMouseAction = MouseAction.EDIT
 }

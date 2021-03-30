@@ -1,20 +1,21 @@
 import * as p5 from "p5"
 
-import { activeTool, currMouseAction } from "./menutools.js"
-import { copyToClipboard, getURLParameter, isDefined, isNullOrUndefined, isTruthyString, isUndefined, MouseAction } from "./utils.js"
-import { WireManager } from "./components/Wire.js"
-import { Mode } from "./utils.js"
-import { PersistenceManager } from "./PersistenceManager.js"
-import { Gate } from "./components/Gate.js"
-import { LogicInput } from "./components/LogicInput.js"
-import { LogicOutput } from "./components/LogicOutput.js"
-import { Clock } from "./components/Clock.js"
-import { Component, ComponentState } from "./components/Component.js"
-import { Display } from "./components/Display.js"
-import { GRID_STEP } from "./components/Position.js"
-import { NodeManager } from "./NodeManager.js"
-import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen.js"
-import { guessCanvasHeight } from "./drawutils.js"
+import { activeTool, MouseAction, setCurrentMouseAction } from "./menutools"
+import { copyToClipboard, getURLParameter, isDefined, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { Wire, WireManager } from "./components/Wire"
+import { Mode } from "./utils"
+import { PersistenceManager } from "./PersistenceManager"
+import { Gate } from "./components/Gate"
+import { LogicInput } from "./components/LogicInput"
+import { LogicOutput } from "./components/LogicOutput"
+import { Clock } from "./components/Clock"
+import { Component, ComponentBase, ComponentState } from "./components/Component"
+import { Display } from "./components/Display"
+import { NodeManager } from "./NodeManager"
+import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen"
+import { GRID_STEP, guessCanvasHeight } from "./drawutils"
+import { Node } from "./components/Node"
+import { Drawable } from "./components/Drawable"
 
 // export type FF = FF_D | FF_JK | FF_T
 
@@ -28,8 +29,9 @@ export const clocks: Clock[] = []
 // export const srLatches: SR_Latch[] = []
 // export const flipflops: FF[] = []
 
+export const wireMgr = new WireManager()
+
 export const allComponents: Component[][] = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
-export const wireMng = new WireManager()
 
 const MaxMode = Mode.FULL
 const MaxEmbeddedMode = Mode.DESIGN
@@ -43,23 +45,33 @@ export const modifierKeys = {
     isOptionDown: false,
     isControlDown: false,
 }
-const movingComponents = new Set<Component>()
+const _movingComponents = new Set<Component>()
 
-export function startedMoving(comp: Component) {
-    movingComponents.add(comp)
-}
-export function stoppedMoving(comp: Component) {
-    movingComponents.delete(comp)
-}
-
-let toolCursor: string | undefined = undefined
-export function setToolCursor(cursor: string) {
-    toolCursor = cursor
-}
-export function clearToolCursor() {
-    toolCursor = undefined
+function changeMovingComponents(change: () => void) {
+    const emptyBefore = _movingComponents.size === 0
+    change()
+    const emptyAfter = _movingComponents.size === 0
+    if (emptyBefore !== emptyAfter) {
+        updateCursor()
+        setCanvasNeedsRedraw()
+    }
 }
 
+export function setComponentMoving(comp: Component) {
+    changeMovingComponents(() => {
+        _movingComponents.add(comp)
+    })
+}
+export function setComponentStoppedMoving(comp: Component) {
+    changeMovingComponents(() => {
+        _movingComponents.delete(comp)
+    })
+}
+
+let _toolCursor: string | null = null
+export function setToolCursor(cursor: string | null) {
+    _toolCursor = cursor
+}
 
 
 let canvasContainer: HTMLElement
@@ -94,7 +106,10 @@ function trySetMode(wantedMode: Mode) {
     const wantedModeStr = Mode[wantedMode]
     if (wantedMode <= upperMode) {
         mode = wantedMode
+
         console.log(`Display/interaction is ${wantedModeStr}`)
+
+        setCanvasNeedsRedraw()
 
         // update mode active button
         document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
@@ -104,6 +119,10 @@ function trySetMode(wantedMode: Mode) {
                 elem.classList.remove("active")
             }
         })
+
+        if (mode < Mode.CONNECT) {
+            setCurrentMouseAction("edit")
+        }
 
         type LeftMenuDisplay = "show" | "hide" | "inactive"
 
@@ -172,15 +191,262 @@ function trySetMode(wantedMode: Mode) {
     } else {
         console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[upperMode]}`)
     }
+}
 
+
+let _canvasNeedsRedraw = true
+
+export function setCanvasNeedsRedraw() {
+    _canvasNeedsRedraw = true
+}
+
+const _componentNeedingRecalc = new Set<Component>()
+
+export function addComponentNeedingRecalc(comp: Component) {
+    _componentNeedingRecalc.add(comp)
+    // console.log("Need recalc:", _componentNeedingRecalc)
+}
+
+
+let _currentMouseOverComp: Drawable | null = null
+let _currentMouseDownComp: Drawable | Element | null = null
+let _startDragTimeoutHandle: number | null = null
+
+function setStartDragTimeout(comp: Drawable, e: MouseEvent) {
+    _startDragTimeoutHandle = setTimeout(function () {
+        comp.mouseDragged(e)
+    }, 300)
+}
+
+function clearStartDragTimeout() {
+    if (isNotNull(_startDragTimeoutHandle)) {
+        clearTimeout(_startDragTimeoutHandle)
+        _startDragTimeoutHandle = null
+    }
+}
+
+function updateMouseOver(e: MouseEvent) {
+    function findMouseOver(): Drawable | null {
+        if (mode > Mode.STATIC) {
+            const x = e.offsetX
+            const y = e.offsetY
+
+            for (const elems of allComponents) {
+                for (const elem of elems) {
+                    let nodeOver: Node | null = null
+                    elem.forEachNode((node) => {
+                        if (node.isOver(x, y)) {
+                            nodeOver = node
+                            return false
+                        }
+                        return true
+                    })
+                    if (isNotNull(nodeOver)) {
+                        return nodeOver
+                    }
+                    if (elem.isOver(x, y)) {
+                        return elem
+                    }
+                }
+            }
+
+            for (const wire of wireMgr.wires) {
+                if (wire.isOver(x, y)) {
+                    return wire
+                }
+            }
+        }
+        return null
+    }
+
+    const newMouseOverComp = findMouseOver()
+    if (newMouseOverComp !== _currentMouseOverComp) {
+        _currentMouseOverComp = newMouseOverComp
+        setCanvasNeedsRedraw()
+        // console.log("Over component: ", newMouseOverComp)
+    }
+}
+
+function updateCursor() {
+    canvasContainer.style.cursor =
+        _movingComponents.size !== 0
+            ? "grabbing"
+            : _toolCursor
+            ?? _currentMouseOverComp?.cursorWhenMouseover
+            ?? "default"
+}
+
+export function createdNewComponent<C extends Component>(comp: C, array: C[]) {
+    array.push(comp)
+    _currentMouseOverComp = comp
+    _currentMouseDownComp = comp
+}
+
+
+
+abstract class ToolHandlers {
+    mouseDownOn(__comp: Drawable, __e: MouseEvent) {
+        // empty
+    }
+    mouseDraggedOn(__comp: Drawable, __e: MouseEvent) {
+        // empty
+    }
+    mouseUpOn(__comp: Drawable, __e: MouseEvent) {
+        // empty
+    }
+    mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent) {
+        // empty
+    }
+    mouseDownOnBackground(__e: MouseEvent) {
+        // empty
+    }
+    mouseDraggedOnBackground(__e: MouseEvent) {
+        // empty
+    }
+    mouseUpOnBackground(__e: MouseEvent) {
+        // empty
+    }
+}
+
+class _EditHandlers extends ToolHandlers {
+    mouseDownOn(comp: Drawable, e: MouseEvent) {
+        comp.mouseDown(e)
+    }
+    mouseDraggedOn(comp: Drawable, e: MouseEvent) {
+        comp.mouseDragged(e)
+    }
+    mouseUpOn(comp: Drawable, e: MouseEvent) {
+        comp.mouseUp(e)
+    }
+    mouseDoubleClickedOn(comp: Drawable, e: MouseEvent) {
+        comp.mouseDoubleClick(e)
+    }
+}
+
+class _DeleteHandlers extends ToolHandlers {
+    mouseUpOn(comp: Drawable, __: MouseEvent) {
+        if (comp instanceof ComponentBase) {
+            outer: for (const elems of allComponents) {
+                for (let i = 0; i < elems.length; i++) {
+                    if (elems[i] === comp) {
+                        elems.splice(i, 1)
+                        comp.destroy()
+                        break outer
+                    }
+                }
+            }
+        } else if (comp instanceof Wire) {
+            wireMgr.deleteWire(comp)
+        }
+        console.log("would now delete", comp)
+    }
+}
+
+
+class _MoveHandlers extends ToolHandlers {
+    mouseDownOnBackground(e: MouseEvent) {
+        this.forAllElems((comp) => comp.mouseDown(e))
+    }
+    mouseDraggedOnBackground(e: MouseEvent) {
+        this.forAllElems((comp) => comp.mouseDragged(e))
+    }
+    mouseUpOnBackground(e: MouseEvent) {
+        this.forAllElems((comp) => comp.mouseUp(e))
+    }
+
+    private forAllElems(f: (comp: Component) => any) {
+        for (const elems of allComponents) {
+            for (const elem of elems) {
+                f(elem)
+            }
+        }
+    }
+
+}
+
+const EditHandlers = new _EditHandlers
+const DeleteHandlers = new _DeleteHandlers
+const MoveHandlers = new _MoveHandlers
+
+let _currentHandlers = EditHandlers
+
+export function setHandlersFor(action: MouseAction) {
+    _currentHandlers = (() => {
+        switch (action) {
+            case "edit": return EditHandlers
+            case "delete": return DeleteHandlers
+            case "move": return MoveHandlers
+        }
+    })()
 }
 
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
 
-    const canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
+    const p5canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
-    canvas.parent('canvas-sim')
+    p5canvas.parent('canvas-sim')
+
+    canvasContainer.addEventListener("mousedown", (e) => {
+        if (isNull(_currentMouseDownComp)) {
+            updateMouseOver(e)
+            if (isNotNull(_currentMouseOverComp)) {
+                // mouse down on component
+                _currentMouseDownComp = _currentMouseOverComp
+                _currentHandlers.mouseDownOn(_currentMouseDownComp, e)
+                setStartDragTimeout(_currentMouseDownComp, e)
+                setCanvasNeedsRedraw()
+            } else {
+                // mouse down on background
+                _currentMouseDownComp = canvasContainer
+                _currentHandlers.mouseDownOnBackground(e)
+            }
+            updateCursor()
+        } else {
+            // we got a mousedown while a component had programmatically
+            // been determined as being mousedown'd; ignore
+        }
+    })
+
+    canvasContainer.addEventListener("mousemove", (e) => {
+        if (isNotNull(_currentMouseDownComp)) {
+            if (_currentMouseDownComp instanceof Drawable) {
+                // dragging component
+                clearStartDragTimeout()
+                _currentHandlers.mouseDraggedOn(_currentMouseDownComp, e)
+            } else {
+                // dragging background
+                _currentHandlers.mouseDraggedOnBackground(e)
+            }
+        } else {
+            // moving
+            updateMouseOver(e)
+        }
+        updateCursor()
+    })
+
+    canvasContainer.addEventListener("mouseup", (e) => {
+        if (isNotNull(_currentMouseDownComp)) {
+            if (_currentMouseDownComp instanceof Drawable) {
+                // mouseup on component
+                if (isNotNull(_startDragTimeoutHandle)) {
+                    clearTimeout(_startDragTimeoutHandle)
+                    _startDragTimeoutHandle = null
+                }
+                _currentHandlers.mouseUpOn(_currentMouseDownComp, e)
+                if (e.detail === 2) {
+                    _currentHandlers.mouseDoubleClickedOn(_currentMouseDownComp, e)
+                }
+            } else {
+                // mouseup on background
+                _currentHandlers.mouseUpOnBackground(e)
+            }
+            _currentMouseDownComp = null
+            setCanvasNeedsRedraw()
+        }
+        updateMouseOver(e)
+        updateCursor()
+    })
 
     const data = getURLParameter(PARAM_DATA)
     if (isDefined(data)) {
@@ -260,9 +526,40 @@ export function tryLoadFromData() {
 
 export function windowResized() {
     resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
+    setCanvasNeedsRedraw()
+}
+
+export function recalculate() {
+    const recalculated = new Set<Component>()
+
+    let round = 1
+    do {
+        const toRecalc = new Set<Component>(_componentNeedingRecalc)
+        console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
+        _componentNeedingRecalc.clear()
+        toRecalc.forEach((comp) => {
+            if (!recalculated.has(comp)) {
+                comp.recalcValue()
+                recalculated.add(comp)
+            } else {
+                console.log("ERROR circular dependency")
+            }
+        })
+
+        round++
+    } while (_componentNeedingRecalc.size !== 0)
 }
 
 export function draw() {
+    const needsRecalc = _componentNeedingRecalc.size !== 0
+    if (needsRecalc) {
+        recalculate()
+    }
+    if (!_canvasNeedsRedraw && !wireMgr.isAddingWire) {
+        return
+    }
+    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc")
+
     strokeCap(PROJECT)
 
     background(0xFF)
@@ -280,7 +577,7 @@ export function draw() {
         }
     }
 
-    const isMovingComponent = movingComponents.size > 0
+    const isMovingComponent = _movingComponents.size > 0
     if (isMovingComponent) {
         stroke(240)
         strokeWeight(1)
@@ -293,56 +590,19 @@ export function draw() {
     }
 
     stroke(0)
-    wireMng.draw()
+    wireMgr.draw(_currentMouseOverComp)
 
-    let newCursor: string | undefined = isMovingComponent ? "grabbing" : toolCursor
     for (const elems of allComponents) {
         for (const elem of elems) {
-            elem.draw()
-            newCursor ??= elem.cursor
+            elem.draw(_currentMouseOverComp)
+            elem.forEachNode((node) => {
+                node.draw(_currentMouseOverComp)
+                return true
+            })
         }
     }
 
-    canvasContainer.style.cursor = newCursor ?? "default"
-}
-
-export function mousePressed() {
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            elem.mousePressed()
-        }
-    }
-}
-
-export function mouseReleased() {
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            elem.mouseReleased()
-        }
-    }
-}
-
-export function doubleClicked() {
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            elem.doubleClicked()
-        }
-    }
-}
-
-export function mouseClicked() {
-    if (currMouseAction === MouseAction.EDIT) {
-        for (const elems of allComponents) {
-            for (const elem of elems) {
-                elem.mouseClicked()
-            }
-        }
-
-    } else if (currMouseAction === MouseAction.DELETE) {
-        tryDeleteComponentsWhere(comp => comp.mouseClicked())
-    }
-
-    wireMng.mouseClicked()
+    _canvasNeedsRedraw = false
 }
 
 function keyUp(e: KeyboardEvent) {
@@ -352,7 +612,19 @@ function keyUp(e: KeyboardEvent) {
 
         case "Escape":
             tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
-            wireMng.tryCancelWire()
+            wireMgr.tryCancelWire()
+            return
+
+        case "e":
+            setCurrentMouseAction("edit")
+            return
+
+        case "d":
+            setCurrentMouseAction("delete")
+            return
+
+        case "m":
+            setCurrentMouseAction("move")
             return
     }
 }
@@ -368,14 +640,9 @@ function modifierKeyWatcher(e: KeyboardEvent) {
 window.preload = preload
 window.setup = setup
 window.draw = draw
-window.windowResized = windowResized
-window.mousePressed = mousePressed
-window.mouseReleased = mouseReleased
-window.doubleClicked = doubleClicked
-window.mouseClicked = mouseClicked
 
+window.addEventListener("resize", windowResized)
 window.addEventListener("keyup", keyUp)
-
 window.addEventListener("keydown", modifierKeyWatcher)
 window.addEventListener("keyup", modifierKeyWatcher)
 
@@ -450,7 +717,7 @@ function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
 }
 
 
-window.loadFromJson = (jsonString: any) => PersistenceManager.doLoadFromJson(jsonString)
+window.load = (jsonString: any) => PersistenceManager.doLoadFromJson(jsonString)
 
 const menu = document.querySelector('.menu') as HTMLElement
 

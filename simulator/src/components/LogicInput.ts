@@ -1,8 +1,8 @@
-import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils.js"
-import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component.js"
+import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils"
+import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils.js"
-import { mode, modifierKeys } from "../simulator.js"
+import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { mode, modifierKeys } from "../simulator"
 
 export const LogicInputDef =
     defineComponent(0, 1, t.type({
@@ -12,15 +12,17 @@ export const LogicInputDef =
 
 export type LogicInputRepr = typeof LogicInputDef.reprType
 
-export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType> extends ComponentBase<0, 1, Repr> {
+export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType> extends ComponentBase<0, 1, Repr, TriState> {
 
-    private _value: TriState = false
     protected readonly name: string | undefined = undefined
 
     public constructor(savedData: Repr | null) {
-        super(savedData, { outOffsets: [[+3, 0]] })
+        super(
+            // initial value may be given by saved data
+            isNotNull(savedData) ? toTriState(savedData.val) : false,
+            savedData, { outOffsets: [[+3, 0]] }
+        )
         if (isNotNull(savedData)) {
-            this._value = toTriState(savedData.val)
             this.name = savedData.name
         }
     }
@@ -29,26 +31,26 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         return {
             ...super.toJSONBase(),
             name: this.name,
-            val: toTriStateRepr(this._value),
+            val: toTriStateRepr(this.value),
         }
     }
 
-    public get value(): TriState {
-        return this._value
+    protected toStringDetails(): string {
+        return "" + this.value
     }
 
     toggleValue() {
-        this._value = isUnset(this._value) ? true : !this._value
+        this.doSetValue(isUnset(this.value) ? true : !this.value)
     }
 
-    draw() {
-        this.updatePositionIfNeeded()
+    protected propagateNewValue(newValue: TriState) {
+        this.outputs[0].value = newValue
+    }
 
-        const output = this.outputs[0]
-        output.value = this.value
-        wireLine(output, this.posX, this.posY)
+    doDraw(isMouseOver: boolean) {
+        wireLine(this.outputs[0], this.posX, this.posY)
 
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -56,8 +58,6 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         fillForBoolean(this.value)
         strokeWeight(4)
         circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
-
-        output.draw()
 
         this.printInfo()
 
@@ -75,29 +75,18 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         }
     }
 
-    isMouseOver(): boolean {
-        return mode >= Mode.TRYOUT && dist(mouseX, mouseY, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+    isOver(x: number, y: number) {
+        return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    doubleClicked() {
-        if (this.isMouseOver()) {
-            this._value = (() => {
-                switch (this._value) {
-                    case true: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : false
-                    case false: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : true
-                    case Unset: return mode >= Mode.FULL ? false : Unset
-                }
-            })()
-        }
-    }
-
-    mouseClicked() {
-        const output = this.outputs[0]
-        if (this.isMouseOver() || output.isMouseOver()) {
-            output.mouseClicked()
-            return true
-        }
-        return false
+    mouseDoubleClick(__: MouseEvent) {
+        this.doSetValue((() => {
+            switch (this.value) {
+                case true: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : false
+                case false: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : true
+                case Unset: return mode >= Mode.FULL ? false : Unset
+            }
+        })())
     }
 
 }
@@ -106,6 +95,15 @@ export class LogicInput extends LogicInputBase<typeof LogicInputDef.reprType> {
 
     toJSON() {
         return this.toJSONBase()
+    }
+
+    get cursorWhenMouseover() {
+        return "pointer"
+    }
+
+    protected doRecalcValue(): TriState {
+        // this never changes on its own
+        return this.value
     }
 
 }

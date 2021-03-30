@@ -1,10 +1,9 @@
-import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils.js"
-import { mode } from "../simulator.js"
-import { ComponentBase, defineComponent, typeOrUndefined } from "./Component.js"
-import { GRID_STEP } from "./Position.js"
+import { isDefined, isNotNull, isUnset, Mode } from "../utils"
+import { mode } from "../simulator"
+import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { displayValuesFromInputs } from "./Node.js"
-import { COLOR_MOUSE_OVER, inRect, wireLine } from "../drawutils.js"
+import { displayValuesFromInputs } from "./Node"
+import { COLOR_MOUSE_OVER, GRID_STEP, inRect, wireLine } from "../drawutils"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -18,13 +17,12 @@ export const DisplayAsciiDef =
 
 type DisplayAsciiRepr = typeof DisplayAsciiDef.reprType
 
-export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
+export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string, number | "?"]> {
 
-    private _value: number | unset = 0
     private readonly name: string | undefined = undefined
 
     public constructor(savedData: DisplayAsciiRepr | null) {
-        super(savedData, {
+        super(["0000000", 0], savedData, {
             inOffsets: [[-3, -3], [-3, -2], [-3, -1], [-3, 0], [-3, +1], [-3, +2], [-3, +3]],
         })
         if (isNotNull(savedData)) {
@@ -40,17 +38,15 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
         }
     }
 
-    public get value() {
-        return this._value
+    protected doRecalcValue() {
+        return displayValuesFromInputs(this.inputs)
     }
 
-    draw() {
-        this.updatePositionIfNeeded()
 
-        const [binaryStringRep, value] = displayValuesFromInputs(this.inputs)
-        this._value = value
+    doDraw(isMouseOver: boolean) {
+        const [binaryStringRep, value] = this.value
 
-        if (this.isMouseOver()) {
+        if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -65,9 +61,6 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
 
         for (const input of this.inputs) {
             wireLine(input, this.posX - width / 2 - 2, input.posY)
-        }
-        for (const input of this.inputs) {
-            input.draw()
         }
 
         noStroke()
@@ -107,23 +100,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr> {
         }
     }
 
-    isMouseOver() {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, mouseX, mouseY)
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
-    mouseClicked() {
-        let didIt = false
-        for (const input of this.inputs) {
-            if (input.isMouseOver()) {
-                input.mouseClicked()
-                didIt = true
-            }
-        }
-
-        return didIt || this.isMouseOver()
-    }
-
-    doubleClicked() {
-        // nothing to toggle
-    }
 }

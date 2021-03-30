@@ -1,10 +1,10 @@
-// import { FF_D_MasterSlave } from "./FF_D.js"
-// import { GateBase } from "./Gate.js"
-// import { ICType } from "./Enums.js"
-// import { Integrated } from "./Integrated.js"
-// import { Node } from "./Node.js"
-// import { any } from "../simulator.js"
-// import { GRID_STEP } from "./Component.js"
+// import { FF_D_MasterSlave } from "./FF_D"
+// import { GateBase } from "./Gate"
+// import { ICType } from "./Enums"
+// import { Integrated } from "./Integrated"
+// import { Node } from "./Node"
+// import { any } from "../simulator"
+// import { GRID_STEP } from "./Component"
 
 // export class FF_JK extends Integrated {
 
@@ -33,7 +33,7 @@
 //         this.nodeNotQ.destroy()
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         super.draw()
 //         this.generateOutput()
 

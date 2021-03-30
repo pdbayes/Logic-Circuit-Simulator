@@ -1,9 +1,9 @@
-// import { any } from "../simulator.js"
-// import { GRID_STEP } from "./Component.js"
-// import { ICType, GateType } from "./Enums.js"
-// import { Integrated } from "./Integrated.js"
-// import { Node } from "./Node.js"
-// import { SR_LatchSync } from "./SR_Latch.js"
+// import { any } from "../simulator"
+// import { GRID_STEP } from "./Component"
+// import { ICType, GateType } from "./Enums"
+// import { Integrated } from "./Integrated"
+// import { Node } from "./Node"
+// import { SR_LatchSync } from "./SR_Latch"
 
 // export abstract class FF_D extends Integrated {
 
@@ -24,7 +24,7 @@
 //         this.nodeNotQ.destroy()
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         super.draw()
 //         this.generateOutput()
 
@@ -108,7 +108,7 @@
 //         this.nodeNotQ.value = this.slave.nodeNotQ.value
 //     }
 
-//     draw() {
+//     oldDraw() {
 //         super.draw()
 
 //         // negative edge-triggered
