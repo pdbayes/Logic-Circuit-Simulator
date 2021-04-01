@@ -1,5 +1,5 @@
 import { HasPosition } from "./components/Drawable"
-import { isUnset, TriState } from "./utils"
+import { isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { allComponents } from "./simulator"
 
@@ -91,4 +91,37 @@ export function guessCanvasHeight(): number {
         }
     }
     return highestY + lowestY // add lower margin equal to top margin
+}
+
+
+
+export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
+    let binaryStringRep = ""
+    let hasUnset = false
+    for (const input of inputs) {
+        if (isUnset(input.value)) {
+            hasUnset = true
+            binaryStringRep = Unset + binaryStringRep
+        } else {
+            binaryStringRep = +input.value + binaryStringRep
+        }
+    }
+    const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
+    return [binaryStringRep, value]
+}
+
+export function formatWithRadix(value: number | unset, radix: number): string {
+    if (isUnset(value)) {
+        return Unset
+    }
+    const caption = value.toString(radix).toUpperCase()
+    const prefix = (() => {
+        switch (radix) {
+            case 16: return "0x"
+            case 8: return "0o"
+            case 2: return "0b"
+            default: return ""
+        }
+    })()
+    return prefix + caption
 }

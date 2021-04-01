@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, unset, isNull, isNotNull } from "../utils"
+import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, isNull, isNotNull } from "../utils"
 import { mode, modifierKeys, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { HasPosition, DrawableWithPosition } from "./Drawable"
@@ -242,19 +242,4 @@ export const Node = {
     isOutput(node: Node): node is NodeOut {
         return node._tag === "_nodeout"
     },
-}
-
-export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
-    let binaryStringRep = ""
-    let hasUnset = false
-    for (const input of inputs) {
-        if (isUnset(input.value)) {
-            hasUnset = true
-            binaryStringRep = Unset + binaryStringRep
-        } else {
-            binaryStringRep = +input.value + binaryStringRep
-        }
-    }
-    const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
-    return [binaryStringRep, value]
 }
