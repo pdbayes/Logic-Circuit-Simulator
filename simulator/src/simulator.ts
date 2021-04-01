@@ -1,7 +1,7 @@
 import * as p5 from "p5"
 
 import { activeTool, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isEmpty, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -53,7 +53,7 @@ function changeMovingComponents(change: () => void) {
     const emptyAfter = _movingComponents.size === 0
     if (emptyBefore !== emptyAfter) {
         updateCursor()
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw("started or stopped moving components")
     }
 }
 
@@ -109,7 +109,7 @@ function trySetMode(wantedMode: Mode) {
 
         console.log(`Display/interaction is ${wantedModeStr}`)
 
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw("mode changed")
 
         // update mode active button
         document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
@@ -203,10 +203,10 @@ function trySetMode(wantedMode: Mode) {
 }
 
 
-let _canvasNeedsRedraw = true
+const _canvasRedrawReasons: string[] = ["initial draw"]
 
-export function setCanvasNeedsRedraw() {
-    _canvasNeedsRedraw = true
+export function setCanvasNeedsRedraw(reason: string) {
+    _canvasRedrawReasons.push(reason)
 }
 
 const _componentNeedingRecalc = new Set<Component>()
@@ -237,7 +237,7 @@ function clearStartDragTimeout() {
 function setCurrentMouseOverComp(comp: Drawable | null) {
     if (comp !== _currentMouseOverComp) {
         _currentMouseOverComp = comp
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw("mouseover changed")
         // console.log("Over component: ", newMouseOverComp)
     }
 }
@@ -245,6 +245,16 @@ function setCurrentMouseOverComp(comp: Drawable | null) {
 function updateMouseOver([x, y]: [number, number]) {
     function findMouseOver(): Drawable | null {
         if (mode > Mode.STATIC) {
+
+            // easy optimization: maybe we're still over the
+            // same component as before, so quickly check this
+            if (isNotNull(_currentMouseOverComp)) {
+                if (_currentMouseOverComp.isOver(x, y)) {
+                    return _currentMouseOverComp
+                }
+            }
+
+            // check if we're over components or their nodes
             for (const elems of allComponents) {
                 for (const elem of elems) {
                     let nodeOver: Node | null = null
@@ -264,6 +274,7 @@ function updateMouseOver([x, y]: [number, number]) {
                 }
             }
 
+            // check if we're over a wire
             for (const wire of wireMgr.wires) {
                 if (wire.isOver(x, y)) {
                     return wire
@@ -442,7 +453,7 @@ export function setup() {
                     _currentMouseDownComp = _currentMouseOverComp
                     setStartDragTimeout(_currentMouseDownComp, e)
                 }
-                setCanvasNeedsRedraw()
+                setCanvasNeedsRedraw("mousedown")
             } else {
                 // mouse down on background
                 _currentMouseDownComp = canvasContainer
@@ -490,7 +501,7 @@ export function setup() {
             _currentHandlers.mouseUpOnBackground(e)
         }
         _currentMouseDownComp = null
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw("mouseup")
     }
 
     canvasContainer.addEventListener("touchstart", (e) => {
@@ -512,10 +523,9 @@ export function setup() {
 
     canvasContainer.addEventListener("touchend", (e) => {
         // console.log("touchend %o %o", offsetXY(e), e, e.detail)
-        if (mode >= Mode.CONNECT) {
-            // prevent scrolling when we can connect
-            e.preventDefault()
-        }
+        // touchend should always be prevented, otherwise it may
+        // generate mouse/click events
+        e.preventDefault()
         mouseUpTouchEnd(e)
         setCurrentMouseOverComp(null)
     })
@@ -620,7 +630,7 @@ export function tryLoadFromData() {
 
 export function windowResized() {
     resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
-    setCanvasNeedsRedraw()
+    setCanvasNeedsRedraw("window resized")
 }
 
 export function recalculate() {
@@ -649,10 +659,14 @@ export function draw() {
     if (needsRecalc) {
         recalculate()
     }
-    if (!_canvasNeedsRedraw && !wireMgr.isAddingWire) {
+    if (wireMgr.isAddingWire) {
+        setCanvasNeedsRedraw("adding a wire")
+    }
+
+    if (isEmpty(_canvasRedrawReasons)) {
         return
     }
-    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc")
+    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reason: " + _canvasRedrawReasons.join("; "))
 
     strokeCap(PROJECT)
 
@@ -696,7 +710,7 @@ export function draw() {
         }
     }
 
-    _canvasNeedsRedraw = false
+    _canvasRedrawReasons.splice(0, _canvasRedrawReasons.length)
 }
 
 function keyUp(e: KeyboardEvent) {

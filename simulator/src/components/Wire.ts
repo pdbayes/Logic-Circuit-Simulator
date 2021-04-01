@@ -215,7 +215,7 @@ export class WireManager {
             this._isAddingWire = false
             setToolCursor(null)
         }
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw("started or stopped wire")
     }
 
     deleteWire(wire: Wire) {

@@ -9,12 +9,12 @@ export abstract class Drawable {
     // private _needsRedraw = false
 
     protected constructor() {
-        this.setNeedsRedraw()
+        this.setNeedsRedraw("newly created")
     }
 
-    protected setNeedsRedraw() {
+    protected setNeedsRedraw(reason: string) {
         // this._needsRedraw = true
-        setCanvasNeedsRedraw()
+        setCanvasNeedsRedraw(this.constructor.name + " – " + reason)
     }
 
     public draw(mouseOverComp: Drawable | null /*, __force: boolean*/) {

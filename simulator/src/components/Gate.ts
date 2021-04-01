@@ -268,7 +268,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
     mouseDoubleClick(__: MouseEvent | TouchEvent) {
         if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
             this._showAsUnknown = !this._showAsUnknown
-            this.setNeedsRedraw()
+            this.setNeedsRedraw("display style changed")
         } else if (mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant
             this._type = (() => {
@@ -280,7 +280,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
                     default: return this._type
                 }
             })()
-            this.setNeedsRedraw()
+            this.setNeedsRedraw("gate variant changed")
         }
     }
 

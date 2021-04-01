@@ -112,7 +112,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     private doSetDisplay(newDisplay: DisplayBarType) {
         this._display = newDisplay
         this.updateInputOffsetX()
-        this.setNeedsRedraw()
+        this.setNeedsRedraw("display mode changed")
     }
 
     private updateInputOffsetX() {

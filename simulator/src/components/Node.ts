@@ -162,7 +162,7 @@ abstract class NodeBase extends DrawableWithPosition {
                 }
             })()
             this.propagateNewValueIfNecessary(oldVisibleValue)
-            this.setNeedsRedraw()
+            this.setNeedsRedraw("changed forced output value")
         }
     }
 

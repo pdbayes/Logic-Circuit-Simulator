@@ -105,7 +105,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {
         this._radix = this._radix === 10 ? 16 : 10
-        this.setNeedsRedraw()
+        this.setNeedsRedraw("radix changed")
     }
 
 }

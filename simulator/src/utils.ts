@@ -110,6 +110,10 @@ export function isArray(arg: unknown): arg is ReadonlyArray<any> {
     return Array.isArray(arg)
 }
 
+export function isEmpty(container: { length: number } | { size: number }): boolean {
+    return ("length" in container ? container.length : container.size) === 0
+}
+
 export function isNumber(arg: unknown): arg is number {
     return typeof arg === "number"
 }

@@ -401,7 +401,7 @@ export abstract class ComponentBase<
         const oldValue = this._value
         if (newValue !== oldValue) {
             this._value = newValue
-            this.setNeedsRedraw()
+            this.setNeedsRedraw("value changed")
             this.propagateNewValue(newValue)
         }
     }
@@ -424,7 +424,7 @@ export abstract class ComponentBase<
         const newPos = this.updateSelfPositionIfNeeded(e)
         const posChanged = isDefined(newPos)
         if (posChanged) {
-            this.setNeedsRedraw()
+            this.setNeedsRedraw("position changed")
             this.forEachNode((node) => {
                 node.updatePositionFromParent()
                 return true
