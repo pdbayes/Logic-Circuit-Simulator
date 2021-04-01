@@ -116,15 +116,26 @@ export function attr(attrName: string, attrValue: string): Modifier {
 
 export const div = elemBuilder("div")
 export const span = elemBuilder("span")
+
+export const b = elemBuilder("b")
+export const i = elemBuilder("i")
+
 export const ul = elemBuilder("ul")
 export const ol = elemBuilder("ol")
 export const li = elemBuilder("li")
+
+export const table = elemBuilder("table")
+export const thead = elemBuilder("thead")
+export const tbody = elemBuilder("tbody")
+export const tr = elemBuilder("tr")
+export const th = elemBuilder("th")
+export const td = elemBuilder("td")
+
 export const input = elemBuilder("input")
 export const label = elemBuilder("label")
-export const b = elemBuilder("b")
-export const i = elemBuilder("i")
 export const img = elemBuilder("img")
 export const canvas = elemBuilder("canvas")
+
 export const style = attrBuilder("style")
 export const type = attrBuilder("type")
 export const cls = attrBuilder("class")

@@ -13,7 +13,7 @@ import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen"
+import { attrBuilder, cls, div, ElemRenderer, faglyph, style, title } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
@@ -328,10 +328,11 @@ function clearPopperIfNecessary() {
     }
 }
 
-function makePopper(tooltipHtml: string, rect: DOMRect) {
+function makePopper(tooltipHtml: ElemRenderer<HTMLElement>, rect: DOMRect) {
     const tooltipElem = document.getElementById("tooltip")!
     const tooltipContents = document.getElementById("tooltipContents")!
-    tooltipContents.innerHTML = tooltipHtml
+    tooltipContents.innerHTML = ""
+    tooltipHtml.applyTo(tooltipContents)
     const canvas = document.getElementsByTagName("CANVAS")[0]
     console.log(canvas)
     _currentMouseOverPopper = createPopper({
@@ -346,21 +347,8 @@ function makePopper(tooltipHtml: string, rect: DOMRect) {
 }
 
 abstract class ToolHandlers {
-    mouseHoverOn(comp: Drawable) {
-        // by default, show tooltip
-        clearPopperIfNecessary()
-        const tooltip = comp.makeTooltip()
-        const containerRect = canvasContainer.getBoundingClientRect()
-        if (isDefined(tooltip)) {
-            const [cx, cy, w, h] =
-                comp instanceof DrawableWithPosition
-                    ? [comp.posX, comp.posY, comp.width, comp.height]
-                    : [mouseX, mouseY, 4, 4]
-            const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
-            console.log("r=" + rect)
-            console.log("tooltip")
-            makePopper(tooltip, rect)
-        }
+    mouseHoverOn(__comp: Drawable) {
+        // empty
     }
     mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         return { lockMouseOver: true }
@@ -386,6 +374,19 @@ abstract class ToolHandlers {
 }
 
 class _EditHandlers extends ToolHandlers {
+    mouseHoverOn(comp: Drawable) {
+        clearPopperIfNecessary()
+        const tooltip = comp.makeTooltip()
+        const containerRect = canvasContainer.getBoundingClientRect()
+        if (isDefined(tooltip)) {
+            const [cx, cy, w, h] =
+                comp instanceof DrawableWithPosition
+                    ? [comp.posX, comp.posY, comp.width, comp.height]
+                    : [mouseX, mouseY, 4, 4]
+            const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
+            makePopper(tooltip, rect)
+        }
+    }
     mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
         return comp.mouseDown(e)
     }

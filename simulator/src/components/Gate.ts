@@ -3,24 +3,26 @@ import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
+import { b, cls, div, ElemRenderer, emptyMod, mods, style, table, tbody, td, th, thead, tr } from "../htmlgen"
 
 
 const Gate2Types_ = {
-    AND: (in1: boolean, in2: boolean) => in1 && in2,
-    OR: (in1: boolean, in2: boolean) => in1 || in2,
-    XOR: (in1: boolean, in2: boolean) => in1 !== in2,
-    NAND: (in1: boolean, in2: boolean) => !(in1 && in2),
-    NOR: (in1: boolean, in2: boolean) => !(in1 || in2),
-    XNOR: (in1: boolean, in2: boolean) => in1 === in2,
-    IMPLY: (in1: boolean, in2: boolean) => !in1 || in2,
-    RIMPLY: (in1: boolean, in2: boolean) => in1 || !in2,
-    NIMPLY: (in1: boolean, in2: boolean) => in1 && !in2,
-    RNIMPLY: (in1: boolean, in2: boolean) => !in1 && in2,
+    AND: { out: (in1: boolean, in2: boolean) => in1 && in2, localName: "ET" },
+    OR: { out: (in1: boolean, in2: boolean) => in1 || in2, localName: "OU" },
+    XOR: { out: (in1: boolean, in2: boolean) => in1 !== in2, localName: "OU-X" },
+    NAND: { out: (in1: boolean, in2: boolean) => !(in1 && in2), localName: "NON-ET" },
+    NOR: { out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU" },
+    XNOR: { out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X" },
+    IMPLY: { out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE" },
+    RIMPLY: { out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE" },
+    NIMPLY: { out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE" },
+    RNIMPLY: { out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE" },
 } as const
 
-export const Gate2Types = RichStringEnum.withProps<
-    (in1: boolean, in2: boolean) => boolean
->()(Gate2Types_)
+export const Gate2Types = RichStringEnum.withProps<{
+    out: (in1: boolean, in2: boolean) => boolean
+    localName: string
+}>()(Gate2Types_)
 
 export const GateTypeNot = "NOT"
 
@@ -255,6 +257,47 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return this.type
     }
 
+    public makeTooltip() {
+        if (this._showAsUnknown) {
+            return div("Porte cachée")
+        }
+
+        const gateProps = Gate2Types.propsOf(this._type)
+        const myIn0 = this.inputs[0].value
+        const myIn1 = this.inputs[1].value
+        const myOut = this.value
+        const asValue = (bool: boolean | unset) => b(isUnset(bool) ? Unset : String(Number(bool)))
+        const makeTruthTable = () => {
+            const rows: ElemRenderer<HTMLTableRowElement>[] = []
+            for (const in0 of [false, true]) {
+                for (const in1 of [false, true]) {
+                    const matchesCurrentState = myIn0 === in0 && myIn1 === in1
+                    const out = gateProps.out(in0, in1)
+                    rows.push(
+                        tr(matchesCurrentState ? cls("current") : emptyMod, td(asValue(in0)), td(asValue(in1)), td(asValue(out)))
+                    )
+                }
+            }
+            return table(cls("truth-table"),
+                thead(
+                    tr(th("Entrée 1"), th("Entrée 2"), th("Sortie"))
+                ),
+                tbody(...rows)
+            )
+        }
+
+        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const explStr = gateIsUnspecified
+            ? mods("Actuellement, elle livre une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
+            : mods("Actuellement, elle livre une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+
+        return div(style("max-width: 200px"),
+            div("Porte ", b(gateProps.localName)),
+            div(explStr),
+            div(makeTruthTable())
+        )
+    }
+
     protected get showAsUnknown() {
         return this._showAsUnknown
     }
@@ -265,8 +308,8 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         if (isUnset(in1) || isUnset(in2)) {
             return Unset
         }
-        const calcOut = Gate2Types.propsOf(this._type)
-        return calcOut(in1, in2)
+        const gateProps = Gate2Types.propsOf(this._type)
+        return gateProps.out(in1, in2)
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {

@@ -2,6 +2,7 @@ import { isNotNull, Mode } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { mode, setCanvasNeedsRedraw } from "../simulator"
+import { ElemRenderer } from "../htmlgen"
 
 
 export abstract class Drawable {
@@ -42,7 +43,7 @@ export abstract class Drawable {
         return ""
     }
 
-    public makeTooltip(): string | undefined {
+    public makeTooltip(): ElemRenderer<HTMLElement> | undefined {
         return undefined
     }
 
