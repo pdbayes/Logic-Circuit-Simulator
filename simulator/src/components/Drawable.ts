@@ -1,7 +1,7 @@
-import { isNotNull } from "../utils"
+import { isNotNull, Mode } from "../utils"
 import * as t from "io-ts"
-import { GRID_STEP } from "../drawutils"
-import { setCanvasNeedsRedraw } from "../simulator"
+import { GRID_STEP, inRect } from "../drawutils"
+import { mode, setCanvasNeedsRedraw } from "../simulator"
 
 
 export abstract class Drawable {
@@ -40,6 +40,10 @@ export abstract class Drawable {
 
     protected toStringDetails(): string {
         return ""
+    }
+
+    public makeTooltip(): string | undefined {
+        return undefined
     }
 
     // Return { lockMouseOver: true } (default) to signal the component
@@ -108,6 +112,14 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public get posY() {
         return this._posY
+    }
+
+    public abstract get width(): number
+
+    public abstract get height(): number
+
+    public isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, this.width, this.height, x, y)
     }
 
     protected setPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {

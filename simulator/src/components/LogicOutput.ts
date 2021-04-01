@@ -34,6 +34,18 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return "" + this.value
     }
 
+    get width() {
+        return INPUT_OUTPUT_DIAMETER
+    }
+
+    get height() {
+        return INPUT_OUTPUT_DIAMETER
+    }
+
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+    }
+
     protected doRecalcValue(): TriState {
         return this.inputs[0].value
     }
@@ -62,10 +74,6 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         }
 
         roundValue(this)
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
 }

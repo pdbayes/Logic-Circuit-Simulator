@@ -1,7 +1,7 @@
 import { Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, inRect, wireLine } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
 
 
@@ -58,6 +58,14 @@ export type Gate = GateBase<any, GateRepr<any>>
 export abstract class GateBase<NumInput extends FixedArraySize, Repr extends GateRepr<NumInput>> extends ComponentBase<NumInput, 1, Repr, TriState> {
 
     abstract get type(): GateType
+
+    get width() {
+        return GRID_WIDTH * GRID_STEP
+    }
+
+    get height() {
+        return GRID_HEIGHT * GRID_STEP
+    }
 
     protected propagateNewValue(newValue: TriState) {
         this.outputs[0].value = newValue
@@ -198,10 +206,6 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 wireEnds()
                 break
         }
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
 }

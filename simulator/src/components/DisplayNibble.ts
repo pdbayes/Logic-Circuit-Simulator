@@ -1,8 +1,7 @@
-import { isDefined, isNotNull, isUnset, Mode, unset } from "../utils"
+import { isDefined, isNotNull, isUnset, unset } from "../utils"
 import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, GRID_STEP, inRect, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
-import { mode } from "../simulator"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -37,6 +36,14 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             name: this.name,
             radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
         }
+    }
+
+    get width() {
+        return GRID_WIDTH * GRID_STEP
+    }
+
+    get height() {
+        return GRID_HEIGHT * GRID_STEP
     }
 
     protected doRecalcValue() {
@@ -88,10 +95,6 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         const stringRep = formatWithRadix(value, this._radix)
         text(stringRep, this.posX, this.posY + width / 6)
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {

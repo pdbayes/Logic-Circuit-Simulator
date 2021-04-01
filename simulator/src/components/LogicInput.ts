@@ -39,6 +39,18 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         return "" + this.value
     }
 
+    get width() {
+        return INPUT_OUTPUT_DIAMETER
+    }
+
+    get height() {
+        return INPUT_OUTPUT_DIAMETER
+    }
+
+    isOver(x: number, y: number) {
+        return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+    }
+
     toggleValue() {
         this.doSetValue(isUnset(this.value) ? true : !this.value)
     }
@@ -73,10 +85,6 @@ export abstract class LogicInputBase<Repr extends typeof LogicInputDef.reprType>
         if (isDefined(this.name)) {
             text(this.name, this.posX - 25, this.posY)
         }
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {

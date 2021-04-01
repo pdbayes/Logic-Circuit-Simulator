@@ -1,4 +1,5 @@
 import * as p5 from "p5"
+import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, MouseAction, setCurrentMouseAction } from "./menutools"
 import { copyToClipboard, getURLParameter, isDefined, isEmpty, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
@@ -15,7 +16,7 @@ import { NodeManager } from "./NodeManager"
 import { attrBuilder, cls, div, faglyph, style, title } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
-import { Drawable } from "./components/Drawable"
+import { Drawable, DrawableWithPosition } from "./components/Drawable"
 
 // export type FF = FF_D | FF_JK | FF_T
 
@@ -218,7 +219,9 @@ export function addComponentNeedingRecalc(comp: Component) {
 
 
 let _currentMouseOverComp: Drawable | null = null
+let _currentMouseOverPopper: PopperInstance | null = null
 let _currentMouseDownComp: Drawable | Element | null = null
+let _startHoverTimeoutHandle: number | null = null
 let _startDragTimeoutHandle: number | null = null
 
 function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
@@ -234,9 +237,25 @@ function clearStartDragTimeout() {
     }
 }
 
+function clearHoverTimeoutHandle() {
+    if (isNotNull(_startHoverTimeoutHandle)) {
+        clearTimeout(_startHoverTimeoutHandle)
+        _startHoverTimeoutHandle = null
+    }
+}
+
 function setCurrentMouseOverComp(comp: Drawable | null) {
     if (comp !== _currentMouseOverComp) {
+        clearPopperIfNecessary()
+        clearHoverTimeoutHandle()
+
         _currentMouseOverComp = comp
+        if (isNotNull(comp)) {
+            _startHoverTimeoutHandle = setTimeout(function () {
+                _currentHandlers.mouseHoverOn(comp)
+                _startHoverTimeoutHandle = null
+            }, 1200)
+        }
         setCanvasNeedsRedraw("mouseover changed")
         // console.log("Over component: ", newMouseOverComp)
     }
@@ -302,9 +321,47 @@ export function createdNewComponent<C extends Component>(comp: C, array: C[]) {
     _currentMouseDownComp = comp
 }
 
+function clearPopperIfNecessary() {
+    if (isNotNull(_currentMouseOverPopper)) {
+        _currentMouseOverPopper.destroy()
+        _currentMouseOverPopper = null
+    }
+}
 
+function makePopper(tooltipHtml: string, rect: DOMRect) {
+    const tooltipElem = document.getElementById("tooltip")!
+    const tooltipContents = document.getElementById("tooltipContents")!
+    tooltipContents.innerHTML = tooltipHtml
+    const canvas = document.getElementsByTagName("CANVAS")[0]
+    console.log(canvas)
+    _currentMouseOverPopper = createPopper({
+        getBoundingClientRect() { return rect },
+        contextElement: canvas,
+    }, tooltipElem, {
+        placement: 'right',
+        modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
+    })
+    tooltipElem.setAttribute('data-show', '')
+    _currentMouseOverPopper.update()
+}
 
 abstract class ToolHandlers {
+    mouseHoverOn(comp: Drawable) {
+        // by default, show tooltip
+        clearPopperIfNecessary()
+        const tooltip = comp.makeTooltip()
+        const containerRect = canvasContainer.getBoundingClientRect()
+        if (isDefined(tooltip)) {
+            const [cx, cy, w, h] =
+                comp instanceof DrawableWithPosition
+                    ? [comp.posX, comp.posY, comp.width, comp.height]
+                    : [mouseX, mouseY, 4, 4]
+            const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
+            console.log("r=" + rect)
+            console.log("tooltip")
+            makePopper(tooltip, rect)
+        }
+    }
     mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         return { lockMouseOver: true }
     }
@@ -444,6 +501,8 @@ export function setup() {
     p5canvas.parent('canvas-sim')
 
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
+        clearHoverTimeoutHandle()
+        clearPopperIfNecessary()
         if (isNull(_currentMouseDownComp)) {
             updateMouseOver(offsetXY(e))
             if (isNotNull(_currentMouseOverComp)) {

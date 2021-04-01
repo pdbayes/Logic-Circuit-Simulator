@@ -1,8 +1,7 @@
-import { isNotNull, isUnset, Mode, TriState } from "../utils"
+import { isNotNull, isUnset, TriState } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, wireLine, inRect, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
-import { mode } from "../simulator"
+import { COLOR_UNSET, wireLine, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
 
 
 export const DisplayBarTypes = {
@@ -48,6 +47,14 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         }
     }
 
+    get width() {
+        return this.getWidthAndHeight()[0]
+    }
+
+    get height() {
+        return this.getWidthAndHeight()[1]
+    }
+
     public get display() {
         return this._display
     }
@@ -87,11 +94,6 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             case "PX":
                 return [GRID_WIDTH * GRID_STEP, GRID_WIDTH * GRID_STEP] as const
         }
-    }
-
-    isOver(x: number, y: number) {
-        const [w, h] = this.getWidthAndHeight()
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, w, h, x, y)
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {

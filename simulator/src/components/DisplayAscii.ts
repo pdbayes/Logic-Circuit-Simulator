@@ -1,8 +1,7 @@
-import { isDefined, isNotNull, isUnset, Mode } from "../utils"
-import { mode } from "../simulator"
+import { isDefined, isNotNull, isUnset } from "../utils"
 import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, inRect, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -40,10 +39,17 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         }
     }
 
+    get width() {
+        return GRID_WIDTH * GRID_STEP
+    }
+
+    get height() {
+        return GRID_HEIGHT * GRID_STEP
+    }
+
     protected doRecalcValue() {
         return displayValuesFromInputs(this.inputs)
     }
-
 
     doDraw(isMouseOver: boolean) {
         const [binaryStringRep, value] = this.value
@@ -83,7 +89,6 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
         let mainTextPosY = this.posY
 
-        console.log(this._additionalReprRadix)
         if (isDefined(this._additionalReprRadix)) {
             const additionalRepr = formatWithRadix(value, this._additionalReprRadix)
             textSize(11)
@@ -108,10 +113,6 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             textStyle(BOLD)
             text("‘" + String.fromCharCode(value) + "’", this.posX, mainTextPosY)
         }
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP, x, y)
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {

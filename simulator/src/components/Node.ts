@@ -46,6 +46,20 @@ abstract class NodeBase extends DrawableWithPosition {
         return Node.isOutput(this.asNode)
     }
 
+    get width() {
+        return DIAMETER
+    }
+
+    get height() {
+        return DIAMETER
+    }
+
+    isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT
+            && this.acceptsMoreConnections
+            && dist(x, y, this.posX, this.posY) < HIT_RANGE / 2
+    }
+
     destroy() {
         this._isAlive = false
         NodeManager.removeLiveNode(this.asNode)
@@ -138,12 +152,6 @@ abstract class NodeBase extends DrawableWithPosition {
             this.parent.posY + this._gridOffsetY * GRID_STEP,
             false,
         ) ?? [this.posX, this.posY]
-    }
-
-    isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT
-            && this.acceptsMoreConnections
-            && dist(x, y, this.posX, this.posY) < HIT_RANGE / 2
     }
 
     get cursorWhenMouseover() {
