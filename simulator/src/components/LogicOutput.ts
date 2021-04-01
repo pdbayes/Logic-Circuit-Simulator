@@ -1,8 +1,9 @@
-import { isDefined, isNotNull, Mode, TriState } from "../utils"
+import { isDefined, isNotNull, isUnset, Mode, TriState } from "../utils"
 import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
 import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
 import { mode } from "../simulator"
+import { emptyMod, mods, tooltipContent } from "../htmlgen"
 
 
 export const LogicOutputDef =
@@ -44,6 +45,10 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
 
     isOver(x: number, y: number) {
         return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+    }
+
+    public makeTooltip() {
+        return tooltipContent(undefined, mods("Sortie", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
     protected doRecalcValue(): TriState {

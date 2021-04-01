@@ -3,6 +3,8 @@
 // Helper export function s to build HTML more smartly in JavaScript
 //
 
+import { isUndefined } from "./utils"
+
 export interface ModifierObject {
     applyTo(parent: Element): void
 }
@@ -143,3 +145,13 @@ export const title = attrBuilder("title")
 export const src = attrBuilder("src")
 export const draggable = attrBuilder("draggable")("true")
 export const br = raw('<br>')
+
+
+// Common Modifier-generating helpers
+
+export function tooltipContent(title: Modifier | undefined, body: Modifier): ModifierObject {
+    return div(style("max-width: 200px"),
+        isUndefined(title) ? emptyMod : div(style("padding-bottom: 3px; border-bottom: 1px solid grey;"), title),
+        div(body)
+    )
+}

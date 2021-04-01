@@ -159,7 +159,7 @@ abstract class NodeBase extends DrawableWithPosition {
     }
 
     mouseDoubleClick(__: MouseEvent | TouchEvent) {
-        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput) {
+        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && !(this.parent.constructor.name === "LogicInput")) {
             const oldVisibleValue = this.value
             this._forceValue = (() => {
                 switch (this._forceValue) {

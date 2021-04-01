@@ -47,6 +47,10 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return GRID_HEIGHT * GRID_STEP
     }
 
+    public makeTooltip() {
+        return undefined // TODO
+    }
+
     protected doRecalcValue() {
         return displayValuesFromInputs(this.inputs)
     }

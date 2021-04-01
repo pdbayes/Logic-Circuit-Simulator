@@ -3,7 +3,7 @@ import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
-import { b, cls, div, ElemRenderer, emptyMod, mods, style, table, tbody, td, th, thead, tr } from "../htmlgen"
+import { b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 
 
 const Gate2Types_ = {
@@ -266,36 +266,36 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         const myIn0 = this.inputs[0].value
         const myIn1 = this.inputs[1].value
         const myOut = this.value
-        const asValue = (bool: boolean | unset) => b(isUnset(bool) ? Unset : String(Number(bool)))
-        const makeTruthTable = () => {
-            const rows: ElemRenderer<HTMLTableRowElement>[] = []
+
+        const genTruthTableData = () => {
+            const header = ["Entrée 1", "Entrée 2", "Sortie"]
+            const rows: TruthTableRowData[] = []
             for (const in0 of [false, true]) {
                 for (const in1 of [false, true]) {
-                    const matchesCurrentState = myIn0 === in0 && myIn1 === in1
+                    const matchesCurrent = myIn0 === in0 && myIn1 === in1
                     const out = gateProps.out(in0, in1)
-                    rows.push(
-                        tr(matchesCurrentState ? cls("current") : emptyMod, td(asValue(in0)), td(asValue(in1)), td(asValue(out)))
-                    )
+                    rows.push({ matchesCurrent, cells: [in0, in1, out] })
                 }
             }
-            return table(cls("truth-table"),
-                thead(
-                    tr(th("Entrée 1"), th("Entrée 2"), th("Sortie"))
-                ),
-                tbody(...rows)
-            )
+            return [header, rows] as const
         }
 
-        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
-        const explStr = gateIsUnspecified
-            ? mods("Actuellement, elle livre une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
-            : mods("Actuellement, elle livre une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+        const nodeOut = this.outputs[0].value
+        const desc = nodeOut === myOut
+            ? "Actuellement, elle livre"
+            : "Actuellement, elle devrait livrer"
 
-        return div(style("max-width: 200px"),
-            div("Porte ", b(gateProps.localName)),
-            div(explStr),
-            div(makeTruthTable())
+        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const explanation = gateIsUnspecified
+            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
+            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+
+        return makeGateTooltip(
+            mods("Porte ", b(gateProps.localName)),
+            explanation,
+            makeTruthTable(genTruthTableData())
         )
+
     }
 
     protected get showAsUnknown() {
@@ -367,6 +367,55 @@ export class Gate1Inverter extends GateBase<1, GateRepr1> {
         return !in0
     }
 
+    public makeTooltip() {
+        const myIn = this.inputs[0].value
+        const myOut = this.value
+
+        const genTruthTableData = () => {
+            const header = ["Entrée", "Sortie"]
+            const rows: TruthTableRowData[] = []
+            for (const in0 of [false, true]) {
+                const matchesCurrent = myIn === in0
+                rows.push({ matchesCurrent, cells: [in0, !in0] })
+            }
+            return [header, rows] as const
+        }
+
+        const nodeOut = this.outputs[0].value
+        const desc = nodeOut === myOut
+            ? "Actuellement, il livre"
+            : "Actuellement, il devrait livrer"
+
+        const explanation = isUnset(myIn)
+            ? mods(desc + " une sortie indéterminée comme son entrée n’est pas connue. Sa table de vérité est:")
+            : mods(desc + " une sortie de ", asValue(myOut), " car son entrée est ", asValue(myIn), ", selon la table de vérité suivante:")
+
+        return makeGateTooltip(
+            mods("Inverseur (porte ", b("NON"), ")"),
+            explanation,
+            makeTruthTable(genTruthTableData())
+        )
+    }
+
+}
+
+// Truth table generation helpers
+
+type TruthTableRowData = { matchesCurrent: boolean, cells: boolean[] }
+const asValue = (bool: boolean | unset) => b(isUnset(bool) ? Unset : String(Number(bool)))
+const makeTruthTable = ([header, rows]: readonly [string[], TruthTableRowData[]]) => {
+    const htmlRows = rows.map(({ matchesCurrent, cells }) =>
+        tr(matchesCurrent ? cls("current") : emptyMod, ...cells.map(v => td(asValue(v))))
+    )
+    return table(cls("truth-table"),
+        thead(tr(...header.map(title =>
+            th(title))
+        )),
+        tbody(...htmlRows)
+    )
+}
+const makeGateTooltip = (title: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject => {
+    return tooltipContent(title, mods(div(explanation), div(truthTable)))
 }
 
 export const GateFactory = {

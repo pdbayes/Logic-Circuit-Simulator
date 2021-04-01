@@ -157,6 +157,10 @@ export function isTruthyString(str: string | null | undefined): boolean {
     return !isNullOrUndefined(str) && (str === "1" || str.toLowerCase() === "true")
 }
 
+export function isFalsyString(str: string | null | undefined): boolean {
+    return !isNullOrUndefined(str) && (str === "0" || str.toLowerCase() === "false")
+}
+
 export function getURLParameter<T>(sParam: string, defaultValue: T): string | T
 export function getURLParameter(sParam: string, defaultValue?: undefined): string | undefined
 export function getURLParameter(sParam: string, defaultValue: any) {

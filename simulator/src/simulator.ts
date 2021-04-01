@@ -2,7 +2,7 @@ import * as p5 from "p5"
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isEmpty, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isEmpty, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -13,7 +13,7 @@ import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { attrBuilder, cls, div, ElemRenderer, faglyph, style, title } from "./htmlgen"
+import { attrBuilder, cls, div, faglyph, ModifierObject, style, title } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
@@ -102,6 +102,9 @@ function isEmbeddedInIframe(): boolean {
 const PARAM_DATA = "data"
 const PARAM_SHOW_ONLY = "showonly"
 const PARAM_MODE = "mode"
+const PARAM_TOOLTIPS = "tooltips"
+
+let showTooltips = true
 
 function trySetMode(wantedMode: Mode) {
     const wantedModeStr = Mode[wantedMode]
@@ -196,6 +199,10 @@ function trySetMode(wantedMode: Mode) {
             document.getElementById("rightToolbarContainer")!.style.removeProperty("visibility")
         } else {
             document.getElementById("rightToolbarContainer")!.style.visibility = "hidden"
+        }
+
+        if (isFalsyString(getURLParameter(PARAM_TOOLTIPS))) {
+            showTooltips = false
         }
 
     } else {
@@ -328,7 +335,7 @@ function clearPopperIfNecessary() {
     }
 }
 
-function makePopper(tooltipHtml: ElemRenderer<HTMLElement>, rect: DOMRect) {
+function makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
     const tooltipElem = document.getElementById("tooltip")!
     const tooltipContents = document.getElementById("tooltipContents")!
     tooltipContents.innerHTML = ""
@@ -376,6 +383,9 @@ abstract class ToolHandlers {
 class _EditHandlers extends ToolHandlers {
     mouseHoverOn(comp: Drawable) {
         clearPopperIfNecessary()
+        if (!showTooltips) {
+            return
+        }
         const tooltip = comp.makeTooltip()
         const containerRect = canvasContainer.getBoundingClientRect()
         if (isDefined(tooltip)) {

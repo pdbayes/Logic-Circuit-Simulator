@@ -3,6 +3,7 @@ import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined 
 import * as t from "io-ts"
 import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
+import { emptyMod, mods, tooltipContent } from "../htmlgen"
 
 export const LogicInputDef =
     defineComponent(0, 1, t.type({
@@ -107,6 +108,10 @@ export class LogicInput extends LogicInputBase<typeof LogicInputDef.reprType> {
 
     get cursorWhenMouseover() {
         return "pointer"
+    }
+
+    public makeTooltip() {
+        return tooltipContent(undefined, mods("Entrée", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
     protected doRecalcValue(): TriState {

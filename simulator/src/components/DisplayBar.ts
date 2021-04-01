@@ -55,6 +55,10 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return this.getWidthAndHeight()[1]
     }
 
+    public makeTooltip() {
+        return undefined // TODO
+    }
+
     public get display() {
         return this._display
     }

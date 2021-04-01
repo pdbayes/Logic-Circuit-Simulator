@@ -46,6 +46,10 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return GRID_HEIGHT * GRID_STEP
     }
 
+    public makeTooltip() {
+        return undefined // TODO
+    }
+
     protected doRecalcValue() {
         return displayValuesFromInputs(this.inputs)
     }
