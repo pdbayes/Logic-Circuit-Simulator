@@ -21,6 +21,6 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "server": "python3 -m http.server --cgi 8088",
-    "webpack": "npx webpack"
+    "pack": "npx webpack && tools/insert_md5_into_index.sh"
   }
 }
