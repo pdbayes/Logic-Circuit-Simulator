@@ -2,6 +2,7 @@ import { isDefined, isNotNull, isUnset } from "../utils"
 import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
+import { tooltipContent, mods, div, b } from "../htmlgen"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -27,6 +28,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         })
         if (isNotNull(savedData)) {
             this.name = savedData.name
+            this._additionalReprRadix = savedData.additionalReprRadix
         }
     }
 
@@ -48,7 +50,18 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
     }
 
     public makeTooltip() {
-        return undefined // TODO
+        const [binaryStringRep, value] = this.value
+
+        return tooltipContent("Afficheur de caractère", mods(
+            div(`Affiche le caractère ASCII représenté par ses 7 entrées, actuellement `, b(binaryStringRep), "."),
+            isUnset(value)
+                ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
+                : mods("Actuellement, c’est le caractère numéro ", b("" + value),
+                    (value < 32)
+                        ? " (un caractère non imprimable)."
+                        : mods(", ‘", b(String.fromCharCode(value)), "’.")
+                )
+        ))
     }
 
     protected doRecalcValue() {

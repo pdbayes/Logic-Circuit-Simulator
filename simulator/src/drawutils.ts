@@ -26,13 +26,12 @@ export function fillForBoolean(value: TriState): Color {
     return c
 }
 
-export function fillForFraction(fraction: number): Color {
+export function colorForFraction(fraction: number): Color {
     const c: Color = [
         (COLOR_FULL[0] - COLOR_EMPTY[0]) * fraction + COLOR_EMPTY[0],
         (COLOR_FULL[1] - COLOR_EMPTY[1]) * fraction + COLOR_EMPTY[1],
         (COLOR_FULL[2] - COLOR_EMPTY[2]) * fraction + COLOR_EMPTY[2],
     ]
-    fill(...c)
     return c
 }
 

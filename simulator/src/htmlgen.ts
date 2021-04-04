@@ -3,7 +3,7 @@
 // Helper export function s to build HTML more smartly in JavaScript
 //
 
-import { isUndefined } from "./utils"
+import { isUndefined, isUnset, Unset, unset } from "./utils"
 
 export interface ModifierObject {
     applyTo(parent: Element): void
@@ -148,6 +148,8 @@ export const br = raw('<br>')
 
 
 // Common Modifier-generating helpers
+
+export const asValue = (bool: boolean | unset) => b(isUnset(bool) ? Unset : String(Number(bool)))
 
 export function tooltipContent(title: Modifier | undefined, body: Modifier): ModifierObject {
     return div(style("max-width: 200px"),

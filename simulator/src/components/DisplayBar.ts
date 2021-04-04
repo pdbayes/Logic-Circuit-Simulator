@@ -1,7 +1,8 @@
-import { isNotNull, isUnset, TriState } from "../utils"
+import { isNotNull, isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, wireLine, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
+import { asValue, Modifier, mods, tooltipContent } from "../htmlgen"
 
 
 export const DisplayBarTypes = {
@@ -56,7 +57,14 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     }
 
     public makeTooltip() {
-        return undefined // TODO
+        const expl: Modifier = (() => {
+            switch (this.value) {
+                case Unset: return "Son état est indéterminé car son entrée n’est pas connue."
+                case true: return mods("Il est actuellement allumé car son entrée est de ", asValue(this.value), ".")
+                case false: return mods("Il est actuellement éteint car son entrée est de ", asValue(this.value), ".")
+            }
+        })()
+        return tooltipContent("Afficheur lumineux", expl)
     }
 
     public get display() {

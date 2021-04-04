@@ -1,7 +1,8 @@
 import { isDefined, isNotNull, isUnset, unset } from "../utils"
 import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, fillForFraction, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
+import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -47,8 +48,22 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
     }
 
     public makeTooltip() {
-        return undefined // TODO
+        const radixStr = (() => {
+            switch (this._radix) {
+                case 2: return "binaire"
+                case 10: return "décimale"
+                case 16: return "hexadécimale"
+                default: return `en base ${this._radix}`
+            }
+        })()
+        const [binaryStringRep, value] = this.value
+
+        return tooltipContent("Afficheur de semioctet", mods(
+            div(`Affiche la valeur ${radixStr} de ses 4 entrées, actuellement `, b(binaryStringRep), "."),
+            !isUnset(value) ? emptyMod : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
+        ))
     }
+
 
     protected doRecalcValue() {
         return displayValuesFromInputs(this.inputs)
@@ -59,7 +74,8 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnset(value) ? COLOR_UNSET : fillForFraction(value / maxValue)
+        const backColor = isUnset(value) ? COLOR_UNSET : colorForFraction(value / maxValue)
+        fill(...backColor)
 
         if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)

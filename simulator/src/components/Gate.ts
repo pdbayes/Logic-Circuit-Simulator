@@ -3,7 +3,7 @@ import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
-import { b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
+import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 
 
 const Gate2Types_ = {
@@ -403,7 +403,6 @@ export class Gate1Inverter extends GateBase<1, GateRepr1> {
 // Truth table generation helpers
 
 type TruthTableRowData = { matchesCurrent: boolean, cells: boolean[] }
-const asValue = (bool: boolean | unset) => b(isUnset(bool) ? Unset : String(Number(bool)))
 const makeTruthTable = ([header, rows]: readonly [string[], TruthTableRowData[]]) => {
     const htmlRows = rows.map(({ matchesCurrent, cells }) =>
         tr(matchesCurrent ? cls("current") : emptyMod, ...cells.map(v => td(asValue(v))))
