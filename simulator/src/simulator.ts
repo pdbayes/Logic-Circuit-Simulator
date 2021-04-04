@@ -684,6 +684,8 @@ export function setup() {
 
     trySetMode(upperMode)
 
+    startTime()
+
 }
 
 export function tryLoadFromData() {
@@ -696,6 +698,16 @@ export function tryLoadFromData() {
     } catch (e) {
         console.log(e)
     }
+}
+
+let _epochStart: number
+
+export function startTime() {
+    _epochStart = new Date().getTime()
+}
+
+export function currentEpochTime() {
+    return new Date().getTime() - _epochStart
 }
 
 export function windowResized() {

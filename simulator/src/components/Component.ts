@@ -378,6 +378,10 @@ export abstract class ComponentBase<
         return isDefined(this._isMovingWithMouseOffset)
     }
 
+    public get allowsForcedOutputs() {
+        return true
+    }
+
     public forEachNode(f: (node: Node) => boolean): void {
         for (const node of this.inputs) {
             const goOn = f(node)

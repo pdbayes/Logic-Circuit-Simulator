@@ -90,9 +90,8 @@ export function activeTool(elTool: HTMLElement) {
             break
 
         case "Clock": {
-            const period = parseInt((document.getElementsByClassName("period")[0] as HTMLInputElement).value)
-            const dutycycle = parseInt((document.getElementsByClassName("duty-cycle")[0] as HTMLInputElement).value)
-            createdNewComponent(new Clock({ period, dutycycle }), clocks)
+            const period = 2000
+            createdNewComponent(new Clock({ period, dutycycle: undefined, phase: undefined }), clocks)
             break
         }
 

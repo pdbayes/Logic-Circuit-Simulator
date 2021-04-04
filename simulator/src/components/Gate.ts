@@ -14,9 +14,9 @@ const Gate2Types_ = {
     NOR: { out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU" },
     XNOR: { out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X" },
     IMPLY: { out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE" },
-    RIMPLY: { out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE" },
+    RIMPLY: { out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE (bis)" },
     NIMPLY: { out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE" },
-    RNIMPLY: { out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE" },
+    RNIMPLY: { out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE (bis)" },
 } as const
 
 export const Gate2Types = RichStringEnum.withProps<{
@@ -327,6 +327,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
                     default: return this._type
                 }
             })()
+            this.setNeedsRecalc()
             this.setNeedsRedraw("gate variant changed")
         }
     }

@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, clocks, saveProjectFile, displays, allComponents, wireMgr, recalculate } from "./simulator"
+import { logicInputs, logicOutputs, gates, clocks, saveProjectFile, displays, allComponents, wireMgr, recalculate, startTime } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -118,6 +118,7 @@ class _PersistenceManager {
             console.log("Unloaded data fields: " + unhandledData.join(", "))
         }
 
+        startTime()
         return true
     }
 

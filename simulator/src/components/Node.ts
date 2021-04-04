@@ -12,7 +12,7 @@ const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertica
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems
-type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void }
+type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean }
 
 export type Node = NodeIn | NodeOut
 
@@ -21,7 +21,7 @@ abstract class NodeBase extends DrawableWithPosition {
     public readonly id: int
     private _isAlive = true
     private _value: TriState = false
-    private _forceValue: TriState | undefined
+    protected _forceValue: TriState | undefined
 
     constructor(
         nodeSpec: InputNodeRepr | OutputNodeRepr,
@@ -113,7 +113,7 @@ abstract class NodeBase extends DrawableWithPosition {
         }
     }
 
-    private propagateNewValueIfNecessary(oldVisibleValue: TriState) {
+    protected propagateNewValueIfNecessary(oldVisibleValue: TriState) {
         const newVisibleValue = this.value
         if (newVisibleValue !== oldVisibleValue) {
             this.propagateNewValue(newVisibleValue)
@@ -156,22 +156,6 @@ abstract class NodeBase extends DrawableWithPosition {
 
     get cursorWhenMouseover() {
         return "crosshair"
-    }
-
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
-        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && !(this.parent.constructor.name === "LogicInput")) {
-            const oldVisibleValue = this.value
-            this._forceValue = (() => {
-                switch (this._forceValue) {
-                    case undefined: return Unset
-                    case Unset: return false
-                    case false: return true
-                    case true: return undefined
-                }
-            })()
-            this.propagateNewValueIfNecessary(oldVisibleValue)
-            this.setNeedsRedraw("changed forced output value")
-        }
     }
 
     mouseDown(__: MouseEvent | TouchEvent) {
@@ -241,6 +225,22 @@ export class NodeOut extends NodeBase {
             if (isNotNull(wire.endNode)) {
                 wire.endNode.value = newValue
             }
+        }
+    }
+
+    mouseDoubleClick(__: MouseEvent | TouchEvent) {
+        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && this.parent.allowsForcedOutputs) {
+            const oldVisibleValue = this.value
+            this._forceValue = (() => {
+                switch (this._forceValue) {
+                    case undefined: return Unset
+                    case Unset: return false
+                    case false: return true
+                    case true: return undefined
+                }
+            })()
+            this.propagateNewValueIfNecessary(oldVisibleValue)
+            this.setNeedsRedraw("changed forced output value")
         }
     }
 
