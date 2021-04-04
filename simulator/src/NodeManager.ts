@@ -1,4 +1,3 @@
-import { int } from "./utils"
 import { ComponentState } from "./components/Component"
 import { Node } from "./components/Node"
 import { wireMgr } from "./simulator"
@@ -10,13 +9,13 @@ export const NodeManager = (() => {
     const allLiveNodes: Node[] = []
 
     return {
-        newID: function (): int {
+        newID: function (): number {
             while (usedIDs.has(++lastGivenNodeID)) {
                 // empty block, condition does the increment
             }
             usedIDs.add(lastGivenNodeID)
             console.log(`gave out new node id ${lastGivenNodeID}`)
-            return lastGivenNodeID as int
+            return lastGivenNodeID 
         },
         markIDUsed: function (id: number): void {
             if (usedIDs.has(id)) {

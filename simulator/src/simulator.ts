@@ -17,6 +17,7 @@ import { attrBuilder, cls, div, faglyph, ModifierObject, style, title } from "./
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
+import { gallery } from "./gallery"
 
 // export type FF = FF_D | FF_JK | FF_T
 
@@ -347,7 +348,7 @@ function makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
         contextElement: canvas,
     }, tooltipElem, {
         placement: 'right',
-        modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
+        modifiers: [{ name: 'offset', options: { offset: [4, 8] } }],
     })
     tooltipElem.setAttribute('data-show', '')
     _currentMouseOverPopper.update()
@@ -837,6 +838,7 @@ window.addEventListener("keydown", modifierKeyWatcher)
 window.addEventListener("keyup", modifierKeyWatcher)
 
 window.activeTool = activeTool
+window.gallery = gallery
 
 window.setModeClicked = function setModeClicked(e: HTMLElement) {
     const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"

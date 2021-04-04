@@ -24,7 +24,7 @@ const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, n: N) =
 
 
 // Node IDs are just represented by a non-negative number
-export const NodeID = t.Int
+export const NodeID = t.number
 export type NodeID = t.TypeOf<typeof NodeID>
 
 // Input nodes are represented by just the ID; output nodes can be forced
@@ -255,7 +255,7 @@ export abstract class ComponentBase<
             // the next two functions take either a single ID or an array of them and
             // generate the corresponding node specs from it
             const genOutSpecs = function (outReprs: FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero>) {
-                const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(t.Int.is(outRepr)
+                const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(isNumber(outRepr)
                     ? { id: outRepr }
                     : { id: outRepr.id, force: outRepr.force }
                 )

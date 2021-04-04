@@ -1,4 +1,4 @@
-import { Mode, int, isNull, isNotNull, isDefined } from "../utils"
+import { Mode, isNull, isNotNull, isDefined } from "../utils"
 import { mode, setCanvasNeedsRedraw, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
@@ -22,7 +22,7 @@ export class Wire extends Drawable {
     }
 
     toJSON(): WireRepr {
-        const endID = this._endNode?.id ?? -1 as int
+        const endID = this._endNode?.id ?? -1
         return [this._startNode.id, endID]
     }
 

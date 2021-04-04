@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, TriState, Unset, int, toTriState, isNull, isNotNull } from "../utils"
+import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
 import { mode, modifierKeys, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { HasPosition, DrawableWithPosition } from "./Drawable"
@@ -18,7 +18,7 @@ export type Node = NodeIn | NodeOut
 
 abstract class NodeBase extends DrawableWithPosition {
 
-    public readonly id: int
+    public readonly id: number
     private _isAlive = true
     private _value: TriState = false
     protected _forceValue: TriState | undefined

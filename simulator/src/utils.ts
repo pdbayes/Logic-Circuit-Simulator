@@ -80,6 +80,29 @@ export type ExpandRecursively<T> = T extends Record<string, unknown>
     : T
 
 
+export type OptionalKeys<T> = { [P in keyof T]-?: undefined extends T[P] ? P : never }[keyof T]
+export type RequiredKeys<T> = Exclude<keyof T, OptionalKeys<T>>
+
+export type PartialWhereUndefinedRecursively<T> = ExpandRecursively<_PartialWhereUndefinedRecursively<T>>
+
+type _PartialWhereUndefinedRecursively<T> =
+    // is it an object?
+    T extends Record<string, unknown>
+    ? T extends infer O ? {
+        [P in RequiredKeys<O>]: _PartialWhereUndefinedRecursively<O[P]>
+    } & {
+        [P in OptionalKeys<O>]?: _PartialWhereUndefinedRecursively<O[P]>
+    }
+    : never // "closing the infer block"
+
+    // is it an array?
+    : T extends ReadonlyArray<infer E>
+    ? Array<_PartialWhereUndefinedRecursively<E>>
+
+    // other types
+    : T
+
+
 // Series of type-assertion functions
 
 export function isUndefined(v: unknown): v is undefined {
@@ -123,10 +146,6 @@ export function isBoolean(arg: unknown): arg is boolean {
 }
 
 import * as t from "io-ts"
-
-export type int = t.TypeOf<typeof t.Int>
-
-export const isInt = t.Int.is
 
 
 // Fixed-size arrays up to 8 to model inputs statically
