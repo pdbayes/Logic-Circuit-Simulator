@@ -13,6 +13,7 @@ export type Color = [number, number, number]
 
 export const COLOR_MOUSE_OVER: Color = [0, 0x7B, 0xFF]
 export const COLOR_FULL: Color = [255, 193, 7]
+export const COLOR_DARK_RED: Color = [180, 0, 0]
 export const COLOR_EMPTY: Color = [52, 58, 64]
 export const COLOR_UNSET: Color = [152, 158, 164]
 

@@ -3,7 +3,7 @@ import { mode, modifierKeys, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { HasPosition, DrawableWithPosition } from "./Drawable"
 import { NodeManager } from "../NodeManager"
-import { fillForBoolean, GRID_STEP } from "../drawutils"
+import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
 
 
@@ -74,7 +74,7 @@ abstract class NodeBase extends DrawableWithPosition {
 
         const [circleColor, thickness] =
             isDefined(this._forceValue) && mode >= Mode.FULL
-                ? [[180, 0, 0], 3] // show forced nodes with red border if not in teacher mode
+                ? [COLOR_DARK_RED, 3] // show forced nodes with red border if not in teacher mode
                 : [[0, 0, 0], 1]   // show normally
 
         stroke(circleColor)
