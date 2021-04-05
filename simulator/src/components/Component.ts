@@ -2,12 +2,8 @@ import { addComponentNeedingRecalc, mode, modifierKeys, offsetXY, setComponentMo
 import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
-import { DrawableWithPosition, PositionSupportRepr } from "./Drawable"
+import { DEFAULT_ORIENTATION, DrawableWithPosition, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
-
-export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
-    return t.union([tpe, t.undefined], tpe.name + " | undefined")
-}
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
@@ -210,6 +206,7 @@ export abstract class ComponentBase<
     protected toJSONBase(): ComponentRepr<NumInputs, NumOutputs> {
         return {
             pos: [this.posX, this.posY] as const,
+            orient: this.orient === DEFAULT_ORIENTATION ? undefined : this.orient,
             ...this.buildNodesRepr(),
         }
     }
@@ -426,15 +423,17 @@ export abstract class ComponentBase<
 
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const newPos = this.updateSelfPositionIfNeeded(e)
-        const posChanged = isDefined(newPos)
-        if (posChanged) {
-            this.setNeedsRedraw("position changed")
-            this.forEachNode((node) => {
-                node.updatePositionFromParent()
-                return true
-            })
+        if (isDefined(newPos)) { // position changed
+            this.updateNodePositions()
         }
         return newPos
+    }
+
+    private updateNodePositions() {
+        this.forEachNode((node) => {
+            node.updatePositionFromParent()
+            return true
+        })
     }
 
     private updateSelfPositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
@@ -445,8 +444,7 @@ export abstract class ComponentBase<
         }
         if (isDefined(this._isMovingWithMouseOffset)) {
             const [mouseOffsetX, mouseOffsetY] = this._isMovingWithMouseOffset
-            const changedPos = this.setPosition(x + mouseOffsetX, y + mouseOffsetY, snapToGrid)
-            return changedPos
+            return this.setPosition(x + mouseOffsetX, y + mouseOffsetY, snapToGrid)
         }
         return undefined
     }
@@ -477,6 +475,22 @@ export abstract class ComponentBase<
             this._isMovingWithMouseOffset = undefined
         }
         setComponentStoppedMoving(this)
+    }
+
+    mouseDoubleClick(e: MouseEvent | TouchEvent): boolean {
+        if (mode >= Mode.CONNECT && e.metaKey) {
+            this.setOrient((() => {
+                switch (this.orient) {
+                    case "e": return "s"
+                    case "s": return "w"
+                    case "w": return "n"
+                    case "n": return "e"
+                }
+            })())
+            this.updateNodePositions()
+            return true
+        }
+        return false
     }
 
     destroy() {

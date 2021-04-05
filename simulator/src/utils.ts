@@ -219,6 +219,10 @@ export function forceTypeOf<U, V, W>(tpe: t.Type<U, V, W>) {
 
 export type ReprType<Repr extends t.Mixed> = Expand<t.TypeOf<Repr>>
 
+export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
+    return t.union([tpe, t.undefined], tpe.name + " | undefined")
+}
+
 
 // Unset; TriState
 

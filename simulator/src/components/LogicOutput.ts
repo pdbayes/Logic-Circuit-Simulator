@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, isUnset, Mode, TriState } from "../utils"
-import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER, typeOrUndefined } from "./Component"
+import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
+import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
 import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
 import { mode } from "../simulator"
@@ -35,11 +35,11 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return "" + this.value
     }
 
-    get width() {
+    get unrotatedWidth() {
         return INPUT_OUTPUT_DIAMETER
     }
 
-    get height() {
+    get unrotatedHeight() {
         return INPUT_OUTPUT_DIAMETER
     }
 
@@ -55,16 +55,23 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return this.inputs[0].value
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
 
         const input = this.inputs[0]
         wireLine(input, this.posX, this.posY)
 
         if (isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
+            fill(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
+            fill(0)
         }
+        triangle(
+            this.posX - INPUT_OUTPUT_DIAMETER / 2 - 5, this.posY - 5,
+            this.posX - INPUT_OUTPUT_DIAMETER / 2 - 5, this.posY + 5,
+            this.posX - INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY,
+        )
         fillForBoolean(this.value)
         strokeWeight(4)
         circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)

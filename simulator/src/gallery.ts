@@ -15,7 +15,10 @@ const Circuit = t.partial({
 })
 type Circuit = PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
 
-function assertCircuits<T extends Record<string, Circuit>>(v: T): T { return v }
+function assertCircuits<T extends Record<string, Circuit>>(v: T): T {
+    // remove prototype to have a nice, clean completion in the console
+    return Object.assign(Object.create(null), v)
+}
 
 export const gallery = assertCircuits({
     CharacterComparator: {
@@ -111,13 +114,13 @@ export const gallery = assertCircuits({
             { "pos": [50, 130], "id": 10, "name": "1", "period": 4000, "phase": 2000 },
             { "pos": [50, 210], "id": 23, "name": "2", "period": 8000, "phase": 4000 },
             { "pos": [50, 300], "id": 24, "name": "3", "period": 16000, "phase": 8000 },
-            { "pos": [430, 30], "id": 5, "period": 200, "phase": 100 },
-            { "pos": [430, 100], "id": 6, "period": 400, "phase": 200 },
-            { "pos": [430, 170], "id": 7, "period": 800, "phase": 400 },
-            { "pos": [430, 240], "id": 8, "period": 1600, "phase": 800 },
-            { "pos": [430, 310], "id": 9, "period": 3200, "phase": 1600 },
-            { "pos": [430, 380], "id": 11, "period": 6400, "phase": 3200 },
-            { "pos": [430, 450], "id": 12, "period": 12800, "phase": 6400 },
+            { "pos": [430, 30], "id": 5, "period": 400, "phase": 200 },
+            { "pos": [430, 100], "id": 6, "period": 800, "phase": 400 },
+            { "pos": [430, 170], "id": 7, "period": 1600, "phase": 800 },
+            { "pos": [430, 240], "id": 8, "period": 3200, "phase": 1600 },
+            { "pos": [430, 310], "id": 9, "period": 6400, "phase": 3200 },
+            { "pos": [430, 380], "id": 11, "period": 12800, "phase": 6400 },
+            { "pos": [430, 450], "id": 12, "period": 25600, "phase": 12800 },
         ],
         "wires": [
             [0, 1],

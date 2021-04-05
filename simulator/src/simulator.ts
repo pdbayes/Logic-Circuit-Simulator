@@ -77,6 +77,7 @@ export function setToolCursor(cursor: string | null) {
 
 
 let canvasContainer: HTMLElement
+let mainCanvas: HTMLCanvasElement
 let initialData: string | undefined = undefined
 
 
@@ -511,6 +512,8 @@ export function setup() {
     const p5canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
     p5canvas.parent('canvas-sim')
+    mainCanvas = canvasContainer.getElementsByTagName("canvas")[0]
+
 
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
         clearHoverTimeoutHandle()
@@ -749,6 +752,8 @@ export function draw() {
     if (isEmpty(_canvasRedrawReasons)) {
         return
     }
+
+    const g = mainCanvas.getContext("2d")!
     console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reason: " + _canvasRedrawReasons.join("; "))
 
     strokeCap(PROJECT)
@@ -781,13 +786,13 @@ export function draw() {
     }
 
     stroke(0)
-    wireMgr.draw(_currentMouseOverComp)
+    wireMgr.draw(g, _currentMouseOverComp)
 
     for (const elems of allComponents) {
         for (const elem of elems) {
-            elem.draw(_currentMouseOverComp)
+            elem.draw(g, _currentMouseOverComp)
             elem.forEachNode((node) => {
-                node.draw(_currentMouseOverComp)
+                node.draw(g, _currentMouseOverComp)
                 return true
             })
         }

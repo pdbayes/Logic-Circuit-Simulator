@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, isUnset, unset } from "../utils"
-import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
+import { isDefined, isNotNull, isUnset, unset, typeOrUndefined } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
@@ -39,11 +39,11 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         }
     }
 
-    get width() {
+    get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get height() {
+    get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -69,7 +69,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return displayValuesFromInputs(this.inputs)
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
 
         const [binaryStringRep, value] = this.value
 
@@ -90,7 +90,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            wireLine(input, this.posX - width / 2 - 2, input.posY)
+            wireLine(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
         noStroke()
@@ -117,9 +117,14 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         text(stringRep, this.posX, this.posY + width / 6)
     }
 
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
+
         this._radix = this._radix === 10 ? 16 : 10
         this.setNeedsRedraw("radix changed")
+        return true
     }
 
 }

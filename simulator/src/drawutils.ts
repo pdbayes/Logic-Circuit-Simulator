@@ -37,8 +37,8 @@ export function colorForFraction(fraction: number): Color {
 }
 
 export function wireLine(node: Node, x1: number, y1: number) {
-    const x0 = node.posX
-    const y0 = node.posY
+    const x0 = node.posXInParentTransform
+    const y0 = node.posYInParentTransform
 
     stroke(80)
     strokeWeight(4)

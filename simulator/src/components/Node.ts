@@ -1,7 +1,7 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
 import { mode, modifierKeys, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
-import { HasPosition, DrawableWithPosition } from "./Drawable"
+import { DrawableWithPosition } from "./Drawable"
 import { NodeManager } from "../NodeManager"
 import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
@@ -12,7 +12,7 @@ const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertica
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems
-type NodeParent = HasPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean }
+type NodeParent = DrawableWithPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean }
 
 export type Node = NodeIn | NodeOut
 
@@ -46,11 +46,11 @@ abstract class NodeBase extends DrawableWithPosition {
         return Node.isOutput(this.asNode)
     }
 
-    get width() {
+    get unrotatedWidth() {
         return DIAMETER
     }
 
-    get height() {
+    get unrotatedHeight() {
         return DIAMETER
     }
 
@@ -65,7 +65,7 @@ abstract class NodeBase extends DrawableWithPosition {
         NodeManager.removeLiveNode(this.asNode)
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
         if (mode < Mode.CONNECT) {
             return
         }
@@ -146,12 +146,49 @@ abstract class NodeBase extends DrawableWithPosition {
 
     public abstract get acceptsMoreConnections(): boolean
 
+    public get posXInParentTransform() {
+        return this.parent.posX + this._gridOffsetX * GRID_STEP
+    }
+
+    public get posYInParentTransform() {
+        return this.parent.posY + this._gridOffsetY * GRID_STEP
+    }
+
     updatePositionFromParent() {
+        const [appliedGridOffsetX, appliedGridOffsetY] = (() => {
+            switch (this.parent.orient) {
+                case "e": return [+this._gridOffsetX, +this._gridOffsetY]
+                case "w": return [-this._gridOffsetX, -this._gridOffsetY]
+                case "s": return [-this._gridOffsetY, +this._gridOffsetX]
+                case "n": return [+this._gridOffsetY, -this._gridOffsetX]
+            }
+        })()
         return this.setPosition(
-            this.parent.posX + this._gridOffsetX * GRID_STEP,
-            this.parent.posY + this._gridOffsetY * GRID_STEP,
-            false,
+            this.parent.posX + appliedGridOffsetX * GRID_STEP,
+            this.parent.posY + appliedGridOffsetY * GRID_STEP,
+            false
         ) ?? [this.posX, this.posY]
+    }
+
+    public wireBezierAnchor(distX: number, distY: number): [number, number] {
+        const wireProlongDirection = (() => {
+            switch (this.parent.orient) {
+                case "e": return this.isOutput ? "w" : "e"
+                case "w": return this.isOutput ? "e" : "w"
+                case "s": return this.isOutput ? "n" : "s"
+                case "n": return this.isOutput ? "s" : "n"
+            }
+        })()
+        switch (wireProlongDirection) {
+            case "e": // going east, so anchor point is before on X
+                return [this.posX - distX, this.posY]
+            case "w": // going west, so anchor point is after on X
+                return [this.posX + distX, this.posY]
+            case "s":// going south, so anchor point is before on Y
+                return [this.posX, this.posY - distY]
+            case "n":// going north, so anchor point is after on Y
+                return [this.posX, this.posY + distY]
+        }
     }
 
     get cursorWhenMouseover() {
@@ -228,7 +265,10 @@ export class NodeOut extends NodeBase {
         }
     }
 
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
         if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && this.parent.allowsForcedOutputs) {
             const oldVisibleValue = this.value
             this._forceValue = (() => {
@@ -241,7 +281,9 @@ export class NodeOut extends NodeBase {
             })()
             this.propagateNewValueIfNecessary(oldVisibleValue)
             this.setNeedsRedraw("changed forced output value")
+            return true
         }
+        return false
     }
 
 }

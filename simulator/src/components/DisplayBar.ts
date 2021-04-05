@@ -48,11 +48,11 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         }
     }
 
-    get width() {
+    get unrotatedWidth() {
         return this.getWidthAndHeight()[0]
     }
 
-    get height() {
+    get unrotatedHeight() {
         return this.getWidthAndHeight()[1]
     }
 
@@ -75,7 +75,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return this.inputs[0].value
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
         const input = this.inputs[0]
         const value = this.value
 
@@ -108,7 +108,10 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         }
     }
 
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
         this.doSetDisplay((() => {
             switch (this.display) {
                 case "h":
@@ -121,6 +124,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
                     return "h"
             }
         })())
+        return true
     }
 
     private doSetDisplay(newDisplay: DisplayBarType) {

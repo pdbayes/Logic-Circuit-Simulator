@@ -74,11 +74,11 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
     abstract get type(): GateType
     abstract get poseAs(): GateType | undefined
 
-    get width() {
+    get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get height() {
+    get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -88,14 +88,14 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
 
     protected abstract get showAsUnknown(): boolean
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
         const gateType = this.showAsUnknown
             ? Unset
             : this.poseAs ?? this.type
-        this.drawGate(gateType, gateType !== this.type, isMouseOver)
+        this.drawGate(g, gateType, gateType !== this.type, isMouseOver)
     }
 
-    protected drawGate(type: GateType | unset, isFake: boolean, isMouseOver: boolean) {
+    protected drawGate(g: CanvasRenderingContext2D, type: GateType | unset, isFake: boolean, isMouseOver: boolean) {
         const output = this.outputs[0]
 
         const width = GRID_WIDTH * GRID_STEP
@@ -138,7 +138,7 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
-                wireLine(input, gateLeft - 3 - (short ? 9 : 0), input.posY)
+                wireLine(input, gateLeft - 3 - (short ? 9 : 0), input.posYInParentTransform)
             }
             wireLine(output, gateRight + 3, this.posY)
         }
@@ -345,24 +345,33 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return gateProps.out(in1, in2)
     }
 
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
         if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
             this._showAsUnknown = !this._showAsUnknown
             this.setNeedsRedraw("display style changed")
+            return true
         } else if (mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant
-            this._type = (() => {
+            const newType = (() => {
                 switch (this._type) {
                     case "IMPLY": return "RIMPLY"
                     case "RIMPLY": return "IMPLY"
                     case "NIMPLY": return "RNIMPLY"
                     case "RNIMPLY": return "NIMPLY"
-                    default: return this._type
+                    default: return undefined
                 }
             })()
-            this.setNeedsRecalc()
-            this.setNeedsRedraw("gate variant changed")
+            if (isDefined(newType)) {
+                this._type = newType
+                this.setNeedsRecalc()
+                this.setNeedsRedraw("gate variant changed")
+                return true
+            }
         }
+        return false
     }
 
 }

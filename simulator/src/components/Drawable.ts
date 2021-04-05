@@ -1,4 +1,4 @@
-import { isNotNull, Mode } from "../utils"
+import { Expand, isDefined, isNotNull, Mode, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { mode, setCanvasNeedsRedraw } from "../simulator"
@@ -6,8 +6,6 @@ import { ModifierObject } from "../htmlgen"
 
 
 export abstract class Drawable {
-
-    // private _needsRedraw = false
 
     protected constructor() {
         this.setNeedsRedraw("newly created")
@@ -18,16 +16,19 @@ export abstract class Drawable {
         setCanvasNeedsRedraw(this.constructor.name + " – " + reason)
     }
 
-    public draw(mouseOverComp: Drawable | null /*, __force: boolean*/) {
-        // if (force || this._needsRedraw) {
+    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
         const isMouseOver = this === mouseOverComp
-        // console.log("Drawing", this, isMouseOver)
-        this.doDraw(isMouseOver)
-        //     this._needsRedraw = false
-        // }
+        const oldTransform = g.getTransform()
+        this.applyDrawTransform(g)
+        this.doDraw(g, isMouseOver)
+        g.setTransform(oldTransform)
     }
 
-    protected abstract doDraw(isMouseOver: boolean): void
+    public applyDrawTransform(__g: CanvasRenderingContext2D) {
+        // by default, do nothing
+    }
+
+    protected abstract doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean): void
 
     public abstract isOver(x: number, y: number): boolean
 
@@ -63,8 +64,11 @@ export abstract class Drawable {
         // empty default implementation
     }
 
-    public mouseDoubleClick(__: MouseEvent | TouchEvent) {
+    // Return true to indicate it was handled and had an effect
+    // (and presumably doesn't need to be handled any more)
+    public mouseDoubleClick(__: MouseEvent | TouchEvent): boolean {
         // empty default implementation
+        return false
     }
 
 }
@@ -79,16 +83,36 @@ export interface HasPosition {
 
 }
 
+export const Orientations = {
+    "e": null,
+    "s": null,
+    "w": null,
+    "n": null,
+} as const
+
+export type Orientation = keyof typeof Orientations
+
+export function isOrientationVertical(orient: Orientation): orient is "s" | "n" {
+    return orient === "s" || orient === "n"
+}
+
+
 // for compact JSON repr, pos is an array
 export const PositionSupportRepr = t.type({
     pos: t.readonly(t.tuple([t.number, t.number])),
+    orient: typeOrUndefined(t.keyof(Orientations)),
 })
-export type PositionSupportRepr = t.TypeOf<typeof PositionSupportRepr>
+
+export type PositionSupportRepr = Expand<t.TypeOf<typeof PositionSupportRepr>>
+
+
+export const DEFAULT_ORIENTATION: Orientation = "e"
 
 export abstract class DrawableWithPosition extends Drawable implements HasPosition {
 
     private _posX: number
     private _posY: number
+    private _orient: Orientation
 
     protected constructor(savedData: PositionSupportRepr | null) {
         super()
@@ -100,10 +124,12 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             // restoring from saved object
             this._posX = savedData.pos[0]
             this._posY = savedData.pos[1]
+            this._orient = savedData.orient ?? DEFAULT_ORIENTATION
         } else {
             // creating new object
             this._posX = Math.max(0, mouseX)
             this._posY = mouseY
+            this._orient = DEFAULT_ORIENTATION
         }
     }
 
@@ -115,12 +141,47 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._posY
     }
 
-    public abstract get width(): number
+    public get orient() {
+        return this._orient
+    }
 
-    public abstract get height(): number
+    protected setOrient(newOrient: Orientation) {
+        // can't be a setter, which would require being public
+        this._orient = newOrient
+        this.setNeedsRedraw("orientation changed")
+    }
+
+    public get width(): number {
+        return isOrientationVertical(this._orient) ? this.unrotatedHeight : this.unrotatedWidth
+    }
+
+    public get height(): number {
+        return isOrientationVertical(this._orient) ? this.unrotatedWidth : this.unrotatedHeight
+    }
+
+    public abstract get unrotatedWidth(): number
+
+    public abstract get unrotatedHeight(): number
+
+    public applyDrawTransform(g: CanvasRenderingContext2D) {
+        const rotation = (() => {
+            switch (this._orient) {
+                case "e": return undefined
+                case "s": return Math.PI / 2
+                case "w": return Math.PI
+                case "n": return -Math.PI / 2
+            }
+        })()
+
+        if (isDefined(rotation)) {
+            g.translate(this.posX, this.posY)
+            g.rotate(rotation)
+            g.translate(-this.posX, -this.posY)
+        }
+    }
 
     public isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && inRect(this.posX, this.posY, this.width, this.height, x, y)
+        return mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
     protected setPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
@@ -131,6 +192,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         if (posX !== this._posX || posY !== this.posY) {
             this._posX = posX
             this._posY = posY
+            this.setNeedsRedraw("position changed")
             return [posX, posY]
         }
         return undefined

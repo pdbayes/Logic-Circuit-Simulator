@@ -82,7 +82,7 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
         stroke(0)
         const mainStrokeWidth = WIRE_WIDTH / 2
         strokeWeight(mainStrokeWidth)
@@ -92,19 +92,22 @@ export class Wire extends Drawable {
             wireLine(this.startNode, mouseX, mouseY)
 
         } else {
-            const bezierAnchorPointDist = Math.max(25, (this.endNode.posX - this.startNode.posX) / 3)
+            const bezierAnchorPointDistX = Math.max(25, Math.abs(this.endNode.posX - this.startNode.posX) / 3)
+            const bezierAnchorPointDistY = Math.max(25, Math.abs(this.endNode.posY - this.startNode.posY) / 3)
 
             noFill()
 
+
+
             // just a straight line if nodes are aligned on X or Y
-            const doDraw = (this.startNode.posX === this.endNode.posX || this.startNode.posY === this.endNode.posY)
+            const doDrawWire = (this.startNode.posX === this.endNode.posX || this.startNode.posY === this.endNode.posY)
                 ? () => line(
                     this.startNode.posX, this.startNode.posY,
                     this.endNode!.posX, this.endNode!.posY)
                 : () => bezier(
                     this.startNode.posX, this.startNode.posY,
-                    this.startNode.posX + bezierAnchorPointDist, this.startNode.posY,
-                    this.endNode!.posX - bezierAnchorPointDist, this.endNode!.posY,
+                    ...this.startNode.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
+                    ...this.endNode!.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
                     this.endNode!.posX, this.endNode!.posY)
 
             if (isMouseOver) {
@@ -113,11 +116,11 @@ export class Wire extends Drawable {
             } else {
                 stroke(80)
             }
-            doDraw()
+            doDrawWire()
 
             strokeWeight(mainStrokeWidth - 2)
             stroke(...colorForBoolean(this.startNode.value))
-            doDraw()
+            doDrawWire()
 
         }
     }
@@ -158,10 +161,10 @@ export class WireManager {
         return this._isAddingWire
     }
 
-    draw(mouseOverComp: Drawable | null) {
+    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
         this.removeDeadWires()
         for (const wire of this._wires) {
-            wire.draw(mouseOverComp)
+            wire.draw(g, mouseOverComp)
         }
     }
 

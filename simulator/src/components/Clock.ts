@@ -1,7 +1,7 @@
 import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
 import * as t from "io-ts"
-import { ComponentState, extendComponent, typeOrUndefined } from "./Component"
-import { isDefined, TriState } from "../utils"
+import { ComponentState, extendComponent } from "./Component"
+import { isDefined, TriState, typeOrUndefined } from "../utils"
 import { currentEpochTime } from "../simulator"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 
@@ -74,8 +74,8 @@ export class Clock extends LogicInputBase<ClockRepr> {
         return value
     }
 
-    doDraw(isMouseOver: boolean) {
-        super.doDraw(isMouseOver)
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+        super.doDraw(g, isMouseOver)
 
         const w = 40
         const h = 10
@@ -99,7 +99,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         textSize(10)
         textAlign(CENTER, CENTER)
         textStyle(NORMAL)
-        const periodStr = this.period % 1000 === 0
+        const periodStr = this.period >= 1000
             ? (this.period / 1000) + " s"
             : this.period + " ms"
         text(periodStr, this.posX, bottom + 8)

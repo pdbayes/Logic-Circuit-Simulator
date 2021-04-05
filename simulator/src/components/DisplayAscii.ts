@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, isUnset } from "../utils"
-import { ComponentBase, defineComponent, typeOrUndefined } from "./Component"
+import { isDefined, isNotNull, isUnset, typeOrUndefined } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
 import { tooltipContent, mods, div, b } from "../htmlgen"
@@ -41,11 +41,11 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         }
     }
 
-    get width() {
+    get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get height() {
+    get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -68,7 +68,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return displayValuesFromInputs(this.inputs)
     }
 
-    doDraw(isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
         const [binaryStringRep, value] = this.value
 
         if (isMouseOver) {
@@ -85,7 +85,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            wireLine(input, this.posX - width / 2 - 2, input.posY)
+            wireLine(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
         noStroke()
@@ -132,8 +132,10 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         }
     }
 
-    mouseDoubleClick(__: MouseEvent | TouchEvent) {
-        console.log("hhh")
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
         this._additionalReprRadix = (() => {
             switch (this._additionalReprRadix) {
                 case undefined: return 10
@@ -143,6 +145,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             }
         })()
         this.setNeedsRedraw("radix changed")
+        return true
     }
 
 
