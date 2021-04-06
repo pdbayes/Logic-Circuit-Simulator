@@ -47,6 +47,9 @@ class _PersistenceManager {
         }
 
         for (const elems of allComponents) {
+            for (const elem of elems) {
+                elem.destroy()
+            }
             elems.splice(0, elems.length)
         }
         wireMgr.clearAllWires()

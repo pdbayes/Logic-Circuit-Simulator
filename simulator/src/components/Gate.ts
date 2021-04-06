@@ -228,32 +228,38 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             }
 
             case "TXA":
-            case "TXNA":
+            case "TXNA": {
                 triangle(
                     gateLeft, top,
                     gateRight, this.posY,
                     gateLeft, this.posY,
                 )
                 line(gateLeft, this.posY, gateLeft, bottom)
+                let shortLeft = false
                 if (type === "TXNA") {
-                    rightCircle()
+                    leftCircle(true)
+                    shortLeft = true
                 }
-                wireEnds(false, false)
+                wireEnds(shortLeft, false)
                 break
+            }
 
             case "TXB":
-            case "TXNB":
+            case "TXNB": {
                 triangle(
                     gateLeft, bottom,
                     gateRight, this.posY,
                     gateLeft, this.posY,
                 )
                 line(gateLeft, this.posY, gateLeft, top)
+                let shortLeft = false
                 if (type === "TXNB") {
-                    rightCircle()
+                    leftCircle(false)
+                    shortLeft = true
                 }
-                wireEnds(false, false)
+                wireEnds(false, shortLeft)
                 break
+            }
 
             case "?":
                 stroke(COLOR_UNSET)
@@ -515,6 +521,21 @@ export class Gate1 extends GateBase<1, Gate1Repr> {
             explanation,
             makeTruthTable(genTruthTableData())
         )
+    }
+
+
+
+    mouseDoubleClick(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClick(e)) {
+            return true // already handled
+        }
+        if (mode >= Mode.DESIGN) {
+            this._type = this._type === "BUF" ? "NOT" : "BUF"
+            this.setNeedsRecalc()
+            this.setNeedsRedraw("gate variant changed")
+            return true
+        }
+        return false
     }
 
 }

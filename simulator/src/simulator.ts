@@ -729,7 +729,7 @@ export function windowResized() {
 }
 
 export function recalculate() {
-    const recalculated = new Set<Component>()
+    // const recalculated = new Set<Component>()
 
     let round = 1
     do {
@@ -737,15 +737,21 @@ export function recalculate() {
         console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
         _componentNeedingRecalc.clear()
         toRecalc.forEach((comp) => {
-            if (!recalculated.has(comp)) {
-                comp.recalcValue()
-                recalculated.add(comp)
-            } else {
-                console.log("ERROR circular dependency")
-            }
+            // if (!recalculated.has(comp)) {
+            comp.recalcValue()
+            //     recalculated.add(comp)
+            // } else {
+            //     console.log("ERROR circular dependency")
+            // }
         })
 
         round++
+
+        // TODO smarter circular dependency tracking
+        if (round > 1000) {
+            console.log("ERROR circular dependency")
+            break
+        }
     } while (_componentNeedingRecalc.size !== 0)
 }
 
