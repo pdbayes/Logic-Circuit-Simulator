@@ -1,8 +1,9 @@
 import { isNotNull, isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, wireLine, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
+import { COLOR_UNSET, wireLineToComponent, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
 import { asValue, Modifier, mods, tooltipContent } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 
 export const DisplayBarTypes = {
@@ -75,11 +76,11 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return this.inputs[0].value
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const input = this.inputs[0]
         const value = this.value
 
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -92,7 +93,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         const [w, h] = this.getWidthAndHeight()
         rect(this.posX - w / 2, this.posY - h / 2, w, h)
 
-        wireLine(input, this.posX - w / 2 - 2, this.posY)
+        wireLineToComponent(input, this.posX - w / 2 - 2, this.posY)
     }
 
     getWidthAndHeight() {

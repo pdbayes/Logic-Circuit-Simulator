@@ -1,9 +1,10 @@
 import { Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { Color, COLOR_DARK_RED, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine } from "../drawutils"
+import { Color, COLOR_DARK_RED, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 
 const Gate2Types_ = {
@@ -97,14 +98,14 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
 
     protected abstract get showAsUnknown(): boolean
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const gateType = this.showAsUnknown
             ? Unset
             : this.poseAs ?? this.type
-        this.drawGate(g, gateType, gateType !== this.type, isMouseOver)
+        this.drawGate(g, gateType, gateType !== this.type, ctx)
     }
 
-    protected drawGate(g: CanvasRenderingContext2D, type: GateType | unset, isFake: boolean, isMouseOver: boolean) {
+    protected drawGate(g: CanvasRenderingContext2D, type: GateType | unset, isFake: boolean, ctx: DrawContext) {
         const output = this.outputs[0]
 
         const width = GRID_WIDTH * GRID_STEP
@@ -115,7 +116,7 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
         const pi2 = Math.PI / 2
 
         noFill()
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             const frameWidth = 2
             const frameMargin = 2
             strokeWeight(frameWidth)
@@ -150,9 +151,9 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
-                wireLine(input, gateLeft - 3 - (short ? 9 : 0), input.posYInParentTransform)
+                wireLineToComponent(input, gateLeft - 3 - (short ? 9 : 0), input.posYInParentTransform)
             }
-            wireLine(output, gateRight + 3, this.posY)
+            wireLineToComponent(output, gateRight + 3, this.posY)
         }
 
         switch (type) {
@@ -271,8 +272,9 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 textStyle(BOLD)
                 strokeWeight(0)
                 fill(COLOR_UNSET)
-                text('?', this.posX, this.posY)
                 wireEnds()
+                ctx.cancelTransform()
+                text('?', this.posX, this.posY)
                 break
         }
     }

@@ -90,8 +90,7 @@ export function activeTool(elTool: HTMLElement) {
             break
 
         case "Clock": {
-            const period = 2000
-            createdNewComponent(new Clock({ period, dutycycle: undefined, phase: undefined }), clocks)
+            createdNewComponent(new Clock({ period: 2000, dutycycle: undefined, phase: undefined, showLabel: undefined }), clocks)
             break
         }
 

@@ -1,9 +1,10 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, extendComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
-import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
 import { mode, modifierKeys } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 export const LogicInputBaseDef =
     defineComponent(0, 1, t.type({
@@ -58,10 +59,10 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         this.outputs[0].value = newValue
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
-        wireLine(this.outputs[0], this.posX, this.posY)
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        wireLineToComponent(this.outputs[0], this.posX, this.posY)
 
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
             fill(...COLOR_MOUSE_OVER)
         } else {
@@ -82,10 +83,11 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         textSize(18)
         textStyle(ITALIC)
         textAlign(RIGHT, CENTER)
-        if (isDefined(this.name)) {
-            text(this.name, this.posX - 25, this.posY)
-        }
 
+        ctx.cancelTransform()
+        if (isDefined(this.name)) {
+            text(this.name, ...this.rotatePoint(- 25, 0))
+        }
         roundValue(this)
     }
 

@@ -507,13 +507,16 @@ export abstract class ComponentBase<
 
 }
 
+// type ReprType<Repr extends t.Mixed> = PartialWhereUndefinedRecursively<t.TypeOf<Repr>>
+type ReprType<Repr extends t.Mixed> = Expand<t.TypeOf<Repr>>
+
 export function defineComponent<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, T extends t.Mixed>(numInputs: NumInputs, numOutputs: NumOutputs, type: T) {
     const repr = t.intersection([ComponentRepr(numInputs, numOutputs), type], type.name)
     return {
         numInputs,
         numOutputs,
         repr,
-        get reprType(): Expand<t.TypeOf<typeof repr>> { throw new Error() },
+        get reprType(): ReprType<typeof repr> { throw new Error() },
     } as const
 }
 
@@ -523,9 +526,8 @@ export function extendComponent<NumInputs extends FixedArraySize, NumOutputs ext
         numInputs: superDef.numInputs,
         numOutputs: superDef.numOutputs,
         repr,
-        get reprType(): Expand<t.TypeOf<typeof repr>> { throw new Error() },
+        get reprType(): ReprType<typeof repr> { throw new Error() },
     } as const
 }
-
 
 export const INPUT_OUTPUT_DIAMETER = 25

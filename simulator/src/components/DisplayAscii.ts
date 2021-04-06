@@ -1,8 +1,9 @@
 import { isDefined, isNotNull, isUnset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs } from "../drawutils"
 import { tooltipContent, mods, div, b } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -68,10 +69,10 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return displayValuesFromInputs(this.inputs)
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
 
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -85,8 +86,10 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            wireLine(input, this.posX - width / 2 - 2, input.posYInParentTransform)
+            wireLineToComponent(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
+
+        ctx.cancelTransform()
 
         noStroke()
         fill(0)
@@ -94,7 +97,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
         if (isDefined(this.name)) {
-            text(this.name, this.posX + width / 2 + 5, this.posY)
+            text(this.name, ...this.rotatePoint(width / 2 + 5, 0))
         }
 
         fill(0)
@@ -102,33 +105,33 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         textAlign(CENTER, CENTER)
         textSize(9)
         textStyle(NORMAL)
-        text(binaryStringRep, this.posX, this.posY - height / 2 + 10)
+        text(binaryStringRep, ...this.rotatePoint(0, - height / 2 + 10))
 
-        let mainTextPosY = this.posY
+        let mainTextPosY = 0
 
         if (isDefined(this._additionalReprRadix)) {
             const additionalRepr = formatWithRadix(value, this._additionalReprRadix)
             textSize(11)
             textStyle(BOLD)
-            text(additionalRepr, this.posX, this.posY - height / 2 + 22)
+            text(additionalRepr, ...this.rotatePoint(0, - height / 2 + 22))
             mainTextPosY += 8
         }
 
         if (isUnset(value)) {
             textSize(18)
             textStyle(BOLD)
-            text("?", this.posX, mainTextPosY)
+            text("?", ...this.rotatePoint(0, mainTextPosY))
 
         } else if (value < 32) {
             // non-printable
             textSize(16)
             textStyle(NORMAL)
-            text("\\" + value, this.posX, mainTextPosY)
+            text("\\" + value, ...this.rotatePoint(0, mainTextPosY))
 
         } else {
             textSize(18)
             textStyle(BOLD)
-            text("‘" + String.fromCharCode(value) + "’", this.posX, mainTextPosY)
+            text("‘" + String.fromCharCode(value) + "’", ...this.rotatePoint(0, mainTextPosY))
         }
     }
 

@@ -1,7 +1,7 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
 import { mode, modifierKeys, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
-import { DrawableWithPosition } from "./Drawable"
+import { DrawableWithPosition, DrawContext } from "./Drawable"
 import { NodeManager } from "../NodeManager"
 import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
@@ -65,7 +65,7 @@ abstract class NodeBase extends DrawableWithPosition {
         NodeManager.removeLiveNode(this.asNode)
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         if (mode < Mode.CONNECT) {
             return
         }
@@ -81,6 +81,11 @@ abstract class NodeBase extends DrawableWithPosition {
         strokeWeight(thickness)
         circle(this.posX, this.posY, DIAMETER)
 
+        if (ctx.isMouseOver) {
+            fill(128, 128)
+            circle(this.posX, this.posY, DIAMETER * 2)
+        }
+
         noStroke()
         if (mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
             // forced value to something that is contrary to normal output
@@ -88,12 +93,9 @@ abstract class NodeBase extends DrawableWithPosition {
             fill(circleColor)
             textSize(14)
             textStyle(BOLD)
-            text("!", this.posX, this.posY - 12)
-        }
 
-        if (isMouseOver) {
-            fill(128, 128)
-            circle(this.posX, this.posY, DIAMETER * 2)
+            ctx.cancelTransform()
+            text("!", ...this.rotatePoint(0, - 12))
         }
     }
 

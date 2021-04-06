@@ -36,15 +36,24 @@ export function colorForFraction(fraction: number): Color {
     return c
 }
 
-export function wireLine(node: Node, x1: number, y1: number) {
+export function wireLineToComponent(node: Node, x1: number, y1: number) {
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
+    wireLine(x0, y0, x1, y1, node.value)
+}
 
+export function wireLineBetweenComponents(node: Node, x1: number, y1: number) {
+    const x0 = node.posX
+    const y0 = node.posY
+    wireLine(x0, y0, x1, y1, node.value)
+}
+
+function wireLine(x0: number, y0: number, x1: number, y1: number, value: TriState) {
     stroke(80)
     strokeWeight(4)
     line(x0, y0, x1, y1)
 
-    stroke(...colorForBoolean(node.value))
+    stroke(...colorForBoolean(value))
     strokeWeight(2)
     const f = x0 < x1 ? 1 : -1
     line(x0 - f, y0, x1 + f, y1)

@@ -3,8 +3,8 @@ import { mode, setCanvasNeedsRedraw, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
-import { wireLine, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils"
-import { Drawable } from "./Drawable"
+import { wireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils"
+import { Drawable, DrawContext } from "./Drawable"
 
 export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
 export type WireRepr = t.TypeOf<typeof WireRepr>
@@ -82,14 +82,14 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         stroke(0)
         const mainStrokeWidth = WIRE_WIDTH / 2
         strokeWeight(mainStrokeWidth)
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            wireLine(this.startNode, mouseX, mouseY)
+            wireLineBetweenComponents(this.startNode, mouseX, mouseY)
 
         } else {
             const bezierAnchorPointDistX = Math.max(25, Math.abs(this.endNode.posX - this.startNode.posX) / 3)
@@ -110,7 +110,7 @@ export class Wire extends Drawable {
                     ...this.endNode!.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
                     this.endNode!.posX, this.endNode!.posY)
 
-            if (isMouseOver) {
+            if (ctx.isMouseOver) {
                 strokeWeight(mainStrokeWidth + 2)
                 stroke(...COLOR_MOUSE_OVER)
             } else {

@@ -1,9 +1,10 @@
 import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
-import { wireLine, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 
 export const LogicOutputDef =
@@ -55,12 +56,12 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return this.inputs[0].value
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const input = this.inputs[0]
-        wireLine(input, this.posX, this.posY)
+        wireLineToComponent(input, this.posX, this.posY)
 
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
             fill(...COLOR_MOUSE_OVER)
         } else {
@@ -81,10 +82,10 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         textSize(18)
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
+        ctx.cancelTransform()
         if (isDefined(this.name)) {
-            text(this.name, this.posX + 21, this.posY)
+            text(this.name, ...this.rotatePoint(+ 21, 0))
         }
-
         roundValue(this)
     }
 

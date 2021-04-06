@@ -1,8 +1,9 @@
 import { isDefined, isNotNull, isUnset, unset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLine, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -69,7 +70,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return displayValuesFromInputs(this.inputs)
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const [binaryStringRep, value] = this.value
 
@@ -77,7 +78,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         const backColor = isUnset(value) ? COLOR_UNSET : colorForFraction(value / maxValue)
         fill(...backColor)
 
-        if (isMouseOver) {
+        if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
             stroke(0)
@@ -90,8 +91,10 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
-            wireLine(input, this.posX - width / 2 - 2, input.posYInParentTransform)
+            wireLineToComponent(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
+
+        ctx.cancelTransform()
 
         noStroke()
         fill(0)
@@ -99,7 +102,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         textStyle(ITALIC)
         textAlign(LEFT, CENTER)
         if (isDefined(this.name)) {
-            text(this.name, this.posX + width / 2 + 5, this.posY)
+            text(this.name, ...this.rotatePoint(width / 2 + 5, 0))
         }
 
         const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
@@ -108,13 +111,13 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         textSize(10)
         textAlign(CENTER, CENTER)
         textStyle(NORMAL)
-        text(binaryStringRep, this.posX, this.posY - height / 2 + 8)
+        text(binaryStringRep, ...this.rotatePoint(0, - height / 2 + 8))
 
         textSize(18)
         textStyle(BOLD)
 
         const stringRep = formatWithRadix(value, this._radix)
-        text(stringRep, this.posX, this.posY + width / 6)
+        text(stringRep, ...this.rotatePoint(0, + width / 6))
     }
 
     mouseDoubleClick(e: MouseEvent | TouchEvent) {

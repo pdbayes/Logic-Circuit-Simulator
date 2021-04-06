@@ -4,6 +4,10 @@ import { GRID_STEP, inRect } from "../drawutils"
 import { mode, setCanvasNeedsRedraw } from "../simulator"
 import { ModifierObject } from "../htmlgen"
 
+export interface DrawContext {
+    isMouseOver: boolean
+    cancelTransform(): void
+}
 
 export abstract class Drawable {
 
@@ -17,18 +21,27 @@ export abstract class Drawable {
     }
 
     public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
-        const isMouseOver = this === mouseOverComp
         const oldTransform = g.getTransform()
         this.applyDrawTransform(g)
-        this.doDraw(g, isMouseOver)
-        g.setTransform(oldTransform)
+        let transformedCanceled = false
+        const context = {
+            isMouseOver: this === mouseOverComp,
+            cancelTransform() {
+                if (!transformedCanceled) {
+                    g.setTransform(oldTransform)
+                    transformedCanceled = true
+                }
+            },
+        }
+        this.doDraw(g, context)
+        context.cancelTransform()
     }
 
     public applyDrawTransform(__g: CanvasRenderingContext2D) {
         // by default, do nothing
     }
 
-    protected abstract doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean): void
+    protected abstract doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void
 
     public abstract isOver(x: number, y: number): boolean
 
@@ -157,6 +170,15 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public get height(): number {
         return isOrientationVertical(this._orient) ? this.unrotatedWidth : this.unrotatedHeight
+    }
+
+    protected rotatePoint(deltaX: number, deltaY: number): [number, number] {
+        switch (this._orient) {
+            case "e": return [this.posX + deltaX, this.posY + deltaY]
+            case "w": return [this.posX - deltaX, this.posY - deltaY]
+            case "s": return [this.posX - deltaY, this.posY + deltaX]
+            case "n": return [this.posX + deltaY, this.posY - deltaX]
+        }
     }
 
     public abstract get unrotatedWidth(): number

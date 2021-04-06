@@ -4,12 +4,14 @@ import { ComponentState, extendComponent } from "./Component"
 import { isDefined, TriState, typeOrUndefined } from "../utils"
 import { currentEpochTime } from "../simulator"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
+import { DrawContext } from "./Drawable"
 
 
 const ClockMandatoryParams = t.type({
     period: t.number,
     dutycycle: typeOrUndefined(t.number),
     phase: typeOrUndefined(t.number),
+    showLabel: typeOrUndefined(t.boolean),
 }, "Clock")
 type ClockMandatoryParams = t.TypeOf<typeof ClockMandatoryParams>
 
@@ -19,12 +21,15 @@ export const ClockDef =
 export type ClockRepr = typeof ClockDef.reprType
 
 const DEFAULT_DUTY_CYCLE = 50
+const DEFAULT_PHASE = 0
+const DEFAULT_SHOW_LABEL = true
 
 export class Clock extends LogicInputBase<ClockRepr> {
 
     public readonly period: number
     public readonly dutycycle: number = DEFAULT_DUTY_CYCLE
-    public readonly phase: number = 0
+    public readonly phase: number = DEFAULT_PHASE
+    public readonly showLabel: boolean = DEFAULT_SHOW_LABEL
 
     constructor(savedData: ClockRepr | ClockMandatoryParams) {
         super(false, "id" in savedData ? savedData : null)
@@ -35,6 +40,9 @@ export class Clock extends LogicInputBase<ClockRepr> {
         if (isDefined(savedData.phase)) {
             this.phase = savedData.phase
         }
+        if (isDefined(savedData.showLabel)) {
+            this.showLabel = savedData.showLabel
+        }
     }
 
     toJSON() {
@@ -42,7 +50,8 @@ export class Clock extends LogicInputBase<ClockRepr> {
             ...this.toJSONBase(),
             period: this.period,
             dutycycle: (this.dutycycle === DEFAULT_DUTY_CYCLE) ? undefined : this.dutycycle,
-            phase: (this.phase === 0) ? undefined : this.phase,
+            phase: (this.phase === DEFAULT_PHASE) ? undefined : this.phase,
+            showLabel: (this.showLabel === DEFAULT_SHOW_LABEL) ? undefined : this.showLabel,
         }
     }
 
@@ -74,8 +83,12 @@ export class Clock extends LogicInputBase<ClockRepr> {
         return value
     }
 
-    doDraw(g: CanvasRenderingContext2D, isMouseOver: boolean) {
-        super.doDraw(g, isMouseOver)
+    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        super.doDraw(g, ctx)
+
+        if (this.showLabel) {
+            return
+        }
 
         const w = 40
         const h = 10
