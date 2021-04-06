@@ -132,12 +132,14 @@ function trySetMode(wantedMode: Mode) {
 
         type LeftMenuDisplay = "show" | "hide" | "inactive"
 
-        const showReset = mode >= Mode.TRYOUT
-        const showRightEditControls = mode >= Mode.CONNECT
         const showLeftMenu: LeftMenuDisplay =
             (upperMode !== Mode.FULL)
                 ? (mode >= Mode.DESIGN) ? "show" : "hide"
                 : (mode >= Mode.DESIGN) ? "show" : "inactive"
+        const showTxGates = mode >= Mode.FULL
+
+        const showReset = mode >= Mode.TRYOUT
+        const showRightEditControls = mode >= Mode.CONNECT
         const showRightMenu = showReset || showRightEditControls
         const showOnlyReset = showReset && !showRightEditControls
 
@@ -194,6 +196,13 @@ function trySetMode(wantedMode: Mode) {
                 leftToolbar.style.visibility = "hidden"
                 leftToolbar.style.removeProperty("display")
                 break
+        }
+
+        const txGateButton = document.querySelector("button[tool=TXA]") as HTMLElement
+        if (showTxGates) {
+            txGateButton.style.removeProperty("display")
+        } else {
+            txGateButton.style.display = "none"
         }
 
 

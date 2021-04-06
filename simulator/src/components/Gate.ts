@@ -7,16 +7,25 @@ import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, 
 
 
 const Gate2Types_ = {
+    // usual suspects
     AND: { out: (in1: boolean, in2: boolean) => in1 && in2, localName: "ET" },
     OR: { out: (in1: boolean, in2: boolean) => in1 || in2, localName: "OU" },
     XOR: { out: (in1: boolean, in2: boolean) => in1 !== in2, localName: "OU-X" },
     NAND: { out: (in1: boolean, in2: boolean) => !(in1 && in2), localName: "NON-ET" },
     NOR: { out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU" },
     XNOR: { out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X" },
+
+    // less common gates
     IMPLY: { out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE" },
     RIMPLY: { out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE (bis)" },
     NIMPLY: { out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE" },
     RNIMPLY: { out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE (bis)" },
+
+    // observing only one input
+    TXA: { out: (in1: boolean, __: boolean) => in1, localName: "TRANSFERT-A" },
+    TXB: { out: (__: boolean, in2: boolean) => in2, localName: "TRANSFERT-B" },
+    TXNA: { out: (in1: boolean, __: boolean) => !in1, localName: "TRANSFERT-NON-A" },
+    TXNB: { out: (__: boolean, in2: boolean) => !in2, localName: "TRANSFERT-NON-B" },
 } as const
 
 export const Gate2Types = RichStringEnum.withProps<{
@@ -128,13 +137,16 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
 
         const rightCircle = () => {
             gateRight += 5
+            fill(0xFF)
             arc(gateRight, this.posY, 8, 8, 0, 0)
+            noFill()
             gateRight += 4
         }
         const leftCircle = (up: boolean) => {
             arc(gateLeft - 5, this.posY - (up ? 1 : -1) * GRID_STEP, 8, 8, 0, 0)
         }
         const wireEnds = (shortUp = false, shortDown = false) => {
+            stroke(0)
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
@@ -149,7 +161,6 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 line(gateLeft, top, gateLeft, bottom)
                 line(gateLeft, top, gateRight, this.posY)
                 line(gateLeft, bottom, gateRight, this.posY)
-                stroke(0)
                 if (type === "NOT") {
                     rightCircle()
                 }
@@ -164,7 +175,6 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 line(gateLeft, top, this.posX, top)
                 line(gateLeft, top, gateLeft, bottom)
                 arc(this.posX, this.posY, gateWidth, height, -pi2, pi2)
-                stroke(0)
                 if (type === "NAND") {
                     rightCircle()
                 }
@@ -194,7 +204,6 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                     gateRight - 5, this.posY - 8, gateRight, this.posY)
                 bezier(this.posX - 15, bottom, this.posX + 10, bottom,
                     gateRight - 5, this.posY + 8, gateRight, this.posY)
-                stroke(0)
                 const savedGateLeft = gateLeft
                 gateLeft += 4
                 if (type === "NOR" || type === "XNOR") {
@@ -215,9 +224,36 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                     strokeWeight(3)
                     arc(gateLeft - 38, this.posY, 75, 75, -.55, .55)
                 }
-                stroke(0)
                 break
             }
+
+            case "TXA":
+            case "TXNA":
+                triangle(
+                    gateLeft, top,
+                    gateRight, this.posY,
+                    gateLeft, this.posY,
+                )
+                line(gateLeft, this.posY, gateLeft, bottom)
+                if (type === "TXNA") {
+                    rightCircle()
+                }
+                wireEnds(false, false)
+                break
+
+            case "TXB":
+            case "TXNB":
+                triangle(
+                    gateLeft, bottom,
+                    gateRight, this.posY,
+                    gateLeft, this.posY,
+                )
+                line(gateLeft, this.posY, gateLeft, top)
+                if (type === "TXNB") {
+                    rightCircle()
+                }
+                wireEnds(false, false)
+                break
 
             case "?":
                 stroke(COLOR_UNSET)
@@ -359,8 +395,15 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
                 switch (this._type) {
                     case "IMPLY": return "RIMPLY"
                     case "RIMPLY": return "IMPLY"
+
                     case "NIMPLY": return "RNIMPLY"
                     case "RNIMPLY": return "NIMPLY"
+
+                    case "TXA": return "TXB"
+                    case "TXB": return "TXNA"
+                    case "TXNA": return "TXNB"
+                    case "TXNB": return "TXA"
+
                     default: return undefined
                 }
             })()
