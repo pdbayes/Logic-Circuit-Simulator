@@ -1,12 +1,12 @@
 import * as p5 from "p5"
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
-import { activeTool, MouseAction, setCurrentMouseAction } from "./menutools"
+import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
 import { copyToClipboard, getURLParameter, isDefined, isEmpty, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
-import { Gate } from "./components/Gate"
+import { Gate, GateFactory } from "./components/Gate"
 import { LogicInput } from "./components/LogicInput"
 import { LogicOutput } from "./components/LogicOutput"
 import { Clock } from "./components/Clock"
@@ -19,9 +19,6 @@ import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
 import { gallery } from "./gallery"
 
-// export type FF = FF_D | FF_JK | FF_T
-
-export const ICImages: p5.Image[] = [] // integrated circuits images
 
 export const gates: Gate[] = []
 export const logicInputs: LogicInput[] = []
@@ -79,18 +76,6 @@ export function setToolCursor(cursor: string | null) {
 let canvasContainer: HTMLElement
 let mainCanvas: HTMLCanvasElement
 let initialData: string | undefined = undefined
-
-
-
-export function preload() {
-    ICImages.push(loadImage('simulator/img/SR_Latch.svg')) // For testing usage
-    ICImages.push(loadImage('simulator/img/SR_Latch.svg'))
-    ICImages.push(loadImage('simulator/img/SR_Latch_Sync.svg'))
-    ICImages.push(loadImage('simulator/img/FF_D.svg'))
-    ICImages.push(loadImage('simulator/img/FF_D_MS.svg'))
-    ICImages.push(loadImage('simulator/img/FF_T.svg'))
-    ICImages.push(loadImage('simulator/img/FF_JK.svg'))
-}
 
 
 function isEmbeddedInIframe(): boolean {
@@ -198,7 +183,7 @@ function trySetMode(wantedMode: Mode) {
                 break
         }
 
-        const txGateButton = document.querySelector("button[tool=TXA]") as HTMLElement
+        const txGateButton = document.querySelector("button[data-type=TXA]") as HTMLElement
         if (showTxGates) {
             txGateButton.style.removeProperty("display")
         } else {
@@ -331,12 +316,6 @@ function updateCursor() {
             : _toolCursor
             ?? _currentMouseOverComp?.cursorWhenMouseover
             ?? "default"
-}
-
-export function createdNewComponent<C extends Component>(comp: C, array: C[]) {
-    array.push(comp)
-    _currentMouseOverComp = comp
-    _currentMouseDownComp = comp
 }
 
 function clearPopperIfNecessary() {
@@ -482,14 +461,33 @@ export function setHandlersFor(action: MouseAction) {
 
 export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
     if ("offsetX" in e) {
-        return [e.offsetX, e.offsetY]
+        // MouseEvent
+        if (e.target === mainCanvas) {
+            return [e.offsetX, e.offsetY]
+        } else {
+            const canvasRect = mainCanvas.getBoundingClientRect()
+            const elemRect = (e.target as HTMLElement).getBoundingClientRect()
+            return [
+                Math.max(GRID_STEP * 2, e.offsetX + elemRect.x - canvasRect.x),
+                Math.max(GRID_STEP * 2, e.offsetY + elemRect.y - canvasRect.y),
+            ]
+        }
     } else {
-        const rect = (e.target as HTMLElement).getBoundingClientRect()
+        const elemRect = (e.target as HTMLElement).getBoundingClientRect()
         const bodyRect = document.body.getBoundingClientRect()
         const touch = e.changedTouches[0]
-        const x = touch.pageX - (rect.left - bodyRect.left)
-        const y = touch.pageY - (rect.top - bodyRect.top)
-        return [x, y]
+        const offsetX = touch.pageX - (elemRect.left - bodyRect.left)
+        const offsetY = touch.pageY - (elemRect.top - bodyRect.top)
+
+        if (e.target === mainCanvas) {
+            return [offsetX, offsetY]
+        } else {
+            const canvasRect = mainCanvas.getBoundingClientRect()
+            return [
+                Math.max(GRID_STEP * 2, offsetX + elemRect.x - canvasRect.x),
+                Math.max(GRID_STEP * 2, offsetY + elemRect.y - canvasRect.y),
+            ]
+        }
     }
 }
 
@@ -633,6 +631,34 @@ export function setup() {
         updateMouseOver([e.offsetX, e.offsetY])
         updateCursor()
     })
+
+    const compButtons = document.getElementsByClassName("sim-component-button")
+
+    for (let i = 0; i < compButtons.length; i++) {
+        const compButton = compButtons[i] as HTMLElement
+        const factory = makeComponentFactoryForButton(compButton)
+        compButton.addEventListener("mousedown", (e) => {
+            e.preventDefault()
+            const newComponent = factory()
+            _currentMouseOverComp = newComponent
+            const { lockMouseOver } = _currentHandlers.mouseDownOn(newComponent, e)
+            if (lockMouseOver) {
+                _currentMouseDownComp = _currentMouseOverComp
+            }
+            _currentHandlers.mouseDraggedOn(newComponent, e)
+        })
+        compButton.addEventListener("touchstart", (e) => {
+            e.preventDefault()
+            const newComponent = factory()
+            _currentMouseOverComp = newComponent
+            const { lockMouseOver } = _currentHandlers.mouseDownOn(newComponent, e)
+            if (lockMouseOver) {
+                _currentMouseDownComp = _currentMouseOverComp
+            }
+            _currentHandlers.mouseDraggedOn(newComponent, e)
+        })
+    }
+
 
     const data = getURLParameter(PARAM_DATA)
     if (isDefined(data)) {
@@ -847,7 +873,6 @@ function modifierKeyWatcher(e: KeyboardEvent) {
 }
 
 
-window.preload = preload
 window.setup = setup
 window.draw = draw
 

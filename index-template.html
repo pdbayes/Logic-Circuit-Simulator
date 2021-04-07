@@ -22,28 +22,28 @@
 			<div
 				style="font-size: 80%; font-weight: bold;background-color: lightgray; padding: 1px; word-break: break-all;">
 				Entrées/sorties</div>
-			<button type="button" tool="LogicInput" title="Entrée" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="LogicInput" title="Entrée""
+				class=" list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/LogicInput.svg" class="" width="32">
 			</button>
-			<button type="button" tool="LogicOutput" title="Sortie" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="LogicOutput" title="Sortie""
+				class=" list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/LogicOutput.svg" class="" width="32">
 			</button>
-			<button type="button" tool="DisplayNibble" title="Affichage de 4 bits" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="DisplayNibble" title="Affichage de 4 bits""
+				class=" list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/DisplayNibble.svg" class="" width="32">
 			</button>
-			<button type="button" tool="DisplayAscii" title="Affichage d’un caractère ASCII" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="DisplayAscii" title="Affichage d’un caractère ASCII""
+				class=" list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/DisplayAscii.svg" class="" width="32">
 			</button>
-			<button type="button" tool="DisplayBar" title="Affichage d’un bit sous forme de segment lumineux"
-				onclick="activeTool(this)" class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="DisplayBar" title="Affichage d’un bit sous forme de segment lumineux"
+				onclick="activeTool(this)" class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/DisplayBar.svg" class="" width="32">
 			</button>
-			<button type="button" tool="Clock" title="Horloge"
-				onclick="activeTool(this)" class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Clock" title="Horloge" onclick="activeTool(this)"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/Clock.svg" class="" width="50">
 			</button>
 
@@ -51,74 +51,74 @@
 				style="margin-top: 20px;font-size: 80%; font-weight: bold;background-color: lightgray; padding: 1px; word-break: break-all;">
 				Portes</div>
 
-			<button type="button" tool="NOT" isGate="true" title="Porte NON" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="NOT" title="Porte NON"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/NOT.svg" width="50">
 				<span class="gate-label">NON</span>
 			</button>
-			<button type="button" tool="AND" isGate="true" title="Porte ET" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="AND" title="Porte ET"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/AND.svg" width="50">
 				<span class="gate-label">ET</span>
 			</button>
-			<button type="button" tool="OR" isGate="true" title="Porte OU" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="OR" title="Porte OU"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/OR.svg" width="50">
 				<span class="gate-label">OU</span>
 			</button>
-			<button type="button" tool="XOR" isGate="true" title="Porte OU-X" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="XOR" title="Porte OU-X"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/XOR.svg" width="50">
 				<span class="gate-label">OU-X</span>
 			</button>
-			<button type="button" tool="NAND" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="NAND"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/NAND.svg" width="50">
 				<span class="gate-label">NON-ET</span>
 			</button>
-			<button type="button" tool="NOR" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="NOR"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/NOR.svg" width="50">
 				<span class="gate-label">NON-OU</span>
 			</button>
-			<button type="button" tool="XNOR" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="XNOR"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/XNOR.svg" width="50">
 				<span class="gate-label">NON-OU-X</span>
 			</button>
-			<button type="button" tool="IMPLY" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="IMPLY"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/IMPLY.svg" width="50">
 				<span class="gate-label">IMPLIQUE</span>
 			</button>
-			<button type="button" tool="NIMPLY" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="NIMPLY"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/NIMPLY.svg" width="50">
 				<span class="gate-label">NON-IMPL.</span>
 			</button>
-			<button type="button" tool="TXA" isGate="true" onclick="activeTool(this)"
-				class="list-group-item list-group-item-action sim-toolbar-button">
+			<button type="button" data-component="Gate" data-type="TXA"
+				class="list-group-item list-group-item-action sim-component-button">
 				<img src="simulator/img/TXA.svg" width="50">
 				<span class="gate-label">TRANSF.</span>
 			</button>
 
 
 			<!-- <button type="button" data-target="#SR_LatchSettings" title="Latch SR NOR-NAND Sync-Async"
-						data-toggle="modal" class="list-group-item list-group-item-action sim-toolbar-button">
+						data-toggle="modal" class="list-group-item list-group-item-action sim-component-button">
 						<img src="simulator/img/SR_Latch.svg" width="50">
 					</button>
 					<button type="button" data-target="#FF_D-TypeSettings" title="Flip Flop D Single or Master-Slave"
-						data-toggle="modal" class="list-group-item list-group-item-action sim-toolbar-button">
+						data-toggle="modal" class="list-group-item list-group-item-action sim-component-button">
 						<img src="simulator/img/FF_D_MS.svg" width="50">
 					</button>
 					<button type="button" data-target="#FF_T-TypeSettings"
 						title="Flip Flop T Positive-Negative Edge Triggered" data-toggle="modal"
-						class="list-group-item list-group-item-action sim-toolbar-button">
+						class="list-group-item list-group-item-action sim-component-button">
 						<img src="simulator/img/FF_T.svg" width="50">
 					</button>
 					<button type="button" data-target="#FF_JK-TypeSettings"
 						title="Flip Flop JK Positive-Negative Edge Triggered" data-toggle="modal"
-						class="list-group-item list-group-item-action sim-toolbar-button">
+						class="list-group-item list-group-item-action sim-component-button">
 						<img src="simulator/img/FF_JK.svg" width="50">
 					</button> -->
 		</div>

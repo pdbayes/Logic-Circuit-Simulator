@@ -46,7 +46,7 @@ export class RichStringEnum<K extends keyof any, P> {
         return defs
     }
 
-    isValue(val: string | number | symbol): val is K {
+    isValue(val: string | number | symbol | null | undefined): val is K {
         return this.values.includes(val as any)
     }
 

@@ -52,7 +52,7 @@ export type Gate1Type = typeof Gate1Types.type
 
 export type GateType = Gate2Type | Gate1Type
 export const GateTypes = {
-    isValue: (str: string): str is GateType => {
+    isValue: (str: string | null | undefined): str is GateType => {
         return Gate2Types.isValue(str) || Gate1Types.isValue(str)
     },
 }

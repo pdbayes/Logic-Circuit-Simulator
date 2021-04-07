@@ -496,7 +496,8 @@ export abstract class ComponentBase<
             // const snapToGrid = !modifierKeys.isCommandDown
             // this.setPosition(e.offsetX, e.offsetY, snapToGrid)
             this._state = ComponentState.SPAWNED
-        } else if (isDefined(this._isMovingWithContext)) {
+        }
+        if (isDefined(this._isMovingWithContext)) {
             this._isMovingWithContext = undefined
         }
         setComponentStoppedMoving(this)
