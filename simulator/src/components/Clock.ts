@@ -86,7 +86,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
-        if (this.showLabel) {
+        if (!this.showLabel) {
             return
         }
 

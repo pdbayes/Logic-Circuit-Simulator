@@ -78,17 +78,17 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         strokeWeight(4)
         circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
 
-        noStroke()
-        fill(0)
-        textSize(18)
-        textStyle(ITALIC)
-        textAlign(RIGHT, CENTER)
-
-        ctx.cancelTransform()
-        if (isDefined(this.name)) {
-            text(this.name, ...this.rotatePoint(- 25, 0))
-        }
-        roundValue(this)
+        ctx.inNonTransformedFrame(ctx => {
+            noStroke()
+            fill(0)
+            textSize(18)
+            textStyle(ITALIC)
+            textAlign(RIGHT, CENTER)
+            if (isDefined(this.name)) {
+                text(this.name, ...ctx.rotatePoint(this.posX - 25, this.posY))
+            }
+            roundValue(this)
+        })
     }
 
 }

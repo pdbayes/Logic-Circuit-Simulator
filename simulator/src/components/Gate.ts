@@ -273,8 +273,9 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 strokeWeight(0)
                 fill(COLOR_UNSET)
                 wireEnds()
-                ctx.cancelTransform()
-                text('?', this.posX, this.posY)
+                ctx.inNonTransformedFrame(() => {
+                    text('?', this.posX, this.posY)
+                })
                 break
         }
     }

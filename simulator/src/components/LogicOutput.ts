@@ -77,16 +77,17 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         strokeWeight(4)
         circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
 
-        noStroke()
-        fill(0)
-        textSize(18)
-        textStyle(ITALIC)
-        textAlign(LEFT, CENTER)
-        ctx.cancelTransform()
-        if (isDefined(this.name)) {
-            text(this.name, ...this.rotatePoint(+ 21, 0))
-        }
-        roundValue(this)
+        ctx.inNonTransformedFrame(ctx => {
+            noStroke()
+            fill(0)
+            textSize(18)
+            textStyle(ITALIC)
+            textAlign(LEFT, CENTER)
+            if (isDefined(this.name)) {
+                text(this.name, ...ctx.rotatePoint(this.posX + 21, this.posY))
+            }
+            roundValue(this)
+        })
     }
 
 }

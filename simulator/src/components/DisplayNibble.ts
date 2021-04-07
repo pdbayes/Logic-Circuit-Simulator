@@ -94,30 +94,30 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             wireLineToComponent(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
-        ctx.cancelTransform()
+        ctx.inNonTransformedFrame(ctx => {
+            noStroke()
+            fill(0)
+            textSize(18)
+            textStyle(ITALIC)
+            textAlign(LEFT, CENTER)
+            if (isDefined(this.name)) {
+                text(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
+            }
 
-        noStroke()
-        fill(0)
-        textSize(18)
-        textStyle(ITALIC)
-        textAlign(LEFT, CENTER)
-        if (isDefined(this.name)) {
-            text(this.name, ...this.rotatePoint(width / 2 + 5, 0))
-        }
+            const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
+            fill(textColor)
 
-        const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
-        fill(textColor)
+            textSize(10)
+            textAlign(CENTER, CENTER)
+            textStyle(NORMAL)
+            text(binaryStringRep, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 8))
 
-        textSize(10)
-        textAlign(CENTER, CENTER)
-        textStyle(NORMAL)
-        text(binaryStringRep, ...this.rotatePoint(0, - height / 2 + 8))
+            textSize(18)
+            textStyle(BOLD)
 
-        textSize(18)
-        textStyle(BOLD)
-
-        const stringRep = formatWithRadix(value, this._radix)
-        text(stringRep, ...this.rotatePoint(0, + width / 6))
+            const stringRep = formatWithRadix(value, this._radix)
+            text(stringRep, ...ctx.rotatePoint(this.posX, this.posY + width / 6))
+        })
     }
 
     mouseDoubleClick(e: MouseEvent | TouchEvent) {

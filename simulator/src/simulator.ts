@@ -352,7 +352,6 @@ function makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
     tooltipContents.innerHTML = ""
     tooltipHtml.applyTo(tooltipContents)
     const canvas = document.getElementsByTagName("CANVAS")[0]
-    console.log(canvas)
     _currentMouseOverPopper = createPopper({
         getBoundingClientRect() { return rect },
         contextElement: canvas,

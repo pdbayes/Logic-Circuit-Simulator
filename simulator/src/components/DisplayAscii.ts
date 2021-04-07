@@ -89,50 +89,50 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             wireLineToComponent(input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
-        ctx.cancelTransform()
-
-        noStroke()
-        fill(0)
-        textSize(18)
-        textStyle(ITALIC)
-        textAlign(LEFT, CENTER)
-        if (isDefined(this.name)) {
-            text(this.name, ...this.rotatePoint(width / 2 + 5, 0))
-        }
-
-        fill(0)
-
-        textAlign(CENTER, CENTER)
-        textSize(9)
-        textStyle(NORMAL)
-        text(binaryStringRep, ...this.rotatePoint(0, - height / 2 + 10))
-
-        let mainTextPosY = 0
-
-        if (isDefined(this._additionalReprRadix)) {
-            const additionalRepr = formatWithRadix(value, this._additionalReprRadix)
-            textSize(11)
-            textStyle(BOLD)
-            text(additionalRepr, ...this.rotatePoint(0, - height / 2 + 22))
-            mainTextPosY += 8
-        }
-
-        if (isUnset(value)) {
+        ctx.inNonTransformedFrame(ctx => {
+            noStroke()
+            fill(0)
             textSize(18)
-            textStyle(BOLD)
-            text("?", ...this.rotatePoint(0, mainTextPosY))
+            textStyle(ITALIC)
+            textAlign(LEFT, CENTER)
+            if (isDefined(this.name)) {
+                text(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
+            }
 
-        } else if (value < 32) {
-            // non-printable
-            textSize(16)
+            fill(0)
+
+            textAlign(CENTER, CENTER)
+            textSize(9)
             textStyle(NORMAL)
-            text("\\" + value, ...this.rotatePoint(0, mainTextPosY))
+            text(binaryStringRep, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 10))
 
-        } else {
-            textSize(18)
-            textStyle(BOLD)
-            text("‘" + String.fromCharCode(value) + "’", ...this.rotatePoint(0, mainTextPosY))
-        }
+            let mainTextPosY = this.posY
+
+            if (isDefined(this._additionalReprRadix)) {
+                const additionalRepr = formatWithRadix(value, this._additionalReprRadix)
+                textSize(11)
+                textStyle(BOLD)
+                text(additionalRepr, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 22))
+                mainTextPosY += 8
+            }
+
+            if (isUnset(value)) {
+                textSize(18)
+                textStyle(BOLD)
+                text("?", ...ctx.rotatePoint(this.posX, mainTextPosY))
+
+            } else if (value < 32) {
+                // non-printable
+                textSize(16)
+                textStyle(NORMAL)
+                text("\\" + value, ...ctx.rotatePoint(this.posX, mainTextPosY))
+
+            } else {
+                textSize(18)
+                textStyle(BOLD)
+                text("‘" + String.fromCharCode(value) + "’", ...ctx.rotatePoint(this.posX, mainTextPosY))
+            }
+        })
     }
 
     mouseDoubleClick(e: MouseEvent | TouchEvent) {

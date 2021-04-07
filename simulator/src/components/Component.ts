@@ -139,6 +139,13 @@ export enum ComponentState {
 // Simplified, generics-free representation of a component
 export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>, unknown>
 
+interface DragContext {
+    mouseOffsetX: number
+    mouseOffsetY: number
+    lastAnchorX: number
+    lastAnchorY: number
+}
+
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs
     NumOutputs extends FixedArraySize, // statically know the number of outputs
@@ -147,7 +154,7 @@ export abstract class ComponentBase<
     > extends DrawableWithPosition {
 
     private _state: ComponentState
-    private _isMovingWithMouseOffset: undefined | [number, number] = undefined
+    private _isMovingWithContext: undefined | DragContext = undefined
     protected readonly inputs: FixedArray<NodeIn, NumInputs>
     protected readonly outputs: FixedArray<NodeOut, NumOutputs>
 
@@ -372,7 +379,7 @@ export abstract class ComponentBase<
     }
 
     public get isMoving() {
-        return isDefined(this._isMovingWithMouseOffset)
+        return isDefined(this._isMovingWithContext)
     }
 
     public get allowsForcedOutputs() {
@@ -442,18 +449,36 @@ export abstract class ComponentBase<
         if (this._state === ComponentState.SPAWNING) {
             return this.setPosition(x, y, snapToGrid)
         }
-        if (isDefined(this._isMovingWithMouseOffset)) {
-            const [mouseOffsetX, mouseOffsetY] = this._isMovingWithMouseOffset
-            return this.setPosition(x + mouseOffsetX, y + mouseOffsetY, snapToGrid)
+        if (isDefined(this._isMovingWithContext)) {
+            const { mouseOffsetX, mouseOffsetY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
+            let targetX = x + mouseOffsetX
+            let targetY = y + mouseOffsetY
+            if (e.shiftKey) {
+                // normal move
+                const dx = Math.abs(lastAnchorX - targetX)
+                const dy = Math.abs(lastAnchorY - targetY)
+                if (dx <= dy) {
+                    targetX = lastAnchorX
+                } else {
+                    targetY = lastAnchorY
+                }
+            }
+            return this.setPosition(targetX, targetY, snapToGrid)
+
         }
         return undefined
     }
 
     mouseDown(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
-            if (isUndefined(this._isMovingWithMouseOffset)) {
+            if (isUndefined(this._isMovingWithContext)) {
                 const [offsetX, offsetY] = offsetXY(e)
-                this._isMovingWithMouseOffset = [this.posX - offsetX, this.posY - offsetY]
+                this._isMovingWithContext = {
+                    mouseOffsetX: this.posX - offsetX,
+                    mouseOffsetY: this.posY - offsetY,
+                    lastAnchorX: this.posX,
+                    lastAnchorY: this.posY,
+                }
             }
         }
         return { lockMouseOver: true }
@@ -471,8 +496,8 @@ export abstract class ComponentBase<
             // const snapToGrid = !modifierKeys.isCommandDown
             // this.setPosition(e.offsetX, e.offsetY, snapToGrid)
             this._state = ComponentState.SPAWNED
-        } else if (isDefined(this._isMovingWithMouseOffset)) {
-            this._isMovingWithMouseOffset = undefined
+        } else if (isDefined(this._isMovingWithContext)) {
+            this._isMovingWithContext = undefined
         }
         setComponentStoppedMoving(this)
     }

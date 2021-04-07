@@ -94,8 +94,9 @@ abstract class NodeBase extends DrawableWithPosition {
             textSize(14)
             textStyle(BOLD)
 
-            ctx.cancelTransform()
-            text("!", ...this.rotatePoint(0, - 12))
+            ctx.inNonTransformedFrame(ctx => {
+                text("!", ...ctx.rotatePoint(this.posX, this.posY - 12))
+            })
         }
     }
 

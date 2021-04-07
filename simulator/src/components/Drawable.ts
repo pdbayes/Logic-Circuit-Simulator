@@ -6,7 +6,51 @@ import { ModifierObject } from "../htmlgen"
 
 export interface DrawContext {
     isMouseOver: boolean
-    cancelTransform(): void
+    inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown): void
+}
+
+export interface DrawContextExt extends DrawContext {
+    rotatePoint(x: number, y: number): readonly [x: number, y: number]
+}
+
+class _DrawContextImpl implements DrawContext, DrawContextExt {
+
+    private readonly entranceTransform: DOMMatrix
+    private readonly componentTransform: DOMMatrix
+
+    constructor(
+        private comp: Drawable,
+        private g: CanvasRenderingContext2D,
+        public readonly isMouseOver: boolean,
+    ) {
+        this.entranceTransform = g.getTransform()
+        comp.applyDrawTransform(g)
+        this.componentTransform = g.getTransform()
+    }
+
+    exit() {
+        this.g.setTransform(this.entranceTransform)
+    }
+
+    inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown) {
+        this.g.setTransform(this.entranceTransform)
+        f(this)
+        this.g.setTransform(this.componentTransform)
+    }
+
+    rotatePoint(x: number, y: number): readonly [x: number, y: number] {
+        const t1 = this.componentTransform
+        const t2 = this.entranceTransform.inverse()
+        return mult(t2, ...mult(t1, x, y))
+    }
+
+}
+
+function mult(m: DOMMatrix, x: number, y: number): [x: number, y: number] {
+    return [
+        m.a * x + m.c * y + m.e,
+        m.b * x + m.d * y + m.f,
+    ]
 }
 
 export abstract class Drawable {
@@ -16,25 +60,13 @@ export abstract class Drawable {
     }
 
     protected setNeedsRedraw(reason: string) {
-        // this._needsRedraw = true
         setCanvasNeedsRedraw(this.constructor.name + " – " + reason)
     }
 
     public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
-        const oldTransform = g.getTransform()
-        this.applyDrawTransform(g)
-        let transformedCanceled = false
-        const context = {
-            isMouseOver: this === mouseOverComp,
-            cancelTransform() {
-                if (!transformedCanceled) {
-                    g.setTransform(oldTransform)
-                    transformedCanceled = true
-                }
-            },
-        }
-        this.doDraw(g, context)
-        context.cancelTransform()
+        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp)
+        this.doDraw(g, ctx)
+        ctx.exit()
     }
 
     public applyDrawTransform(__g: CanvasRenderingContext2D) {
@@ -170,15 +202,6 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public get height(): number {
         return isOrientationVertical(this._orient) ? this.unrotatedWidth : this.unrotatedHeight
-    }
-
-    protected rotatePoint(deltaX: number, deltaY: number): [number, number] {
-        switch (this._orient) {
-            case "e": return [this.posX + deltaX, this.posY + deltaY]
-            case "w": return [this.posX - deltaX, this.posY - deltaY]
-            case "s": return [this.posX - deltaY, this.posY + deltaX]
-            case "n": return [this.posX + deltaY, this.posY - deltaX]
-        }
     }
 
     public abstract get unrotatedWidth(): number
