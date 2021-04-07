@@ -137,6 +137,10 @@ export function isEmpty(container: { length: number } | { size: number }): boole
     return ("length" in container ? container.length : container.size) === 0
 }
 
+export function isEmptyObject(obj: Record<string, unknown>): boolean {
+    return Object.keys(obj).length === 0
+}
+
 export function isNumber(arg: unknown): arg is number {
     return typeof arg === "number"
 }

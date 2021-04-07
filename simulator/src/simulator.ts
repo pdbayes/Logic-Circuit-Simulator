@@ -1,12 +1,11 @@
-import * as p5 from "p5"
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isEmpty, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, Dict, getURLParameter, isDefined, isEmptyObject, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
-import { Gate, GateFactory } from "./components/Gate"
+import { Gate } from "./components/Gate"
 import { LogicInput } from "./components/LogicInput"
 import { LogicOutput } from "./components/LogicOutput"
 import { Clock } from "./components/Clock"
@@ -52,7 +51,7 @@ function changeMovingComponents(change: () => void) {
     const emptyAfter = _movingComponents.size === 0
     if (emptyBefore !== emptyAfter) {
         updateCursor()
-        setCanvasNeedsRedraw("started or stopped moving components")
+        setCanvasNeedsRedraw("started or stopped moving components", null)
     }
 }
 
@@ -100,7 +99,7 @@ function trySetMode(wantedMode: Mode) {
 
         console.log(`Display/interaction is ${wantedModeStr}`)
 
-        setCanvasNeedsRedraw("mode changed")
+        setCanvasNeedsRedraw("mode changed", null)
 
         // update mode active button
         document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
@@ -207,10 +206,16 @@ function trySetMode(wantedMode: Mode) {
 }
 
 
-const _canvasRedrawReasons: string[] = ["initial draw"]
+let _canvasRedrawReasons: Dict<unknown[]> = {}
 
-export function setCanvasNeedsRedraw(reason: string) {
-    _canvasRedrawReasons.push(reason)
+export function setCanvasNeedsRedraw(reason: string, comp: Drawable | null) {
+    const compObj = comp ?? mainCanvas
+    const compList = _canvasRedrawReasons[reason]
+    if (isUndefined(compList)) {
+        _canvasRedrawReasons[reason] = [compObj]
+    } else {
+        compList.push(compObj)
+    }
 }
 
 const _componentNeedingRecalc = new Set<Component>()
@@ -259,7 +264,7 @@ function setCurrentMouseOverComp(comp: Drawable | null) {
                 _startHoverTimeoutHandle = null
             }, 1200)
         }
-        setCanvasNeedsRedraw("mouseover changed")
+        setCanvasNeedsRedraw("mouseover changed", null)
         // console.log("Over component: ", newMouseOverComp)
     }
 }
@@ -533,7 +538,7 @@ export function setup() {
                     _currentMouseDownComp = _currentMouseOverComp
                     setStartDragTimeout(_currentMouseDownComp, e)
                 }
-                setCanvasNeedsRedraw("mousedown")
+                setCanvasNeedsRedraw("mousedown", null)
             } else {
                 // mouse down on background
                 _currentMouseDownComp = canvasContainer
@@ -581,7 +586,7 @@ export function setup() {
             _currentHandlers.mouseUpOnBackground(e)
         }
         _currentMouseDownComp = null
-        setCanvasNeedsRedraw("mouseup")
+        setCanvasNeedsRedraw("mouseup", null)
     }
 
     canvasContainer.addEventListener("touchstart", (e) => {
@@ -750,7 +755,7 @@ export function currentEpochTime() {
 
 export function windowResized() {
     resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
-    setCanvasNeedsRedraw("window resized")
+    setCanvasNeedsRedraw("window resized", null)
 }
 
 export function recalculate() {
@@ -786,15 +791,32 @@ export function draw() {
         recalculate()
     }
     if (wireMgr.isAddingWire) {
-        setCanvasNeedsRedraw("adding a wire")
+        setCanvasNeedsRedraw("adding a wire", null)
     }
 
-    if (isEmpty(_canvasRedrawReasons)) {
+    if (isEmptyObject(_canvasRedrawReasons)) {
         return
     }
 
+    const reasonParts: string[] = []
+    for (const reason of Object.keys(_canvasRedrawReasons)) {
+        reasonParts.push(reason)
+        const linkedComps = _canvasRedrawReasons[reason]!
+        reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
+        for (const comp of linkedComps) {
+            if (comp !== mainCanvas) {
+                reasonParts.push((comp as any).constructor.name, "; ")
+            }
+        }
+        reasonParts.pop()
+        reasonParts.push("\n    ")
+    }
+    reasonParts.pop()
+
+
+    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reasons:\n    " + reasonParts.join(""))
+
     const g = mainCanvas.getContext("2d")!
-    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reason: " + _canvasRedrawReasons.join("; "))
 
     strokeCap(PROJECT)
 
@@ -838,7 +860,7 @@ export function draw() {
         }
     }
 
-    _canvasRedrawReasons.splice(0, _canvasRedrawReasons.length)
+    _canvasRedrawReasons = {}
 }
 
 function keyUp(e: KeyboardEvent) {

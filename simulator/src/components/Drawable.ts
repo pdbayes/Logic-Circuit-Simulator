@@ -60,7 +60,7 @@ export abstract class Drawable {
     }
 
     protected setNeedsRedraw(reason: string) {
-        setCanvasNeedsRedraw(this.constructor.name + " – " + reason)
+        setCanvasNeedsRedraw(reason, this)
     }
 
     public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
