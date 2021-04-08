@@ -1,5 +1,5 @@
 import { Mode, isNull, isNotNull, isDefined } from "../utils"
-import { mode, setCanvasNeedsRedraw, setToolCursor } from "../simulator"
+import { mode, RedrawManager, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -218,7 +218,7 @@ export class WireManager {
             this._isAddingWire = false
             setToolCursor(null)
         }
-        setCanvasNeedsRedraw("started or stopped wire", null)
+        RedrawManager.addReason("started or stopped wire", null)
     }
 
     deleteWire(wire: Wire) {

@@ -1,7 +1,7 @@
 import { Expand, isDefined, isNotNull, Mode, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode, setCanvasNeedsRedraw } from "../simulator"
+import { mode, RedrawManager } from "../simulator"
 import { ModifierObject } from "../htmlgen"
 
 export interface DrawContext {
@@ -60,7 +60,7 @@ export abstract class Drawable {
     }
 
     protected setNeedsRedraw(reason: string) {
-        setCanvasNeedsRedraw(reason, this)
+        RedrawManager.addReason(reason, this)
     }
 
     public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {

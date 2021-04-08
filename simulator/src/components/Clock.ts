@@ -5,6 +5,7 @@ import { isDefined, TriState, typeOrUndefined } from "../utils"
 import { currentEpochTime } from "../simulator"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
+import { TickManager } from "../TickManager"
 
 
 const ClockMandatoryParams = t.type({
@@ -32,17 +33,22 @@ export class Clock extends LogicInputBase<ClockRepr> {
     public readonly showLabel: boolean = DEFAULT_SHOW_LABEL
 
     constructor(savedData: ClockRepr | ClockMandatoryParams) {
-        super(false, "id" in savedData ? savedData : null)
+        super(
+            false,
+            "id" in savedData ? savedData : null
+        )
         this.period = savedData.period
         if (isDefined(savedData.dutycycle)) {
-            this.dutycycle = savedData.dutycycle
+            this.dutycycle = savedData.dutycycle % 100
         }
         if (isDefined(savedData.phase)) {
-            this.phase = savedData.phase
+            this.phase = savedData.phase % savedData.period
         }
         if (isDefined(savedData.showLabel)) {
             this.showLabel = savedData.showLabel
         }
+        // sets the value and schedules the next tick
+        this.tickCallback(currentEpochTime())
     }
 
     toJSON() {
@@ -64,23 +70,41 @@ export class Clock extends LogicInputBase<ClockRepr> {
             ))
     }
 
-    protected doRecalcValue(): TriState {
-        const myTime = currentEpochTime() - this.phase
+    private currentClockValue(time: number): [boolean, number] {
+        const myTime = time - this.phase
         let timeOverPeriod = myTime % this.period
-        while (timeOverPeriod < 0) {
+        if (timeOverPeriod < 0) {
             timeOverPeriod += this.period
         }
         const onDuration = this.period * this.dutycycle / 100
-        const value = timeOverPeriod <= onDuration ? true : false
-
-        if (this.state !== ComponentState.DEAD) {
-            const nextTick = value
-                ? this.period - onDuration - timeOverPeriod
-                : this.period - timeOverPeriod
-            setTimeout(() => this.recalcValue(), nextTick)
+        const offDuration = this.period - onDuration
+        let value: boolean
+        let timeOverLastTick: number
+        if (timeOverPeriod < onDuration) {
+            value = true
+            timeOverLastTick = timeOverPeriod
+        } else {
+            value = false
+            timeOverLastTick = timeOverPeriod - onDuration
         }
+        const lastTick = time - timeOverLastTick
+        const nextTick = lastTick + (value ? onDuration : offDuration)
 
-        return value
+        return [value, nextTick]
+    }
+
+    protected doRecalcValue(): TriState {
+        // nothing special to recalc, will change automatically on next tick,
+        // so until further notice, we keep this same value
+        return this.value
+    }
+
+    private tickCallback(theoreticalTime: number) {
+        const [value, nextTick] = this.currentClockValue(theoreticalTime)
+        this.doSetValue(value)
+        if (this.state !== ComponentState.DEAD) {
+            TickManager.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
+        }
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -90,32 +114,34 @@ export class Clock extends LogicInputBase<ClockRepr> {
             return
         }
 
-        const w = 40
-        const h = 10
-        const offsetY = 28
-        stroke(0)
-        strokeWeight(1)
-        const left = this.posX - w / 2
-        const mid1 = left + w * this.phase / this.period
-        const mid2 = mid1 + w * this.dutycycle / 100
-        const right = this.posX + w / 2
-        const bottom = this.posY + offsetY + h / 2
-        const top = this.posY + offsetY - h / 2
-        line(left, bottom, mid1, bottom)
-        line(mid1, bottom, mid1, top)
-        line(mid1, top, mid2, top)
-        line(mid2, top, mid2, bottom)
-        line(mid2, bottom, right, bottom)
+        ctx.inNonTransformedFrame(() => {
+            const w = 40
+            const h = 10
+            const offsetY = this.orient === "s" ? -36 : 26
+            stroke(0)
+            strokeWeight(1)
+            const left = this.posX - w / 2
+            const mid1 = left + w * this.phase / this.period
+            const mid2 = mid1 + w * this.dutycycle / 100
+            const right = this.posX + w / 2
+            const bottom = this.posY + offsetY + h / 2
+            const top = this.posY + offsetY - h / 2
+            line(left, bottom, mid1, bottom)
+            line(mid1, bottom, mid1, top)
+            line(mid1, top, mid2, top)
+            line(mid2, top, mid2, bottom)
+            line(mid2, bottom, right, bottom)
 
-        noStroke()
-        fill(0)
-        textSize(10)
-        textAlign(CENTER, CENTER)
-        textStyle(NORMAL)
-        const periodStr = this.period >= 1000
-            ? (this.period / 1000) + " s"
-            : this.period + " ms"
-        text(periodStr, this.posX, bottom + 8)
+            noStroke()
+            fill(0)
+            textSize(10)
+            textAlign(CENTER, CENTER)
+            textStyle(NORMAL)
+            const periodStr = this.period >= 1000
+                ? (this.period / 1000) + " s"
+                : this.period + " ms"
+            text(periodStr, this.posX, bottom + 8)
+        })
     }
 
 }

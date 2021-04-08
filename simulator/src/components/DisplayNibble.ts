@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { DrawContext, isOrientationVertical } from "./Drawable"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -104,19 +104,21 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
                 text(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
             }
 
+            const isVertical = isOrientationVertical(this.orient)
+
             const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
             fill(textColor)
 
             textSize(10)
             textAlign(CENTER, CENTER)
             textStyle(NORMAL)
-            text(binaryStringRep, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 8))
+            text(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
 
             textSize(18)
             textStyle(BOLD)
 
             const stringRep = formatWithRadix(value, this._radix)
-            text(stringRep, ...ctx.rotatePoint(this.posX, this.posY + width / 6))
+            text(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })
     }
 

@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs } from "../drawutils"
 import { tooltipContent, mods, div, b } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { DrawContext, isOrientationVertical } from "./Drawable"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -101,37 +101,57 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
             fill(0)
 
-            textAlign(CENTER, CENTER)
+            const isVertical = isOrientationVertical(this.orient)
+            const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
+
             textSize(9)
             textStyle(NORMAL)
-            text(binaryStringRep, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 10))
-
-            let mainTextPosY = this.posY
-
-            if (isDefined(this._additionalReprRadix)) {
-                const additionalRepr = formatWithRadix(value, this._additionalReprRadix)
-                textSize(11)
-                textStyle(BOLD)
-                text(additionalRepr, ...ctx.rotatePoint(this.posX, this.posY - height / 2 + 22))
-                mainTextPosY += 8
+            if (isVertical && hasAdditionalRepresentation) {
+                // upper left corner
+                textAlign(LEFT, CENTER)
+                text(binaryStringRep, this.posX - height / 2 + 3, this.posY - width / 2 + 8)
+                textAlign(CENTER, CENTER)
+            } else {
+                // upper center
+                textAlign(CENTER, CENTER)
+                text(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 8 : -height / 2 + 10))
             }
 
+            let mainTextPosY = this.posY + (isVertical ? 4 : 0)
+
+            if (hasAdditionalRepresentation) {
+                const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10)
+                textSize(11)
+                textStyle(BOLD)
+                if (isVertical) {
+                    // upper right
+                    textAlign(RIGHT, CENTER)
+                    text(additionalRepr, this.posX + height / 2 - 3, this.posY - width / 2 + 9)
+                    textAlign(CENTER, CENTER)
+                } else {
+                    // center, below bin repr
+                    text(additionalRepr, this.posX, this.posY - height / 2 + 22)
+                    mainTextPosY += 8 // shift main repr a bit
+                }
+            }
+
+            let mainText: string
             if (isUnset(value)) {
                 textSize(18)
                 textStyle(BOLD)
-                text("?", ...ctx.rotatePoint(this.posX, mainTextPosY))
-
+                mainText = "?"
             } else if (value < 32) {
                 // non-printable
                 textSize(16)
                 textStyle(NORMAL)
-                text("\\" + value, ...ctx.rotatePoint(this.posX, mainTextPosY))
-
+                mainText = "\\" + value
             } else {
                 textSize(18)
                 textStyle(BOLD)
-                text("‘" + String.fromCharCode(value) + "’", ...ctx.rotatePoint(this.posX, mainTextPosY))
+                mainText = "‘" + String.fromCharCode(value) + "’"
             }
+            text(mainText, this.posX, mainTextPosY)
+
         })
     }
 

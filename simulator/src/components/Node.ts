@@ -1,7 +1,7 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
-import { mode, modifierKeys, wireMgr } from "../simulator"
+import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
-import { DrawableWithPosition, DrawContext } from "./Drawable"
+import { DrawableWithPosition, DrawContext, isOrientationVertical } from "./Drawable"
 import { NodeManager } from "../NodeManager"
 import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
@@ -95,7 +95,11 @@ abstract class NodeBase extends DrawableWithPosition {
             textStyle(BOLD)
 
             ctx.inNonTransformedFrame(ctx => {
-                text("!", ...ctx.rotatePoint(this.posX, this.posY - 12))
+                const parentOrient = this.parent.orient
+                text("!!", ...ctx.rotatePoint(
+                    this.posX + (isOrientationVertical(parentOrient) ? 13 : 0),
+                    this.posY + (isOrientationVertical(parentOrient) ? 0 : -13),
+                ))
             })
         }
     }
@@ -272,7 +276,7 @@ export class NodeOut extends NodeBase {
         if (super.mouseDoubleClick(e)) {
             return true // already handled
         }
-        if (mode >= Mode.FULL && modifierKeys.isOptionDown && this.isOutput && this.parent.allowsForcedOutputs) {
+        if (mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
             const oldVisibleValue = this.value
             this._forceValue = (() => {
                 switch (this._forceValue) {

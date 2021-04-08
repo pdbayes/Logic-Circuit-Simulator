@@ -2,7 +2,7 @@ import { Expand, FixedArraySize, isDefined, isUnset, Mode, RichStringEnum, TriSt
 import { ComponentBase, ComponentRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { Color, COLOR_DARK_RED, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
-import { mode, modifierKeys } from "../simulator"
+import { mode } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 
@@ -268,12 +268,15 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
                 line(gateLeft, bottom, gateRight, bottom)
                 line(gateLeft, top, gateLeft, bottom)
                 line(gateRight, top, gateRight, bottom)
-                textAlign(CENTER, CENTER)
-                textStyle(BOLD)
                 strokeWeight(0)
-                fill(COLOR_UNSET)
                 wireEnds()
+
                 ctx.inNonTransformedFrame(() => {
+                    noStroke()
+                    fill(COLOR_UNSET)
+                    textSize(20)
+                    textAlign(CENTER, CENTER)
+                    textStyle(BOLD)
                     text('?', this.posX, this.posY)
                 })
                 break
@@ -394,7 +397,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         if (super.mouseDoubleClick(e)) {
             return true // already handled
         }
-        if (mode >= Mode.FULL && modifierKeys.isOptionDown) {
+        if (mode >= Mode.FULL && e.altKey) {
             this._showAsUnknown = !this._showAsUnknown
             this.setNeedsRedraw("display style changed")
             return true

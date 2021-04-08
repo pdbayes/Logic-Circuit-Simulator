@@ -1,4 +1,4 @@
-import { addComponentNeedingRecalc, mode, modifierKeys, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
+import { addComponentNeedingRecalc, mode, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
 import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
@@ -445,7 +445,7 @@ export abstract class ComponentBase<
 
     private updateSelfPositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const [x, y] = offsetXY(e)
-        const snapToGrid = !modifierKeys.isCommandDown
+        const snapToGrid = !e.metaKey
         if (this._state === ComponentState.SPAWNING) {
             return this.setPosition(x, y, snapToGrid)
         }
@@ -493,8 +493,6 @@ export abstract class ComponentBase<
 
     mouseUp(__: MouseEvent | TouchEvent) {
         if (this._state === ComponentState.SPAWNING) {
-            // const snapToGrid = !modifierKeys.isCommandDown
-            // this.setPosition(e.offsetX, e.offsetY, snapToGrid)
             this._state = ComponentState.SPAWNED
         }
         if (isDefined(this._isMovingWithContext)) {

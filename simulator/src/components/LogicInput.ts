@@ -2,7 +2,7 @@ import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriSta
 import { ComponentBase, defineComponent, extendComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
 import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
-import { mode, modifierKeys } from "../simulator"
+import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 
@@ -137,8 +137,8 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         }
         this.doSetValue((() => {
             switch (this.value) {
-                case true: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : false
-                case false: return (mode >= Mode.FULL && modifierKeys.isOptionDown) ? Unset : true
+                case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false
+                case false: return (mode >= Mode.FULL && e.altKey) ? Unset : true
                 case Unset: return mode >= Mode.FULL ? false : Unset
             }
         })())

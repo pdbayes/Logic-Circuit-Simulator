@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, Dict, getURLParameter, isDefined, isEmptyObject, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, Dict, getURLParameter, isDefined, isEmpty, isEmptyObject, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -37,12 +37,6 @@ const MaxEmbeddedMode = Mode.DESIGN
 export let upperMode: Mode = isEmbeddedInIframe() ? MaxEmbeddedMode : MaxMode
 export let mode: Mode = upperMode
 
-export const modifierKeys = {
-    isShiftDown: false,
-    isCommandDown: false,
-    isOptionDown: false,
-    isControlDown: false,
-}
 const _movingComponents = new Set<Component>()
 
 function changeMovingComponents(change: () => void) {
@@ -51,7 +45,7 @@ function changeMovingComponents(change: () => void) {
     const emptyAfter = _movingComponents.size === 0
     if (emptyBefore !== emptyAfter) {
         updateCursor()
-        setCanvasNeedsRedraw("started or stopped moving components", null)
+        RedrawManager.addReason("started or stopped moving components", null)
     }
 }
 
@@ -99,7 +93,7 @@ function trySetMode(wantedMode: Mode) {
 
         console.log(`Display/interaction is ${wantedModeStr}`)
 
-        setCanvasNeedsRedraw("mode changed", null)
+        RedrawManager.addReason("mode changed", null)
 
         // update mode active button
         document.querySelectorAll(".sim-mode-tool").forEach((elem) => {
@@ -206,17 +200,54 @@ function trySetMode(wantedMode: Mode) {
 }
 
 
-let _canvasRedrawReasons: Dict<unknown[]> = {}
+export const RedrawManager = (() => {
+    let _canvasRedrawReasons: Dict<unknown[]> = {}
 
-export function setCanvasNeedsRedraw(reason: string, comp: Drawable | null) {
-    const compObj = comp ?? mainCanvas
-    const compList = _canvasRedrawReasons[reason]
-    if (isUndefined(compList)) {
-        _canvasRedrawReasons[reason] = [compObj]
-    } else {
-        compList.push(compObj)
+    return {
+        addReason(reason: string, comp: Drawable | null) {
+            const compObj = comp ?? mainCanvas
+            const compList = _canvasRedrawReasons[reason]
+            if (isUndefined(compList)) {
+                _canvasRedrawReasons[reason] = [compObj]
+            } else {
+                compList.push(compObj)
+            }
+        },
+
+        getReasonsAndClear(): string | undefined {
+            if (isEmptyObject(_canvasRedrawReasons)) {
+                return undefined
+            }
+
+            const reasonParts: string[] = []
+            for (const reason of Object.keys(_canvasRedrawReasons)) {
+                reasonParts.push(reason)
+                const linkedComps = _canvasRedrawReasons[reason]!
+                reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
+                for (const comp of linkedComps) {
+                    if (comp !== mainCanvas) {
+                        const compAny = comp as any
+                        reasonParts.push(compAny.constructor?.name ?? "Component")
+                        if (isDefined(compAny.type)) {
+                            reasonParts.push("_", compAny.type)
+                        }
+                        if (isDefined(compAny.name)) {
+                            reasonParts.push("('", compAny.name, "')")
+                        }
+                        reasonParts.push("; ")
+                    }
+                }
+                reasonParts.pop()
+                reasonParts.push("\n    ")
+            }
+            reasonParts.pop()
+
+            _canvasRedrawReasons = {}
+
+            return reasonParts.join("")
+        },
     }
-}
+})()
 
 const _componentNeedingRecalc = new Set<Component>()
 
@@ -264,7 +295,7 @@ function setCurrentMouseOverComp(comp: Drawable | null) {
                 _startHoverTimeoutHandle = null
             }, 1200)
         }
-        setCanvasNeedsRedraw("mouseover changed", null)
+        RedrawManager.addReason("mouseover changed", null)
         // console.log("Over component: ", newMouseOverComp)
     }
 }
@@ -538,7 +569,7 @@ export function setup() {
                     _currentMouseDownComp = _currentMouseOverComp
                     setStartDragTimeout(_currentMouseDownComp, e)
                 }
-                setCanvasNeedsRedraw("mousedown", null)
+                RedrawManager.addReason("mousedown", null)
             } else {
                 // mouse down on background
                 _currentMouseDownComp = canvasContainer
@@ -586,63 +617,63 @@ export function setup() {
             _currentHandlers.mouseUpOnBackground(e)
         }
         _currentMouseDownComp = null
-        setCanvasNeedsRedraw("mouseup", null)
+        RedrawManager.addReason("mouseup", null)
     }
 
-    canvasContainer.addEventListener("touchstart", (e) => {
+    canvasContainer.addEventListener("touchstart", wrapHandler((e) => {
         // console.log("touchstart %o %o", offsetXY(e), e)
         if (mode >= Mode.CONNECT) {
             // prevent scrolling when we can connect
             e.preventDefault()
         }
         mouseDownTouchStart(e)
-    })
-    canvasContainer.addEventListener("touchmove", (e) => {
+    }))
+    canvasContainer.addEventListener("touchmove", wrapHandler((e) => {
         // console.log("touchmove %o %o", offsetXY(e), e)
         if (mode >= Mode.CONNECT) {
             // prevent scrolling when we can connect
             e.preventDefault()
         }
         mouseMoveTouchMove(e)
-    })
+    }))
 
-    canvasContainer.addEventListener("touchend", (e) => {
+    canvasContainer.addEventListener("touchend", wrapHandler((e) => {
         // console.log("touchend %o %o", offsetXY(e), e, e.detail)
         // touchend should always be prevented, otherwise it may
         // generate mouse/click events
         e.preventDefault()
         mouseUpTouchEnd(e)
         setCurrentMouseOverComp(null)
-    })
+    }))
 
-    canvasContainer.addEventListener("touchcancel", (e) => {
+    canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
         console.log("touchcancel %o %o", offsetXY(e), e)
-    })
+    }))
 
-    canvasContainer.addEventListener("mousedown", (e) => {
+    canvasContainer.addEventListener("mousedown", wrapHandler((e) => {
         // console.log("mousedown %o", e)
         mouseDownTouchStart(e)
-    })
+    }))
 
-    canvasContainer.addEventListener("mousemove", (e) => {
+    canvasContainer.addEventListener("mousemove", wrapHandler((e) => {
         // console.log("mousemove %o", e)
         mouseMoveTouchMove(e)
         updateCursor()
-    })
+    }))
 
-    canvasContainer.addEventListener("mouseup", (e) => {
+    canvasContainer.addEventListener("mouseup", wrapHandler((e) => {
         // console.log("mouseup %o", e)
         mouseUpTouchEnd(e)
         updateMouseOver([e.offsetX, e.offsetY])
         updateCursor()
-    })
+    }))
 
     const compButtons = document.getElementsByClassName("sim-component-button")
 
     for (let i = 0; i < compButtons.length; i++) {
         const compButton = compButtons[i] as HTMLElement
         const factory = makeComponentFactoryForButton(compButton)
-        compButton.addEventListener("mousedown", (e) => {
+        compButton.addEventListener("mousedown", wrapHandler((e) => {
             e.preventDefault()
             const newComponent = factory()
             _currentMouseOverComp = newComponent
@@ -651,8 +682,8 @@ export function setup() {
                 _currentMouseDownComp = _currentMouseOverComp
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
-        })
-        compButton.addEventListener("touchstart", (e) => {
+        }))
+        compButton.addEventListener("touchstart", wrapHandler((e) => {
             e.preventDefault()
             const newComponent = factory()
             _currentMouseOverComp = newComponent
@@ -661,7 +692,7 @@ export function setup() {
                 _currentMouseDownComp = _currentMouseOverComp
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
-        })
+        }))
     }
 
 
@@ -715,7 +746,7 @@ export function setup() {
                         copyLinkDiv
                     ).render()
 
-                switchToModeDiv.addEventListener("click", () => trySetMode(buttonMode))
+                switchToModeDiv.addEventListener("click", wrapHandler(() => trySetMode(buttonMode)))
 
                 return switchToModeDiv
             })
@@ -753,11 +784,6 @@ export function currentEpochTime() {
     return new Date().getTime() - _epochStart
 }
 
-export function windowResized() {
-    resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
-    setCanvasNeedsRedraw("window resized", null)
-}
-
 export function recalculate() {
     // const recalculated = new Set<Component>()
 
@@ -785,85 +811,81 @@ export function recalculate() {
     } while (_componentNeedingRecalc.size !== 0)
 }
 
-export function draw() {
-    const needsRecalc = _componentNeedingRecalc.size !== 0
-    if (needsRecalc) {
-        recalculate()
-    }
-    if (wireMgr.isAddingWire) {
-        setCanvasNeedsRedraw("adding a wire", null)
+export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
+    return (...params: T) => {
+        const result = f(...params)
+        recalcAndDrawIfNeeded()
+        return result
     }
 
-    if (isEmptyObject(_canvasRedrawReasons)) {
-        return
-    }
+    function recalcAndDrawIfNeeded() {
+        const needsRecalc = _componentNeedingRecalc.size !== 0
+        if (needsRecalc) {
+            recalculate()
+        }
+        if (wireMgr.isAddingWire) {
+            RedrawManager.addReason("adding a wire", null)
+        }
 
-    const reasonParts: string[] = []
-    for (const reason of Object.keys(_canvasRedrawReasons)) {
-        reasonParts.push(reason)
-        const linkedComps = _canvasRedrawReasons[reason]!
-        reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
-        for (const comp of linkedComps) {
-            if (comp !== mainCanvas) {
-                reasonParts.push((comp as any).constructor.name, "; ")
+        const redrawReasons = RedrawManager.getReasonsAndClear()
+        if (isUndefined(redrawReasons)) {
+            return
+        }
+
+        console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
+
+        const g = mainCanvas.getContext("2d")!
+
+        strokeCap(PROJECT)
+
+        background(0xFF)
+        fill(0xFF)
+
+        stroke(200)
+        strokeWeight(2)
+        if (mode >= Mode.CONNECT || upperMode === MaxMode) {
+            rect(0, 0, width, height)
+            if (upperMode === MaxMode && mode < upperMode) {
+                const h = guessCanvasHeight()
+                line(0, h, width, h)
+                fill(0xEE)
+                rect(0, h, width, height - h)
             }
         }
-        reasonParts.pop()
-        reasonParts.push("\n    ")
-    }
-    reasonParts.pop()
 
+        const isMovingComponent = _movingComponents.size > 0
+        if (isMovingComponent) {
+            stroke(240)
+            strokeWeight(1)
+            for (let x = GRID_STEP; x < width; x += GRID_STEP) {
+                line(x, 0, x, height)
+            }
+            for (let y = GRID_STEP; y < height; y += GRID_STEP) {
+                line(0, y, width, y)
+            }
+        }
 
-    console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reasons:\n    " + reasonParts.join(""))
+        stroke(0)
+        wireMgr.draw(g, _currentMouseOverComp)
 
-    const g = mainCanvas.getContext("2d")!
+        for (const elems of allComponents) {
+            for (const elem of elems) {
+                elem.draw(g, _currentMouseOverComp)
+                elem.forEachNode((node) => {
+                    node.draw(g, _currentMouseOverComp)
+                    return true
+                })
+            }
+        }
 
-    strokeCap(PROJECT)
-
-    background(0xFF)
-    fill(0xFF)
-
-    stroke(200)
-    strokeWeight(2)
-    if (mode >= Mode.CONNECT || upperMode === MaxMode) {
-        rect(0, 0, width, height)
-        if (upperMode === MaxMode && mode < upperMode) {
-            const h = guessCanvasHeight()
-            line(0, h, width, h)
-            fill(0xEE)
-            rect(0, h, width, height - h)
+        const newRedrawReasons = RedrawManager.getReasonsAndClear()
+        if (isDefined(newRedrawReasons)) {
+            console.log("ERROR: unexpectedly found new reasons to redraw right after a redraw:\n    " + newRedrawReasons)
         }
     }
-
-    const isMovingComponent = _movingComponents.size > 0
-    if (isMovingComponent) {
-        stroke(240)
-        strokeWeight(1)
-        for (let x = GRID_STEP; x < width; x += GRID_STEP) {
-            line(x, 0, x, height)
-        }
-        for (let y = GRID_STEP; y < height; y += GRID_STEP) {
-            line(0, y, width, y)
-        }
-    }
-
-    stroke(0)
-    wireMgr.draw(g, _currentMouseOverComp)
-
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            elem.draw(g, _currentMouseOverComp)
-            elem.forEachNode((node) => {
-                node.draw(g, _currentMouseOverComp)
-                return true
-            })
-        }
-    }
-
-    _canvasRedrawReasons = {}
 }
 
-function keyUp(e: KeyboardEvent) {
+function keyUpHandler(e: KeyboardEvent) {
     switch (e.key) {
         case "Shift":
             return NodeManager.tryConnectNodes()
@@ -887,21 +909,15 @@ function keyUp(e: KeyboardEvent) {
     }
 }
 
-function modifierKeyWatcher(e: KeyboardEvent) {
-    modifierKeys.isShiftDown = e.shiftKey
-    modifierKeys.isCommandDown = e.metaKey
-    modifierKeys.isOptionDown = e.altKey
-    modifierKeys.isControlDown = e.ctrlKey
+window.setup = setup
+
+function resizeHandler() {
+    resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
+    RedrawManager.addReason("window resized", null)
 }
 
-
-window.setup = setup
-window.draw = draw
-
-window.addEventListener("resize", windowResized)
-window.addEventListener("keyup", keyUp)
-window.addEventListener("keydown", modifierKeyWatcher)
-window.addEventListener("keyup", modifierKeyWatcher)
+window.addEventListener("resize", wrapHandler(resizeHandler))
+window.addEventListener("keyup", wrapHandler(keyUpHandler))
 
 window.activeTool = activeTool
 window.gallery = gallery
@@ -913,17 +929,6 @@ window.setModeClicked = function setModeClicked(e: HTMLElement) {
         trySetMode(wantedMode)
     }
 }
-
-const projectFile = document.getElementById("projectFile")
-if (projectFile) {
-    projectFile.addEventListener("change", (e) => PersistenceManager.loadFile(e), false)
-}
-
-export const saveProjectFile = document.getElementById("saveProjectFile") as HTMLAnchorElement | null
-if (saveProjectFile) {
-    saveProjectFile.addEventListener("click", () => PersistenceManager.saveFile(), false)
-}
-
 
 function copyLinkForMode(mode: Mode) {
     if (mode > MaxEmbeddedMode) {
@@ -962,6 +967,7 @@ ${json}
 }
 
 function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
+    let compDeleted = false
     for (const elems of allComponents) {
         for (let i = 0; i < elems.length; i++) {
             const elem = elems[i]
@@ -969,13 +975,17 @@ function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
                 elem.destroy()
                 delete elems[i]
                 elems.splice(i, 1)
+                compDeleted = true
             }
         }
     }
+    if (compDeleted) {
+        RedrawManager.addReason("components deleted", null)
+    }
 }
 
-
-window.load = (jsonString: any) => PersistenceManager.doLoadFromJson(jsonString)
+// Expose functions as part of the in-browser command-line API
+window.load = wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(jsonString))
 
 const menu = document.querySelector('.menu') as HTMLElement
 

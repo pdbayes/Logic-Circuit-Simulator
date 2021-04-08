@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, clocks, saveProjectFile, displays, allComponents, wireMgr, recalculate, startTime } from "./simulator"
+import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr, recalculate, startTime } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -54,6 +54,8 @@ class _PersistenceManager {
         }
         wireMgr.clearAllWires()
         NodeManager.clearAllLiveNodes()
+
+        startTime()
 
         function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
             if (!(fieldName in parsedContents)) {
@@ -121,17 +123,13 @@ class _PersistenceManager {
             console.log("Unloaded data fields: " + unhandledData.join(", "))
         }
 
-        startTime()
         return true
     }
 
-    saveFile() {
-        const jsonWorkspace = this.buildWorkspaceJSON()
-        const blob = new Blob([jsonWorkspace], { type: 'application/json' })
-        if (saveProjectFile) {
-            saveProjectFile.href = URL.createObjectURL(blob)
-        }
-    }
+    // saveFile() {
+    //     const jsonWorkspace = this.buildWorkspaceJSON()
+    //     const blob = new Blob([jsonWorkspace], { type: 'application/json' })
+    // }
 
     buildWorkspaceJSON() {
         const workspace: any = {}
