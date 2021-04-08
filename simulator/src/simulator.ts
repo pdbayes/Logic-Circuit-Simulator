@@ -18,6 +18,7 @@ import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
 import { gallery } from "./gallery"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
+import { Timeline } from './Timeline'
 
 
 export const gates: Gate[] = []
@@ -695,14 +696,40 @@ export function setup() {
             })
         ).applyTo(modeChangeMenu)
 
-
         modeChangeMenu.style.removeProperty("visibility")
+    }
+
+    const showPlayPauseButtons = true
+    if (showPlayPauseButtons) {
+        const modeChangeMenu = document.getElementById("modeChangeMenu")!
+
+        const makeButton = (icon: string, expl: string, action: () => unknown) => {
+            const but =
+                div(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
+                    style("display: flex; justify-content: space-between; align-items: center"),
+                    title(expl),
+                    faglyph(icon)
+                ).render()
+            but.addEventListener("click", action)
+            return but
+        }
+
+        div(cls("btn-group-vertical"),
+            div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
+                "Temps",
+            ),
+            makeButton("play", "Démarre l’écoulement du temps", () => Timeline.play()),
+            makeButton("pause", "Arrête l’écoulement du temps", () => Timeline.pause()),
+            makeButton("step-forward", "Avance au prochain événement", () => Timeline.step()),
+        ).applyTo(modeChangeMenu)
     }
 
     trySetMode(upperMode)
 
-    startTime()
-
+    Timeline.reset()
+    Timeline.onStateChanged = newState => {
+        console.log("new state", newState)
+    }
 }
 
 export function tryLoadFromData() {
@@ -715,16 +742,6 @@ export function tryLoadFromData() {
     } catch (e) {
         console.log(e)
     }
-}
-
-let _epochStart: number
-
-export function startTime() {
-    _epochStart = new Date().getTime()
-}
-
-export function currentEpochTime() {
-    return new Date().getTime() - _epochStart
 }
 
 
@@ -800,11 +817,15 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
     }
 }
 
-function keyUpHandler(e: KeyboardEvent) {
+function keyDownHandler(e: KeyboardEvent) {
     switch (e.key) {
         case "Shift":
             return NodeManager.tryConnectNodes()
+    }
+}
 
+function keyUpHandler(e: KeyboardEvent) {
+    switch (e.key) {
         case "Escape":
             tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
             wireMgr.tryCancelWire()
@@ -832,6 +853,7 @@ function resizeHandler() {
 }
 
 window.addEventListener("resize", wrapHandler(resizeHandler))
+window.addEventListener("keydown", wrapHandler(keyDownHandler))
 window.addEventListener("keyup", wrapHandler(keyUpHandler))
 
 window.activeTool = activeTool

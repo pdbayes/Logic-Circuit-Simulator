@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr, startTime } from "./simulator"
+import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -11,6 +11,7 @@ import { isArray, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 import { RecalcManager } from "./RedrawRecalcManager"
+import { Timeline } from "./Timeline"
 
 class _PersistenceManager {
 
@@ -55,8 +56,7 @@ class _PersistenceManager {
         }
         wireMgr.clearAllWires()
         NodeManager.clearAllLiveNodes()
-
-        startTime()
+        Timeline.reset()
 
         function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
             if (!(fieldName in parsedContents)) {

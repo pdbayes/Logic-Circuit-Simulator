@@ -2,10 +2,9 @@ import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
 import { isDefined, TriState, typeOrUndefined } from "../utils"
-import { currentEpochTime } from "../simulator"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
-import { TickManager } from "../TickManager"
+import { Timeline } from "../Timeline"
 
 
 const ClockMandatoryParams = t.type({
@@ -48,7 +47,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
             this.showLabel = savedData.showLabel
         }
         // sets the value and schedules the next tick
-        this.tickCallback(currentEpochTime())
+        this.tickCallback(Timeline.adjustedTime())
     }
 
     toJSON() {
@@ -103,7 +102,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         const [value, nextTick] = this.currentClockValue(theoreticalTime)
         this.doSetValue(value)
         if (this.state !== ComponentState.DEAD) {
-            TickManager.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
+            Timeline.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
         }
     }
 
