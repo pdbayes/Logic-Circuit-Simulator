@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, Dict, getURLParameter, isDefined, isEmpty, isEmptyObject, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -17,6 +17,7 @@ import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
 import { gallery } from "./gallery"
+import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
 
 
 export const gates: Gate[] = []
@@ -198,64 +199,6 @@ function trySetMode(wantedMode: Mode) {
         console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[upperMode]}`)
     }
 }
-
-
-export const RedrawManager = (() => {
-    let _canvasRedrawReasons: Dict<unknown[]> = {}
-
-    return {
-        addReason(reason: string, comp: Drawable | null) {
-            const compObj = comp ?? mainCanvas
-            const compList = _canvasRedrawReasons[reason]
-            if (isUndefined(compList)) {
-                _canvasRedrawReasons[reason] = [compObj]
-            } else {
-                compList.push(compObj)
-            }
-        },
-
-        getReasonsAndClear(): string | undefined {
-            if (isEmptyObject(_canvasRedrawReasons)) {
-                return undefined
-            }
-
-            const reasonParts: string[] = []
-            for (const reason of Object.keys(_canvasRedrawReasons)) {
-                reasonParts.push(reason)
-                const linkedComps = _canvasRedrawReasons[reason]!
-                reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
-                for (const comp of linkedComps) {
-                    if (comp !== mainCanvas) {
-                        const compAny = comp as any
-                        reasonParts.push(compAny.constructor?.name ?? "Component")
-                        if (isDefined(compAny.type)) {
-                            reasonParts.push("_", compAny.type)
-                        }
-                        if (isDefined(compAny.name)) {
-                            reasonParts.push("('", compAny.name, "')")
-                        }
-                        reasonParts.push("; ")
-                    }
-                }
-                reasonParts.pop()
-                reasonParts.push("\n    ")
-            }
-            reasonParts.pop()
-
-            _canvasRedrawReasons = {}
-
-            return reasonParts.join("")
-        },
-    }
-})()
-
-const _componentNeedingRecalc = new Set<Component>()
-
-export function addComponentNeedingRecalc(comp: Component) {
-    _componentNeedingRecalc.add(comp)
-    // console.log("Need recalc:", _componentNeedingRecalc)
-}
-
 
 let _currentMouseOverComp: Drawable | null = null
 let _currentMouseOverPopper: PopperInstance | null = null
@@ -784,32 +727,6 @@ export function currentEpochTime() {
     return new Date().getTime() - _epochStart
 }
 
-export function recalculate() {
-    // const recalculated = new Set<Component>()
-
-    let round = 1
-    do {
-        const toRecalc = new Set<Component>(_componentNeedingRecalc)
-        console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
-        _componentNeedingRecalc.clear()
-        toRecalc.forEach((comp) => {
-            // if (!recalculated.has(comp)) {
-            comp.recalcValue()
-            //     recalculated.add(comp)
-            // } else {
-            //     console.log("ERROR circular dependency")
-            // }
-        })
-
-        round++
-
-        // TODO smarter circular dependency tracking
-        if (round > 1000) {
-            console.log("ERROR circular dependency")
-            break
-        }
-    } while (_componentNeedingRecalc.size !== 0)
-}
 
 export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
     return (...params: T) => {
@@ -819,10 +736,8 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
     }
 
     function recalcAndDrawIfNeeded() {
-        const needsRecalc = _componentNeedingRecalc.size !== 0
-        if (needsRecalc) {
-            recalculate()
-        }
+        const recalculated = RecalcManager.recalculateIfNeeded()
+
         if (wireMgr.isAddingWire) {
             RedrawManager.addReason("adding a wire", null)
         }
@@ -832,7 +747,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
             return
         }
 
-        console.log("Drawing " + (needsRecalc ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
+        console.log("Drawing " + (recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
 
         const g = mainCanvas.getContext("2d")!
 

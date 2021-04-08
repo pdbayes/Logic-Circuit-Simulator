@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr, recalculate, startTime } from "./simulator"
+import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr, startTime } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -10,6 +10,7 @@ import { NodeManager } from "./NodeManager"
 import { isArray, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
+import { RecalcManager } from "./RedrawRecalcManager"
 
 class _PersistenceManager {
 
@@ -106,7 +107,7 @@ class _PersistenceManager {
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
         // now all components are marked as needing recalculating
-        recalculate()
+        RecalcManager.recalculateIfNeeded()
 
         loadField("wires", WireRepr, ([nodeID1, nodeID2]) => {
             const node1 = NodeManager.findNode(nodeID1)
@@ -114,7 +115,7 @@ class _PersistenceManager {
             if (!isUndefined(node1) && !isUndefined(node2)) {
                 wireMgr.addNode(node1)
                 wireMgr.addNode(node2)
-                recalculate()
+                RecalcManager.recalculateIfNeeded()
             }
         })
 

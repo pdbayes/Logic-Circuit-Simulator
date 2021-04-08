@@ -34,7 +34,7 @@ export const TickManager = (() => {
                 try {
                     callback(wantedTime)
                 } catch (err) {
-                    console.log("ERROR running callback: " + err)
+                    console.log(`ERROR running callback '${desc}': ` + err)
                 }
             }
         }

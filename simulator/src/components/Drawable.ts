@@ -1,8 +1,9 @@
 import { Expand, isDefined, isNotNull, Mode, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode, RedrawManager } from "../simulator"
+import { mode } from "../simulator"
 import { ModifierObject } from "../htmlgen"
+import { RedrawManager } from "../RedrawRecalcManager"
 
 export interface DrawContext {
     isMouseOver: boolean

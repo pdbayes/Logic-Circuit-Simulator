@@ -1,9 +1,10 @@
-import { addComponentNeedingRecalc, mode, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
+import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
 import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
 import { DEFAULT_ORIENTATION, DrawableWithPosition, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
+import { RecalcManager } from "../RedrawRecalcManager"
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
@@ -425,7 +426,7 @@ export abstract class ComponentBase<
     }
 
     public setNeedsRecalc() {
-        addComponentNeedingRecalc(this)
+        RecalcManager.addComponentNeedingRecalc(this)
     }
 
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {

@@ -1,10 +1,11 @@
 import { Mode, isNull, isNotNull, isDefined } from "../utils"
-import { mode, RedrawManager, setToolCursor } from "../simulator"
+import { mode, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
 import { wireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils"
 import { Drawable, DrawContext } from "./Drawable"
+import { RedrawManager } from "../RedrawRecalcManager"
 
 export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
 export type WireRepr = t.TypeOf<typeof WireRepr>
