@@ -3,8 +3,6 @@
 
 ## High priority
 
- * Support touch events
- * Unify click-and-drag also from left buttons instead of click-and-move
  * ...
 
 
@@ -34,3 +32,5 @@
  * Allow changing modes, add admin mode to force nodes in states
  * Generate links or Markdown blocks with given diagram
  * Optimize draw calls
+ * Support touch events
+ * Unify click-and-drag also from left buttons instead of click-and-move

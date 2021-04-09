@@ -2,7 +2,7 @@ import { Expand, isDefined, isNotNull, Mode, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { mode } from "../simulator"
-import { ModifierObject } from "../htmlgen"
+import { Modifier, ModifierObject } from "../htmlgen"
 import { RedrawManager } from "../RedrawRecalcManager"
 
 export interface DrawContext {
@@ -13,6 +13,13 @@ export interface DrawContext {
 export interface DrawContextExt extends DrawContext {
     rotatePoint(x: number, y: number): readonly [x: number, y: number]
 }
+
+export type ContextMenuItem =
+    | { _tag: "sep" }
+    | { _tag: "item", caption: Modifier, action: () => unknown }
+    | { _tag: "submenu", caption: Modifier, items: ContextMenuData }
+
+export type ContextMenuData = ContextMenuItem[]
 
 class _DrawContextImpl implements DrawContext, DrawContextExt {
 
@@ -91,6 +98,10 @@ export abstract class Drawable {
     }
 
     public makeTooltip(): ModifierObject | undefined {
+        return undefined
+    }
+
+    public makeContextMenu(): ContextMenuData | undefined {
         return undefined
     }
 

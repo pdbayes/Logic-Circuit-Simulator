@@ -4,77 +4,96 @@ import * as t from "io-ts"
 import { Color, COLOR_DARK_RED, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { mode } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, DrawContext } from "./Drawable"
 
+
+
+type GateProps = {
+    includeInContextMenu: boolean
+    localName: string
+    localDesc: string
+}
 
 const Gate2Types_ = {
     // usual suspects
     AND: {
-        out: (in1: boolean, in2: boolean) => in1 && in2, localName: "ET",
+        out: (in1: boolean, in2: boolean) => in1 && in2,
+        localName: "ET", includeInContextMenu: true,
         localDesc: "La sortie vaut 1 lorsque les deux entrées valent 1.",
     },
     OR: {
-        out: (in1: boolean, in2: boolean) => in1 || in2, localName: "OU",
+        out: (in1: boolean, in2: boolean) => in1 || in2,
+        localName: "OU", includeInContextMenu: true,
         localDesc: "La sortie vaut 1 lorsqu’au moins une des deux entrées vaut 1.",
     },
     XOR: {
-        out: (in1: boolean, in2: boolean) => in1 !== in2, localName: "OU-X",
+        out: (in1: boolean, in2: boolean) => in1 !== in2,
+        localName: "OU-X", includeInContextMenu: true,
         localDesc: "La sortie vaut 1 lorsque l’une ou l’autre des deux entrées vaut 1, mais pas les deux.",
     },
     NAND: {
-        out: (in1: boolean, in2: boolean) => !(in1 && in2), localName: "NON-ET",
+        out: (in1: boolean, in2: boolean) => !(in1 && in2),
+        localName: "NON-ET", includeInContextMenu: true,
         localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les deux entrées ne valent 1.",
     },
     NOR: {
-        out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU",
+        out: (in1: boolean, in2: boolean) => !(in1 || in2),
+        localName: "NON-OU", includeInContextMenu: true,
         localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les deux entrées valent 0.",
     },
     XNOR: {
-        out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X",
+        out: (in1: boolean, in2: boolean) => in1 === in2,
+        localName: "NON-OU-X", includeInContextMenu: true,
         localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsque les entrées valent soit les deux 1, soit les deux 0.",
     },
 
     // less common gates
     IMPLY: {
-        out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE",
+        out: (in1: boolean, in2: boolean) => !in1 || in2,
+        localName: "IMPLIQUE", includeInContextMenu: true,
         localDesc: "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1.",
     },
     RIMPLY: {
-        out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE (bis)",
+        out: (in1: boolean, in2: boolean) => in1 || !in2,
+        localName: "IMPLIQUE (bis)", includeInContextMenu: false,
         localDesc: "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1.",
     },
     NIMPLY: {
-        out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE",
+        out: (in1: boolean, in2: boolean) => in1 && !in2,
+        localName: "NON-IMPLIQUE", includeInContextMenu: true,
         localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0.",
     },
     RNIMPLY: {
-        out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE (bis)",
+        out: (in1: boolean, in2: boolean) => !in1 && in2,
+        localName: "NON-IMPLIQUE (bis)", includeInContextMenu: false,
         localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1.",
     },
 
     // observing only one input
     TXA: {
-        out: (in1: boolean, __: boolean) => in1, localName: "TRANSFERT-A",
+        out: (in1: boolean, __: boolean) => in1,
+        localName: "TRANSFERT-A", includeInContextMenu: true,
         localDesc: "La sortie est égale à la première entrée; la seconde entrée est ignorée.",
     },
     TXB: {
-        out: (__: boolean, in2: boolean) => in2, localName: "TRANSFERT-B",
+        out: (__: boolean, in2: boolean) => in2,
+        localName: "TRANSFERT-B", includeInContextMenu: false,
         localDesc: "La sortie est égale à la seconde entrée; la première entrée est ignorée.",
     },
     TXNA: {
-        out: (in1: boolean, __: boolean) => !in1, localName: "TRANSFERT-NON-A",
+        out: (in1: boolean, __: boolean) => !in1,
+        localName: "TRANSFERT-NON-A", includeInContextMenu: false,
         localDesc: "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée.",
     },
     TXNB: {
-        out: (__: boolean, in2: boolean) => !in2, localName: "TRANSFERT-NON-B",
+        out: (__: boolean, in2: boolean) => !in2,
+        localName: "TRANSFERT-NON-B", includeInContextMenu: false,
         localDesc: "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée.",
     },
 } as const
 
-export const Gate2Types = RichStringEnum.withProps<{
+export const Gate2Types = RichStringEnum.withProps<GateProps & {
     out: (in1: boolean, in2: boolean) => boolean
-    localName: string
-    localDesc: string
 }>()(Gate2Types_)
 
 export type Gate2Type = typeof Gate2Types.type
@@ -91,10 +110,8 @@ const Gate1Types_ = {
     },
 } as const
 
-export const Gate1Types = RichStringEnum.withProps<{
+export const Gate1Types = RichStringEnum.withProps<GateProps & {
     out: (in1: boolean) => boolean
-    localName: string
-    localDesc: string
 }>()(Gate1Types_)
 
 export type Gate1Type = typeof Gate1Types.type
@@ -333,6 +350,21 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
         }
     }
 
+    protected makeRemplaceByMenuItem<G extends string>(currentType: G, enumDef: RichStringEnum<G, GateProps>, callback: (newType: G) => unknown): ContextMenuItem {
+        const otherTypes = enumDef.values.filter(t => t !== currentType && enumDef.propsOf(t).includeInContextMenu)
+        return {
+            _tag: "submenu", caption: "Remplacer par",
+            items: otherTypes.map(newType => {
+                const gateProps = enumDef.propsOf(newType)
+                return {
+                    _tag: "item", caption: "Porte " + gateProps.localName, action: () => {
+                        callback(newType)
+                    },
+                }
+            }),
+        }
+    }
+
 }
 
 
@@ -444,6 +476,17 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return gateProps.out(in1, in2)
     }
 
+    public makeContextMenu(): ContextMenuData {
+        const replaceItem = this.makeRemplaceByMenuItem(this._type, Gate2Types, newType => this.doSetType(newType))
+        return [replaceItem]
+    }
+
+    private doSetType(newType: Gate2Type) {
+        this._type = newType
+        this.setNeedsRecalc()
+        this.setNeedsRedraw("gate type changed")
+    }
+
     mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
@@ -471,9 +514,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
                 }
             })()
             if (isDefined(newType)) {
-                this._type = newType
-                this.setNeedsRecalc()
-                this.setNeedsRedraw("gate variant changed")
+                this.doSetType(newType)
                 return true
             }
         }
@@ -581,6 +622,16 @@ export class Gate1 extends GateBase<1, Gate1Repr> {
         )
     }
 
+    public makeContextMenu(): ContextMenuData {
+        const replaceItem = this.makeRemplaceByMenuItem(this._type, Gate1Types, newType => this.doSetType(newType))
+        return [replaceItem]
+    }
+
+    private doSetType(newType: Gate1Type) {
+        this._type = newType
+        this.setNeedsRecalc()
+        this.setNeedsRedraw("gate type changed")
+    }
 
 
     mouseDoubleClicked(e: MouseEvent | TouchEvent) {
@@ -588,9 +639,7 @@ export class Gate1 extends GateBase<1, Gate1Repr> {
             return true // already handled
         }
         if (mode >= Mode.DESIGN) {
-            this._type = this._type === "BUF" ? "NOT" : "BUF"
-            this.setNeedsRecalc()
-            this.setNeedsRedraw("gate variant changed")
+            this.doSetType(this._type === "BUF" ? "NOT" : "BUF")
             return true
         }
         return false

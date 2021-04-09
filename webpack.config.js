@@ -7,12 +7,15 @@ module.exports = {
         path: path.resolve(__dirname, 'simulator', 'lib'),
     },
 
+
+    mode: 'production',
     optimization: {
-        minimize: false
+        minimize: false,
+    },
+    performance: {
+        hints: false,
     },
 
-    // devtool: 'inline-source-map',
-    mode: 'development',
     module: {
         rules: [
             {

@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isUndefined, TimeoutHandle } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -12,10 +12,10 @@ import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, ModifierObject, mods, raw, style, title } from "./htmlgen"
+import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, ModifierObject, mods, raw, style, title, type, ul } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
-import { Drawable, DrawableWithPosition } from "./components/Drawable"
+import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
 import { Timeline, TimelineState } from './Timeline'
 
@@ -70,8 +70,8 @@ export function setToolCursor(cursor: string | null) {
 let canvasContainer: HTMLElement
 let mainCanvas: HTMLCanvasElement
 let tooltipElem: HTMLElement
+let mainContextMenu: HTMLElement
 let initialData: string | undefined = undefined
-
 
 function isEmbeddedInIframe(): boolean {
     try {
@@ -184,6 +184,7 @@ type MouseDownData = {
     comp: Drawable | Element
     fireMouseClickedOnFinish: boolean
     initialXY: [number, number]
+    triggeredContextMenu: boolean
 }
 
 let _currentMouseOverComp: Drawable | null = null
@@ -195,10 +196,16 @@ let _startDragTimeoutHandle: TimeoutHandle | null = null
 function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
     _startDragTimeoutHandle = setTimeout(
         wrapHandler(() => {
+            let fireDrag = true
             if (isNotNull(_currentMouseDownData)) {
                 _currentMouseDownData.fireMouseClickedOnFinish = false
+                if (_currentMouseDownData.triggeredContextMenu) {
+                    fireDrag = false
+                }
             }
-            _currentHandlers.mouseDraggedOn(comp, e)
+            if (fireDrag) {
+                _currentHandlers.mouseDraggedOn(comp, e)
+            }
         }),
         300
     )
@@ -333,6 +340,9 @@ abstract class ToolHandlers {
     mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
+    contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+        // empty
+    }
     mouseDownOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
@@ -345,6 +355,9 @@ abstract class ToolHandlers {
 }
 
 class _EditHandlers extends ToolHandlers {
+
+    private _contextMenuOpen = false
+
     mouseHoverOn(comp: Drawable) {
         clearPopperIfNecessary()
         if (!showTooltips) {
@@ -375,6 +388,70 @@ class _EditHandlers extends ToolHandlers {
     }
     mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDoubleClicked(e)
+    }
+    contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+        if (this._contextMenuOpen) {
+            return
+        }
+
+        const contextMenuData = comp.makeContextMenu()
+        // console.log("asking for menu: %o got: %o", comp, contextMenuData)
+        if (isDefined(contextMenuData)) {
+
+            // console.log("setting triggered")
+            if (isNotNull(_currentMouseDownData)) {
+                _currentMouseDownData.triggeredContextMenu = true
+            }
+
+            // console.log("building menu for %o", contextMenuData)
+
+            const defToElem = (item: ContextMenuItem): HTMLElement => {
+                switch (item._tag) {
+                    case 'sep':
+                        return li(cls("menu-separator")).render()
+                    case "item": {
+                        const but =
+                            button(type("button"), cls("menu-btn"),
+                                item.caption,
+                            ).render()
+                        but.addEventListener("click", wrapHandler(item.action))
+                        return li(cls("menu-item"), but).render()
+                    }
+                    case "submenu": {
+                        return li(cls("menu-item submenu"),
+                            button(type("button"), cls("menu-btn"),
+                                item.caption,
+                            ),
+                            ul(cls("menu"),
+                                ...item.items.map(defToElem)
+                            )
+                        ).render()
+                    }
+                }
+            }
+
+            const items = contextMenuData.map(defToElem)
+
+            applyModifiersTo(mainContextMenu, items)
+            const em = e as MouseEvent
+            mainContextMenu.style.left = em.pageX + 'px'
+            mainContextMenu.style.top = em.pageY + 'px'
+            mainContextMenu.classList.add("show-menu")
+            this._contextMenuOpen = true
+
+            const hideMenu = () => {
+                mainContextMenu.classList.remove('show-menu')
+                mainContextMenu.innerHTML = ""
+                this._contextMenuOpen = false
+            }
+
+            const clickHandler = () => {
+                hideMenu()
+                document.removeEventListener("click", clickHandler)
+            }
+
+            document.addEventListener("click", clickHandler, false)
+        }
     }
     mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         wireMgr.tryCancelWire()
@@ -493,6 +570,7 @@ function isDoubleClick(clickedComp: Drawable, e: MouseEvent | TouchEvent) {
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
     tooltipElem = document.getElementById("tooltip")!
+    mainContextMenu = document.getElementById("mainContextMenu")!
 
     const p5canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
@@ -514,6 +592,7 @@ export function setup() {
                         comp: _currentMouseOverComp,
                         fireMouseClickedOnFinish: true,
                         initialXY: xy,
+                        triggeredContextMenu: false,
                     }
                     setStartDragTimeout(_currentMouseOverComp, e)
                 }
@@ -524,6 +603,7 @@ export function setup() {
                     comp: canvasContainer,
                     fireMouseClickedOnFinish: true,
                     initialXY: xy,
+                    triggeredContextMenu: false,
                 }
                 _currentHandlers.mouseDownOnBackground(e)
             }
@@ -536,21 +616,26 @@ export function setup() {
 
     const mouseMoveTouchMove = (e: MouseEvent | TouchEvent) => {
         if (isNotNull(_currentMouseDownData)) {
-            if (_currentMouseDownData.comp instanceof Drawable) {
-                // check if the drag is too small to be taken into account now
-                // (e.g., touchmove is fired very quickly)
-                const d = dist(...offsetXY(e), ..._currentMouseDownData.initialXY)
-                // NaN is returned when no input point was specified and
-                // dragging should then happen regardless
-                if (isNaN(d) || d >= 5) {
-                    // dragging component
-                    clearStartDragTimeout()
-                    _currentMouseDownData.fireMouseClickedOnFinish = false
-                    _currentHandlers.mouseDraggedOn(_currentMouseDownData.comp, e)
-                }
+            if (_currentMouseDownData.triggeredContextMenu) {
+                // cancel it all
+                _currentMouseDownData = null
             } else {
-                // dragging background
-                _currentHandlers.mouseDraggedOnBackground(e)
+                if (_currentMouseDownData.comp instanceof Drawable) {
+                    // check if the drag is too small to be taken into account now
+                    // (e.g., touchmove is fired very quickly)
+                    const d = dist(...offsetXY(e), ..._currentMouseDownData.initialXY)
+                    // NaN is returned when no input point was specified and
+                    // dragging should then happen regardless
+                    if (isNaN(d) || d >= 5) {
+                        // dragging component
+                        clearStartDragTimeout()
+                        _currentMouseDownData.fireMouseClickedOnFinish = false
+                        _currentHandlers.mouseDraggedOn(_currentMouseDownData.comp, e)
+                    }
+                } else {
+                    // dragging background
+                    _currentHandlers.mouseDraggedOnBackground(e)
+                }
             }
         } else {
             // moving mouse or dragging without a locked component 
@@ -633,6 +718,14 @@ export function setup() {
         updateCursor()
     }))
 
+    canvasContainer.addEventListener("contextmenu", wrapHandler((e) => {
+        // console.log("contextmenu %o", e)
+        e.preventDefault()
+        if (isNotNull(_currentMouseOverComp)) {
+            _currentHandlers.contextMenuOn(_currentMouseOverComp, e)
+        }
+    }))
+
     const compButtons = document.getElementsByClassName("sim-component-button")
 
     for (let i = 0; i < compButtons.length; i++) {
@@ -649,6 +742,7 @@ export function setup() {
                     comp: _currentMouseOverComp,
                     fireMouseClickedOnFinish: false,
                     initialXY: [NaN, NaN],
+                    triggeredContextMenu: false,
                 }
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
@@ -981,29 +1075,3 @@ function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
 
 // Expose functions as part of the in-browser command-line API
 window.load = wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(jsonString))
-
-const menu = document.querySelector('.menu') as HTMLElement
-
-function showMenu(x: number, y: number) {
-    menu.style.left = x + 'px'
-    menu.style.top = y + 'px'
-    menu.classList.add('show-menu')
-}
-
-function hideMenu() {
-    menu.classList.remove('show-menu')
-}
-
-function onContextMenu(e: MouseEvent) {
-    e.preventDefault()
-    showMenu(e.pageX, e.pageY)
-    document.addEventListener('click', onClick, false)
-}
-
-function onClick() {
-    hideMenu()
-    document.removeEventListener('click', onClick)
-}
-
-document.addEventListener('contextmenu', onContextMenu, false)
-
