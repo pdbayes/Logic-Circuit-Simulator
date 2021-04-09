@@ -1,9 +1,10 @@
-import { isDefined, isNotNull, isUnset, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUnset, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs } from "../drawutils"
-import { tooltipContent, mods, div, b } from "../htmlgen"
+import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET } from "../drawutils"
+import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { DrawContext, isOrientationVertical } from "./Drawable"
+import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -14,6 +15,7 @@ export const DisplayAsciiDef =
         type: t.literal("ascii"),
         name: typeOrUndefined(t.string),
         additionalReprRadix: typeOrUndefined(t.number),
+        showAsUnknown: typeOrUndefined(t.boolean),
     }, "DisplayAscii"))
 
 type DisplayAsciiRepr = typeof DisplayAsciiDef.reprType
@@ -22,6 +24,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
     private readonly name: string | undefined = undefined
     private _additionalReprRadix: number | undefined = undefined
+    private _showAsUnknown = false
 
     public constructor(savedData: DisplayAsciiRepr | null) {
         super(["0000000", 0], savedData, {
@@ -30,6 +33,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         if (isNotNull(savedData)) {
             this.name = savedData.name
             this._additionalReprRadix = savedData.additionalReprRadix
+            this._showAsUnknown = savedData.showAsUnknown ?? false
         }
     }
 
@@ -39,6 +43,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             ...this.toJSONBase(),
             name: this.name,
             additionalReprRadix: this._additionalReprRadix,
+            showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
     }
 
@@ -55,13 +60,15 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
         return tooltipContent("Afficheur de caractère", mods(
             div(`Affiche le caractère ASCII représenté par ses 7 entrées, actuellement `, b(binaryStringRep), "."),
-            isUnset(value)
-                ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
-                : mods("Actuellement, c’est le caractère numéro ", b("" + value),
-                    (value < 32)
-                        ? " (un caractère non imprimable)."
-                        : mods(", ‘", b(String.fromCharCode(value)), "’.")
-                )
+            this._showAsUnknown
+                ? emptyMod
+                : isUnset(value)
+                    ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
+                    : mods("Actuellement, c’est le caractère numéro ", b("" + value),
+                        (value < 32)
+                            ? " (un caractère non imprimable)."
+                            : mods(", ‘", b(String.fromCharCode(value)), "’.")
+                    )
         ))
     }
 
@@ -74,6 +81,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
         if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
+        } else if (this._showAsUnknown) {
+            stroke(...COLOR_UNSET)
         } else {
             stroke(0)
         }
@@ -136,9 +145,12 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             }
 
             let mainText: string
-            if (isUnset(value)) {
+            if (isUnset(value) || this._showAsUnknown) {
                 textSize(18)
                 textStyle(BOLD)
+                if (this._showAsUnknown) {
+                    fill(...COLOR_UNSET)
+                }
                 mainText = "?"
             } else if (value < 32) {
                 // non-printable
@@ -159,16 +171,23 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-        this._additionalReprRadix = (() => {
-            switch (this._additionalReprRadix) {
-                case undefined: return 10
-                case 10: return 16
-                case 16: return undefined
-                default: return undefined
-            }
-        })()
-        this.setNeedsRedraw("radix changed")
-        return true
+        if (mode >= Mode.FULL && e.altKey) {
+            this._showAsUnknown = !this._showAsUnknown
+            this.setNeedsRedraw("display as unknown changed")
+            return true
+        } else if (mode >= Mode.DESIGN) {
+            this._additionalReprRadix = (() => {
+                switch (this._additionalReprRadix) {
+                    case undefined: return 10
+                    case 10: return 16
+                    case 16: return undefined
+                    default: return undefined
+                }
+            })()
+            this.setNeedsRedraw("radix changed")
+            return true
+        }
+        return false
     }
 
 

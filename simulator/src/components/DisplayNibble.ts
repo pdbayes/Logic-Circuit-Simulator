@@ -1,9 +1,10 @@
-import { isDefined, isNotNull, isUnset, unset, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { DrawContext, isOrientationVertical } from "./Drawable"
+import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -14,6 +15,7 @@ export const DisplayNibbleDef =
         type: t.literal("nibble"),
         name: typeOrUndefined(t.string),
         radix: typeOrUndefined(t.number),
+        showAsUnknown: typeOrUndefined(t.boolean),
     }, "DisplayNibble"))
 
 type DisplayNibbleRepr = typeof DisplayNibbleDef.reprType
@@ -22,12 +24,14 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
     private readonly name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
+    private _showAsUnknown = false
 
     public constructor(savedData: DisplayNibbleRepr | null) {
         super(["0000", 0], savedData, { inOffsets: [[-3, -3], [-3, -1], [-3, +1], [-3, +3]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX
+            this._showAsUnknown = savedData.showAsUnknown ?? false
         }
     }
 
@@ -37,6 +41,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             ...this.toJSONBase(),
             name: this.name,
             radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
+            showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
     }
 
@@ -61,7 +66,9 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         return tooltipContent("Afficheur de semioctet", mods(
             div(`Affiche la valeur ${radixStr} de ses 4 entrées, actuellement `, b(binaryStringRep), "."),
-            !isUnset(value) ? emptyMod : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
+            !isUnset(value) || this._showAsUnknown
+                ? emptyMod
+                : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
         ))
     }
 
@@ -80,6 +87,8 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
+        } else if (this._showAsUnknown) {
+            stroke(...COLOR_UNSET)
         } else {
             stroke(0)
         }
@@ -117,7 +126,16 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             textSize(18)
             textStyle(BOLD)
 
-            const stringRep = formatWithRadix(value, this._radix)
+            let stringRep: string
+            if (this._showAsUnknown) {
+                stringRep = "?"
+                if (!isUnset(value)) {
+                    // otherwise we get the same color for background and text
+                    fill(...COLOR_UNSET)
+                }
+            } else {
+                stringRep = formatWithRadix(value, this._radix)
+            }
             text(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })
     }
@@ -126,10 +144,16 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-
-        this._radix = this._radix === 10 ? 16 : 10
-        this.setNeedsRedraw("radix changed")
-        return true
+        if (mode >= Mode.FULL && e.altKey) {
+            this._showAsUnknown = !this._showAsUnknown
+            this.setNeedsRedraw("display as unknown changed")
+            return true
+        } else if (mode >= Mode.DESIGN) {
+            this._radix = this._radix === 10 ? 16 : 10
+            this.setNeedsRedraw("radix changed")
+            return true
+        }
+        return false
     }
 
 }
