@@ -11,22 +11,18 @@
         ],
         "downlevelIteration": true,
         "sourceMap": true,
-        "rootDir": "simulator/src/",
         "strict": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitAny": true,
         "moduleResolution": "node",
-        "typeRoots": [
-            "../../node_modules",
-            "../../node_modules/@types",
-            "../definitions"
-        ],
+        // "typeRoots": [
+        //     "../../node_modules",
+        //     "../../node_modules/@types",
+        //     "../definitions"
+        // ],
     },
-    "exclude": [
-        "simulator/js",
-        "../../node_modules",
-        ".vscode-test",
-        "webpack.config.js"
-    ]
+    "include": [
+        "simulator/src"
+    ],
 }

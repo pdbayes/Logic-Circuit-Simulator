@@ -1,3 +1,5 @@
+export {}
+
 // import { any } from "../simulator"
 // import { GRID_STEP } from "./Component"
 // import { ICType, GateType } from "./Enums"

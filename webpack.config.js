@@ -4,7 +4,7 @@ module.exports = {
     entry: './simulator/js/simulator.js',
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, 'simulator', 'js'),
+        path: path.resolve(__dirname, 'simulator', 'lib'),
     },
 
     optimization: {

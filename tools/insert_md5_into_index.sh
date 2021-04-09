@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bundle_file="./simulator/js/bundle.js"
+bundle_file="./simulator/lib/bundle.js"
 template_index="./index-template.html"
 out_index="./index.html"
 

@@ -1,5 +1,5 @@
 import { wrapHandler } from "./simulator"
-import { isDefined, isEmpty, isUndefined, nonEmpty } from "./utils"
+import { isDefined, isEmpty, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
 
 export type Callback = (theoreticalTime: number) => unknown
 export type TimelineState = { isPaused: boolean, canStep: boolean }
@@ -14,7 +14,7 @@ class _Timeline {
     // per callback time, a list of callbacks
     private _schedule!: ScheduledCallbacks
     // allows canceling the next tick if (a) we pause, (b) we enqueue something before
-    private _nextTimeoutHandle: number | undefined
+    private _nextTimeoutHandle: TimeoutHandle | undefined
     // when we are paused: the (absolute) start time of the pause
     private _pausedSince: number | undefined
 

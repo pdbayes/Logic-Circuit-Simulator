@@ -6,19 +6,6 @@ import { DEFAULT_ORIENTATION, DrawableWithPosition, PositionSupportRepr } from "
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
 
-// type HashSize1 = { readonly HasSize1: unique symbol }
-// type H<N extends number, T> = { [K in `HasSize${N}`]: T }
-interface HasSizeNBrand<__ extends number> {
-    readonly HasSizeN: unique symbol // TODO check unique per N
-}
-
-const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, n: N) =>
-    t.brand(
-        t.array(tpe, `array of size ${n}`),
-        (arr): arr is t.Branded<[t.TypeOf<T>], HasSizeNBrand<N>> => arr.length === n,
-        "HasSizeN"
-    )
-
 
 // Node IDs are just represented by a non-negative number
 export const NodeID = t.number

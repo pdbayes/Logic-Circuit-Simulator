@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined, TimeoutHandle } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -204,8 +204,8 @@ function trySetMode(wantedMode: Mode) {
 let _currentMouseOverComp: Drawable | null = null
 let _currentMouseOverPopper: PopperInstance | null = null
 let _currentMouseDownComp: Drawable | Element | null = null
-let _startHoverTimeoutHandle: number | null = null
-let _startDragTimeoutHandle: number | null = null
+let _startHoverTimeoutHandle: TimeoutHandle | null = null
+let _startDragTimeoutHandle: TimeoutHandle | null = null
 
 function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
     _startDragTimeoutHandle = setTimeout(function () {

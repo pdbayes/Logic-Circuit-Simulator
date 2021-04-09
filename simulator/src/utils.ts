@@ -1,4 +1,5 @@
 export type Dict<T> = Record<string, T | undefined>
+export type TimeoutHandle = NodeJS.Timeout
 
 // Better types for an Object.keys() replacement
 export function keysOf<K extends keyof any>(d: Record<K, any>): K[]
@@ -173,6 +174,20 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 7 ? readonly [T, T, T, T, T, T, T]
     : /*N extends 8 ? */readonly [T, T, T, T, T, T, T, T]
 
+
+// type HashSize1 = { readonly HasSize1: unique symbol }
+// type H<N extends number, T> = { [K in `HasSize${N}`]: T }
+interface HasSizeNBrand<__ extends number> {
+    readonly HasSizeN: unique symbol // TODO check unique per N
+}
+
+export const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, n: N) =>
+    t.brand(
+        t.array(tpe, `array of size ${n}`),
+        (arr): arr is t.Branded<[t.TypeOf<T>], HasSizeNBrand<N>> => arr.length === n,
+        "HasSizeN"
+    )
+
 // This seemingly identity function allows to convert back from a fixed-size tuple
 // to a regular array. It is a safe type cast, in a way, and allows to see the
 // regular array methods as well as to use the for-of iteration on these tuples
@@ -206,8 +221,8 @@ export function getURLParameter(sParam: string, defaultValue: any) {
 // More general-purpose utility functions
 
 export function any(bools: boolean[]): boolean {
-    for (let i = 0; i < bools.length; i++) {
-        if (bools[i]) {
+    for (const b of bools) {
+        if (b) {
             return true
         }
     }
