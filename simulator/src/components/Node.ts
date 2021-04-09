@@ -272,8 +272,8 @@ export class NodeOut extends NodeBase {
         }
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
         if (mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {

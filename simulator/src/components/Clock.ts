@@ -1,7 +1,7 @@
 import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
-import { isDefined, TriState, typeOrUndefined } from "../utils"
+import { isDefined, isUnset, TriState, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 import { Timeline } from "../Timeline"
@@ -141,6 +141,11 @@ export class Clock extends LogicInputBase<ClockRepr> {
                 : this.period + " ms"
             text(periodStr, this.posX, bottom + 8)
         })
+    }
+
+    mouseClicked(__: MouseEvent | TouchEvent): boolean {
+        this.doSetValue(isUnset(this.value) ? true : !this.value)
+        return true
     }
 
 }

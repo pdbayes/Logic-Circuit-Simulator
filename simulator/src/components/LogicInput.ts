@@ -51,10 +51,6 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         return false
     }
 
-    toggleValue() {
-        this.doSetValue(isUnset(this.value) ? true : !this.value)
-    }
-
     protected propagateNewValue(newValue: TriState) {
         this.outputs[0].value = newValue
     }
@@ -131,10 +127,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         return this.value
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
-            return true // already handled
-        }
+    mouseClicked(e: MouseEvent | TouchEvent) {
         this.doSetValue((() => {
             switch (this.value) {
                 case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false

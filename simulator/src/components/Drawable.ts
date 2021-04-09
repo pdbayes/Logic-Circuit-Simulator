@@ -112,7 +112,14 @@ export abstract class Drawable {
 
     // Return true to indicate it was handled and had an effect
     // (and presumably doesn't need to be handled any more)
-    public mouseDoubleClick(__: MouseEvent | TouchEvent): boolean {
+    public mouseClicked(__: MouseEvent | TouchEvent): boolean {
+        // empty default implementation
+        return false
+    }
+
+    // Return true to indicate it was handled and had an effect
+    // (and presumably doesn't need to be handled any more)
+    public mouseDoubleClicked(__: MouseEvent | TouchEvent): boolean {
         // empty default implementation
         return false
     }

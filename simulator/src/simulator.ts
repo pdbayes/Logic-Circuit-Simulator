@@ -201,16 +201,28 @@ function trySetMode(wantedMode: Mode) {
     }
 }
 
+type MouseDownData = {
+    comp: Drawable | Element
+    fireMouseClickedOnFinish: boolean
+    // initialXY: [number, number]
+}
+
 let _currentMouseOverComp: Drawable | null = null
 let _currentMouseOverPopper: PopperInstance | null = null
-let _currentMouseDownComp: Drawable | Element | null = null
+let _currentMouseDownData: MouseDownData | null = null
 let _startHoverTimeoutHandle: TimeoutHandle | null = null
 let _startDragTimeoutHandle: TimeoutHandle | null = null
 
 function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
-    _startDragTimeoutHandle = setTimeout(function () {
-        comp.mouseDragged(e)
-    }, 300)
+    _startDragTimeoutHandle = setTimeout(
+        wrapHandler(() => {
+            if (isNotNull(_currentMouseDownData)) {
+                _currentMouseDownData.fireMouseClickedOnFinish = false
+            }
+            _currentHandlers.mouseDraggedOn(comp, e)
+        }),
+        300
+    )
 }
 
 function clearStartDragTimeout() {
@@ -335,6 +347,9 @@ abstract class ToolHandlers {
     mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
+    mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+        // empty
+    }
     mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
@@ -375,8 +390,11 @@ class _EditHandlers extends ToolHandlers {
     mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseUp(e)
     }
+    mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+        comp.mouseClicked(e)
+    }
     mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
-        comp.mouseDoubleClick(e)
+        comp.mouseDoubleClicked(e)
     }
     mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         wireMgr.tryCancelWire()
@@ -384,7 +402,7 @@ class _EditHandlers extends ToolHandlers {
 }
 
 class _DeleteHandlers extends ToolHandlers {
-    mouseUpOn(comp: Drawable, __: MouseEvent) {
+    mouseClickedOn(comp: Drawable, __: MouseEvent) {
         if (comp instanceof ComponentBase) {
             outer: for (const elems of allComponents) {
                 for (let i = 0; i < elems.length; i++) {
@@ -504,19 +522,25 @@ export function setup() {
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
         clearHoverTimeoutHandle()
         clearPopperIfNecessary()
-        if (isNull(_currentMouseDownComp)) {
+        if (isNull(_currentMouseDownData)) {
             updateMouseOver(offsetXY(e))
             if (isNotNull(_currentMouseOverComp)) {
                 // mouse down on component
                 const { lockMouseOver } = _currentHandlers.mouseDownOn(_currentMouseOverComp, e)
                 if (lockMouseOver) {
-                    _currentMouseDownComp = _currentMouseOverComp
-                    setStartDragTimeout(_currentMouseDownComp, e)
+                    _currentMouseDownData = {
+                        comp: _currentMouseOverComp,
+                        fireMouseClickedOnFinish: true,
+                    }
+                    setStartDragTimeout(_currentMouseOverComp, e)
                 }
                 RedrawManager.addReason("mousedown", null)
             } else {
                 // mouse down on background
-                _currentMouseDownComp = canvasContainer
+                _currentMouseDownData = {
+                    comp: canvasContainer,
+                    fireMouseClickedOnFinish: true,
+                }
                 _currentHandlers.mouseDownOnBackground(e)
             }
             updateCursor()
@@ -527,11 +551,12 @@ export function setup() {
     }
 
     const mouseMoveTouchMove = (e: MouseEvent | TouchEvent) => {
-        if (isNotNull(_currentMouseDownComp)) {
-            if (_currentMouseDownComp instanceof Drawable) {
+        if (isNotNull(_currentMouseDownData)) {
+            if (_currentMouseDownData.comp instanceof Drawable) {
                 // dragging component
                 clearStartDragTimeout()
-                _currentHandlers.mouseDraggedOn(_currentMouseDownComp, e)
+                _currentMouseDownData.fireMouseClickedOnFinish = false
+                _currentHandlers.mouseDraggedOn(_currentMouseDownData.comp, e)
             } else {
                 // dragging background
                 _currentHandlers.mouseDraggedOnBackground(e)
@@ -545,7 +570,7 @@ export function setup() {
     const mouseUpTouchEnd = (e: MouseEvent | TouchEvent) => {
         // our target is either the locked component that
         // was clicked or the latest mouse over component
-        const mouseUpTarget = _currentMouseDownComp ?? _currentMouseOverComp
+        const mouseUpTarget = _currentMouseDownData?.comp ?? _currentMouseOverComp
         if (mouseUpTarget instanceof Drawable) {
             // mouseup on component
             if (isNotNull(_startDragTimeoutHandle)) {
@@ -553,14 +578,19 @@ export function setup() {
                 _startDragTimeoutHandle = null
             }
             _currentHandlers.mouseUpOn(mouseUpTarget, e)
-            if (isDoubleClick(mouseUpTarget, e)) {
-                _currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+            if (_currentMouseDownData?.fireMouseClickedOnFinish ?? false) {
+                if (isDoubleClick(mouseUpTarget, e)) {
+                    _currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+                } else {
+                    _currentHandlers.mouseClickedOn(mouseUpTarget, e)
+                }
             }
+
         } else {
             // mouseup on background
             _currentHandlers.mouseUpOnBackground(e)
         }
-        _currentMouseDownComp = null
+        _currentMouseDownData = null
         RedrawManager.addReason("mouseup", null)
     }
 
@@ -623,7 +653,10 @@ export function setup() {
             _currentMouseOverComp = newComponent
             const { lockMouseOver } = _currentHandlers.mouseDownOn(newComponent, e)
             if (lockMouseOver) {
-                _currentMouseDownComp = _currentMouseOverComp
+                _currentMouseDownData = {
+                    comp: _currentMouseOverComp,
+                    fireMouseClickedOnFinish: false,
+                }
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
         }))
@@ -633,7 +666,10 @@ export function setup() {
             _currentMouseOverComp = newComponent
             const { lockMouseOver } = _currentHandlers.mouseDownOn(newComponent, e)
             if (lockMouseOver) {
-                _currentMouseDownComp = _currentMouseOverComp
+                _currentMouseDownData = {
+                    comp: _currentMouseOverComp,
+                    fireMouseClickedOnFinish: false,
+                }
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
         }))

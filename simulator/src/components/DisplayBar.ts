@@ -109,8 +109,8 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         }
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
         this.doSetDisplay((() => {

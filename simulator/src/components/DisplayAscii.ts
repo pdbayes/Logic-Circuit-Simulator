@@ -155,8 +155,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         })
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
         this._additionalReprRadix = (() => {

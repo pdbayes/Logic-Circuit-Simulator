@@ -489,7 +489,7 @@ export abstract class ComponentBase<
         setComponentStoppedMoving(this)
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent): boolean {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
         if (mode >= Mode.CONNECT && e.metaKey) {
             this.setOrient((() => {
                 switch (this.orient) {

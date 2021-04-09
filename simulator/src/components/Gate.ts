@@ -393,8 +393,8 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         return gateProps.out(in1, in2)
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
         if (mode >= Mode.FULL && e.altKey) {
@@ -531,8 +531,8 @@ export class Gate1 extends GateBase<1, Gate1Repr> {
 
 
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
         if (mode >= Mode.DESIGN) {

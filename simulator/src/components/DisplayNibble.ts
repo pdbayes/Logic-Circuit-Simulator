@@ -122,8 +122,8 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         })
     }
 
-    mouseDoubleClick(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClick(e)) {
+    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
 
