@@ -57,6 +57,8 @@ export const NodeManager = (() => {
                         const nodeY = node.posY
                         for (const other of allLiveNodes) {
                             if (other !== node && other.posX === nodeX && other.posY === nodeY) {
+                                // the wire manager will take care of determining whether
+                                // they can actually be connected or not
                                 wireMgr.addNode(node)
                                 wireMgr.addNode(other)
                                 return

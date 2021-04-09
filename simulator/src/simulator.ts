@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined, TimeoutHandle } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -12,12 +12,12 @@ import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { attrBuilder, cls, div, faglyph, ModifierObject, style, title } from "./htmlgen"
+import { applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, ModifierObject, mods, raw, style, title } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
-import { Timeline } from './Timeline'
+import { Timeline, TimelineState } from './Timeline'
 
 
 export const gates: Gate[] = []
@@ -123,21 +123,10 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         const showRightMenu = showReset || showRightEditControls
         const showOnlyReset = showReset && !showRightEditControls
 
-        if (!showReset) {
-            document.getElementById("resetToolButton")!.style.display = "none"
-        } else {
-            document.getElementById("resetToolButton")!.style.removeProperty("display")
-        }
-
-        if (showOnlyReset) {
-            document.getElementById("resetToolButtonCaption")!.style.display = "none"
-            document.getElementById("resetToolButtonDummyCaption")!.style.removeProperty("display")
-        } else {
-            document.getElementById("resetToolButtonCaption")!.style.removeProperty("display")
-            document.getElementById("resetToolButtonDummyCaption")!.style.display = "none"
-        }
-
-
+        setVisible(document.getElementById("resetToolButton")!, showReset)
+        setVisible(document.getElementById("resetToolButtonCaption")!, !showOnlyReset)
+        setVisible(document.getElementById("resetToolButtonDummyCaption")!, showOnlyReset)
+        // 
         const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
         if (isDefined(showonlyStr)) {
             const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
@@ -145,9 +134,11 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
             const toolbarChildren = leftToolbar.children
             for (let i = 0; i < toolbarChildren.length; i++) {
                 const child = toolbarChildren[i] as HTMLElement
-                const tool = child.getAttribute("tool")
-                if (child.tagName === "BUTTON" && !isNullOrUndefined(tool) && isTruthyString(child.getAttribute("isGate")) && !showonly.includes(tool)) {
-                    child.style.display = "none"
+                const componentAttr = child.getAttribute("component")
+                const typeAttr = child.getAttribute("type")
+                const buttonID = typeAttr ?? componentAttr
+                if (isNotNull(buttonID) && !showonly.includes(buttonID)) {
+                    setVisible(child, false)
                 }
             }
         }
@@ -155,11 +146,7 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         const modifButtons = document.querySelectorAll("button.sim-modification-tool")
         for (let i = 0; i < modifButtons.length; i++) {
             const but = modifButtons[i] as HTMLElement
-            if (showRightEditControls) {
-                but.style.removeProperty("display")
-            } else {
-                but.style.display = "none"
-            }
+            setVisible(but, showRightEditControls)
         }
 
         const leftToolbar = document.getElementById("leftToolbar")!
@@ -179,18 +166,10 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         }
 
         const txGateButton = document.querySelector("button[data-type=TXA]") as HTMLElement
-        if (showTxGates) {
-            txGateButton.style.removeProperty("display")
-        } else {
-            txGateButton.style.display = "none"
-        }
+        setVisible(txGateButton, showTxGates)
 
-
-        if (showRightMenu) {
-            document.getElementById("rightToolbarContainer")!.style.removeProperty("visibility")
-        } else {
-            document.getElementById("rightToolbarContainer")!.style.visibility = "hidden"
-        }
+        const rightToolbarContainer = document.getElementById("rightToolbarContainer")!
+        setVisible(rightToolbarContainer, showRightMenu)
 
         if (isFalsyString(getURLParameter(PARAM_TOOLTIPS))) {
             showTooltips = false
@@ -696,12 +675,6 @@ export function setup() {
     }
 
 
-    const data = getURLParameter(PARAM_DATA)
-    if (isDefined(data)) {
-        initialData = data
-        tryLoadFromData()
-    }
-
     const maybeMode = getURLParameter(PARAM_MODE, "").toUpperCase()
     if (maybeMode in Mode) {
         upperMode = (Mode as any)[maybeMode]
@@ -752,44 +725,79 @@ export function setup() {
             })
         ).applyTo(modeChangeMenu)
 
-        modeChangeMenu.style.removeProperty("visibility")
+        setVisible(modeChangeMenu, true)
     }
 
-    const showPlayPauseButtons = true
-    if (showPlayPauseButtons) {
-        const modeChangeMenu = document.getElementById("modeChangeMenu")!
 
-        const makeButton = (icon: string, expl: string, action: () => unknown) => {
-            const but =
-                div(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
-                    style("display: flex; justify-content: space-between; align-items: center"),
-                    title(expl),
-                    faglyph(icon)
-                ).render()
-            but.addEventListener("click", action)
-            return but
+    const timelineControls = document.getElementById("timelineControls")!
+    const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
+        const but =
+            button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
+                isUndefined(text) ? style("text-align: center") : emptyMod,
+                title(expl),
+                faglyph(icon, style("width: 20px")), isUndefined(text) ? raw("&nbsp;") : text,
+            ).render()
+        but.addEventListener("click", action)
+        return but
+    }
+    const playButton = makeTimelineButton("play", "Play", "Démarre l’écoulement du temps", () => Timeline.play())
+    const pauseButton = makeTimelineButton("pause", "Pause", "Arrête l’écoulement du temps", () => Timeline.pause())
+    const stepButton = makeTimelineButton("step-forward", undefined, "Avance au prochain événement", () => Timeline.step())
+    applyModifierTo(timelineControls, mods(playButton, pauseButton, stepButton))
+
+    const showTimelineButtons = true
+    setVisible(timelineControls, showTimelineButtons)
+
+    function setTimelineButtonsVisible(state: TimelineState) {
+        if (state.hasCallbacks) {
+            // show part of the interface
+            setVisible(playButton, state.isPaused)
+            setVisible(pauseButton, !state.isPaused)
+            setVisible(stepButton, state.canStep)
+        } else {
+            // show nothing
+            setVisible(playButton, false)
+            setVisible(pauseButton, false)
+            setVisible(stepButton, false)
         }
-
-        div(cls("btn-group-vertical"),
-            div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
-                "Temps",
-            ),
-            makeButton("play", "Démarre l’écoulement du temps", () => Timeline.play()),
-            makeButton("pause", "Arrête l’écoulement du temps", () => Timeline.pause()),
-            makeButton("step-forward", "Avance au prochain événement", () => Timeline.step()),
-        ).applyTo(modeChangeMenu)
     }
-
-    trySetMode(upperMode)
-
-
 
     Timeline.reset()
-    Timeline.onStateChanged = newState => {
-        console.log("new state", newState)
+    Timeline.onStateChanged = newState => setTimelineButtonsVisible(newState)
+    setTimelineButtonsVisible(Timeline.state)
+
+    const data = getURLParameter(PARAM_DATA)
+    if (isDefined(data)) {
+        initialData = data
+        tryLoadFromData()
     }
+
+    // also triggers redraw, should be last
+    trySetMode(upperMode)
 }
 window.setup = setup
+
+function setVisible(elem: HTMLElement, visible: boolean) {
+    if (visible) {
+        const prevDisplay = elem.getAttribute("data-prev-display")
+        if (isNull(prevDisplay)) {
+            if (elem.style.display === "none") {
+                elem.style.removeProperty("display")
+            } else {
+                // not hidden
+            }
+        } else {
+            elem.removeAttribute("data-prev-display")
+            elem.style.display = prevDisplay
+        }
+    } else {
+        const currentDisplay = elem.style.display
+        if (currentDisplay.length !== 0 && currentDisplay !== "none") {
+            elem.setAttribute("data-prev-display", currentDisplay)
+        }
+        elem.style.display = "none"
+    }
+}
 
 export function tryLoadFromData() {
     if (isUndefined(initialData)) {
@@ -877,7 +885,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
 
 window.addEventListener("keydown", wrapHandler(e => {
     switch (e.key) {
-        case "Shift":
+        case "Alt": // option
             return NodeManager.tryConnectNodes()
     }
 }))

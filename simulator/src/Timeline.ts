@@ -2,7 +2,13 @@ import { wrapHandler } from "./simulator"
 import { isDefined, isEmpty, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
 
 export type Callback = (theoreticalTime: number) => unknown
-export type TimelineState = { isPaused: boolean, canStep: boolean }
+export type TimelineState = { hasCallbacks: boolean, isPaused: boolean, canStep: boolean }
+
+function areStatesEqual(s1: TimelineState, s2: TimelineState): boolean {
+    return s1.hasCallbacks === s2.hasCallbacks
+        && s1.isPaused === s2.isPaused
+        && s1.canStep === s2.canStep
+}
 
 type ScheduledCallbacks = { [time: number]: [Callback, string][] }
 
@@ -17,6 +23,8 @@ class _Timeline {
     private _nextTimeoutHandle: TimeoutHandle | undefined
     // when we are paused: the (absolute) start time of the pause
     private _pausedSince: number | undefined
+    // remember last sent state to avoid fake events
+    private _lastSentState: TimelineState | undefined
 
     // public callback function
     public onStateChanged: (state: TimelineState) => unknown = __ => null
@@ -34,6 +42,13 @@ class _Timeline {
             this._nextTimeoutHandle = undefined
         }
         this._pausedSince = undefined
+    }
+
+    public get state(): TimelineState {
+        const hasCallbacks = nonEmpty(this._sortedNextCallbackTimes)
+        const isPaused = isDefined(this._pausedSince)
+        const canStep = isPaused && hasCallbacks
+        return { hasCallbacks, isPaused, canStep }
     }
 
     private unadjustedTime() {
@@ -83,6 +98,7 @@ class _Timeline {
                 this.rescheduleNextIfNeeded()
             }
 
+            this.fireStateChangedIfNeeded()
             // console.log("Schedule: ", this._schedule)
         }
     }
@@ -140,6 +156,7 @@ class _Timeline {
 
         // move on to the next tick
         this.rescheduleNextIfNeeded()
+        this.fireStateChangedIfNeeded()
     }
 
     public pause() {
@@ -150,7 +167,7 @@ class _Timeline {
             clearTimeout(this._nextTimeoutHandle)
         }
         this._pausedSince = this.unadjustedTime()
-        this.fireStateChanged()
+        this.fireStateChangedIfNeeded()
     }
 
     public play() {
@@ -160,7 +177,7 @@ class _Timeline {
         this._epochStart += (this.unadjustedTime() - this._pausedSince)
         this._pausedSince = undefined
         this.rescheduleNextIfNeeded()
-        this.fireStateChanged()
+        this.fireStateChangedIfNeeded()
     }
 
     public step() {
@@ -173,14 +190,15 @@ class _Timeline {
         const currentPauseTime = this.adjustedTime()
         this._epochStart -= nextTickTime - currentPauseTime
         this.handleNextTick()
-        this.fireStateChanged()
+        this.fireStateChangedIfNeeded()
     }
 
-    private fireStateChanged() {
-        this.onStateChanged({
-            isPaused: isDefined(this._pausedSince),
-            canStep: nonEmpty(this._sortedNextCallbackTimes),
-        })
+    private fireStateChangedIfNeeded() {
+        const newState = this.state
+        if (isUndefined(this._lastSentState) || !areStatesEqual(this._lastSentState, newState)) {
+            this.onStateChanged(newState)
+            this._lastSentState = newState
+        }
     }
 }
 

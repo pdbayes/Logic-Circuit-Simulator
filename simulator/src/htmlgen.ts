@@ -108,8 +108,8 @@ export const emptyMod: Modifier = {
     applyTo: __ => undefined, // do nothing
 }
 
-export function faglyph(glyphName: string) {
-    return i(cls(`fa fa-${glyphName}`))
+export function faglyph(glyphName: string, ...modifiers: Modifier[]) {
+    return i(cls(`fa fa-${glyphName}`), ...modifiers)
 }
 
 export function attr(attrName: string, attrValue: string): Modifier {
@@ -134,6 +134,7 @@ export const th = elemBuilder("th")
 export const td = elemBuilder("td")
 
 export const input = elemBuilder("input")
+export const button = elemBuilder("button")
 export const label = elemBuilder("label")
 export const img = elemBuilder("img")
 export const canvas = elemBuilder("canvas")

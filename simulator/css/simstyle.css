@@ -39,6 +39,7 @@ input[type="file"] {
 .sim-toolbar-button-right {
     text-align: left;
     cursor: pointer;
+    height: 30px;
 }
 
 .sim-toolbar-button-right > i {
