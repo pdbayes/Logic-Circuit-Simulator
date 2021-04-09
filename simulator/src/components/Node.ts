@@ -8,7 +8,7 @@ import { Wire } from "./Wire"
 
 
 const DIAMETER = 8
-const HIT_RANGE = DIAMETER + 2 // not more to avoid matching more than 1 vertically if aligned on grid
+const HIT_RANGE = DIAMETER + 4
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems

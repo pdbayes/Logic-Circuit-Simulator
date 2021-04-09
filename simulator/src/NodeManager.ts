@@ -14,7 +14,7 @@ export const NodeManager = (() => {
                 // empty block, condition does the increment
             }
             usedIDs.add(lastGivenNodeID)
-            console.log(`gave out new node id ${lastGivenNodeID}`)
+            // console.log(`gave out new node id ${lastGivenNodeID}`)
             return lastGivenNodeID 
         },
         markIDUsed: function (id: number): void {

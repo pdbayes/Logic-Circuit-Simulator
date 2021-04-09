@@ -337,3 +337,4 @@ export const gallery = assertCircuits({
         ],
     },
 })
+window.gallery = gallery

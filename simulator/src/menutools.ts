@@ -102,7 +102,7 @@ export function setCurrentMouseAction(action: MouseAction) {
 }
 
 
-export function activeTool(elTool: HTMLElement) {
+function activeTool(elTool: HTMLElement) {
 
     const tool = elTool.getAttribute("tool")
     if (isNullOrUndefined(tool)) {
@@ -164,3 +164,4 @@ export function activeTool(elTool: HTMLElement) {
     // }
 
 }
+window.activeTool = activeTool

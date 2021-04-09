@@ -1,6 +1,6 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
-import { activeTool, makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
+import { makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
 import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isTruthyString, isUndefined, TimeoutHandle } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
@@ -16,7 +16,6 @@ import { attrBuilder, cls, div, faglyph, ModifierObject, style, title } from "./
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { Drawable, DrawableWithPosition } from "./components/Drawable"
-import { gallery } from "./gallery"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
 import { Timeline } from './Timeline'
 
@@ -70,6 +69,7 @@ export function setToolCursor(cursor: string | null) {
 
 let canvasContainer: HTMLElement
 let mainCanvas: HTMLCanvasElement
+let tooltipElem: HTMLElement
 let initialData: string | undefined = undefined
 
 
@@ -88,12 +88,12 @@ const PARAM_TOOLTIPS = "tooltips"
 
 let showTooltips = true
 
-function trySetMode(wantedMode: Mode) {
+const trySetMode = wrapHandler((wantedMode: Mode) => {
     const wantedModeStr = Mode[wantedMode]
     if (wantedMode <= upperMode) {
         mode = wantedMode
 
-        console.log(`Display/interaction is ${wantedModeStr}`)
+        // console.log(`Display/interaction is ${wantedModeStr}`)
 
         RedrawManager.addReason("mode changed", null)
 
@@ -199,12 +199,12 @@ function trySetMode(wantedMode: Mode) {
     } else {
         console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[upperMode]}`)
     }
-}
+})
 
 type MouseDownData = {
     comp: Drawable | Element
     fireMouseClickedOnFinish: boolean
-    // initialXY: [number, number]
+    initialXY: [number, number]
 }
 
 let _currentMouseOverComp: Drawable | null = null
@@ -314,14 +314,15 @@ function clearPopperIfNecessary() {
     if (isNotNull(_currentMouseOverPopper)) {
         _currentMouseOverPopper.destroy()
         _currentMouseOverPopper = null
+        tooltipElem.style.display = "none"
     }
 }
 
 function makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
-    const tooltipElem = document.getElementById("tooltip")!
     const tooltipContents = document.getElementById("tooltipContents")!
     tooltipContents.innerHTML = ""
     tooltipHtml.applyTo(tooltipContents)
+    tooltipElem.style.removeProperty("display")
     const canvas = document.getElementsByTagName("CANVAS")[0]
     _currentMouseOverPopper = createPopper({
         getBoundingClientRect() { return rect },
@@ -512,6 +513,7 @@ function isDoubleClick(clickedComp: Drawable, e: MouseEvent | TouchEvent) {
 
 export function setup() {
     canvasContainer = document.getElementById("canvas-sim")!
+    tooltipElem = document.getElementById("tooltip")!
 
     const p5canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
 
@@ -523,7 +525,8 @@ export function setup() {
         clearHoverTimeoutHandle()
         clearPopperIfNecessary()
         if (isNull(_currentMouseDownData)) {
-            updateMouseOver(offsetXY(e))
+            const xy = offsetXY(e)
+            updateMouseOver(xy)
             if (isNotNull(_currentMouseOverComp)) {
                 // mouse down on component
                 const { lockMouseOver } = _currentHandlers.mouseDownOn(_currentMouseOverComp, e)
@@ -531,6 +534,7 @@ export function setup() {
                     _currentMouseDownData = {
                         comp: _currentMouseOverComp,
                         fireMouseClickedOnFinish: true,
+                        initialXY: xy,
                     }
                     setStartDragTimeout(_currentMouseOverComp, e)
                 }
@@ -540,6 +544,7 @@ export function setup() {
                 _currentMouseDownData = {
                     comp: canvasContainer,
                     fireMouseClickedOnFinish: true,
+                    initialXY: xy,
                 }
                 _currentHandlers.mouseDownOnBackground(e)
             }
@@ -553,10 +558,17 @@ export function setup() {
     const mouseMoveTouchMove = (e: MouseEvent | TouchEvent) => {
         if (isNotNull(_currentMouseDownData)) {
             if (_currentMouseDownData.comp instanceof Drawable) {
-                // dragging component
-                clearStartDragTimeout()
-                _currentMouseDownData.fireMouseClickedOnFinish = false
-                _currentHandlers.mouseDraggedOn(_currentMouseDownData.comp, e)
+                // check if the drag is too small to be taken into account now
+                // (e.g., touchmove is fired very quickly)
+                const d = dist(...offsetXY(e), ..._currentMouseDownData.initialXY)
+                // NaN is returned when no input point was specified and
+                // dragging should then happen regardless
+                if (isNaN(d) || d >= 5) {
+                    // dragging component
+                    clearStartDragTimeout()
+                    _currentMouseDownData.fireMouseClickedOnFinish = false
+                    _currentHandlers.mouseDraggedOn(_currentMouseDownData.comp, e)
+                }
             } else {
                 // dragging background
                 _currentHandlers.mouseDraggedOnBackground(e)
@@ -595,7 +607,7 @@ export function setup() {
     }
 
     canvasContainer.addEventListener("touchstart", wrapHandler((e) => {
-        // console.log("touchstart %o %o", offsetXY(e), e)
+        // console.log("canvas touchstart %o %o", offsetXY(e), e)
         if (mode >= Mode.CONNECT) {
             // prevent scrolling when we can connect
             e.preventDefault()
@@ -603,7 +615,7 @@ export function setup() {
         mouseDownTouchStart(e)
     }))
     canvasContainer.addEventListener("touchmove", wrapHandler((e) => {
-        // console.log("touchmove %o %o", offsetXY(e), e)
+        // console.log("canvas touchmove %o %o", offsetXY(e), e)
         if (mode >= Mode.CONNECT) {
             // prevent scrolling when we can connect
             e.preventDefault()
@@ -612,7 +624,7 @@ export function setup() {
     }))
 
     canvasContainer.addEventListener("touchend", wrapHandler((e) => {
-        // console.log("touchend %o %o", offsetXY(e), e, e.detail)
+        // console.log("canvas touchend %o %o", offsetXY(e), e, e.detail)
         // touchend should always be prevented, otherwise it may
         // generate mouse/click events
         e.preventDefault()
@@ -620,9 +632,9 @@ export function setup() {
         setCurrentMouseOverComp(null)
     }))
 
-    canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
-        console.log("touchcancel %o %o", offsetXY(e), e)
-    }))
+    // canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
+    //     // console.log("canvas touchcancel %o %o", offsetXY(e), e)
+    // }))
 
     canvasContainer.addEventListener("mousedown", wrapHandler((e) => {
         // console.log("mousedown %o", e)
@@ -647,7 +659,8 @@ export function setup() {
     for (let i = 0; i < compButtons.length; i++) {
         const compButton = compButtons[i] as HTMLElement
         const factory = makeComponentFactoryForButton(compButton)
-        compButton.addEventListener("mousedown", wrapHandler((e) => {
+
+        const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
             e.preventDefault()
             const newComponent = factory()
             _currentMouseOverComp = newComponent
@@ -656,22 +669,29 @@ export function setup() {
                 _currentMouseDownData = {
                     comp: _currentMouseOverComp,
                     fireMouseClickedOnFinish: false,
+                    initialXY: [NaN, NaN],
                 }
             }
             _currentHandlers.mouseDraggedOn(newComponent, e)
+        }
+
+        compButton.addEventListener("mousedown", wrapHandler((e) => {
+            buttonMouseDownTouchStart(e)
         }))
         compButton.addEventListener("touchstart", wrapHandler((e) => {
+            // console.log("button touchstart %o %o", offsetXY(e), e)
+            buttonMouseDownTouchStart(e)
+        }))
+        compButton.addEventListener("touchmove", wrapHandler((e) => {
+            // console.log("button touchmove %o %o", offsetXY(e), e)
             e.preventDefault()
-            const newComponent = factory()
-            _currentMouseOverComp = newComponent
-            const { lockMouseOver } = _currentHandlers.mouseDownOn(newComponent, e)
-            if (lockMouseOver) {
-                _currentMouseDownData = {
-                    comp: _currentMouseOverComp,
-                    fireMouseClickedOnFinish: false,
-                }
-            }
-            _currentHandlers.mouseDraggedOn(newComponent, e)
+            mouseMoveTouchMove(e)
+        }))
+        compButton.addEventListener("touchend", wrapHandler((e) => {
+            // console.log("button touchend %o %o", offsetXY(e), e)
+            e.preventDefault() // otherwise, may generate mouseclick, etc.
+            mouseUpTouchEnd(e)
+            setCurrentMouseOverComp(null)
         }))
     }
 
@@ -762,11 +782,14 @@ export function setup() {
 
     trySetMode(upperMode)
 
+
+
     Timeline.reset()
     Timeline.onStateChanged = newState => {
         console.log("new state", newState)
     }
 }
+window.setup = setup
 
 export function tryLoadFromData() {
     if (isUndefined(initialData)) {
@@ -780,7 +803,6 @@ export function tryLoadFromData() {
     }
 }
 
-
 export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
     return (...params: T) => {
         const result = f(...params)
@@ -789,7 +811,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
     }
 
     function recalcAndDrawIfNeeded() {
-        const recalculated = RecalcManager.recalculateIfNeeded()
+        const __recalculated = RecalcManager.recalculateIfNeeded()
 
         if (wireMgr.isAddingWire) {
             RedrawManager.addReason("adding a wire", null)
@@ -800,7 +822,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
             return
         }
 
-        console.log("Drawing " + (recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
+        // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
 
         const g = mainCanvas.getContext("2d")!
 
@@ -853,14 +875,14 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
     }
 }
 
-function keyDownHandler(e: KeyboardEvent) {
+window.addEventListener("keydown", wrapHandler(e => {
     switch (e.key) {
         case "Shift":
             return NodeManager.tryConnectNodes()
     }
-}
+}))
 
-function keyUpHandler(e: KeyboardEvent) {
+window.addEventListener("keyup", wrapHandler(e => {
     switch (e.key) {
         case "Escape":
             tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
@@ -879,21 +901,13 @@ function keyUpHandler(e: KeyboardEvent) {
             setCurrentMouseAction("move")
             return
     }
-}
+}))
 
-window.setup = setup
 
-function resizeHandler() {
+window.addEventListener("resize", wrapHandler(__ => {
     resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
     RedrawManager.addReason("window resized", null)
-}
-
-window.addEventListener("resize", wrapHandler(resizeHandler))
-window.addEventListener("keydown", wrapHandler(keyDownHandler))
-window.addEventListener("keyup", wrapHandler(keyUpHandler))
-
-window.activeTool = activeTool
-window.gallery = gallery
+}))
 
 window.setModeClicked = function setModeClicked(e: HTMLElement) {
     const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"

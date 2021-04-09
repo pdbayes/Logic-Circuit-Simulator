@@ -2,68 +2,80 @@ import { Component } from "./components/Component"
 import { Drawable } from "./components/Drawable"
 import { Dict, isUndefined, isEmptyObject, isDefined, isNotNull } from "./utils"
 
-export const RedrawManager = (() => {
-    let _canvasRedrawReasons: Dict<unknown[]> = {}
+class _RedrawManager {
 
-    return {
-        addReason(reason: string, comp: Drawable | null) {
-            const compObj = comp
-            const compList = _canvasRedrawReasons[reason]
-            if (isUndefined(compList)) {
-                _canvasRedrawReasons[reason] = [compObj]
-            } else {
-                compList.push(compObj)
-            }
-        },
+    private _canvasRedrawReasons: Dict<unknown[]> = {}
 
-        getReasonsAndClear(): string | undefined {
-            if (isEmptyObject(_canvasRedrawReasons)) {
-                return undefined
-            }
+    public addReason(reason: string, comp: Drawable | null) {
+        const compObj = comp
+        const compList = this._canvasRedrawReasons[reason]
+        if (isUndefined(compList)) {
+            this._canvasRedrawReasons[reason] = [compObj]
+        } else {
+            compList.push(compObj)
+        }
+    }
 
-            const reasonParts: string[] = []
-            for (const reason of Object.keys(_canvasRedrawReasons)) {
-                reasonParts.push(reason)
-                const linkedComps = _canvasRedrawReasons[reason]!
-                reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
-                for (const comp of linkedComps) {
-                    if (isNotNull(comp)) {
-                        const compAny = comp as any
-                        reasonParts.push(compAny.constructor?.name ?? "Component")
-                        if (isDefined(compAny.type)) {
-                            reasonParts.push("_", compAny.type)
-                        }
-                        if (isDefined(compAny.name)) {
-                            reasonParts.push("('", compAny.name, "')")
-                        }
-                        reasonParts.push("; ")
+    public getReasonsAndClear(): string | undefined {
+        if (isEmptyObject(this._canvasRedrawReasons)) {
+            return undefined
+        }
+
+        const reasonParts: string[] = []
+        for (const reason of Object.keys(this._canvasRedrawReasons)) {
+            reasonParts.push(reason)
+            const linkedComps = this._canvasRedrawReasons[reason]!
+            reasonParts.push(" (", String(linkedComps.length), "×)", ": ")
+            for (const comp of linkedComps) {
+                if (isNotNull(comp)) {
+                    const compAny = comp as any
+                    reasonParts.push(compAny.constructor?.name ?? "Component")
+                    if (isDefined(compAny.type)) {
+                        reasonParts.push("_", compAny.type)
                     }
+                    if (isDefined(compAny.name)) {
+                        reasonParts.push("('", compAny.name, "')")
+                    }
+                    reasonParts.push("; ")
                 }
-                reasonParts.pop()
-                reasonParts.push("\n    ")
             }
             reasonParts.pop()
+            reasonParts.push("\n    ")
+        }
+        reasonParts.pop()
 
-            _canvasRedrawReasons = {}
-
-            return reasonParts.join("")
-        },
+        this._canvasRedrawReasons = {}
+        return reasonParts.join("")
     }
-})()
+}
+export const RedrawManager = new _RedrawManager()
 
 
-export const RecalcManager = (() => {
+class _RecalcManager {
 
-    const _componentNeedingRecalc = new Set<Component>()
+    private _componentNeedingRecalc = new Set<Component>()
 
-    function recalculate() {
+    public addComponentNeedingRecalc(comp: Component) {
+        this._componentNeedingRecalc.add(comp)
+        // console.log("Need recalc:", _componentNeedingRecalc)
+    }
+
+    public recalculateIfNeeded(): boolean {
+        if (this._componentNeedingRecalc.size !== 0) {
+            this.recalculate()
+            return true
+        }
+        return false
+    }
+
+    private recalculate() {
         // const recalculated = new Set<Component>()
 
         let round = 1
         do {
-            const toRecalc = new Set<Component>(_componentNeedingRecalc)
-            console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
-            _componentNeedingRecalc.clear()
+            const toRecalc = new Set<Component>(this._componentNeedingRecalc)
+            // console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
+            this._componentNeedingRecalc.clear()
             toRecalc.forEach((comp) => {
                 // if (!recalculated.has(comp)) {
                 comp.recalcValue()
@@ -80,20 +92,9 @@ export const RecalcManager = (() => {
                 console.log("ERROR circular dependency")
                 break
             }
-        } while (_componentNeedingRecalc.size !== 0)
+        } while (this._componentNeedingRecalc.size !== 0)
     }
 
-    return {
-        addComponentNeedingRecalc(comp: Component) {
-            _componentNeedingRecalc.add(comp)
-            // console.log("Need recalc:", _componentNeedingRecalc)
-        },
-        recalculateIfNeeded(): boolean {
-            if (_componentNeedingRecalc.size !== 0) {
-                recalculate()
-                return true
-            }
-            return false
-        },
-    }
-})()
+}
+
+export const RecalcManager = new _RecalcManager()
