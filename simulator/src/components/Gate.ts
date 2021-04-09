@@ -101,11 +101,13 @@ export type Gate2Type = typeof Gate2Types.type
 
 const Gate1Types_ = {
     NOT: {
-        out: (in1: boolean) => !in1, localName: "NON",
+        out: (in1: boolean) => !in1,
+        localName: "NON", includeInContextMenu: true,
         localDesc: "La sortie est égale à l’entrée inversée.",
     },
     BUF: {
-        out: (in1: boolean) => in1, localName: "OUI",
+        out: (in1: boolean) => in1,
+        localName: "OUI", includeInContextMenu: true,
         localDesc: "La sortie est égale à l’entrée.",
     },
 } as const
@@ -354,14 +356,18 @@ export abstract class GateBase<NumInput extends FixedArraySize, Repr extends Gat
         const otherTypes = enumDef.values.filter(t => t !== currentType && enumDef.propsOf(t).includeInContextMenu)
         return {
             _tag: "submenu", caption: "Remplacer par",
-            items: otherTypes.map(newType => {
-                const gateProps = enumDef.propsOf(newType)
-                return {
-                    _tag: "item", caption: "Porte " + gateProps.localName, action: () => {
-                        callback(newType)
-                    },
-                }
-            }),
+            items: [
+                ...otherTypes.map(newType => {
+                    const gateProps = enumDef.propsOf(newType)
+                    return {
+                        _tag: "item" as const, caption: "Porte " + gateProps.localName, action: () => {
+                            callback(newType)
+                        },
+                    }
+                }),
+                { _tag: "sep" as const },
+                { _tag: "text" as const, caption: "Changez entre les variantes avec Majuscule + double-clic sur la porte" },
+            ],
         }
     }
 
@@ -478,7 +484,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
 
     public makeContextMenu(): ContextMenuData {
         const replaceItem = this.makeRemplaceByMenuItem(this._type, Gate2Types, newType => this.doSetType(newType))
-        return [replaceItem]
+        return [replaceItem, this.makeChangeOrientationContextMenuItem()]
     }
 
     private doSetType(newType: Gate2Type) {
@@ -493,7 +499,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
         }
         if (mode >= Mode.FULL && e.altKey) {
             this._showAsUnknown = !this._showAsUnknown
-            this.setNeedsRedraw("display style changed")
+            this.setNeedsRedraw("display as unknown changed")
             return true
         } else if (mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant

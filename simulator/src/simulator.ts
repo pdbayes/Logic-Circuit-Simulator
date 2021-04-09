@@ -12,12 +12,13 @@ import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, ModifierObject, mods, raw, style, title, type, ul } from "./htmlgen"
+import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
 import { Timeline, TimelineState } from './Timeline'
+import { gallery } from './gallery'
 
 
 export const gates: Gate[] = []
@@ -69,9 +70,11 @@ export function setToolCursor(cursor: string | null) {
 
 let canvasContainer: HTMLElement
 let mainCanvas: HTMLCanvasElement
+let baseTransform: DOMMatrix
 let tooltipElem: HTMLElement
 let mainContextMenu: HTMLElement
 let initialData: string | undefined = undefined
+export const currentScale = 1
 
 function isEmbeddedInIframe(): boolean {
     try {
@@ -406,22 +409,34 @@ class _EditHandlers extends ToolHandlers {
             // console.log("building menu for %o", contextMenuData)
 
             const defToElem = (item: ContextMenuItem): HTMLElement => {
+                function mkButton(spec: { icon?: string | undefined, caption: Modifier }) {
+                    let content: Modifier
+                    if ("icon" in spec) {
+                        const captionElem = span(cls("menu-text"), spec.caption)
+                        if (isDefined(spec.icon)) {
+                            content = mods(faglyph(spec.icon), captionElem)
+                        } else {
+                            content = captionElem
+                        }
+                    } else {
+                        content = spec.caption
+                    }
+                    return button(type("button"), cls("menu-btn"), content)
+                }
+
                 switch (item._tag) {
                     case 'sep':
                         return li(cls("menu-separator")).render()
+                    case 'text':
+                        return li(cls("menu-item-static"), item.caption).render()
                     case "item": {
-                        const but =
-                            button(type("button"), cls("menu-btn"),
-                                item.caption,
-                            ).render()
+                        const but = mkButton(item).render()
                         but.addEventListener("click", wrapHandler(item.action))
                         return li(cls("menu-item"), but).render()
                     }
                     case "submenu": {
                         return li(cls("menu-item submenu"),
-                            button(type("button"), cls("menu-btn"),
-                                item.caption,
-                            ),
+                            mkButton(item),
                             ul(cls("menu"),
                                 ...item.items.map(defToElem)
                             )
@@ -502,7 +517,7 @@ const EditHandlers = new _EditHandlers
 const DeleteHandlers = new _DeleteHandlers
 const MoveHandlers = new _MoveHandlers
 
-let _currentHandlers = EditHandlers
+let _currentHandlers: ToolHandlers = EditHandlers
 
 export function setHandlersFor(action: MouseAction) {
     _currentHandlers = (() => {
@@ -515,35 +530,38 @@ export function setHandlersFor(action: MouseAction) {
 }
 
 export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
-    if ("offsetX" in e) {
-        // MouseEvent
-        if (e.target === mainCanvas) {
-            return [e.offsetX, e.offsetY]
+    const [unscaledX, unscaledY] = (() => {
+        if ("offsetX" in e) {
+            // MouseEvent
+            if (e.target === mainCanvas) {
+                return [e.offsetX, e.offsetY]
+            } else {
+                const canvasRect = mainCanvas.getBoundingClientRect()
+                const elemRect = (e.target as HTMLElement).getBoundingClientRect()
+                return [
+                    Math.max(GRID_STEP * 2, e.offsetX + elemRect.x - canvasRect.x),
+                    Math.max(GRID_STEP * 2, e.offsetY + elemRect.y - canvasRect.y),
+                ]
+            }
         } else {
-            const canvasRect = mainCanvas.getBoundingClientRect()
             const elemRect = (e.target as HTMLElement).getBoundingClientRect()
-            return [
-                Math.max(GRID_STEP * 2, e.offsetX + elemRect.x - canvasRect.x),
-                Math.max(GRID_STEP * 2, e.offsetY + elemRect.y - canvasRect.y),
-            ]
-        }
-    } else {
-        const elemRect = (e.target as HTMLElement).getBoundingClientRect()
-        const bodyRect = document.body.getBoundingClientRect()
-        const touch = e.changedTouches[0]
-        const offsetX = touch.pageX - (elemRect.left - bodyRect.left)
-        const offsetY = touch.pageY - (elemRect.top - bodyRect.top)
+            const bodyRect = document.body.getBoundingClientRect()
+            const touch = e.changedTouches[0]
+            const offsetX = touch.pageX - (elemRect.left - bodyRect.left)
+            const offsetY = touch.pageY - (elemRect.top - bodyRect.top)
 
-        if (e.target === mainCanvas) {
-            return [offsetX, offsetY]
-        } else {
-            const canvasRect = mainCanvas.getBoundingClientRect()
-            return [
-                Math.max(GRID_STEP * 2, offsetX + elemRect.x - canvasRect.x),
-                Math.max(GRID_STEP * 2, offsetY + elemRect.y - canvasRect.y),
-            ]
+            if (e.target === mainCanvas) {
+                return [offsetX, offsetY]
+            } else {
+                const canvasRect = mainCanvas.getBoundingClientRect()
+                return [
+                    Math.max(GRID_STEP * 2, offsetX + elemRect.x - canvasRect.x),
+                    Math.max(GRID_STEP * 2, offsetY + elemRect.y - canvasRect.y),
+                ]
+            }
         }
-    }
+    })()
+    return [unscaledX / currentScale, unscaledY / currentScale]
 }
 
 let _lastTouchEnd: [Drawable, number] | undefined = undefined
@@ -576,6 +594,7 @@ export function setup() {
 
     p5canvas.parent('canvas-sim')
     mainCanvas = canvasContainer.getElementsByTagName("canvas")[0]
+    baseTransform = mainCanvas.getContext('2d')?.getTransform() ?? new DOMMatrix("scale(1)")
 
 
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
@@ -870,6 +889,7 @@ export function setup() {
     trySetMode(upperMode)
 }
 window.setup = setup
+window.gallery = gallery
 
 function setVisible(elem: HTMLElement, visible: boolean) {
     if (visible) {
@@ -927,6 +947,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
 
         const g = mainCanvas.getContext("2d")!
+        g.setTransform(baseTransform)
 
         strokeCap(PROJECT)
 
@@ -956,6 +977,8 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
                 line(0, y, width, y)
             }
         }
+
+        g.scale(currentScale, currentScale)
 
         stroke(0)
         wireMgr.draw(g, _currentMouseOverComp)

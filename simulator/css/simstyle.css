@@ -180,6 +180,7 @@ input[type="file"] {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    user-select: none;
     display: block;
     width: 100%;
     color: #444;
@@ -197,7 +198,22 @@ input[type="file"] {
    padding: 0;
   }
   
-  .menu-text { margin-left: 25px; }
+  .menu-text { margin-left: 22px; }
+
+  .menu-item-static {
+    display: block;
+    padding: 0 5px;
+    color:rgb(150, 150, 150);
+    font-size: 70%;
+    font-style: italic;
+    width: 100%;
+    white-space: normal;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
   
   .menu-btn .fa {
     position: absolute;

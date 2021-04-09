@@ -1,4 +1,4 @@
-import { Expand, isDefined, isNotNull, Mode, typeOrUndefined } from "../utils"
+import { Expand, isDefined, isNotNull, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { mode } from "../simulator"
@@ -16,8 +16,9 @@ export interface DrawContextExt extends DrawContext {
 
 export type ContextMenuItem =
     | { _tag: "sep" }
-    | { _tag: "item", caption: Modifier, action: () => unknown }
-    | { _tag: "submenu", caption: Modifier, items: ContextMenuData }
+    | { _tag: "text", caption: Modifier }
+    | { _tag: "item", icon?: string | undefined, caption: Modifier, action: () => unknown }
+    | { _tag: "submenu", icon?: string | undefined, caption: Modifier, items: ContextMenuData }
 
 export type ContextMenuData = ContextMenuItem[]
 
@@ -147,14 +148,19 @@ export interface HasPosition {
 
 }
 
-export const Orientations = {
-    "e": null,
-    "s": null,
-    "w": null,
-    "n": null,
+const Orientations_ = {
+    "e": { localDesc: "Vers la droite (par défaut)" },
+    "s": { localDesc: "Vers le bas" },
+    "w": { localDesc: "Vers la gauche" },
+    "n": { localDesc: "Vers le haut" },
 } as const
 
-export type Orientation = keyof typeof Orientations
+export const Orientations = RichStringEnum.withProps<{
+    localDesc: string
+}>()(Orientations_)
+
+
+export type Orientation = typeof Orientations.type
 
 export function isOrientationVertical(orient: Orientation): orient is "s" | "n" {
     return orient === "s" || orient === "n"
@@ -164,7 +170,7 @@ export function isOrientationVertical(orient: Orientation): orient is "s" | "n" 
 // for compact JSON repr, pos is an array
 export const PositionSupportRepr = t.type({
     pos: t.readonly(t.tuple([t.number, t.number])),
-    orient: typeOrUndefined(t.keyof(Orientations)),
+    orient: typeOrUndefined(t.keyof(Orientations_)),
 })
 
 export type PositionSupportRepr = Expand<t.TypeOf<typeof PositionSupportRepr>>
@@ -209,7 +215,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._orient
     }
 
-    protected setOrient(newOrient: Orientation) {
+    protected doSetOrient(newOrient: Orientation) {
         // can't be a setter, which would require being public
         this._orient = newOrient
         this.setNeedsRedraw("orientation changed")
@@ -260,6 +266,26 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             return [posX, posY]
         }
         return undefined
+    }
+
+    protected makeChangeOrientationContextMenuItem(): ContextMenuItem {
+        return {
+            _tag: "submenu",
+            caption: "Orientation",
+            items: [
+                ...Orientations.values.map(orient => {
+                    const isCurrent = this._orient === orient
+                    const icon = isCurrent ? "check" : undefined
+                    const caption = Orientations.propsOf(orient).localDesc
+                    const action = isCurrent ? () => undefined : () => {
+                        this.doSetOrient(orient)
+                    }
+                    return { _tag: "item" as const, icon, caption, action }
+                }),
+                { _tag: "sep" as const },
+                { _tag: "text" as const, caption: "Changez l’orientation avec Commande + double-clic sur le composant" },
+            ],
+        }
     }
 
 }

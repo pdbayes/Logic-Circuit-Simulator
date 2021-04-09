@@ -2,7 +2,7 @@ import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving } from ".
 import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
-import { DEFAULT_ORIENTATION, DrawableWithPosition, PositionSupportRepr } from "./Drawable"
+import { DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
 
@@ -491,7 +491,7 @@ export abstract class ComponentBase<
 
     mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
         if (mode >= Mode.CONNECT && e.metaKey) {
-            this.setOrient((() => {
+            this.doSetOrient((() => {
                 switch (this.orient) {
                     case "e": return "s"
                     case "s": return "w"
@@ -499,10 +499,14 @@ export abstract class ComponentBase<
                     case "n": return "e"
                 }
             })())
-            this.updateNodePositions()
             return true
         }
         return false
+    }
+
+    protected doSetOrient(orient: Orientation) {
+        super.doSetOrient(orient)
+        this.updateNodePositions()
     }
 
     destroy() {
