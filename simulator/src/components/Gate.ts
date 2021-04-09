@@ -9,42 +9,92 @@ import { DrawContext } from "./Drawable"
 
 const Gate2Types_ = {
     // usual suspects
-    AND: { out: (in1: boolean, in2: boolean) => in1 && in2, localName: "ET" },
-    OR: { out: (in1: boolean, in2: boolean) => in1 || in2, localName: "OU" },
-    XOR: { out: (in1: boolean, in2: boolean) => in1 !== in2, localName: "OU-X" },
-    NAND: { out: (in1: boolean, in2: boolean) => !(in1 && in2), localName: "NON-ET" },
-    NOR: { out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU" },
-    XNOR: { out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X" },
+    AND: {
+        out: (in1: boolean, in2: boolean) => in1 && in2, localName: "ET",
+        localDesc: "La sortie vaut 1 lorsque les deux entrées valent 1.",
+    },
+    OR: {
+        out: (in1: boolean, in2: boolean) => in1 || in2, localName: "OU",
+        localDesc: "La sortie vaut 1 lorsqu’au moins une des deux entrées vaut 1.",
+    },
+    XOR: {
+        out: (in1: boolean, in2: boolean) => in1 !== in2, localName: "OU-X",
+        localDesc: "La sortie vaut 1 lorsque l’une ou l’autre des deux entrées vaut 1, mais pas les deux.",
+    },
+    NAND: {
+        out: (in1: boolean, in2: boolean) => !(in1 && in2), localName: "NON-ET",
+        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les deux entrées ne valent 1.",
+    },
+    NOR: {
+        out: (in1: boolean, in2: boolean) => !(in1 || in2), localName: "NON-OU",
+        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les deux entrées valent 0.",
+    },
+    XNOR: {
+        out: (in1: boolean, in2: boolean) => in1 === in2, localName: "NON-OU-X",
+        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsque les entrées valent soit les deux 1, soit les deux 0.",
+    },
 
     // less common gates
-    IMPLY: { out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE" },
-    RIMPLY: { out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE (bis)" },
-    NIMPLY: { out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE" },
-    RNIMPLY: { out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE (bis)" },
+    IMPLY: {
+        out: (in1: boolean, in2: boolean) => !in1 || in2, localName: "IMPLIQUE",
+        localDesc: "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1.",
+    },
+    RIMPLY: {
+        out: (in1: boolean, in2: boolean) => in1 || !in2, localName: "IMPLIQUE (bis)",
+        localDesc: "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1.",
+    },
+    NIMPLY: {
+        out: (in1: boolean, in2: boolean) => in1 && !in2, localName: "NON-IMPLIQUE",
+        localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0.",
+    },
+    RNIMPLY: {
+        out: (in1: boolean, in2: boolean) => !in1 && in2, localName: "NON-IMPLIQUE (bis)",
+        localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1.",
+    },
 
     // observing only one input
-    TXA: { out: (in1: boolean, __: boolean) => in1, localName: "TRANSFERT-A" },
-    TXB: { out: (__: boolean, in2: boolean) => in2, localName: "TRANSFERT-B" },
-    TXNA: { out: (in1: boolean, __: boolean) => !in1, localName: "TRANSFERT-NON-A" },
-    TXNB: { out: (__: boolean, in2: boolean) => !in2, localName: "TRANSFERT-NON-B" },
+    TXA: {
+        out: (in1: boolean, __: boolean) => in1, localName: "TRANSFERT-A",
+        localDesc: "La sortie est égale à la première entrée; la seconde entrée est ignorée.",
+    },
+    TXB: {
+        out: (__: boolean, in2: boolean) => in2, localName: "TRANSFERT-B",
+        localDesc: "La sortie est égale à la seconde entrée; la première entrée est ignorée.",
+    },
+    TXNA: {
+        out: (in1: boolean, __: boolean) => !in1, localName: "TRANSFERT-NON-A",
+        localDesc: "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée.",
+    },
+    TXNB: {
+        out: (__: boolean, in2: boolean) => !in2, localName: "TRANSFERT-NON-B",
+        localDesc: "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée.",
+    },
 } as const
 
 export const Gate2Types = RichStringEnum.withProps<{
     out: (in1: boolean, in2: boolean) => boolean
     localName: string
+    localDesc: string
 }>()(Gate2Types_)
 
 export type Gate2Type = typeof Gate2Types.type
 
 
 const Gate1Types_ = {
-    NOT: { out: (in1: boolean) => !in1, localName: "NON" },
-    BUF: { out: (in1: boolean) => in1, localName: "OUI" },
+    NOT: {
+        out: (in1: boolean) => !in1, localName: "NON",
+        localDesc: "La sortie est égale à l’entrée inversée.",
+    },
+    BUF: {
+        out: (in1: boolean) => in1, localName: "OUI",
+        localDesc: "La sortie est égale à l’entrée.",
+    },
 } as const
 
 export const Gate1Types = RichStringEnum.withProps<{
     out: (in1: boolean) => boolean
     localName: string
+    localDesc: string
 }>()(Gate1Types_)
 
 export type Gate1Type = typeof Gate1Types.type
@@ -373,6 +423,7 @@ export class Gate2 extends GateBase<2, Gate2Repr> {
 
         return makeGateTooltip(
             mods("Porte ", b(gateProps.localName)),
+            gateProps.localDesc,
             explanation,
             makeTruthTable(genTruthTableData())
         )
@@ -524,6 +575,7 @@ export class Gate1 extends GateBase<1, Gate1Repr> {
 
         return makeGateTooltip(
             header,
+            Gate1Types.propsOf(this._type).localDesc,
             explanation,
             makeTruthTable(genTruthTableData())
         )
@@ -560,8 +612,8 @@ const makeTruthTable = ([header, rows]: readonly [string[], TruthTableRowData[]]
         tbody(...htmlRows)
     )
 }
-const makeGateTooltip = (title: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject => {
-    return tooltipContent(title, mods(div(explanation), div(truthTable)))
+const makeGateTooltip = (title: Modifier, description: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject => {
+    return tooltipContent(title, mods(div(description), div(explanation), div(truthTable)))
 }
 
 export const GateFactory = {
