@@ -1,5 +1,5 @@
 import { Clock } from "./components/Clock"
-import { logicInputs, logicOutputs, clocks, gates, tryLoadFromData, displays, setToolCursor, setHandlersFor } from "./simulator"
+import { tryLoadFromData, setToolCursor, setHandlersFor, components } from "./simulator"
 import { GateFactory, GateTypes } from "./components/Gate"
 import { LogicInput } from "./components/LogicInput"
 import { LogicOutput } from "./components/LogicOutput"
@@ -19,38 +19,31 @@ export const MouseActions = RichStringEnum.withProps<{
 })
 export type MouseAction = typeof MouseActions.type
 
-export const ComponentTypes = RichStringEnum.withProps<{
+export const ComponentFactoryTypes = RichStringEnum.withProps<{
     make(elem: HTMLElement): Component,
-    backingArray(): Component[],
 }>()({
     "LogicInput": {
         make: () => new LogicInput(null),
-        backingArray: () => logicInputs,
     },
 
     "LogicOutput": {
         make: () => new LogicOutput(null),
-        backingArray: () => logicOutputs,
     },
 
     "DisplayNibble": {
         make: () => new DisplayNibble(null),
-        backingArray: () => displays,
     },
 
     "DisplayAscii": {
         make: () => new DisplayAscii(null),
-        backingArray: () => displays,
     },
 
     "DisplayBar": {
         make: () => new DisplayBar(null),
-        backingArray: () => displays,
     },
 
     "Clock": {
         make: () => new Clock({ period: 2000, dutycycle: undefined, phase: undefined, showLabel: undefined }),
-        backingArray: () => clocks,
     },
 
     "Gate": {
@@ -61,21 +54,20 @@ export const ComponentTypes = RichStringEnum.withProps<{
             }
             return GateFactory.make({ type: gateType })
         },
-        backingArray: () => gates,
     },
 })
-export type ComponentType = typeof ComponentTypes.type
+export type ComponentFactoryType = typeof ComponentFactoryTypes.type
 
 
 export function makeComponentFactoryForButton(elem: HTMLElement): () => Component {
     const compType = elem.dataset["component"]
-    if (!ComponentTypes.isValue(compType)) {
-        throw new Error(`bad component type: '${compType}'; expected one of: ` + ComponentTypes.values.join(", "))
+    if (!ComponentFactoryTypes.isValue(compType)) {
+        throw new Error(`bad component type: '${compType}'; expected one of: ` + ComponentFactoryTypes.values.join(", "))
     }
-    const compDef = ComponentTypes.propsOf(compType)
+    const compDef = ComponentFactoryTypes.propsOf(compType)
     return () => {
         const newComp = compDef.make(elem)
-        compDef.backingArray().push(newComp)
+        components.push(newComp)
         return newComp
     }
 }

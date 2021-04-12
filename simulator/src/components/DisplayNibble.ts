@@ -44,6 +44,10 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
     }
+    
+    public get componentType() {
+        return "Display" as const
+    }
 
     get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP

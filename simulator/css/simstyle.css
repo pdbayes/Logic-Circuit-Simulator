@@ -232,6 +232,14 @@ input[type="file"] {
     border: 1px solid #2E3940;
   }
   
+  .menu-item:hover > .menu-btn.danger {
+    color: #fff;
+    background-color: #bd154d;
+    background: -webkit-linear-gradient(to bottom, #c4577b, #bd154d);
+    background: linear-gradient(to bottom, #c4577b, #bd154d);
+    border: 1px solid #bd154d;
+  }
+  
   .menu-item.disabled {
     opacity: .5;
     pointer-events: none;

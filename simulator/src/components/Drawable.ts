@@ -17,10 +17,24 @@ export interface DrawContextExt extends DrawContext {
 export type ContextMenuItem =
     | { _tag: "sep" }
     | { _tag: "text", caption: Modifier }
-    | { _tag: "item", icon?: string | undefined, caption: Modifier, action: () => unknown }
-    | { _tag: "submenu", icon?: string | undefined, caption: Modifier, items: ContextMenuData }
+    | { _tag: "item", icon: string | undefined, caption: Modifier, danger: boolean | undefined, action: () => unknown }
+    | { _tag: "submenu", icon: string | undefined, caption: Modifier, items: ContextMenuData }
 
 export type ContextMenuData = ContextMenuItem[]
+export const ContextMenuData = {
+    sep(): ContextMenuItem {
+        return { _tag: "sep" }
+    },
+    text(caption: Modifier): ContextMenuItem {
+        return { _tag: "text", caption }
+    },
+    item(icon: string | undefined, caption: Modifier, action: () => unknown, danger?: boolean): ContextMenuItem {
+        return { _tag: "item", icon, caption, action, danger }
+    },
+    submenu(icon: string | undefined, caption: Modifier, items: ContextMenuData): ContextMenuItem {
+        return { _tag: "submenu", icon, caption, items }
+    },
+}
 
 class _DrawContextImpl implements DrawContext, DrawContextExt {
 
@@ -269,23 +283,19 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     protected makeChangeOrientationContextMenuItem(): ContextMenuItem {
-        return {
-            _tag: "submenu",
-            caption: "Orientation",
-            items: [
-                ...Orientations.values.map(orient => {
-                    const isCurrent = this._orient === orient
-                    const icon = isCurrent ? "check" : undefined
-                    const caption = Orientations.propsOf(orient).localDesc
-                    const action = isCurrent ? () => undefined : () => {
-                        this.doSetOrient(orient)
-                    }
-                    return { _tag: "item" as const, icon, caption, action }
-                }),
-                { _tag: "sep" as const },
-                { _tag: "text" as const, caption: "Changez l’orientation avec Commande + double-clic sur le composant" },
-            ],
-        }
+        return ContextMenuData.submenu("arrow-circle-right", "Orientation", [
+            ...Orientations.values.map(orient => {
+                const isCurrent = this._orient === orient
+                const icon = isCurrent ? "check" : "none"
+                const caption = Orientations.propsOf(orient).localDesc
+                const action = isCurrent ? () => undefined : () => {
+                    this.doSetOrient(orient)
+                }
+                return ContextMenuData.item(icon, caption, action)
+            }),
+            ContextMenuData.sep(),
+            ContextMenuData.text("Changez l’orientation avec Commande + double-clic sur le composant"),
+        ])
     }
 
 }

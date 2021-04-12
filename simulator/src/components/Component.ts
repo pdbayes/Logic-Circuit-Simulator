@@ -1,8 +1,8 @@
-import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving } from "../simulator"
-import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, toTriStateRepr, TriStateRepr } from "../utils"
+import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving, tryDeleteComponentsWhere } from "../simulator"
+import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
-import { DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
 
@@ -126,6 +126,20 @@ export enum ComponentState {
 
 // Simplified, generics-free representation of a component
 export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>, unknown>
+
+
+
+export const ComponentTypes = RichStringEnum.withProps<{
+    jsonFieldName: string
+}>()({
+    LogicInput: { jsonFieldName: "in" },
+    LogicOutput: { jsonFieldName: "out" },
+    Display: { jsonFieldName: "displays" },
+    Clock: { jsonFieldName: "clocks" },
+    Gate: { jsonFieldName: "gates" },
+})
+
+export type ComponentType = typeof ComponentTypes.type
 
 interface DragContext {
     mouseOffsetX: number
@@ -362,6 +376,8 @@ export abstract class ComponentBase<
         return result
     }
 
+    public abstract get componentType(): ComponentType
+
     public get state() {
         return this._state
     }
@@ -519,6 +535,77 @@ export abstract class ComponentBase<
 
     get cursorWhenMouseover() {
         return "grab"
+    }
+
+    protected makeDeleteContextMenuItem(): ContextMenuItem {
+        return ContextMenuData.item("trash-o", "Supprimer", () => {
+            tryDeleteComponentsWhere(c => c === this)
+        }, true)
+    }
+
+    protected makeShowAsUnknownContextMenuItem(isUnknown: boolean, set: (newUnknown: boolean) => void): ContextMenuItem {
+        return ContextMenuData.submenu("question-circle", "Cacher la fonction", [
+            ...[false, true].map(newUnkown => ContextMenuData.item(newUnkown === isUnknown ? "check" : "none",
+                newUnkown ? "Cacher avec «?»" : "Afficher normalement", () => {
+                    set(newUnkown)
+                })
+            ),
+            ContextMenuData.sep(),
+            ContextMenuData.text("Changez entre normal ou caché avec Option + double-clic sur le composant"),
+        ])
+    }
+
+    protected makeForceOutputsContextMenuItem(): ContextMenuItem {
+        const numOutputs = this.outputs.length
+
+        if (numOutputs === 0) {
+            throw new Error("should have at least one input")
+        }
+
+        function makeOutputItems(out: NodeOut): ContextMenuItem[] {
+            const currentForceValue = out.forceValue
+            return [undefined, Unset, true, false]
+                .map(newForceValue => ContextMenuData.item(
+                    currentForceValue === newForceValue ? "check" : "none",
+                    (() => {
+                        switch (newForceValue) {
+                            case undefined: return "Sortie normale"
+                            case Unset: return "Forcer comme état inconnu"
+                            case true: return "Forcer à 1"
+                            case false: return "Forcer à 0"
+                        }
+                    })(),
+                    () => {
+                        out.forceValue = newForceValue
+                    }
+                ))
+        }
+
+        const footerItems = [
+            ContextMenuData.sep(),
+            ContextMenuData.text("Forcez une sortie avec Option + double-clic sur la sortie"),
+        ]
+
+        if (numOutputs === 1) {
+            return ContextMenuData.submenu("exclamation", "Forcer la sortie", [
+                ...makeOutputItems(this.outputs[0]!),
+                ...footerItems,
+            ])
+
+        } else {
+            let outIndex = 0
+            return ContextMenuData.submenu("exclamation", "Forcer une sortie", [
+                ...this.outputs.map((_out: unknown) => {
+                    const out = _out as NodeOut
+                    return ContextMenuData.submenu(undefined, "Sortie " + (++outIndex),
+                        makeOutputItems(out)
+                    )
+                }),
+                ...footerItems,
+            ])
+        }
+
+
     }
 
 }

@@ -5,12 +5,7 @@ import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, 
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
-import { Gate } from "./components/Gate"
-import { LogicInput } from "./components/LogicInput"
-import { LogicOutput } from "./components/LogicOutput"
-import { Clock } from "./components/Clock"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Display } from "./components/Display"
 import { NodeManager } from "./NodeManager"
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
@@ -21,17 +16,9 @@ import { Timeline, TimelineState } from './Timeline'
 import { gallery } from './gallery'
 
 
-export const gates: Gate[] = []
-export const logicInputs: LogicInput[] = []
-export const logicOutputs: LogicOutput[] = []
-export const displays: Display[] = []
-export const clocks: Clock[] = []
-// export const srLatches: SR_Latch[] = []
-// export const flipflops: FF[] = []
-
+export const components: Component[] = []
 export const wireMgr = new WireManager()
 
-export const allComponents: Component[][] = [gates, logicInputs, logicOutputs, displays, clocks/*, srLatches, flipflops*/]
 
 const MaxMode = Mode.FULL
 const MaxEmbeddedMode = Mode.DESIGN
@@ -258,22 +245,20 @@ function updateMouseOver([x, y]: [number, number]) {
             }
 
             // check if we're over components or their nodes
-            for (const elems of allComponents) {
-                for (const elem of elems) {
-                    let nodeOver: Node | null = null
-                    elem.forEachNode((node) => {
-                        if (node.isOver(x, y)) {
-                            nodeOver = node
-                            return false
-                        }
-                        return true
-                    })
-                    if (isNotNull(nodeOver)) {
-                        return nodeOver
+            for (const comp of components) {
+                let nodeOver: Node | null = null
+                comp.forEachNode((node) => {
+                    if (node.isOver(x, y)) {
+                        nodeOver = node
+                        return false
                     }
-                    if (elem.isOver(x, y)) {
-                        return elem
-                    }
+                    return true
+                })
+                if (isNotNull(nodeOver)) {
+                    return nodeOver
+                }
+                if (comp.isOver(x, y)) {
+                    return comp
                 }
             }
 
@@ -409,19 +394,12 @@ class _EditHandlers extends ToolHandlers {
             // console.log("building menu for %o", contextMenuData)
 
             const defToElem = (item: ContextMenuItem): HTMLElement => {
-                function mkButton(spec: { icon?: string | undefined, caption: Modifier }) {
-                    let content: Modifier
-                    if ("icon" in spec) {
-                        const captionElem = span(cls("menu-text"), spec.caption)
-                        if (isDefined(spec.icon)) {
-                            content = mods(faglyph(spec.icon), captionElem)
-                        } else {
-                            content = captionElem
-                        }
-                    } else {
-                        content = spec.caption
-                    }
-                    return button(type("button"), cls("menu-btn"), content)
+                function mkButton(spec: { icon?: string | undefined, caption: Modifier }, danger: boolean) {
+                    return button(type("button"), cls(`menu-btn${(danger ? " danger" : "")}`),
+                        isUndefined(spec.icon)
+                            ? spec.caption
+                            : mods(faglyph(spec.icon), span(cls("menu-text"), spec.caption))
+                    )
                 }
 
                 switch (item._tag) {
@@ -430,13 +408,13 @@ class _EditHandlers extends ToolHandlers {
                     case 'text':
                         return li(cls("menu-item-static"), item.caption).render()
                     case "item": {
-                        const but = mkButton(item).render()
+                        const but = mkButton(item, item.danger ?? false).render()
                         but.addEventListener("click", wrapHandler(item.action))
                         return li(cls("menu-item"), but).render()
                     }
                     case "submenu": {
                         return li(cls("menu-item submenu"),
-                            mkButton(item),
+                            mkButton(item, false),
                             ul(cls("menu"),
                                 ...item.items.map(defToElem)
                             )
@@ -473,44 +451,47 @@ class _EditHandlers extends ToolHandlers {
     }
 }
 
+export function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
+    let compDeleted = false
+    for (let i = 0; i < components.length; i++) {
+        const comp = components[i]
+        if (cond(comp)) {
+            comp.destroy()
+            components.splice(i, 1)
+            compDeleted = true
+        }
+    }
+    if (compDeleted) {
+        RedrawManager.addReason("component(s) deleted", null)
+    }
+}
+
 class _DeleteHandlers extends ToolHandlers {
     mouseClickedOn(comp: Drawable, __: MouseEvent) {
         if (comp instanceof ComponentBase) {
-            outer: for (const elems of allComponents) {
-                for (let i = 0; i < elems.length; i++) {
-                    if (elems[i] === comp) {
-                        elems.splice(i, 1)
-                        comp.destroy()
-                        break outer
-                    }
-                }
-            }
+            tryDeleteComponentsWhere(c => c === comp)
         } else if (comp instanceof Wire) {
             wireMgr.deleteWire(comp)
         }
     }
 }
 
-
 class _MoveHandlers extends ToolHandlers {
     mouseDownOnBackground(e: MouseEvent) {
-        this.forAllElems((comp) => comp.mouseDown(e))
-    }
-    mouseDraggedOnBackground(e: MouseEvent) {
-        this.forAllElems((comp) => comp.mouseDragged(e))
-    }
-    mouseUpOnBackground(e: MouseEvent) {
-        this.forAllElems((comp) => comp.mouseUp(e))
-    }
-
-    private forAllElems(f: (comp: Component) => any) {
-        for (const elems of allComponents) {
-            for (const elem of elems) {
-                f(elem)
-            }
+        for (const comp of components) {
+            comp.mouseDown(e)
         }
     }
-
+    mouseDraggedOnBackground(e: MouseEvent) {
+        for (const comp of components) {
+            comp.mouseDragged(e)
+        }
+    }
+    mouseUpOnBackground(e: MouseEvent) {
+        for (const comp of components) {
+            comp.mouseUp(e)
+        }
+    }
 }
 
 const EditHandlers = new _EditHandlers
@@ -983,14 +964,12 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
         stroke(0)
         wireMgr.draw(g, _currentMouseOverComp)
 
-        for (const elems of allComponents) {
-            for (const elem of elems) {
-                elem.draw(g, _currentMouseOverComp)
-                elem.forEachNode((node) => {
-                    node.draw(g, _currentMouseOverComp)
-                    return true
-                })
-            }
+        for (const comp of components) {
+            comp.draw(g, _currentMouseOverComp)
+            comp.forEachNode((node) => {
+                node.draw(g, _currentMouseOverComp)
+                return true
+            })
         }
 
         const newRedrawReasons = RedrawManager.getReasonsAndClear()
@@ -1076,24 +1055,6 @@ ${json}
         console.log("  -> Could not copy!")
     }
     history.replaceState(null, "", linkForMode(MaxMode))
-}
-
-function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
-    let compDeleted = false
-    for (const elems of allComponents) {
-        for (let i = 0; i < elems.length; i++) {
-            const elem = elems[i]
-            if (cond(elem)) {
-                elem.destroy()
-                delete elems[i]
-                elems.splice(i, 1)
-                compDeleted = true
-            }
-        }
-    }
-    if (compDeleted) {
-        RedrawManager.addReason("components deleted", null)
-    }
 }
 
 // Expose functions as part of the in-browser command-line API

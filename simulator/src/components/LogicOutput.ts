@@ -32,6 +32,10 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         }
     }
 
+    public get componentType() {
+        return "LogicOutput" as const
+    }
+
     protected toStringDetails(): string {
         return "" + this.value
     }

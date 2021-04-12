@@ -1,7 +1,7 @@
 import { HasPosition } from "./components/Drawable"
 import { isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
-import { allComponents } from "./simulator"
+import { components } from "./simulator"
 
 export const GRID_STEP = 10
 
@@ -88,15 +88,13 @@ export function inRect(centerX: number, centerY: number, width: number, height: 
 
 export function guessCanvasHeight(): number {
     let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
-    for (const elems of allComponents) {
-        for (const elem of elems) {
-            const y = elem.posY
-            if (y > lowestY) {
-                lowestY = y
-            }
-            if (y < highestY) {
-                highestY = y
-            }
+    for (const comp of components) {
+        const y = comp.posY
+        if (y > lowestY) {
+            lowestY = y
+        }
+        if (y < highestY) {
+            highestY = y
         }
     }
     return highestY + lowestY // add lower margin equal to top margin

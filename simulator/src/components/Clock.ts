@@ -60,6 +60,10 @@ export class Clock extends LogicInputBase<ClockRepr> {
         }
     }
 
+    public get componentType() {
+        return "Clock" as const
+    }
+
     public makeTooltip() {
         return tooltipContent("Horloge",
             mods(`Période: ${this.period} ms`, br, `Rapport cyclique: ${this.dutycycle}%`,

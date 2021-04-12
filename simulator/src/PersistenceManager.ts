@@ -1,4 +1,4 @@
-import { logicInputs, logicOutputs, gates, clocks, displays, allComponents, wireMgr } from "./simulator"
+import { wireMgr, components } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -12,6 +12,7 @@ import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 import { RecalcManager } from "./RedrawRecalcManager"
 import { Timeline } from "./Timeline"
+import { Component, ComponentTypes } from "./components/Component"
 
 class _PersistenceManager {
 
@@ -48,12 +49,10 @@ class _PersistenceManager {
             }
         }
 
-        for (const elems of allComponents) {
-            for (const elem of elems) {
-                elem.destroy()
-            }
-            elems.splice(0, elems.length)
+        for (const elem of components) {
+            elem.destroy()
         }
+        components.splice(0, components.length)
         wireMgr.clearAllWires()
         NodeManager.clearAllLiveNodes()
         Timeline.reset()
@@ -85,23 +84,23 @@ class _PersistenceManager {
         }
 
         loadField("in", LogicInputDef, (d) =>
-            logicInputs.push(new LogicInput(d))
+            components.push(new LogicInput(d))
         )
 
         loadField("out", LogicOutputDef, (d) =>
-            logicOutputs.push(new LogicOutput(d))
+            components.push(new LogicOutput(d))
         )
 
         loadField("displays", DisplayDef, (d) =>
-            displays.push(DisplayFactory.make(d))
+            components.push(DisplayFactory.make(d))
         )
 
         loadField("clocks", ClockDef, (d) =>
-            clocks.push(new Clock(d))
+            components.push(new Clock(d))
         )
 
         loadField("gates", GateDef, (d) =>
-            gates.push(GateFactory.make(d))
+            components.push(GateFactory.make(d))
         )
 
         // recalculating all the unconnected gates here allows
@@ -135,24 +134,19 @@ class _PersistenceManager {
     buildWorkspaceJSON() {
         const workspace: any = {}
 
-        function add(array: readonly any[], fieldName: string) {
-            if (array.length !== 0) {
-                workspace[fieldName] = array
+        for (const comp of components) {
+            const fieldName = ComponentTypes.propsOf(comp.componentType).jsonFieldName
+            let arr: Component[] = workspace[fieldName]
+            if (isUndefined(arr)) {
+                workspace[fieldName] = (arr = [])
             }
+            arr.push(comp)
+        }
+        if (wireMgr.wires.length !== 0) {
+            workspace.wires = wireMgr.wires
         }
 
-        add(logicInputs, "in")
-        add(logicOutputs, "out")
-        add(displays, "displays")
-        add(clocks, "clocks")
-        add(gates, "gates")
-        // add(flipflops, "flipflops")
-        // add(srLatches, "srLatches")
-        add(wireMgr.wires, "wires")
-
-        const jsonStr = stringifySmart(workspace, { maxLength: 85 })
-        // console.log(jsonStr)
-        return jsonStr
+        return stringifySmart(workspace, { maxLength: 85 })
     }
 }
 

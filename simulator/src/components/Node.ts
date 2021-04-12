@@ -129,9 +129,7 @@ abstract class NodeBase extends DrawableWithPosition {
 
     protected abstract propagateNewValue(newValue: TriState): void
 
-    public get forceValue() {
-        return this._forceValue
-    }
+    public abstract get forceValue(): TriState | undefined
 
     public get gridOffsetX() {
         return this._gridOffsetX
@@ -236,6 +234,10 @@ export class NodeIn extends NodeBase {
         return isNull(this._incomingWire)
     }
 
+    get forceValue() {
+        return undefined
+    }
+
     protected propagateNewValue(__newValue: TriState) {
         this.parent.setNeedsRecalc()
     }
@@ -264,6 +266,17 @@ export class NodeOut extends NodeBase {
         return true
     }
 
+    get forceValue() {
+        return this._forceValue
+    }
+
+    set forceValue(newForceValue: TriState | undefined) {
+        const oldVisibleValue = this.value
+        this._forceValue = newForceValue
+        this.propagateNewValueIfNecessary(oldVisibleValue)
+        this.setNeedsRedraw("changed forced output value")
+    }
+
     protected propagateNewValue(newValue: TriState) {
         for (const wire of this._outgoingWires) {
             if (isNotNull(wire.endNode)) {
@@ -277,8 +290,7 @@ export class NodeOut extends NodeBase {
             return true // already handled
         }
         if (mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
-            const oldVisibleValue = this.value
-            this._forceValue = (() => {
+            this.forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset
                     case Unset: return false
@@ -286,8 +298,6 @@ export class NodeOut extends NodeBase {
                     case true: return undefined
                 }
             })()
-            this.propagateNewValueIfNecessary(oldVisibleValue)
-            this.setNeedsRedraw("changed forced output value")
             return true
         }
         return false

@@ -46,6 +46,10 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
     }
+    
+    public get componentType() {
+        return "Display" as const
+    }
 
     get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP

@@ -114,6 +114,10 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         }
     }
 
+    public get componentType() {
+        return "LogicInput" as const
+    }
+
     get cursorWhenMouseover() {
         return "pointer"
     }

@@ -48,6 +48,10 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             display: this._display,
         }
     }
+    
+    public get componentType() {
+        return "Display" as const
+    }
 
     get unrotatedWidth() {
         return this.getWidthAndHeight()[0]
