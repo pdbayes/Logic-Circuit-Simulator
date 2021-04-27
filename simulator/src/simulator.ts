@@ -1,7 +1,7 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isUndefined, TimeoutHandle } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isUndefined, TimeoutHandle } from "./utils"
 import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
@@ -143,7 +143,6 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
             (upperMode !== Mode.FULL)
                 ? (mode >= Mode.DESIGN) ? "show" : "hide"
                 : (mode >= Mode.DESIGN) ? "show" : "inactive"
-        const showTxGates = mode >= Mode.FULL
 
         const showReset = mode >= Mode.TRYOUT
         const showRightEditControls = mode >= Mode.CONNECT
@@ -155,19 +154,33 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         setVisible(document.getElementById("resetToolButtonDummyCaption")!, showOnlyReset)
         // 
         const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
+        let showonly: undefined | string[] = undefined
         if (isDefined(showonlyStr)) {
-            const showonly = showonlyStr.toUpperCase().split(/[, ]+/).filter(x => x.trim())
+            showonly = showonlyStr.toUpperCase().split(/[, +]+/).filter(x => x.trim())
             const leftToolbar = document.getElementById("leftToolbar")!
             const toolbarChildren = leftToolbar.children
+            let numVisibleInOut = 0
+            let numVisibleGates = 0
             for (let i = 0; i < toolbarChildren.length; i++) {
                 const child = toolbarChildren[i] as HTMLElement
-                const componentAttr = child.getAttribute("component")
-                const typeAttr = child.getAttribute("type")
-                const buttonID = typeAttr ?? componentAttr
-                if (isNotNull(buttonID) && !showonly.includes(buttonID)) {
-                    setVisible(child, false)
+                const compStr = child.getAttribute("data-component")
+                const compType = child.getAttribute("data-type")
+                const buttonID = compType ?? compStr
+                const visible = isNull(buttonID) || showonly.includes(buttonID)
+                if (visible) {
+                    if (compStr === "Gate") {
+                        numVisibleGates++
+                    } else if (!isNullOrUndefined(compStr)) {
+                        numVisibleInOut++
+                    }
                 }
+                setVisible(child, visible)
             }
+            const showInOutHeader = numVisibleInOut > 0
+            const showGatesHeader = numVisibleGates > 0
+            setVisible(document.getElementById("inOutHeader")!, showInOutHeader)
+            setVisible(document.getElementById("gatesHeader")!, showGatesHeader)
+            setVisible(document.getElementById("inOut-gates-sep")!, showInOutHeader && showGatesHeader)
         }
 
         const modifButtons = document.querySelectorAll("button.sim-modification-tool")
@@ -192,6 +205,7 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
                 break
         }
 
+        const showTxGates = mode >= Mode.FULL && (isUndefined(showonly) || showonly.includes("TX") || showonly.includes("TXA"))
         const txGateButton = document.querySelector("button[data-type=TXA]") as HTMLElement
         setVisible(txGateButton, showTxGates)
 

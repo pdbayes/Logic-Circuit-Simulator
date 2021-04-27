@@ -176,11 +176,10 @@ export abstract class GateBase<
         super(false, "in" in savedData ? savedData : null, nodeOffsets)
         this._type = savedData.type
         if ("poseAs" in savedData) {
-            // it's a GateRepr
             this._poseAs = savedData.poseAs
-            if (isDefined(savedData.showAsUnknown)) {
-                this._showAsUnknown = savedData.showAsUnknown
-            }
+        }
+        if ("showAsUnknown" in savedData) {
+            this._showAsUnknown = savedData.showAsUnknown ?? false
         }
     }
 
