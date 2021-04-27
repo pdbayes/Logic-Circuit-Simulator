@@ -8,5 +8,6 @@ declare global {
         setModeClicked(e: HTMLElement): void
         gallery: typeof gallery,
         load(jsonString: string): boolean
+        setOptions(opts: Record<string, unknown>): void
     }
 }

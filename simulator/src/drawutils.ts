@@ -16,6 +16,7 @@ export const COLOR_FULL: Color = [255, 193, 7]
 export const COLOR_DARK_RED: Color = [180, 0, 0]
 export const COLOR_EMPTY: Color = [52, 58, 64]
 export const COLOR_UNSET: Color = [152, 158, 164]
+export const COLOR_GATE_NAMES: Color = [190, 190, 190]
 
 export function colorForBoolean(value: TriState): Color {
     return isUnset(value) ? COLOR_UNSET : value ? COLOR_FULL : COLOR_EMPTY

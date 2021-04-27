@@ -1,8 +1,8 @@
 import { FixedArraySizeNonZero, isDefined, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { Color, COLOR_DARK_RED, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
-import { mode } from "../simulator"
+import { Color, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
+import { mode, options } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, DrawContext } from "./Drawable"
 
@@ -12,6 +12,7 @@ type GateProps = {
     includeInContextMenu: boolean
     includeInPoseAs: boolean
     localName: string
+    shortName: string | undefined
     localDesc: string
 }
 
@@ -19,76 +20,76 @@ const Gate2Types_ = {
     // usual suspects
     AND: {
         out: (in1: boolean, in2: boolean) => in1 && in2,
-        localName: "ET", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie vaut 1 lorsque les deux entrées valent 1.",
     },
     OR: {
         out: (in1: boolean, in2: boolean) => in1 || in2,
-        localName: "OU", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie vaut 1 lorsqu’au moins une des deux entrées vaut 1.",
     },
     XOR: {
         out: (in1: boolean, in2: boolean) => in1 !== in2,
-        localName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie vaut 1 lorsque l’une ou l’autre des deux entrées vaut 1, mais pas les deux.",
     },
     NAND: {
         out: (in1: boolean, in2: boolean) => !(in1 && in2),
-        localName: "NON-ET", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les deux entrées ne valent 1.",
     },
     NOR: {
         out: (in1: boolean, in2: boolean) => !(in1 || in2),
-        localName: "NON-OU", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les deux entrées valent 0.",
     },
     XNOR: {
         out: (in1: boolean, in2: boolean) => in1 === in2,
-        localName: "NON-OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsque les entrées valent soit les deux 1, soit les deux 0.",
     },
 
     // less common gates
     IMPLY: {
         out: (in1: boolean, in2: boolean) => !in1 || in2,
-        localName: "IMPLIQUE", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "IMPLIQUE", shortName: "IMPL", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1.",
     },
     RIMPLY: {
         out: (in1: boolean, in2: boolean) => in1 || !in2,
-        localName: "IMPLIQUE (bis)", includeInContextMenu: false, includeInPoseAs: true,
+        localName: "IMPLIQUE (bis)", shortName: "IMPL", includeInContextMenu: false, includeInPoseAs: true,
         localDesc: "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1.",
     },
     NIMPLY: {
         out: (in1: boolean, in2: boolean) => in1 && !in2,
-        localName: "NON-IMPLIQUE", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "NON-IMPLIQUE", shortName: "N-IMPL", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0.",
     },
     RNIMPLY: {
         out: (in1: boolean, in2: boolean) => !in1 && in2,
-        localName: "NON-IMPLIQUE (bis)", includeInContextMenu: false, includeInPoseAs: true,
+        localName: "NON-IMPLIQUE (bis)", shortName: "N-IMPL", includeInContextMenu: false, includeInPoseAs: true,
         localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1.",
     },
 
     // observing only one input
     TXA: {
         out: (in1: boolean, __: boolean) => in1,
-        localName: "TRANSFERT-A", includeInContextMenu: true, includeInPoseAs: false,
+        localName: "TRANSFERT-A", shortName: undefined, includeInContextMenu: true, includeInPoseAs: false,
         localDesc: "La sortie est égale à la première entrée; la seconde entrée est ignorée.",
     },
     TXB: {
         out: (__: boolean, in2: boolean) => in2,
-        localName: "TRANSFERT-B", includeInContextMenu: false, includeInPoseAs: false,
+        localName: "TRANSFERT-B", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
         localDesc: "La sortie est égale à la seconde entrée; la première entrée est ignorée.",
     },
     TXNA: {
         out: (in1: boolean, __: boolean) => !in1,
-        localName: "TRANSFERT-NON-A", includeInContextMenu: false, includeInPoseAs: false,
+        localName: "TRANSFERT-NON-A", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
         localDesc: "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée.",
     },
     TXNB: {
         out: (__: boolean, in2: boolean) => !in2,
-        localName: "TRANSFERT-NON-B", includeInContextMenu: false, includeInPoseAs: false,
+        localName: "TRANSFERT-NON-B", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
         localDesc: "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée.",
     },
 } as const
@@ -103,12 +104,12 @@ export type Gate2Type = typeof Gate2Types.type
 const Gate1Types_ = {
     NOT: {
         out: (in1: boolean) => !in1,
-        localName: "NON", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "NON", shortName: "NON", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie est égale à l’entrée inversée.",
     },
     BUF: {
         out: (in1: boolean) => in1,
-        localName: "OUI", includeInContextMenu: true, includeInPoseAs: true,
+        localName: "OUI", shortName: "OUI", includeInContextMenu: true, includeInPoseAs: true,
         localDesc: "La sortie est égale à l’entrée.",
     },
 } as const
@@ -257,7 +258,7 @@ export abstract class GateBase<
         return false
     }
 
-    protected drawGate(g: CanvasRenderingContext2D, type: GateType | unset, isFake: boolean, ctx: DrawContext) {
+    protected drawGate(g: CanvasRenderingContext2D, type: G | unset, isFake: boolean, ctx: DrawContext) {
         const output = this.outputs[0]
 
         const width = GRID_WIDTH * GRID_STEP
@@ -284,6 +285,7 @@ export abstract class GateBase<
         const gateWidth = 40
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
+        let nameDeltaX = 0
         const gateBorderColor: Color = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : [0, 0, 0]
         strokeWeight(3)
         stroke(...gateBorderColor)
@@ -318,6 +320,7 @@ export abstract class GateBase<
                     rightCircle()
                 }
                 wireEnds()
+                nameDeltaX -= 6
                 break
 
             case "AND":
@@ -340,6 +343,7 @@ export abstract class GateBase<
                     shortUp = true
                 }
                 wireEnds(shortUp, shortDown)
+                nameDeltaX -= 1
                 break
             }
 
@@ -377,6 +381,7 @@ export abstract class GateBase<
                     strokeWeight(3)
                     arc(gateLeft - 38, this.posY, 75, 75, -.55, .55)
                 }
+                nameDeltaX -= 1
                 break
             }
 
@@ -432,6 +437,22 @@ export abstract class GateBase<
                     text('?', this.posX, this.posY)
                 })
                 break
+        }
+
+        if (options.showGateTypes && !isUnset(type)) {
+            const gateShortName = this.gateTypeEnum.propsOf(type).shortName
+            if (isDefined(gateShortName)) {
+                noStroke()
+                fill(...COLOR_GATE_NAMES)
+                textSize(13)
+                textAlign(CENTER, CENTER)
+                textStyle(BOLD)
+                const oldTransform = g.getTransform()
+                g.translate(this.posX + nameDeltaX, this.posY)
+                g.scale(0.65, 1)
+                text(gateShortName, 0, 0)
+                g.setTransform(oldTransform)
+            }
         }
     }
 

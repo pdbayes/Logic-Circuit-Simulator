@@ -26,6 +26,43 @@ const MaxEmbeddedMode = Mode.DESIGN
 export let upperMode: Mode = isEmbeddedInIframe() ? MaxEmbeddedMode : MaxMode
 export let mode: Mode = upperMode
 
+const DEFAULT_OPTIONS = {
+    showGateTypes: false,
+}
+
+type WorkspaceOptions = typeof DEFAULT_OPTIONS
+
+export let options: WorkspaceOptions = { ...DEFAULT_OPTIONS }
+
+export function nonDefaultOptions(): undefined | Partial<WorkspaceOptions> {
+    const nonDefaultOpts: Partial<WorkspaceOptions> = {}
+    let set = false
+    for (const [_k, v] of Object.entries(options)) {
+        const k = _k as keyof WorkspaceOptions
+        if (v !== DEFAULT_OPTIONS[k]) {
+            nonDefaultOpts[k] = v
+            set = true
+        }
+    }
+    return set ? nonDefaultOpts : undefined
+}
+
+export function setOptions(opts: Record<string, unknown> | undefined) {
+    const newOpts = { ...DEFAULT_OPTIONS }
+    if (isDefined(opts)) {
+        for (const _k of Object.keys(newOpts)) {
+            const k = _k as keyof WorkspaceOptions
+            if (k in opts) {
+                newOpts[k] = opts[k] as any // this assumes our value type is correct
+            }
+        }
+    }
+    options = newOpts
+    // console.log("New options are %o", options)
+    RedrawManager.addReason("options changed", null)
+}
+
+
 const _movingComponents = new Set<Component>()
 
 function changeMovingComponents(change: () => void) {
@@ -1059,3 +1096,4 @@ ${json}
 
 // Expose functions as part of the in-browser command-line API
 window.load = wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(jsonString))
+window.setOptions = wrapHandler(setOptions)

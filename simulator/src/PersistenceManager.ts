@@ -1,4 +1,4 @@
-import { wireMgr, components } from "./simulator"
+import { wireMgr, components, nonDefaultOptions, setOptions } from "./simulator"
 import { LogicInput, LogicInputDef } from "./components/LogicInput"
 import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
 import { Clock, ClockDef } from "./components/Clock"
@@ -118,6 +118,10 @@ class _PersistenceManager {
             }
         })
 
+        // also works with undefined
+        setOptions(parsedContents.opts)
+        delete parsedContents.opts
+
         const unhandledData = keysOf(parsedContents)
         if (unhandledData.length !== 0) {
             console.log("Unloaded data fields: " + unhandledData.join(", "))
@@ -132,7 +136,9 @@ class _PersistenceManager {
     // }
 
     buildWorkspaceJSON() {
-        const workspace: any = {}
+        const workspace: any = {
+            "opts": nonDefaultOptions(),
+        }
 
         for (const comp of components) {
             const fieldName = ComponentTypes.propsOf(comp.componentType).jsonFieldName
