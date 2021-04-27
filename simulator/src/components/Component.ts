@@ -1,5 +1,5 @@
 import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving, tryDeleteComponentsWhere } from "../simulator"
-import { Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
+import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
 import { ContextMenuData, ContextMenuItem, DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
@@ -595,8 +595,7 @@ export abstract class ComponentBase<
         } else {
             let outIndex = 0
             return ContextMenuData.submenu("exclamation", "Forcer une sortie", [
-                ...this.outputs.map((_out: unknown) => {
-                    const out = _out as NodeOut
+                ...asArray(this.outputs).map(out => {
                     return ContextMenuData.submenu(undefined, "Sortie " + (++outIndex),
                         makeOutputItems(out)
                     )

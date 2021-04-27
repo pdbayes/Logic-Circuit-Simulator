@@ -152,9 +152,9 @@ input[type="file"] {
     padding: 2px;
     margin: 0;
     border: 1px solid #bbb;
-    background: #eee;
-    background: -webkit-linear-gradient(to bottom, #fff 0%, #e5e5e5 100px, #e5e5e5 100%);
-    background: linear-gradient(to bottom, #fff 0%, #e5e5e5 100px, #e5e5e5 100%);
+    background: #EAEAEA;
+    background: -webkit-linear-gradient(to bottom, #F2F2F2 0%, #EAEAEA 100px, #EAEAEA 100%);
+    background: linear-gradient(to bottom, #F2F2F2 0%, #EAEAEA 100px, #EAEAEA 100%);
     z-index: 100;
     border-radius: 3px;
     box-shadow: 1px 1px 4px rgba(0,0,0,.2);
@@ -226,18 +226,18 @@ input[type="file"] {
   .menu-item:hover > .menu-btn {
     color: #fff;
     outline: none;
-    background-color: #2E3940;
-    background: -webkit-linear-gradient(to bottom, #5D6D79, #2E3940);
-    background: linear-gradient(to bottom, #5D6D79, #2E3940);
-    border: 1px solid #2E3940;
+    background-color: #2865E1;
+    background: -webkit-linear-gradient(to bottom, #2A6BED, #2865E1);
+    background: linear-gradient(to bottom, #2A6BED, #2865E1);
+    border: 1px solid #2865E1;
   }
   
   .menu-item:hover > .menu-btn.danger {
     color: #fff;
-    background-color: #bd154d;
-    background: -webkit-linear-gradient(to bottom, #c4577b, #bd154d);
-    background: linear-gradient(to bottom, #c4577b, #bd154d);
-    border: 1px solid #bd154d;
+    background-color: #C1210E;
+    background: -webkit-linear-gradient(to bottom, #DE2610, #C1210E);
+    background: linear-gradient(to bottom, #DE2610, #C1210E);
+    border: 1px solid #C1210E;
   }
   
   .menu-item.disabled {
@@ -249,9 +249,9 @@ input[type="file"] {
   
   .menu-separator {
     display: block;
-    margin: 7px 5px;
+    margin: 3px 5px;
     height: 1px;
-    border-bottom: 1px solid #fff;
+    border-bottom: 1px solid #D0CFD0;
     background-color: #aaa;
   }
   
