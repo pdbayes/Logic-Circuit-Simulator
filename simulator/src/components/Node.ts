@@ -1,7 +1,7 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
 import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
-import { DrawableWithPosition, DrawContext, isOrientationVertical } from "./Drawable"
+import { DrawableWithPosition, DrawContext, isOrientationVertical, Orientation } from "./Drawable"
 import { NodeManager } from "../NodeManager"
 import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
@@ -28,6 +28,7 @@ abstract class NodeBase extends DrawableWithPosition {
         public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
+        private relativePosition: Orientation,
     ) {
         super(null)
         this.id = nodeSpec.id
@@ -178,10 +179,30 @@ abstract class NodeBase extends DrawableWithPosition {
     public wireBezierAnchor(distX: number, distY: number): [number, number] {
         const wireProlongDirection = (() => {
             switch (this.parent.orient) {
-                case "e": return this.isOutput ? "w" : "e"
-                case "w": return this.isOutput ? "e" : "w"
-                case "s": return this.isOutput ? "n" : "s"
-                case "n": return this.isOutput ? "s" : "n"
+                case "e":
+                    switch (this.relativePosition) {
+                        case "e": return "w"
+                        case "w": return "e"
+                        case "s": return "n"
+                        case "n": return "s"
+                    }
+                    break
+                case "w": return this.relativePosition
+                case "s":
+                    switch (this.relativePosition) {
+                        case "e": return "n"
+                        case "w": return "s"
+                        case "s": return "e"
+                        case "n": return "w"
+                    }
+                    break
+                case "n":
+                    switch (this.relativePosition) {
+                        case "e": return "s"
+                        case "w": return "n"
+                        case "s": return "w"
+                        case "n": return "e"
+                    }
             }
         })()
         switch (wireProlongDirection) {

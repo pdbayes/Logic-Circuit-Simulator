@@ -27,7 +27,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
     private _showAsUnknown = false
 
     public constructor(savedData: DisplayNibbleRepr | null) {
-        super(["0000", 0], savedData, { inOffsets: [[-3, -3], [-3, -1], [-3, +1], [-3, +3]] })
+        super(["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX

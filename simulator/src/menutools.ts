@@ -3,11 +3,13 @@ import { tryLoadFromData, setToolCursor, setHandlersFor, components } from "./si
 import { GateFactory, GateTypes } from "./components/Gate"
 import { LogicInput } from "./components/LogicInput"
 import { LogicOutput } from "./components/LogicOutput"
-import { isNullOrUndefined, RichStringEnum } from "./utils"
+import { isNullOrUndefined, isUndefined, RichStringEnum } from "./utils"
 import { DisplayNibble } from "./components/DisplayNibble"
 import { DisplayAscii } from "./components/DisplayAscii"
 import { DisplayBar } from "./components/DisplayBar"
 import { Component } from "./components/Component"
+import { ICFactory } from "./components/IC"
+import { Adder } from "./components/Adder"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -53,6 +55,20 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
                 throw new Error(`bad gate type: '${gateType}' - elem: ` + elem.outerHTML)
             }
             return GateFactory.make({ type: gateType })
+        },
+    },
+
+    "IC": {
+        make: (elem) => {
+            const icType = elem.dataset["type"]
+            if (isUndefined(icType)) {
+                throw new Error(`undefined IC type - elem: ` + elem.outerHTML)
+            }
+            switch (icType) {
+                case "Adder":
+                default:
+                    return new Adder(null)
+            }
         },
     },
 })

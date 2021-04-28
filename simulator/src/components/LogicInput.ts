@@ -18,7 +18,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
     protected readonly name: string | undefined = undefined
 
     protected constructor(initialValue: TriState, savedData: Repr | null) {
-        super(initialValue, savedData, { outOffsets: [[+3, 0]] })
+        super(initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
         }

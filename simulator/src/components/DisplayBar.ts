@@ -33,7 +33,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     private _display = DEFAULT_BAR_DISPLAY
 
     public constructor(savedData: DisplayBarRepr | null) {
-        super(false, savedData, { inOffsets: [[0, 0]] })
+        super(false, savedData, { inOffsets: [[0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
         } else {

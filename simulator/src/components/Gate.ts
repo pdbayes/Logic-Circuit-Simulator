@@ -521,8 +521,8 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
     constructor(savedData: Gate1Repr | Gate1MandatoryParams) {
         super(savedData, {
-            inOffsets: [[-4, 0]],
-            outOffsets: [[+4, 0]],
+            inOffsets: [[-4, 0, "w"]],
+            outOffsets: [[+4, 0, "e"]],
         })
     }
 
@@ -606,8 +606,8 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
     constructor(savedData: Gate2Repr | Gate2MandatoryParams) {
         super(savedData, {
-            inOffsets: [[-4, -1], [-4, +1]],
-            outOffsets: [[+4, 0]],
+            inOffsets: [[-4, -1, "w"], [-4, +1, "w"]],
+            outOffsets: [[+4, 0, "e"]],
         })
     }
 

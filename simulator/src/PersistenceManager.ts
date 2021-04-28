@@ -13,6 +13,7 @@ import { PathReporter } from 'io-ts/PathReporter'
 import { RecalcManager } from "./RedrawRecalcManager"
 import { Timeline } from "./Timeline"
 import { Component, ComponentTypes } from "./components/Component"
+import { ICDef, ICFactory } from "./components/IC"
 
 class _PersistenceManager {
 
@@ -101,6 +102,10 @@ class _PersistenceManager {
 
         loadField("gates", GateDef, (d) =>
             components.push(GateFactory.make(d))
+        )
+
+        loadField("components", ICDef, (d) =>
+            components.push(ICFactory.make(d))
         )
 
         // recalculating all the unconnected gates here allows

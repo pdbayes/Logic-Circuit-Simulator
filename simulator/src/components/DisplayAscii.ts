@@ -28,7 +28,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
     public constructor(savedData: DisplayAsciiRepr | null) {
         super(["0000000", 0], savedData, {
-            inOffsets: [[-3, -3], [-3, -2], [-3, -1], [-3, 0], [-3, +1], [-3, +2], [-3, +3]],
+            inOffsets: [[-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"]],
         })
         if (isNotNull(savedData)) {
             this.name = savedData.name

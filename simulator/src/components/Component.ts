@@ -113,9 +113,9 @@ export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs
 // size of the passed arrays in the super() call.
 export type NodeOffsets<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>
     // eslint-disable-next-line @typescript-eslint/ban-types
-    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<[number, number], NumInputs> })
+    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<[number, number, Orientation], NumInputs> })
     // eslint-disable-next-line @typescript-eslint/ban-types
-    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<[number, number], NumOutputs> })
+    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<[number, number, Orientation], NumOutputs> })
 
 
 export enum ComponentState {
@@ -137,6 +137,7 @@ export const ComponentTypes = RichStringEnum.withProps<{
     Display: { jsonFieldName: "displays" },
     Clock: { jsonFieldName: "clocks" },
     Gate: { jsonFieldName: "gates" },
+    IC: { jsonFieldName: "components" }, 
 })
 
 export type ComponentType = typeof ComponentTypes.type
@@ -170,7 +171,7 @@ export abstract class ComponentBase<
         // being inferred as nonexistant (basically, the '"key" in savedData'
         // check fails to provide enough info for type narrowing)
         type NodeOffsetsKey = keyof NodeOffsets<1, 0> | keyof NodeOffsets<0, 1>
-        function get(key: NodeOffsetsKey): ReadonlyArray<[number, number]> {
+        function get(key: NodeOffsetsKey): ReadonlyArray<[number, number, Orientation]> {
             if (key in nodeOffsets) {
                 return (nodeOffsets as any as NodeOffsets<1, 1>)[key]
             } else {
@@ -223,18 +224,19 @@ export abstract class ComponentBase<
     // creates the input/output nodes based on array of offsets (provided
     // by subclass) and spec (either loaded from JSON repr or newly generated)
     private makeNodes<N extends Node>(
-        offsets: readonly [number, number][],
+        offsets: readonly [number, number, Orientation][],
         specs: readonly (InputNodeRepr | OutputNodeRepr)[], node: new (
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
             _gridOffsetX: number,
             _gridOffsetY: number,
+            relativePosition: Orientation,
         ) => N): readonly N[] {
 
         const nodes: N[] = []
         for (let i = 0; i < offsets.length; i++) {
             const gridOffset = offsets[i]
-            nodes.push(new node(specs[i], this, gridOffset[0], gridOffset[1]))
+            nodes.push(new node(specs[i], this, gridOffset[0], gridOffset[1], gridOffset[2]))
         }
         return nodes
     }

@@ -19,7 +19,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
     private readonly name: string | undefined = undefined
 
     public constructor(savedData: LogicOutputRepr | null) {
-        super(false, savedData, { inOffsets: [[-3, 0]] })
+        super(false, savedData, { inOffsets: [[-3, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.name = savedData.name
         }
