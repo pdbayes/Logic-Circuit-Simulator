@@ -156,20 +156,25 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         const showonlyStr = getURLParameter(PARAM_SHOW_ONLY)
         let showonly: undefined | string[] = undefined
         if (isDefined(showonlyStr)) {
-            showonly = showonlyStr.toUpperCase().split(/[, +]+/).filter(x => x.trim())
+            showonly = showonlyStr.toLowerCase().split(/[, +]+/).filter(x => x.trim())
+            console.log("showonly", showonly)
             const leftToolbar = document.getElementById("leftToolbar")!
             const toolbarChildren = leftToolbar.children
             let numVisibleInOut = 0
             let numVisibleGates = 0
+            let numVisibleIC = 0
             for (let i = 0; i < toolbarChildren.length; i++) {
                 const child = toolbarChildren[i] as HTMLElement
-                const compStr = child.getAttribute("data-component")
-                const compType = child.getAttribute("data-type")
-                const buttonID = compType ?? compStr
-                const visible = isNull(buttonID) || showonly.includes(buttonID)
+                const compStr = child.getAttribute("data-component")?.toLowerCase()
+                const compType = child.getAttribute("data-type")?.toLowerCase()
+                const buttonID = (compType ?? compStr)
+                const visible = isUndefined(buttonID) || showonly.includes(buttonID)
+                console.log("buttonID", buttonID, "visible", visible)
                 if (visible) {
-                    if (compStr === "Gate") {
+                    if (compStr === "gate") {
                         numVisibleGates++
+                    } else if (compStr === "ic") {
+                        numVisibleIC++
                     } else if (!isNullOrUndefined(compStr)) {
                         numVisibleInOut++
                     }
@@ -178,9 +183,12 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
             }
             const showInOutHeader = numVisibleInOut > 0
             const showGatesHeader = numVisibleGates > 0
+            const showICHeader = numVisibleIC > 0
             setVisible(document.getElementById("inOutHeader")!, showInOutHeader)
             setVisible(document.getElementById("gatesHeader")!, showGatesHeader)
+            setVisible(document.getElementById("icHeader")!, showICHeader)
             setVisible(document.getElementById("inOut-gates-sep")!, showInOutHeader && showGatesHeader)
+            setVisible(document.getElementById("gates-ic-sep")!, (showInOutHeader || showGatesHeader) && showICHeader)
         }
 
         const modifButtons = document.querySelectorAll("button.sim-modification-tool")
