@@ -8,7 +8,6 @@ import { DisplayNibble } from "./components/DisplayNibble"
 import { DisplayAscii } from "./components/DisplayAscii"
 import { DisplayBar } from "./components/DisplayBar"
 import { Component } from "./components/Component"
-import { ICFactory } from "./components/IC"
 import { Adder } from "./components/Adder"
 
 

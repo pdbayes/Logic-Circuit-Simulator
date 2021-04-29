@@ -5,8 +5,8 @@ import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 
-const GRID_WIDTH = 6
-const GRID_HEIGHT = 8
+const GRID_WIDTH = 7
+const GRID_HEIGHT = 5
 
 const INPUT_A = 0
 const INPUT_B = 1
@@ -26,8 +26,8 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
 
     public constructor(savedData: AdderRepr | null) {
         super([false, false], savedData, {
-            inOffsets: [[-4, -2, "w"], [-4, 2, "w"], [0, -5, "n"]],
-            outOffsets: [[4, 0, "e"], [0, 5, "s"]],
+            inOffsets: [[-2, -4, "n"], [2, -4, "n"], [5, 0, "e"]],
+            outOffsets: [[0, 4, "s"], [-5, 0, "w"]],
         })
     }
 
@@ -92,53 +92,54 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
             stroke(0)
         }
 
-        strokeWeight(4)
+        strokeWeight(3)
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
-        wireLineToComponent(this.inputs[0], this.posX - width / 2 - 2, this.inputs[0].posYInParentTransform)
-        wireLineToComponent(this.inputs[1], this.posX - width / 2 - 2, this.inputs[1].posYInParentTransform)
-        wireLineToComponent(this.inputs[2], this.inputs[2].posXInParentTransform, this.posY - height / 2 - 2)
+
+        wireLineToComponent(this.inputs[INPUT_A], this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 - 2, true)
+        wireLineToComponent(this.inputs[INPUT_B], this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 - 2, true)
+        wireLineToComponent(this.inputs[INPUT_Cin], this.posX + width / 2 + 2, this.inputs[INPUT_Cin].posYInParentTransform, true)
 
 
-        wireLineToComponent(this.outputs[0], this.posX + width / 2 + 2, this.outputs[0].posYInParentTransform)
-        wireLineToComponent(this.outputs[1], this.outputs[1].posXInParentTransform, this.posY + height / 2 + 2)
+        wireLineToComponent(this.outputs[OUTPUT_S], this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 + 2, true)
+        wireLineToComponent(this.outputs[OUTPUT_Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT_Cout].posYInParentTransform, true)
 
 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
 
             fill(0xAA)
-            textSize(13)
+            textSize(11)
             textStyle(NORMAL)
             textAlign(CENTER, CENTER)
 
-            let spacingLeft = 8
-            let spacingRight = 8
-            let spacingTop = 9
-            let spacingBottom = 8
+            let spacingTop = 8
+            let spacingRight = 10
+            let spacingBottom = 6
+            let spacingLeft = 13
 
             if (isOrientationVertical(this.orient)) {
-                spacingLeft += 2
-                spacingRight += 1
-                spacingTop += 4
-                spacingBottom += 9
+                spacingTop -= 1
+                spacingRight -= 0
+                spacingBottom -= 0
+                spacingLeft -= 3
             }
 
-            text("A", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.inputs[INPUT_A].posYInParentTransform))
-            text("B", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.inputs[INPUT_B].posYInParentTransform))
-            text("Cin", ...ctx.rotatePoint(this.inputs[INPUT_Cin].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            text("A", ...ctx.rotatePoint(this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            text("B", ...ctx.rotatePoint(this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            text("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT_Cin].posYInParentTransform))
 
-            text("S", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.outputs[OUTPUT_S].posYInParentTransform))
-            text("Cout", ...ctx.rotatePoint(this.outputs[OUTPUT_Cout].posXInParentTransform, this.posY + height / 2 - spacingBottom))
+            text("S", ...ctx.rotatePoint(this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
+            text("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT_Cout].posYInParentTransform))
 
             fill(0)
             textSize(30)
             textStyle(BOLD)
             textAlign(CENTER, CENTER)
-            text("+", this.posX, this.posY)
+            text("+", this.posX, this.posY - 2)
         })
     }
 

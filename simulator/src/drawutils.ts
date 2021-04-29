@@ -37,10 +37,50 @@ export function colorForFraction(fraction: number): Color {
     return c
 }
 
-export function wireLineToComponent(node: Node, x1: number, y1: number) {
+export function wireLineToComponent(node: Node, x1: number, y1: number, withTriangle = false) {
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
     wireLine(x0, y0, x1, y1, node.value)
+    if (withTriangle) {
+        stroke(0)
+        fill(0)
+        const shift = node.isOutput ? 3 : 0
+        if (x0 === x1) {
+            // vertical line
+            const pointsDown = (node.isOutput && y1 <= y0) || (!node.isOutput && y0 <= y1)
+            if (pointsDown) {
+                triangle(
+                    x1 - 3, y1 - 2 + shift,
+                    x1 + 3, y1 - 2 + shift,
+                    x1, y1 + 1 + shift,
+                )
+            } else {
+                triangle(
+                    x1 - 3, y1 - 2 - shift,
+                    x1 + 3, y1 - 2 - shift,
+                    x1, y1 - 5 - shift,
+                )
+            }
+        } else if (y0 === y1) {
+            // horizontal line
+            const pointsRight = (node.isOutput && x1 <= x0) || (!node.isOutput && x0 <= x1)
+            if (pointsRight) {
+                triangle(
+                    x1 - 2 + shift, y1 - 3,
+                    x1 - 2 + shift, y1 + 3,
+                    x1 + 1 + shift, y1,
+                )
+            } else {
+                triangle(
+                    x1 + 2 - shift, y1 - 3,
+                    x1 + 2 - shift, y1 + 3,
+                    x1 - 1 - shift, y1,
+                )
+            }
+        } else {
+            console.log(`ERROR  wireLineToComponent cannot draw triangle as line is not vertical or horizontal between (${x0}, ${y0}) and (${x1}, ${y1})`)
+        }
+    }
 }
 
 export function wireLineBetweenComponents(node: Node, x1: number, y1: number) {
