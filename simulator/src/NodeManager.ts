@@ -1,4 +1,4 @@
-import { ComponentState } from "./components/Component"
+import { Component } from "./components/Component"
 import { Node } from "./components/Node"
 import { wireMgr } from "./simulator"
 
@@ -15,7 +15,7 @@ export const NodeManager = (() => {
             }
             usedIDs.add(lastGivenNodeID)
             // console.log(`gave out new node id ${lastGivenNodeID}`)
-            return lastGivenNodeID 
+            return lastGivenNodeID
         },
         markIDUsed: function (id: number): void {
             if (usedIDs.has(id)) {
@@ -46,29 +46,25 @@ export const NodeManager = (() => {
             return allLiveNodes[nodeID]
         },
 
-        tryConnectNodes: function () {
-            let exitOnNextComponent = false
-            for (const node of allLiveNodes) {
+        tryConnectNodesOf: function (comp: Component) {
+            comp.forEachNode(node => {
                 if (node.acceptsMoreConnections) {
-                    const component = node.parent
-                    if (component.state === ComponentState.SPAWNING || component.isMoving) {
-                        exitOnNextComponent = true
-                        const nodeX = node.posX
-                        const nodeY = node.posY
-                        for (const other of allLiveNodes) {
-                            if (other !== node && other.posX === nodeX && other.posY === nodeY) {
+                    const nodeX = node.posX
+                    const nodeY = node.posY
+                    const parent = node.parent
+                    for (const other of allLiveNodes) {
+                        if (other.parent !== parent && other.acceptsMoreConnections) {
+                            if (other.posX === nodeX && other.posY === nodeY) {
                                 // the wire manager will take care of determining whether
                                 // they can actually be connected or not
                                 wireMgr.addNode(node)
                                 wireMgr.addNode(other)
-                                return
                             }
                         }
-                    } else if (exitOnNextComponent) {
-                        return
                     }
                 }
-            }
+                return true
+            })
         },
 
     }

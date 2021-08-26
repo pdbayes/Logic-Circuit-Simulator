@@ -505,6 +505,7 @@ export abstract class ComponentBase<
             this._isMovingWithContext = undefined
         }
         setComponentStoppedMoving(this)
+        NodeManager.tryConnectNodesOf(this)
     }
 
     mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {

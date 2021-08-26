@@ -6,7 +6,6 @@ import { Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { NodeManager } from "./NodeManager"
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
 import { GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
@@ -1038,12 +1037,12 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
     }
 }
 
-window.addEventListener("keydown", wrapHandler(e => {
-    switch (e.key) {
-        case "Alt": // option
-            return NodeManager.tryConnectNodes()
-    }
-}))
+// window.addEventListener("keydown", wrapHandler(e => {
+//     switch (e.key) {
+//         case "Alt": // option
+//             return NodeManager.tryConnectNodes()
+//     }
+// }))
 
 window.addEventListener("keyup", wrapHandler(e => {
     switch (e.key) {
