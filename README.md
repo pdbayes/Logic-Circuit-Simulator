@@ -1,65 +1,37 @@
 # Logic Circuit Simulator
-A logic circuit simulator made with [p5.js library](https://github.com/processing/p5.js), useful for educational use. It can be used to simulate combinational and sequential circuits.
 
-### Demo live
-A live version is available [here](https://drendog.github.io/Logic-Circuit-Simulator/).
+A logic circuit simulator useful for educational use.
 
-## Usage
+This is a fork followed by an almost complete rewrite of [drendog's Logic-Circuit-Simuator](https://github.com/drendog/Logic-Circuit-Simulator).
 
-### Demo
 
-![](demo.gif)
+## Demo
 
-### Tools
+See <https://jp.pellet.name/hep/logiga/>
 
-![](simulator/img/pencil.svg) Edit - Move the components - Connect wires
 
-![](simulator/img/hand.png) Move the whole circuit
+## Development
 
-![](simulator/img/trashcan.svg) Remove the component
+ * Checkout with git
+ * `npm install`
+ * `npm run watch-pack`
+ * `npm run server`
 
-![](simulator/img/LogicInput.png) Logic Input (click to change value)
 
-![](simulator/img/LogicOutput.png) Logic Output
+## Differences with Original Version
 
-## Set up for offline work
+ * This fork is written in TypeScript
+ * Interface is drawnly differently, all with p5/canvas calls and no external images
+ * Screen is only refreshed when needed and not 60 times per second no matter what
+ * Components have been added: bit display, segment display, nibble display, half adder, etc.
+ * Mouseovers have been added
+ * Components can be edited to be faulty, for educational exercises
+ * Editor can be in several modes with different capabilities
+ * Some components have been removed (for now)
+ * Component buttons can be hidden or shown for educational purposes with URL parameters
+ * Loading and saving using JSON is much cleaner and does not include unnecessary properties
+ * Demo circuits are predefined and can be loaded from the JavaScript console
 
-### Prerequisites
-
-* [Nodejs](https://nodejs.org) or some local web server ([more info](https://github.com/processing/p5.js/wiki/Local-server))
-* git
-```bash
-sudo apt-get install git
-```
-
-### Clone the repository
-
-```bash
-git clone https://github.com/drendog/Logic-Circuit-Simulator.git
-```
-
-### Serve it on local
-
-```bash
-cd Logic-Circuit-Simulator
-npx serve
-```
-
-## :book: Reference book
-
-Hamacher, C., Vranesic, Z., Zaky, S., & Manjikian, N. (2011). Appendix A. In *Computer Organization and Embedded Systems* (6th ed., p. 465). McGraw-Hill Education.
-
-## 🤝 Contributing
-
-Contributions, issues and feature requests are welcome.
-
-## :wrench: TODO
-
-Code documentation and everything.
-
-## Author
-
-👤 **[drendog](https://github.com/drendog)**
 
 ## License
 
