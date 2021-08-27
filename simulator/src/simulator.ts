@@ -436,12 +436,13 @@ class _EditHandlers extends ToolHandlers {
         comp.mouseDoubleClicked(e)
     }
     contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+        console.log("contextMenuOn: %o", comp)
         if (this._contextMenuOpen) {
             return
         }
 
         const contextMenuData = comp.makeContextMenu()
-        // console.log("asking for menu: %o got: %o", comp, contextMenuData)
+        console.log("asking for menu: %o got: %o", comp, contextMenuData)
         if (isDefined(contextMenuData)) {
 
             // console.log("setting triggered")
@@ -501,7 +502,9 @@ class _EditHandlers extends ToolHandlers {
                 document.removeEventListener("click", clickHandler)
             }
 
-            document.addEventListener("click", clickHandler, false)
+            setTimeout(() => {
+                document.addEventListener("click", clickHandler, false)
+            }, 200)
         }
     }
     mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
@@ -777,7 +780,7 @@ export function setup() {
     }))
 
     canvasContainer.addEventListener("contextmenu", wrapHandler((e) => {
-        // console.log("contextmenu %o", e)
+        console.log("contextmenu %o", e)
         e.preventDefault()
         if (isNotNull(_currentMouseOverComp)) {
             _currentHandlers.contextMenuOn(_currentMouseOverComp, e)

@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { Color, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { mode, options } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
 
@@ -455,15 +455,11 @@ export abstract class GateBase<
         }
     }
 
-    public makeContextMenu(): ContextMenuData {
+    protected makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
         return [
-            this.makeReplaceByMenuItem(),
-            this.makeChangeOrientationContextMenuItem(),
-            ContextMenuData.sep(),
-            this.makePoseAsMenuItem(),
-            this.makeForceOutputsContextMenuItem(),
-            ContextMenuData.sep(),
-            this.makeDeleteContextMenuItem(),
+            ["start", this.makeReplaceByMenuItem()],
+            ["mid", this.makePoseAsMenuItem()],
+            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
     }
 

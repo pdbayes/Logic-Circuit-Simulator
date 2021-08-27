@@ -36,6 +36,8 @@ export const ContextMenuData = {
     },
 }
 
+export type ContextMenuItemPlacement = "start" | "mid" | "end" // where to insert items created by components
+
 class _DrawContextImpl implements DrawContext, DrawContextExt {
 
     private readonly entranceTransform: DOMMatrix

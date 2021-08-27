@@ -2,7 +2,7 @@ import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving, tryDelet
 import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
-import { ContextMenuData, ContextMenuItem, DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
 
@@ -137,7 +137,7 @@ export const ComponentTypes = RichStringEnum.withProps<{
     Display: { jsonFieldName: "displays" },
     Clock: { jsonFieldName: "clocks" },
     Gate: { jsonFieldName: "gates" },
-    IC: { jsonFieldName: "components" }, 
+    IC: { jsonFieldName: "components" },
 })
 
 export type ComponentType = typeof ComponentTypes.type
@@ -498,14 +498,19 @@ export abstract class ComponentBase<
     }
 
     mouseUp(__: MouseEvent | TouchEvent) {
+        let tryConnectNodes = false
         if (this._state === ComponentState.SPAWNING) {
             this._state = ComponentState.SPAWNED
+            tryConnectNodes = true
         }
         if (isDefined(this._isMovingWithContext)) {
             this._isMovingWithContext = undefined
+            tryConnectNodes = true
         }
         setComponentStoppedMoving(this)
-        NodeManager.tryConnectNodesOf(this)
+        if (tryConnectNodes) {
+            NodeManager.tryConnectNodesOf(this)
+        }
     }
 
     mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
@@ -540,6 +545,52 @@ export abstract class ComponentBase<
         return "grab"
     }
 
+    public makeContextMenu(): ContextMenuData {
+        const menuItems: ContextMenuData = []
+
+        const baseItems = this.makeBaseContextMenu()
+        const specificItems = this.makeComponentSpecificContextMenuItems()
+
+        let lastWasSep = true
+        function addItemsAt(placement: ContextMenuItemPlacement, items: [ContextMenuItemPlacement, ContextMenuItem][] | undefined, insertSep = false) {
+            if (isUndefined(items)) {
+                return
+            }
+            if (insertSep) {
+                if (!lastWasSep) {
+                    menuItems.push(ContextMenuData.sep())
+                }
+                lastWasSep = true
+            }
+            for (const [pl, it] of items) {
+                if (pl === placement) {
+                    menuItems.push(it)
+                    lastWasSep = false
+                }
+            }
+        }
+
+        addItemsAt("start", specificItems)
+        addItemsAt("start", baseItems)
+        addItemsAt("mid", baseItems, true)
+        addItemsAt("mid", specificItems)
+        addItemsAt("end", baseItems, true)
+        addItemsAt("end", specificItems)
+
+        return menuItems
+    }
+
+    private makeBaseContextMenu(): [ContextMenuItemPlacement, ContextMenuItem][] {
+        return [
+            ["start", this.makeChangeOrientationContextMenuItem()],
+            ["end", this.makeDeleteContextMenuItem()],
+        ]
+    }
+
+    protected makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        return undefined
+    }
+
     protected makeDeleteContextMenuItem(): ContextMenuItem {
         return ContextMenuData.item("trash-o", "Supprimer", () => {
             tryDeleteComponentsWhere(c => c === this)
@@ -558,11 +609,11 @@ export abstract class ComponentBase<
         ])
     }
 
-    protected makeForceOutputsContextMenuItem(): ContextMenuItem {
+    protected makeForceOutputsContextMenuItem(): undefined | ContextMenuItem {
         const numOutputs = this.outputs.length
 
         if (numOutputs === 0) {
-            throw new Error("should have at least one input")
+            return undefined
         }
 
         function makeOutputItems(out: NodeOut): ContextMenuItem[] {

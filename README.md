@@ -14,8 +14,9 @@ See <https://jp.pellet.name/hep/logiga/>
 
  * Checkout with git
  * `npm install`
- * `npm run watch-pack`
- * `npm run server`
+ * Open VS Code and start compilation in watch mode
+ * `npm run watch-pack` to build the bundle
+ * `npm run server` to serve locally for testing
 
 
 ## Differences with Original Version

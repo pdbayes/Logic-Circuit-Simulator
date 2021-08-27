@@ -1,6 +1,7 @@
 import { Component } from "./components/Component"
 import { Node } from "./components/Node"
 import { wireMgr } from "./simulator"
+import { isUndefined } from "./utils"
 
 
 export const NodeManager = (() => {
@@ -53,7 +54,7 @@ export const NodeManager = (() => {
                     const nodeY = node.posY
                     const parent = node.parent
                     for (const other of allLiveNodes) {
-                        if (other.parent !== parent && other.acceptsMoreConnections) {
+                        if (!isUndefined(other) && other.parent !== parent && other.acceptsMoreConnections) {
                             if (other.posX === nodeX && other.posY === nodeY) {
                                 // the wire manager will take care of determining whether
                                 // they can actually be connected or not
