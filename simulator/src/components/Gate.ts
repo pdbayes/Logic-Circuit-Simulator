@@ -1,7 +1,7 @@
 import { FixedArraySizeNonZero, isDefined, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { Color, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
+import { Color, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { mode, options } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
@@ -285,13 +285,13 @@ export abstract class GateBase<
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
-        const gateBorderColor: Color = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : [0, 0, 0]
+        const gateBorderColor: Color = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : [COLOR_COMPONENT_BORDER, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_BORDER]
         strokeWeight(3)
         stroke(...gateBorderColor)
 
         const rightCircle = () => {
             gateRight += 5
-            fill(0xFF)
+            fill(COLOR_BACKGROUND)
             arc(gateRight, this.posY, 8, 8, 0, 0)
             noFill()
             gateRight += 4
@@ -300,7 +300,7 @@ export abstract class GateBase<
             arc(gateLeft - 5, this.posY - (up ? 1 : -1) * GRID_STEP, 8, 8, 0, 0)
         }
         const wireEnds = (shortUp = false, shortDown = false) => {
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown

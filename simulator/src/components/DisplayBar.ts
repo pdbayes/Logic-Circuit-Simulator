@@ -1,7 +1,7 @@
 import { isNotNull, isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, wireLineToComponent, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid } from "../drawutils"
+import { COLOR_UNSET, wireLineToComponent, COLOR_MOUSE_OVER, Color, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON } from "../drawutils"
 import { asValue, Modifier, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 
@@ -48,7 +48,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             display: this._display,
         }
     }
-    
+
     public get componentType() {
         return "Display" as const
     }
@@ -87,12 +87,12 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
         }
 
         strokeWeight(4)
 
-        const backColor: Color = isUnset(value) ? COLOR_UNSET : (value) ? [20, 255, 20] : [80, 80, 80]
+        const backColor: Color = isUnset(value) ? COLOR_UNSET : (value) ? COLOR_LED_ON : [COLOR_WIRE_BORDER, COLOR_WIRE_BORDER, COLOR_WIRE_BORDER]
         fill(...backColor)
         const [w, h] = this.getWidthAndHeight()
         rect(this.posX - w / 2, this.posY - h / 2, w, h)

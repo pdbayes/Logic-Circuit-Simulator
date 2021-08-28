@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
-import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
@@ -69,8 +69,8 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
             stroke(...COLOR_MOUSE_OVER)
             fill(...COLOR_MOUSE_OVER)
         } else {
-            stroke(0)
-            fill(0)
+            stroke(COLOR_COMPONENT_BORDER)
+            fill(COLOR_COMPONENT_BORDER)
         }
         triangle(
             this.posX - INPUT_OUTPUT_DIAMETER / 2 - 5, this.posY - 5,
@@ -83,7 +83,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(18)
             textStyle(ITALIC)
             textAlign(LEFT, CENTER)

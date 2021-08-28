@@ -5,6 +5,7 @@ import { isDefined, isUnset, TriState, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 import { Timeline } from "../Timeline"
+import { COLOR_COMPONENT_BORDER } from "../drawutils"
 
 
 const ClockMandatoryParams = t.type({
@@ -121,7 +122,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
             const w = 40
             const h = 10
             const offsetY = this.orient === "s" ? -36 : 26
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
             strokeWeight(1)
             const left = this.posX - w / 2
             const mid1 = left + w * this.phase / this.period
@@ -136,7 +137,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
             line(mid2, bottom, right, bottom)
 
             noStroke()
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(10)
             textAlign(CENTER, CENTER)
             textStyle(NORMAL)

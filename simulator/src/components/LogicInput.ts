@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, extendComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
-import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER } from "../drawutils"
+import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
@@ -62,8 +62,8 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             stroke(...COLOR_MOUSE_OVER)
             fill(...COLOR_MOUSE_OVER)
         } else {
-            stroke(0)
-            fill(0)
+            stroke(COLOR_COMPONENT_BORDER)
+            fill(COLOR_COMPONENT_BORDER)
         }
         triangle(
             this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,
@@ -76,7 +76,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(18)
             textStyle(ITALIC)
             textAlign(RIGHT, CENTER)

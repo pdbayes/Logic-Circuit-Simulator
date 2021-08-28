@@ -1,7 +1,7 @@
 import { isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent } from "../drawutils"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 
@@ -84,12 +84,12 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        fill(0xFF)
+        fill(COLOR_BACKGROUND)
 
         if (ctx.isMouseOver) {
             stroke(...COLOR_MOUSE_OVER)
         } else {
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
         }
 
         strokeWeight(3)
@@ -111,7 +111,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
 
-            fill(0xAA)
+            fill(COLOR_COMPONENT_INNER_LABELS)
             textSize(11)
             textStyle(NORMAL)
             textAlign(CENTER, CENTER)
@@ -135,7 +135,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
             text("S", ...ctx.rotatePoint(this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
             text("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT_Cout].posYInParentTransform))
 
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(30)
             textStyle(BOLD)
             textAlign(CENTER, CENTER)

@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
@@ -88,14 +88,14 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         } else if (this._showAsUnknown) {
             stroke(...COLOR_UNSET)
         } else {
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
         }
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
 
         strokeWeight(4)
-        fill(0xFF)
+        fill(COLOR_BACKGROUND)
         rect(this.posX - width / 2, this.posY - height / 2, width, height)
 
         for (const input of this.inputs) {
@@ -104,7 +104,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(18)
             textStyle(ITALIC)
             textAlign(LEFT, CENTER)
@@ -112,7 +112,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
                 text(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
             }
 
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
 
             const isVertical = isOrientationVertical(this.orient)
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)

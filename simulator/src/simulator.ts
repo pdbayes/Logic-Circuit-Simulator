@@ -7,7 +7,7 @@ import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
-import { GRID_STEP, guessCanvasHeight } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, guessCanvasHeight } from "./drawutils"
 import { Node } from "./components/Node"
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
@@ -993,24 +993,24 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
 
         strokeCap(PROJECT)
 
-        background(0xFF)
-        fill(0xFF)
+        background(COLOR_BACKGROUND)
+        fill(COLOR_BACKGROUND)
 
-        stroke(200)
+        stroke(COLOR_BORDER)
         strokeWeight(2)
         if (mode >= Mode.CONNECT || upperMode === MaxMode) {
             rect(0, 0, width, height)
             if (upperMode === MaxMode && mode < upperMode) {
                 const h = guessCanvasHeight()
                 line(0, h, width, h)
-                fill(0xEE)
+                fill(COLOR_BACKGROUND_UNUSED_REGION) 
                 rect(0, h, width, height - h)
             }
         }
 
         const isMovingComponent = _movingComponents.size > 0
         if (isMovingComponent) {
-            stroke(240)
+            stroke(COLOR_GRID_LINES)
             strokeWeight(1)
             for (let x = GRID_STEP; x < width; x += GRID_STEP) {
                 line(x, 0, x, height)
@@ -1022,7 +1022,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
 
         g.scale(currentScale, currentScale)
 
-        stroke(0)
+        stroke(COLOR_COMPONENT_BORDER)
         wireMgr.draw(g, _currentMouseOverComp)
 
         for (const comp of components) {

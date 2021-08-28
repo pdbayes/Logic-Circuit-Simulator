@@ -3,7 +3,7 @@ import { mode, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
-import { wireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER } from "../drawutils"
+import { wireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER } from "../drawutils"
 import { Drawable, DrawContext } from "./Drawable"
 import { RedrawManager } from "../RedrawRecalcManager"
 
@@ -84,7 +84,7 @@ export class Wire extends Drawable {
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        stroke(0)
+        stroke(COLOR_COMPONENT_BORDER)
         const mainStrokeWidth = WIRE_WIDTH / 2
         strokeWeight(mainStrokeWidth)
 
@@ -115,7 +115,7 @@ export class Wire extends Drawable {
                 strokeWeight(mainStrokeWidth + 2)
                 stroke(...COLOR_MOUSE_OVER)
             } else {
-                stroke(80)
+                stroke(COLOR_WIRE_BORDER)
             }
             doDrawWire()
 

@@ -114,8 +114,8 @@ export {}
 //         super.draw()
 
 //         // negative edge-triggered
-//         fill(0xFF) // white
-//         stroke(0)
+//         fill(COLOR_BACKGROUND)
+//         stroke(COLOR_COMPONENT_BORDER)
 //         strokeWeight(2)
 //         circle(this.posX + 17, this.posY + this.height - 30, 8)
 //     }

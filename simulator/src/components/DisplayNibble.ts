@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
@@ -94,7 +94,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         } else if (this._showAsUnknown) {
             stroke(...COLOR_UNSET)
         } else {
-            stroke(0)
+            stroke(COLOR_COMPONENT_BORDER)
         }
 
         strokeWeight(4)
@@ -109,7 +109,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         ctx.inNonTransformedFrame(ctx => {
             noStroke()
-            fill(0)
+            fill(COLOR_COMPONENT_BORDER)
             textSize(18)
             textStyle(ITALIC)
             textAlign(LEFT, CENTER)
