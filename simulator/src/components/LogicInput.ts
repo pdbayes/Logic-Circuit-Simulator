@@ -24,14 +24,14 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         }
     }
 
-    toJSONBase() {
+    override toJSONBase() {
         return {
             ...super.toJSONBase(),
             name: this.name,
         }
     }
 
-    protected toStringDetails(): string {
+    protected override toStringDetails(): string {
         return "" + this.value
     }
 
@@ -43,15 +43,15 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         return INPUT_OUTPUT_DIAMETER
     }
 
-    isOver(x: number, y: number) {
+    override isOver(x: number, y: number) {
         return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    get allowsForcedOutputs() {
+    override get allowsForcedOutputs() {
         return false
     }
 
-    protected propagateNewValue(newValue: TriState) {
+    protected override propagateNewValue(newValue: TriState) {
         this.outputs[0].value = newValue
     }
 
@@ -118,11 +118,11 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         return "LogicInput" as const
     }
 
-    get cursorWhenMouseover() {
+    override get cursorWhenMouseover() {
         return "pointer"
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         return tooltipContent(undefined, mods("Entrée", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
@@ -131,7 +131,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         return this.value
     }
 
-    mouseClicked(e: MouseEvent | TouchEvent) {
+    override mouseClicked(e: MouseEvent | TouchEvent) {
         this.doSetValue((() => {
             switch (this.value) {
                 case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false

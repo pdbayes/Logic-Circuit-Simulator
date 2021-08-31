@@ -50,7 +50,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         return GRID_HEIGHT * GRID_STEP
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         return tooltipContent("Additionneur", mods(
             div(`Additionne deux bits A et B et une retenue d’entrée Cin, et fournit un bit de somme S et une retenue de sortie Cout.`)
         ))
@@ -77,7 +77,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         }
     }
 
-    protected propagateNewValue(newValue: [TriState, TriState]) {
+    protected override propagateNewValue(newValue: [TriState, TriState]) {
         this.outputs[OUTPUT_S].value = newValue[OUTPUT_S]
         this.outputs[OUTPUT_Cout].value = newValue[OUTPUT_Cout]
     }

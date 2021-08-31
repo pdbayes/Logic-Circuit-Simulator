@@ -249,7 +249,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public abstract get unrotatedHeight(): number
 
-    public applyDrawTransform(g: CanvasRenderingContext2D) {
+    public override applyDrawTransform(g: CanvasRenderingContext2D) {
         const rotation = (() => {
             switch (this._orient) {
                 case "e": return undefined

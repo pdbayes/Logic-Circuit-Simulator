@@ -55,7 +55,7 @@ abstract class NodeBase extends DrawableWithPosition {
         return DIAMETER
     }
 
-    isOver(x: number, y: number) {
+    override isOver(x: number, y: number) {
         return mode >= Mode.CONNECT
             && this.acceptsMoreConnections
             && dist(x, y, this.posX, this.posY) < HIT_RANGE / 2
@@ -217,16 +217,16 @@ abstract class NodeBase extends DrawableWithPosition {
         }
     }
 
-    get cursorWhenMouseover() {
+    override get cursorWhenMouseover() {
         return "crosshair"
     }
 
-    mouseDown(__: MouseEvent | TouchEvent) {
+    override mouseDown(__: MouseEvent | TouchEvent) {
         wireMgr.addNode(this.asNode)
         return { lockMouseOver: false }
     }
 
-    mouseUp(__: MouseEvent | TouchEvent) {
+    override mouseUp(__: MouseEvent | TouchEvent) {
         wireMgr.addNode(this.asNode)
     }
 
@@ -306,7 +306,7 @@ export class NodeOut extends NodeBase {
         }
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

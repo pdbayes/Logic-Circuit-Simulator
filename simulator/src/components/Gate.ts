@@ -183,7 +183,7 @@ export abstract class GateBase<
         }
     }
 
-    toJSONBase() {
+    override toJSONBase() {
         return {
             type: this._type,
             ...super.toJSONBase(),
@@ -226,7 +226,7 @@ export abstract class GateBase<
         this.setNeedsRedraw("display as unknown changed")
     }
 
-    protected toStringDetails(): string {
+    protected override toStringDetails(): string {
         return this.type
     }
 
@@ -238,7 +238,7 @@ export abstract class GateBase<
         return GRID_HEIGHT * GRID_STEP
     }
 
-    protected propagateNewValue(newValue: TriState) {
+    protected override propagateNewValue(newValue: TriState) {
         this.outputs[0].value = newValue
     }
 
@@ -249,7 +249,7 @@ export abstract class GateBase<
         this.drawGate(g, gateType, gateType !== this.type, ctx)
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return true
@@ -455,7 +455,7 @@ export abstract class GateBase<
         }
     }
 
-    protected makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
         return [
             ["start", this.makeReplaceByMenuItem()],
             ["mid", this.makePoseAsMenuItem()],
@@ -539,7 +539,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         return gateProps.out(in0)
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         if (this.showAsUnknown) {
             return div("Porte cachée")
         }
@@ -584,7 +584,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         )
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -615,7 +615,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         return Gate2Types
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         if (this.showAsUnknown) {
             return div("Porte cachée")
         }
@@ -667,7 +667,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         return gateProps.out(in1, in2)
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

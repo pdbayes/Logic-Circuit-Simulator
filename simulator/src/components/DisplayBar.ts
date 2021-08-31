@@ -61,7 +61,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return this.getWidthAndHeight()[1]
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         const expl: Modifier = (() => {
             switch (this.value) {
                 case Unset: return "Son état est indéterminé car son entrée n’est pas connue."
@@ -113,7 +113,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         }
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

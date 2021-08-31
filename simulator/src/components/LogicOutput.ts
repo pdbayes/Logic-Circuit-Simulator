@@ -36,7 +36,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return "LogicOutput" as const
     }
 
-    protected toStringDetails(): string {
+    protected override toStringDetails(): string {
         return "" + this.value
     }
 
@@ -48,11 +48,11 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         return INPUT_OUTPUT_DIAMETER
     }
 
-    isOver(x: number, y: number) {
+    override isOver(x: number, y: number) {
         return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         return tooltipContent(undefined, mods("Sortie", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 

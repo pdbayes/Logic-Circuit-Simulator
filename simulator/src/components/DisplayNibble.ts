@@ -57,7 +57,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return GRID_HEIGHT * GRID_STEP
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         const radixStr = (() => {
             switch (this._radix) {
                 case 2: return "binaire"
@@ -144,7 +144,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         })
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

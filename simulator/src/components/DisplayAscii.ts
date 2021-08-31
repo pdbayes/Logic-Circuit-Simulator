@@ -59,7 +59,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return GRID_HEIGHT * GRID_STEP
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         const [binaryStringRep, value] = this.value
 
         return tooltipContent("Afficheur de caractère", mods(
@@ -171,7 +171,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         })
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

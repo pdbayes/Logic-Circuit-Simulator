@@ -65,7 +65,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         return "Clock" as const
     }
 
-    public makeTooltip() {
+    public override makeTooltip() {
         return tooltipContent("Horloge",
             mods(`Période: ${this.period} ms`, br, `Rapport cyclique: ${this.dutycycle}%`,
                 this.phase === 0
@@ -111,7 +111,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
         if (!this.showLabel) {
@@ -148,7 +148,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         })
     }
 
-    mouseClicked(__: MouseEvent | TouchEvent): boolean {
+    override mouseClicked(__: MouseEvent | TouchEvent): boolean {
         this.doSetValue(isUnset(this.value) ? true : !this.value)
         return true
     }

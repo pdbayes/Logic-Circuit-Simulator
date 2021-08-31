@@ -475,7 +475,7 @@ export abstract class ComponentBase<
         return undefined
     }
 
-    mouseDown(e: MouseEvent | TouchEvent) {
+    override mouseDown(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
             if (isUndefined(this._isMovingWithContext)) {
                 const [offsetX, offsetY] = offsetXY(e)
@@ -490,14 +490,14 @@ export abstract class ComponentBase<
         return { lockMouseOver: true }
     }
 
-    mouseDragged(e: MouseEvent | TouchEvent) {
+    override mouseDragged(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
             this.updatePositionIfNeeded(e)
             setComponentMoving(this)
         }
     }
 
-    mouseUp(__: MouseEvent | TouchEvent) {
+    override mouseUp(__: MouseEvent | TouchEvent) {
         let tryConnectNodes = false
         if (this._state === ComponentState.SPAWNING) {
             this._state = ComponentState.SPAWNED
@@ -513,7 +513,7 @@ export abstract class ComponentBase<
         }
     }
 
-    mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
         if (mode >= Mode.CONNECT && e.metaKey) {
             this.doSetOrient((() => {
                 switch (this.orient) {
@@ -528,7 +528,7 @@ export abstract class ComponentBase<
         return false
     }
 
-    protected doSetOrient(orient: Orientation) {
+    protected override doSetOrient(orient: Orientation) {
         super.doSetOrient(orient)
         this.updateNodePositions()
     }
@@ -541,11 +541,11 @@ export abstract class ComponentBase<
         })
     }
 
-    get cursorWhenMouseover() {
+    override get cursorWhenMouseover() {
         return "grab"
     }
 
-    public makeContextMenu(): ContextMenuData {
+    public override makeContextMenu(): ContextMenuData {
         const menuItems: ContextMenuData = []
 
         const baseItems = this.makeBaseContextMenu()

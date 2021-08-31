@@ -404,7 +404,7 @@ class _EditHandlers extends ToolHandlers {
 
     private _contextMenuOpen = false
 
-    mouseHoverOn(comp: Drawable) {
+    override mouseHoverOn(comp: Drawable) {
         clearPopperIfNecessary()
         if (!showTooltips) {
             return
@@ -420,22 +420,22 @@ class _EditHandlers extends ToolHandlers {
             makePopper(tooltip, rect)
         }
     }
-    mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+    override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
         return comp.mouseDown(e)
     }
-    mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    override mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDragged(e)
     }
-    mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseUp(e)
     }
-    mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseClicked(e)
     }
-    mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDoubleClicked(e)
     }
-    contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         console.log("contextMenuOn: %o", comp)
         if (this._contextMenuOpen) {
             return
@@ -507,7 +507,7 @@ class _EditHandlers extends ToolHandlers {
             }, 200)
         }
     }
-    mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
+    override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         wireMgr.tryCancelWire()
     }
 }
@@ -528,7 +528,7 @@ export function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
 }
 
 class _DeleteHandlers extends ToolHandlers {
-    mouseClickedOn(comp: Drawable, __: MouseEvent) {
+    override mouseClickedOn(comp: Drawable, __: MouseEvent) {
         if (comp instanceof ComponentBase) {
             tryDeleteComponentsWhere(c => c === comp)
         } else if (comp instanceof Wire) {
@@ -538,17 +538,17 @@ class _DeleteHandlers extends ToolHandlers {
 }
 
 class _MoveHandlers extends ToolHandlers {
-    mouseDownOnBackground(e: MouseEvent) {
+    override mouseDownOnBackground(e: MouseEvent) {
         for (const comp of components) {
             comp.mouseDown(e)
         }
     }
-    mouseDraggedOnBackground(e: MouseEvent) {
+    override mouseDraggedOnBackground(e: MouseEvent) {
         for (const comp of components) {
             comp.mouseDragged(e)
         }
     }
-    mouseUpOnBackground(e: MouseEvent) {
+    override mouseUpOnBackground(e: MouseEvent) {
         for (const comp of components) {
             comp.mouseUp(e)
         }
