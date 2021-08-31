@@ -1,7 +1,7 @@
 import { HasPosition } from "./components/Drawable"
 import { isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
-import { components } from "./simulator"
+import { components, wrapHandler } from "./simulator"
 import { RedrawManager } from "./RedrawRecalcManager"
 
 export const GRID_STEP = 10
@@ -16,6 +16,8 @@ export let COLOR_BACKGROUND: number
 export let COLOR_BACKGROUND_UNUSED_REGION: number
 export let COLOR_BORDER: number
 export let COLOR_GRID_LINES: number
+export let COLOR_LABEL_OFF: number
+export let COLOR_LABEL_ON: number
 export let COLOR_COMPONENT_BORDER: number
 export let COLOR_COMPONENT_INNER_LABELS: number
 export let COLOR_WIRE_BORDER: number
@@ -28,10 +30,10 @@ export let COLOR_UNSET: Color
 export let COLOR_GATE_NAMES: Color
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
-darkModeQuery.onchange = () => {
+darkModeQuery.onchange = wrapHandler(() => {
     setColors(darkModeQuery.matches)
     RedrawManager.addReason("dark/light mode switch", null)
-}
+})
 setColors(darkModeQuery.matches)
 
 function setColors(darkMode: boolean) {
@@ -41,6 +43,8 @@ function setColors(darkMode: boolean) {
         COLOR_BACKGROUND_UNUSED_REGION = 0xEE
         COLOR_BORDER = 200
         COLOR_GRID_LINES = 240
+        COLOR_LABEL_OFF = 0xFF
+        COLOR_LABEL_ON = 0
         COLOR_COMPONENT_BORDER = 0x00
         COLOR_COMPONENT_INNER_LABELS = 0xAA
         COLOR_WIRE_BORDER = 80
@@ -53,12 +57,14 @@ function setColors(darkMode: boolean) {
         COLOR_GATE_NAMES = [190, 190, 190]
     } else {
         // Dark Theme
-        COLOR_BACKGROUND = 0x1E
-        COLOR_BACKGROUND_UNUSED_REGION = 0x2F
+        COLOR_BACKGROUND = 43
+        COLOR_BACKGROUND_UNUSED_REGION = 55
         COLOR_BORDER = 0x55
         COLOR_GRID_LINES = 0x2D
-        COLOR_COMPONENT_BORDER = 0xFF
-        COLOR_COMPONENT_INNER_LABELS = 0x5B
+        COLOR_LABEL_OFF = 185
+        COLOR_LABEL_ON = COLOR_BACKGROUND
+        COLOR_COMPONENT_BORDER = 200
+        COLOR_COMPONENT_INNER_LABELS = 0x8B
         COLOR_WIRE_BORDER = 175
         COLOR_MOUSE_OVER = [0, 0x7B, 0xFF]
         COLOR_FULL = [255, 193, 7]
@@ -158,14 +164,15 @@ export function roundValue(comp: HasPosition & { value: TriState }) {
     textAlign(CENTER, CENTER)
 
     if (isUnset(value)) {
-        fill(COLOR_BACKGROUND)
+        fill(COLOR_LABEL_OFF)
         textStyle(BOLD)
         text('?', comp.posX, comp.posY)
     } else if (value) {
+        fill(COLOR_LABEL_ON)
         textStyle(BOLD)
         text('1', comp.posX, comp.posY)
     } else {
-        fill(COLOR_BACKGROUND)
+        fill(COLOR_LABEL_OFF)
         textStyle(NORMAL)
         text('0', comp.posX, comp.posY)
     }
