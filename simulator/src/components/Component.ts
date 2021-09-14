@@ -380,6 +380,14 @@ export abstract class ComponentBase<
 
     public abstract get componentType(): ComponentType
 
+    protected getInputName(__i: number): string | undefined {
+        return undefined
+    }
+
+    protected getOutputName(__i: number): string | undefined {
+        return undefined
+    }
+
     public get state() {
         return this._state
     }
@@ -647,10 +655,10 @@ export abstract class ComponentBase<
             ])
 
         } else {
-            let outIndex = 0
+            const makeName = (i: number) => this.getOutputName(i) ?? "Sortie " + (i + 1)
             return ContextMenuData.submenu("exclamation", "Forcer une sortie", [
-                ...asArray(this.outputs).map(out => {
-                    return ContextMenuData.submenu(undefined, "Sortie " + (++outIndex),
+                ...asArray(this.outputs).map((out, i) => {
+                    return ContextMenuData.submenu(undefined, makeName(i),
                         makeOutputItems(out)
                     )
                 }),

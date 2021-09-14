@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
-import { DrawContext, isOrientationVertical } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
@@ -171,22 +171,57 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             return true // already handled
         }
         if (mode >= Mode.FULL && e.altKey) {
-            this._showAsUnknown = !this._showAsUnknown
-            this.setNeedsRedraw("display as unknown changed")
+            this.doSetShowAsUnknown(!this._showAsUnknown)
             return true
         } else if (mode >= Mode.DESIGN) {
-            this._additionalReprRadix = (() => {
+            this.doSetAdditionalDisplayRadix((() => {
                 switch (this._additionalReprRadix) {
                     case undefined: return 10
                     case 10: return 16
                     case 16: return undefined
                     default: return undefined
                 }
-            })()
-            this.setNeedsRedraw("radix changed")
+            })())
             return true
         }
         return false
+    }
+
+    private doSetShowAsUnknown(showAsUnknown: boolean) {
+        this._showAsUnknown = showAsUnknown
+        this.setNeedsRedraw("display as unknown changed")
+    }
+
+    private doSetAdditionalDisplayRadix(additionalReprRadix: number | undefined) {
+        this._additionalReprRadix = additionalReprRadix
+        this.setNeedsRedraw("additional display radix changed")
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
+            const icon = isCurrent ? "check" : "none"
+            return ContextMenuData.item(icon, desc, handler)
+        }
+
+        const makeItemShowRadix = (radix: number | undefined, desc: string) => {
+            return makeItemShowAs(desc,
+                () => this.doSetAdditionalDisplayRadix(radix),
+                this._additionalReprRadix === radix
+            )
+        }
+
+        return [
+            ["mid", ContextMenuData.submenu("eye", "Affichage supplémentaire", [
+                makeItemShowRadix(undefined, "Aucun"),
+                makeItemShowRadix(10, "Valeur décimale"),
+                makeItemShowRadix(16, "Valeur hexadécimale"),
+                ContextMenuData.sep(),
+                ContextMenuData.text("Changez l’affichage supplémentaire avec un double-clic sur le composant"),
+
+            ])],
+            ["mid", makeItemShowAs("Afficher comme inconnu", () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
+        ]
     }
 
 

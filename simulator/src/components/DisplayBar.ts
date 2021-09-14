@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON } from "../drawutils"
 import { asValue, Modifier, mods, tooltipContent } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
 export const DisplayBarTypes = {
@@ -140,6 +140,27 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     private updateInputOffsetX() {
         const width = this.getWidthAndHeight()[0]
         this.inputs[0].gridOffsetX = -pxToGrid(width / 2) - 2
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeItemShowAs = (desc: string, display: DisplayBarType) => {
+            const isCurrent = this._display === display
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetDisplay(display)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+        return [
+            ["mid", ContextMenuData.submenu("eye", "Affichage", [
+                makeItemShowAs("Barre verticale", "v"),
+                makeItemShowAs("Barre horizontale", "h"),
+                makeItemShowAs("Petit carré", "px"),
+                makeItemShowAs("Gros carré", "PX"),
+                ContextMenuData.sep(),
+                ContextMenuData.text("Changez l’affichage avec un double-clic sur le composant"),
+            ])],
+        ]
     }
 
 }

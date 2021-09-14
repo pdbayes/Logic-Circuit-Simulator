@@ -2,7 +2,7 @@ import { isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent } from "../drawutils"
-import { DrawContext, isOrientationVertical } from "./Drawable"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 
 const GRID_WIDTH = 7
@@ -40,6 +40,23 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
 
     public get componentType() {
         return "IC" as const
+    }
+
+    protected override getInputName(i: number): string | undefined {
+        switch (i) {
+            case INPUT_A: return "A"
+            case INPUT_B: return "B"
+            case INPUT_Cin: return "Cin (retenue précédente)"
+        }
+        return undefined
+    }
+
+    protected override getOutputName(i: number): string | undefined {
+        switch (i) {
+            case OUTPUT_S: return "S (somme)"
+            case OUTPUT_Cout: return "Cout (retenue)"
+        }
+        return undefined
     }
 
     get unrotatedWidth() {
@@ -138,5 +155,13 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
             g.fillText("+", this.posX, this.posY - 2)
         })
     }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        return [
+            ["mid", this.makeForceOutputsContextMenuItem()!],
+        ]
+    }
+
 
 }

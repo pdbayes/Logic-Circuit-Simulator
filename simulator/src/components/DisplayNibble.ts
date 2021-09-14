@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
-import { DrawContext, isOrientationVertical } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
@@ -149,15 +149,48 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             return true // already handled
         }
         if (mode >= Mode.FULL && e.altKey) {
-            this._showAsUnknown = !this._showAsUnknown
-            this.setNeedsRedraw("display as unknown changed")
+            this.doSetShowAsUnknown(!this._showAsUnknown)
             return true
         } else if (mode >= Mode.DESIGN) {
-            this._radix = this._radix === 10 ? 16 : 10
-            this.setNeedsRedraw("radix changed")
+            this.doSetRadix(this._radix === 10 ? 16 : 10)
             return true
         }
         return false
+    }
+
+    private doSetShowAsUnknown(showAsUnknown: boolean) {
+        this._showAsUnknown = showAsUnknown
+        this.setNeedsRedraw("display as unknown changed")
+    }
+
+    private doSetRadix(radix: number) {
+        this._radix = radix
+        this.setNeedsRedraw("radix changed")
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
+            const icon = isCurrent ? "check" : "none"
+            const caption = "Afficher " + desc
+            const action = isCurrent ? () => undefined : handler
+            return ContextMenuData.item(icon, caption, action)
+        }
+
+        const makeItemShowRadix = (radix: number, desc: string) => {
+            return makeItemShowAs(desc, () => {
+                if (this._showAsUnknown) {
+                    this.doSetShowAsUnknown(false)
+                }
+                this.doSetRadix(radix)
+            }, !this._showAsUnknown && this._radix === radix)
+        }
+
+        return [
+            ["mid", makeItemShowRadix(10, "en décimal")],
+            ["mid", makeItemShowRadix(16, "en hexadécimal")],
+            ["mid", makeItemShowAs("comme inconnu", () => this.doSetShowAsUnknown(false), this._showAsUnknown)],
+        ]
     }
 
 }

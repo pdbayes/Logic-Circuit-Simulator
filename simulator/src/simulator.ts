@@ -7,7 +7,7 @@ import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, dist, GRID_STEP, guessCanvasHeight, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, dist, GRID_STEP, guessCanvasHeight, setColorMouseOverIsDanger, strokeSingleLine } from "./drawutils"
 import { Node } from "./components/Node"
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
@@ -572,6 +572,7 @@ export function setHandlersFor(action: MouseAction) {
             case "move": return MoveHandlers
         }
     })()
+    setColorMouseOverIsDanger(action === "delete")
 }
 
 export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
@@ -797,7 +798,7 @@ export function setup() {
     canvasContainer.addEventListener("contextmenu", wrapHandler((e) => {
         // console.log("contextmenu %o", e)
         e.preventDefault()
-        if (isNotNull(_currentMouseOverComp)) {
+        if (mode >= Mode.CONNECT && isNotNull(_currentMouseOverComp)) {
             _currentHandlers.contextMenuOn(_currentMouseOverComp, e)
         }
     }))

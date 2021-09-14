@@ -48,6 +48,8 @@ export let COLOR_COMPONENT_BORDER: ColorString
 export let COLOR_COMPONENT_INNER_LABELS: ColorString
 export let COLOR_WIRE_BORDER: ColorString
 export let COLOR_MOUSE_OVER: ColorString
+export let COLOR_MOUSE_OVER_NORMAL: ColorString
+export let COLOR_MOUSE_OVER_DANGER: ColorString
 export let COLORCOMPS_FULL: ColorComponents
 export let COLOR_FULL: ColorString
 export let COLOR_LED_ON: ColorString
@@ -76,7 +78,8 @@ function setColors(darkMode: boolean) {
         COLORCOMP_COMPONENT_BORDER = 0x00
         COLOR_COMPONENT_INNER_LABELS = ColorString(0xAA)
         COLOR_WIRE_BORDER = ColorString(80)
-        COLOR_MOUSE_OVER = ColorString([0, 0x7B, 0xFF])
+        COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
+        COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_LED_ON = ColorString([20, 255, 20])
         COLOR_DARK_RED = ColorString([180, 0, 0])
@@ -94,7 +97,8 @@ function setColors(darkMode: boolean) {
         COLORCOMP_COMPONENT_BORDER = 200
         COLOR_COMPONENT_INNER_LABELS = ColorString(0x8B)
         COLOR_WIRE_BORDER = ColorString(175)
-        COLOR_MOUSE_OVER = ColorString([0, 0x7B, 0xFF])
+        COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
+        COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_LED_ON = ColorString([11, 144, 11])
         COLOR_DARK_RED = ColorString([180, 0, 0])
@@ -103,8 +107,13 @@ function setColors(darkMode: boolean) {
         COLOR_GATE_NAMES = ColorString([95, 95, 95])
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
+    setColorMouseOverIsDanger(false)
     COLOR_FULL = ColorString(COLORCOMPS_FULL)
     COLOR_EMPTY = ColorString(COLORCOMPS_EMPTY)
+}
+
+export function setColorMouseOverIsDanger(mouseOverIsDanger: boolean) {
+    COLOR_MOUSE_OVER = mouseOverIsDanger ? COLOR_MOUSE_OVER_DANGER : COLOR_MOUSE_OVER_NORMAL
 }
 
 export function ColorString(input: ColorGreyLevel | ColorComponents): ColorString {

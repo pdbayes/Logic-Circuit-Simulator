@@ -8,7 +8,7 @@
 
 ## Medium priority
 
- * Add contextual menu
+ * Add contextual menu to clock
 
 
 ## Low priority
@@ -19,6 +19,8 @@
 
 ### DONE
 
+ * Get rid of p5
+ * Add contextual menu to displays and adder
  * Refactor component hierarachy, in-memory list and JSON repr
  * Extract common stuff into Component superclass
  * Align input and output nodes on grid
