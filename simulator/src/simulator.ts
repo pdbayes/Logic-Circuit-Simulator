@@ -7,7 +7,7 @@ import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, guessCanvasHeight } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, dist, GRID_STEP, guessCanvasHeight, strokeSingleLine } from "./drawutils"
 import { Node } from "./components/Node"
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
@@ -32,6 +32,8 @@ const DEFAULT_OPTIONS = {
 type WorkspaceOptions = typeof DEFAULT_OPTIONS
 
 export let options: WorkspaceOptions = { ...DEFAULT_OPTIONS }
+export let mouseX = 0
+export let mouseY = 0
 
 export function nonDefaultOptions(): undefined | Partial<WorkspaceOptions> {
     const nonDefaultOpts: Partial<WorkspaceOptions> = {}
@@ -91,6 +93,7 @@ export function setToolCursor(cursor: string | null) {
 }
 
 
+let setupWasRun = false
 let canvasContainer: HTMLElement
 let mainCanvas: HTMLCanvasElement
 let baseTransform: DOMMatrix
@@ -156,7 +159,7 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
         let showonly: undefined | string[] = undefined
         if (isDefined(showonlyStr)) {
             showonly = showonlyStr.toLowerCase().split(/[, +]+/).filter(x => x.trim())
-            console.log("showonly", showonly)
+            // console.log("showonly", showonly)
             const leftToolbar = document.getElementById("leftToolbar")!
             const toolbarChildren = leftToolbar.children
             let numVisibleInOut = 0
@@ -168,7 +171,7 @@ const trySetMode = wrapHandler((wantedMode: Mode) => {
                 const compType = child.getAttribute("data-type")?.toLowerCase()
                 const buttonID = (compType ?? compStr)
                 const visible = isUndefined(buttonID) || showonly.includes(buttonID)
-                console.log("buttonID", buttonID, "visible", visible)
+                // console.log("buttonID", buttonID, "visible", visible)
                 if (visible) {
                     if (compStr === "gate") {
                         numVisibleGates++
@@ -436,13 +439,13 @@ class _EditHandlers extends ToolHandlers {
         comp.mouseDoubleClicked(e)
     }
     override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
-        console.log("contextMenuOn: %o", comp)
+        // console.log("contextMenuOn: %o", comp)
         if (this._contextMenuOpen) {
             return
         }
 
         const contextMenuData = comp.makeContextMenu()
-        console.log("asking for menu: %o got: %o", comp, contextMenuData)
+        // console.log("asking for menu: %o got: %o", comp, contextMenuData)
         if (isDefined(contextMenuData)) {
 
             // console.log("setting triggered")
@@ -627,16 +630,28 @@ function isDoubleClick(clickedComp: Drawable, e: MouseEvent | TouchEvent) {
     }
 }
 
+function setCanvasWidth(w: number, h: number) {
+    const f = window.devicePixelRatio ?? 1
+    mainCanvas.setAttribute("width", String(w * f))
+    mainCanvas.setAttribute("height", String(h * f))
+    mainCanvas.style.setProperty("width", w + "px")
+    mainCanvas.style.setProperty("height", h + "px")
+    baseTransform = new DOMMatrix(`scale(${f})`)
+}
+
 export function setup() {
+    if (setupWasRun) {
+        console.log("Skipping repeated setup")
+        return
+    }
+    console.log("Running setup…")
     canvasContainer = document.getElementById("canvas-sim")!
     tooltipElem = document.getElementById("tooltip")!
     mainContextMenu = document.getElementById("mainContextMenu")!
 
-    const p5canvas = createCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight, P2D)
-
-    p5canvas.parent('canvas-sim')
-    mainCanvas = canvasContainer.getElementsByTagName("canvas")[0]
-    baseTransform = mainCanvas.getContext('2d')?.getTransform() ?? new DOMMatrix("scale(1)")
+    mainCanvas = document.createElement("canvas")
+    setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+    canvasContainer.appendChild(mainCanvas)
 
 
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
@@ -780,7 +795,7 @@ export function setup() {
     }))
 
     canvasContainer.addEventListener("contextmenu", wrapHandler((e) => {
-        console.log("contextmenu %o", e)
+        // console.log("contextmenu %o", e)
         e.preventDefault()
         if (isNotNull(_currentMouseOverComp)) {
             _currentHandlers.contextMenuOn(_currentMouseOverComp, e)
@@ -929,9 +944,80 @@ export function setup() {
 
     // also triggers redraw, should be last
     trySetMode(upperMode)
+
+    window.addEventListener("mousemove", e => {
+        const canvasPos = canvasContainer.getBoundingClientRect()
+        mouseX = e.clientX - canvasPos.left
+        mouseY = e.clientY - canvasPos.top
+    }, true)
+
+    // window.addEventListener("keydown", wrapHandler(e => {
+    //     switch (e.key) {
+    //         case "Alt": // option
+    //             return NodeManager.tryConnectNodes()
+    //     }
+    // }))
+
+    window.addEventListener("keyup", wrapHandler(e => {
+        switch (e.key) {
+            case "Escape":
+                tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
+                wireMgr.tryCancelWire()
+                return
+
+            case "e":
+                setCurrentMouseAction("edit")
+                return
+
+            case "d":
+                setCurrentMouseAction("delete")
+                return
+
+            case "m":
+                setCurrentMouseAction("move")
+                return
+        }
+    }))
+
+
+    window.addEventListener("resize", wrapHandler(__ => {
+        if (isUndefined(canvasContainer)) {
+            setup()
+        } else {
+            setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+            RedrawManager.addReason("window resized", null)
+        }
+    }))
+
+    let pixelRatioMediaQuery: undefined | MediaQueryList
+    function registerPixelRatioListener() {
+        if (isDefined(pixelRatioMediaQuery)) {
+            pixelRatioMediaQuery.onchange = null
+        }
+
+        const queryString = `(resolution: ${window.devicePixelRatio}dppx)`
+        pixelRatioMediaQuery = window.matchMedia(queryString)
+        pixelRatioMediaQuery.onchange = wrapHandler(() => {
+            RedrawManager.addReason("devicePixelRatio changed", null)
+            registerPixelRatioListener()
+        })
+    }
+    registerPixelRatioListener()
+
+    window.setModeClicked = function setModeClicked(e: HTMLElement) {
+        const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"
+        if (buttonModeStr in Mode) {
+            const wantedMode = (Mode as any)[buttonModeStr]
+            trySetMode(wantedMode)
+        }
+    }
+    window.gallery = gallery
+
+    setupWasRun = true
 }
-window.setup = setup
-window.gallery = gallery
+window.addEventListener('DOMContentLoaded', () => {
+    setup()
+})
 
 function setVisible(elem: HTMLElement, visible: boolean) {
     if (visible) {
@@ -989,40 +1075,48 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
 
         const g = mainCanvas.getContext("2d")!
+        const width = mainCanvas.width
+        const height = mainCanvas.height
         g.setTransform(baseTransform)
+        g.lineCap = "square"
+        g.textBaseline = "middle"
 
-        strokeCap(PROJECT)
+        g.fillStyle = COLOR_BACKGROUND
+        g.fillRect(0, 0, width, height)
 
-        background(COLOR_BACKGROUND)
-        fill(COLOR_BACKGROUND)
+        g.strokeStyle = COLOR_BORDER
+        g.lineWidth = 2
 
-        stroke(COLOR_BORDER)
-        strokeWeight(2)
         if (mode >= Mode.CONNECT || upperMode === MaxMode) {
-            rect(0, 0, width, height)
+            g.strokeRect(0, 0, width, height)
             if (upperMode === MaxMode && mode < upperMode) {
                 const h = guessCanvasHeight()
-                line(0, h, width, h)
-                fill(COLOR_BACKGROUND_UNUSED_REGION) 
-                rect(0, h, width, height - h)
+                strokeSingleLine(g, 0, h, width, h)
+
+                g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION
+                g.fillRect(0, h, width, height - h)
             }
         }
 
         const isMovingComponent = _movingComponents.size > 0
         if (isMovingComponent) {
-            stroke(COLOR_GRID_LINES)
-            strokeWeight(1)
+            g.strokeStyle = COLOR_GRID_LINES
+            g.lineWidth = 1
+            g.beginPath()
             for (let x = GRID_STEP; x < width; x += GRID_STEP) {
-                line(x, 0, x, height)
+                g.moveTo(x, 0)
+                g.lineTo(x, height)
             }
             for (let y = GRID_STEP; y < height; y += GRID_STEP) {
-                line(0, y, width, y)
+                g.moveTo(0, y)
+                g.lineTo(width, y)
             }
+            g.stroke()
         }
 
         g.scale(currentScale, currentScale)
 
-        stroke(COLOR_COMPONENT_BORDER)
+        g.strokeStyle = COLOR_COMPONENT_BORDER
         wireMgr.draw(g, _currentMouseOverComp)
 
         for (const comp of components) {
@@ -1037,48 +1131,6 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
         if (isDefined(newRedrawReasons)) {
             console.log("ERROR: unexpectedly found new reasons to redraw right after a redraw:\n    " + newRedrawReasons)
         }
-    }
-}
-
-// window.addEventListener("keydown", wrapHandler(e => {
-//     switch (e.key) {
-//         case "Alt": // option
-//             return NodeManager.tryConnectNodes()
-//     }
-// }))
-
-window.addEventListener("keyup", wrapHandler(e => {
-    switch (e.key) {
-        case "Escape":
-            tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
-            wireMgr.tryCancelWire()
-            return
-
-        case "e":
-            setCurrentMouseAction("edit")
-            return
-
-        case "d":
-            setCurrentMouseAction("delete")
-            return
-
-        case "m":
-            setCurrentMouseAction("move")
-            return
-    }
-}))
-
-
-window.addEventListener("resize", wrapHandler(__ => {
-    resizeCanvas(canvasContainer.clientWidth, canvasContainer.clientHeight)
-    RedrawManager.addReason("window resized", null)
-}))
-
-window.setModeClicked = function setModeClicked(e: HTMLElement) {
-    const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"
-    if (buttonModeStr in Mode) {
-        const wantedMode = (Mode as any)[buttonModeStr]
-        trySetMode(wantedMode)
     }
 }
 

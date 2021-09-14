@@ -1,7 +1,7 @@
 import { FixedArraySizeNonZero, isDefined, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { Color, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent } from "../drawutils"
+import { circle, COLORCOMP_COMPONENT_BORDER, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
 import { mode, options } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
@@ -267,58 +267,68 @@ export abstract class GateBase<
         const bottom = this.posY + height / 2
         const pi2 = Math.PI / 2
 
-        noFill()
         if (ctx.isMouseOver) {
             const frameWidth = 2
             const frameMargin = 2
-            strokeWeight(frameWidth)
-            stroke(...COLOR_MOUSE_OVER)
-            rect(
+            g.lineWidth = frameWidth
+            g.strokeStyle = COLOR_MOUSE_OVER
+            g.beginPath()
+            g.rect(
                 left - frameWidth - frameMargin,
                 top - frameWidth - frameMargin,
                 width + 2 * (frameWidth + frameMargin),
                 height + 2 * (frameWidth + frameMargin)
             )
+            g.stroke()
         }
 
         const gateWidth = 40
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
-        const gateBorderColor: Color = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : [COLOR_COMPONENT_BORDER, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_BORDER]
-        strokeWeight(3)
-        stroke(...gateBorderColor)
+        const gateBorderColor: ColorString = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        g.lineWidth = 3
+        g.strokeStyle = gateBorderColor
 
-        const rightCircle = () => {
+        const drawRightCircle = () => {
             gateRight += 5
-            fill(COLOR_BACKGROUND)
-            arc(gateRight, this.posY, 8, 8, 0, 0)
-            noFill()
+            g.beginPath()
+            circle(g, gateRight, this.posY, 8)
+            g.fillStyle = COLOR_BACKGROUND
+            g.fill()
+            g.stroke()
             gateRight += 4
         }
-        const leftCircle = (up: boolean) => {
-            arc(gateLeft - 5, this.posY - (up ? 1 : -1) * GRID_STEP, 8, 8, 0, 0)
+        const drawLeftCircle = (up: boolean) => {
+            g.beginPath()
+            circle(g, gateLeft - 5, this.posY - (up ? 1 : -1) * GRID_STEP, 8)
+            g.fillStyle = COLOR_BACKGROUND
+            g.fill()
+            g.stroke()
         }
-        const wireEnds = (shortUp = false, shortDown = false) => {
-            stroke(COLOR_COMPONENT_BORDER)
+        const drawWireEnds = (shortUp = false, shortDown = false) => {
+            g.strokeStyle = COLOR_COMPONENT_BORDER
             for (let i = 0; i < this.inputs.length; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
-                wireLineToComponent(input, gateLeft - 3 - (short ? 9 : 0), input.posYInParentTransform)
+                drawWireLineToComponent(g, input, gateLeft - 1 - (short ? 9 : 0), input.posYInParentTransform)
             }
-            wireLineToComponent(output, gateRight + 3, this.posY)
+            drawWireLineToComponent(g, output, gateRight + 1, this.posY)
         }
 
+        g.beginPath()
         switch (type) {
             case "NOT":
             case "BUF":
-                line(gateLeft, top, gateLeft, bottom)
-                line(gateLeft, top, gateRight, this.posY)
-                line(gateLeft, bottom, gateRight, this.posY)
+                g.moveTo(gateLeft, top)
+                g.lineTo(gateRight, this.posY)
+                g.lineTo(gateLeft, bottom)
+                g.closePath()
+                g.stroke()
                 if (type === "NOT") {
-                    rightCircle()
+                    drawRightCircle()
                 }
-                wireEnds()
+                drawWireEnds()
                 nameDeltaX -= 6
                 break
 
@@ -326,22 +336,25 @@ export abstract class GateBase<
             case "NAND":
             case "NIMPLY":
             case "RNIMPLY": {
-                line(gateLeft, bottom, this.posX, bottom)
-                line(gateLeft, top, this.posX, top)
-                line(gateLeft, top, gateLeft, bottom)
-                arc(this.posX, this.posY, gateWidth, height, -pi2, pi2)
+                g.moveTo(this.posX, bottom)
+                g.lineTo(gateLeft, bottom)
+                g.lineTo(gateLeft, top)
+                g.lineTo(this.posX, top)
+                g.arc(this.posX, this.posY, height / 2, -pi2, pi2)
+                g.closePath()
+                g.stroke()
                 if (type === "NAND") {
-                    rightCircle()
+                    drawRightCircle()
                 }
                 let shortUp = false, shortDown = false
                 if (type === "NIMPLY") {
-                    leftCircle(false)
+                    drawLeftCircle(false)
                     shortDown = true
                 } else if (type === "RNIMPLY") {
-                    leftCircle(true)
+                    drawLeftCircle(true)
                     shortUp = true
                 }
-                wireEnds(shortUp, shortDown)
+                drawWireEnds(shortUp, shortDown)
                 nameDeltaX -= 1
                 break
             }
@@ -352,33 +365,39 @@ export abstract class GateBase<
             case "XNOR":
             case "IMPLY":
             case "RIMPLY": {
-                arc(gateLeft - 35, this.posY, 75, 75, -.55, .55)
-                gateLeft -= 3
-                line(gateLeft, top, this.posX - 15, top)
-                line(gateLeft, bottom, this.posX - 15, bottom)
-                bezier(this.posX - 15, top, this.posX + 10, top,
-                    gateRight - 5, this.posY - 8, gateRight, this.posY)
-                bezier(this.posX - 15, bottom, this.posX + 10, bottom,
-                    gateRight - 5, this.posY + 8, gateRight, this.posY)
+                g.beginPath()
+                g.moveTo(gateLeft, top)
+                g.lineTo(this.posX - 15, top)
+                g.bezierCurveTo(this.posX + 10, top, gateRight - 5, this.posY - 8,
+                    gateRight, this.posY)
+                g.bezierCurveTo(gateRight - 5, this.posY + 8, this.posX + 10, bottom,
+                    this.posX - 15, bottom)
+                g.lineTo(gateLeft, bottom)
+                g.quadraticCurveTo(this.posX - 8, this.posY, gateLeft, top)
+                g.closePath()
+                g.stroke()
                 const savedGateLeft = gateLeft
                 gateLeft += 4
                 if (type === "NOR" || type === "XNOR") {
-                    rightCircle()
+                    drawRightCircle()
                 }
                 let shortUp = false, shortDown = false
                 if (type === "IMPLY") {
-                    leftCircle(true)
+                    drawLeftCircle(true)
                     shortUp = true
                 } else if (type === "RIMPLY") {
-                    leftCircle(false)
+                    drawLeftCircle(false)
                     shortDown = true
                 }
-                wireEnds(shortUp, shortDown)
+                drawWireEnds(shortUp, shortDown)
                 if (type === "XOR" || type === "XNOR") {
                     gateLeft = savedGateLeft
-                    stroke(...gateBorderColor)
-                    strokeWeight(3)
-                    arc(gateLeft - 38, this.posY, 75, 75, -.55, .55)
+                    g.strokeStyle = gateBorderColor
+                    g.lineWidth = 3
+                    g.beginPath()
+                    g.moveTo(gateLeft - 6, bottom)
+                    g.quadraticCurveTo(this.posX - 14, this.posY, gateLeft - 6, top)
+                    g.stroke()
                 }
                 nameDeltaX -= 1
                 break
@@ -386,54 +405,55 @@ export abstract class GateBase<
 
             case "TXA":
             case "TXNA": {
-                triangle(
-                    gateLeft, top,
-                    gateRight, this.posY,
-                    gateLeft, this.posY,
-                )
-                line(gateLeft, this.posY, gateLeft, bottom)
+                g.beginPath()
+                g.moveTo(gateLeft, bottom)
+                g.lineTo(gateLeft, top)
+                g.lineTo(gateRight, this.posY)
+                g.lineTo(gateLeft + 2, this.posY)
+                g.stroke()
                 let shortLeft = false
                 if (type === "TXNA") {
-                    leftCircle(true)
+                    drawLeftCircle(true)
                     shortLeft = true
                 }
-                wireEnds(shortLeft, false)
+                drawWireEnds(shortLeft, false)
                 break
             }
 
             case "TXB":
             case "TXNB": {
-                triangle(
-                    gateLeft, bottom,
-                    gateRight, this.posY,
-                    gateLeft, this.posY,
-                )
-                line(gateLeft, this.posY, gateLeft, top)
+                g.beginPath()
+                g.moveTo(gateLeft, top)
+                g.lineTo(gateLeft, bottom)
+                g.lineTo(gateRight, this.posY)
+                g.lineTo(gateLeft + 2, this.posY)
+                g.stroke()
                 let shortLeft = false
                 if (type === "TXNB") {
-                    leftCircle(false)
+                    drawLeftCircle(false)
                     shortLeft = true
                 }
-                wireEnds(false, shortLeft)
+                drawWireEnds(false, shortLeft)
                 break
             }
 
             case "?":
-                stroke(COLOR_UNSET)
-                line(gateLeft, top, gateRight, top)
-                line(gateLeft, bottom, gateRight, bottom)
-                line(gateLeft, top, gateLeft, bottom)
-                line(gateRight, top, gateRight, bottom)
-                strokeWeight(0)
-                wireEnds()
+                g.strokeStyle = COLOR_UNSET
+                g.beginPath()
+                g.moveTo(gateLeft, top)
+                g.lineTo(gateRight, top)
+                g.lineTo(gateRight, bottom)
+                g.lineTo(gateLeft, bottom)
+                g.closePath()
+                g.stroke()
+                g.lineWidth = 0
+                drawWireEnds()
 
                 ctx.inNonTransformedFrame(() => {
-                    noStroke()
-                    fill(COLOR_UNSET)
-                    textSize(20)
-                    textAlign(CENTER, CENTER)
-                    textStyle(BOLD)
-                    text('?', this.posX, this.posY)
+                    g.fillStyle = COLOR_UNSET
+                    g.textAlign = "center"
+                    g.font = "bold 20px sans-serif"
+                    g.fillText('?', this.posX, this.posY)
                 })
                 break
         }
@@ -441,15 +461,13 @@ export abstract class GateBase<
         if (options.showGateTypes && !isUnset(type)) {
             const gateShortName = this.gateTypeEnum.propsOf(type).shortName
             if (isDefined(gateShortName)) {
-                noStroke()
-                fill(...COLOR_GATE_NAMES)
-                textSize(13)
-                textAlign(CENTER, CENTER)
-                textStyle(BOLD)
+                g.fillStyle = COLOR_GATE_NAMES
+                g.textAlign = "center"
+                g.font = "bold 13px sans-serif"
                 const oldTransform = g.getTransform()
                 g.translate(this.posX + nameDeltaX, this.posY)
                 g.scale(0.65, 1)
-                text(gateShortName, 0, 0)
+                g.fillText(gateShortName, 0, 0)
                 g.setTransform(oldTransform)
             }
         }

@@ -1,9 +1,9 @@
 import { Mode, isNull, isNotNull, isDefined } from "../utils"
-import { mode, setToolCursor } from "../simulator"
+import { mode, mouseX, mouseY, setToolCursor } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
-import { wireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER } from "../drawutils"
+import { drawWireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, strokeSingleLine, strokeBezier, dist } from "../drawutils"
 import { Drawable, DrawContext } from "./Drawable"
 import { RedrawManager } from "../RedrawRecalcManager"
 
@@ -84,43 +84,40 @@ export class Wire extends Drawable {
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        stroke(COLOR_COMPONENT_BORDER)
+        g.strokeStyle = COLOR_COMPONENT_BORDER
         const mainStrokeWidth = WIRE_WIDTH / 2
-        strokeWeight(mainStrokeWidth)
+        g.lineWidth = mainStrokeWidth
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            wireLineBetweenComponents(this.startNode, mouseX, mouseY)
+            drawWireLineBetweenComponents(g, this.startNode, mouseX, mouseY)
 
         } else {
             const bezierAnchorPointDistX = Math.max(25, Math.abs(this.endNode.posX - this.startNode.posX) / 3)
             const bezierAnchorPointDistY = Math.max(25, Math.abs(this.endNode.posY - this.startNode.posY) / 3)
 
-            noFill()
-
-
-
             // just a straight line if nodes are aligned on X or Y
             const doDrawWire = (this.startNode.posX === this.endNode.posX || this.startNode.posY === this.endNode.posY)
-                ? () => line(
+                ? () => strokeSingleLine(g,
                     this.startNode.posX, this.startNode.posY,
                     this.endNode!.posX, this.endNode!.posY)
-                : () => bezier(
+                : () => strokeBezier(g,
                     this.startNode.posX, this.startNode.posY,
                     ...this.startNode.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
                     ...this.endNode!.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
                     this.endNode!.posX, this.endNode!.posY)
 
             if (ctx.isMouseOver) {
-                strokeWeight(mainStrokeWidth + 2)
-                stroke(...COLOR_MOUSE_OVER)
+                g.lineWidth = mainStrokeWidth + 2
+                g.strokeStyle = COLOR_MOUSE_OVER
             } else {
-                stroke(COLOR_WIRE_BORDER)
+                g.strokeStyle = COLOR_WIRE_BORDER
             }
+
             doDrawWire()
 
-            strokeWeight(mainStrokeWidth - 2)
-            stroke(...colorForBoolean(this.startNode.value))
+            g.lineWidth = mainStrokeWidth - 2
+            g.strokeStyle = colorForBoolean(this.startNode.value)
             doDrawWire()
 
         }

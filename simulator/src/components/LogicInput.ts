@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, extendComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
 import * as t from "io-ts"
-import { wireLineToComponent, fillForBoolean, roundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
@@ -56,34 +56,39 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        wireLineToComponent(this.outputs[0], this.posX, this.posY)
+        drawWireLineToComponent(g, this.outputs[0], this.posX, this.posY)
 
         if (ctx.isMouseOver) {
-            stroke(...COLOR_MOUSE_OVER)
-            fill(...COLOR_MOUSE_OVER)
+            g.strokeStyle = COLOR_MOUSE_OVER
+            g.fillStyle = COLOR_MOUSE_OVER
         } else {
-            stroke(COLOR_COMPONENT_BORDER)
-            fill(COLOR_COMPONENT_BORDER)
+            g.strokeStyle = COLOR_COMPONENT_BORDER
+            g.fillStyle = COLOR_COMPONENT_BORDER
         }
-        triangle(
+        g.beginPath()
+        triangle(g,
             this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,
             this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY + 7,
             this.posX + INPUT_OUTPUT_DIAMETER / 2 + 5, this.posY,
         )
-        fillForBoolean(this.value)
-        strokeWeight(4)
-        circle(this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
+        g.fill()
+        g.stroke()
+
+        g.fillStyle = colorForBoolean(this.value)
+        g.lineWidth = 4
+        g.beginPath()
+        circle(g, this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
+        g.fill()
+        g.stroke()
 
         ctx.inNonTransformedFrame(ctx => {
-            noStroke()
-            fill(COLOR_COMPONENT_BORDER)
-            textSize(18)
-            textStyle(ITALIC)
-            textAlign(RIGHT, CENTER)
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.textAlign = "end"
+            g.font = "italic 18px sans-serif"
             if (isDefined(this.name)) {
-                text(this.name, ...ctx.rotatePoint(this.posX - 25, this.posY))
+                g.fillText(this.name, ...ctx.rotatePoint(this.posX - 25, this.posY))
             }
-            roundValue(this)
+            drawRoundValue(g, this)
         })
     }
 

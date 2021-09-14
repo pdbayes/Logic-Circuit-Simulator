@@ -1,5 +1,5 @@
 import { Clock } from "./components/Clock"
-import { tryLoadFromData, setToolCursor, setHandlersFor, components } from "./simulator"
+import { tryLoadFromData, setToolCursor, setHandlersFor, components, wrapHandler } from "./simulator"
 import { GateFactory, GateTypes } from "./components/Gate"
 import { LogicInput } from "./components/LogicInput"
 import { LogicOutput } from "./components/LogicOutput"
@@ -124,7 +124,9 @@ function activeTool(elTool: HTMLElement) {
 
     setCurrentMouseAction("edit")
     if (tool === "Reset") {
-        tryLoadFromData()
+        wrapHandler(() => {
+            tryLoadFromData()
+        })()
         return
     }
 

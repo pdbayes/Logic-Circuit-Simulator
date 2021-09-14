@@ -3,7 +3,7 @@ import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, isOrientationVertical, Orientation } from "./Drawable"
 import { NodeManager } from "../NodeManager"
-import { COLOR_DARK_RED, fillForBoolean, GRID_STEP } from "../drawutils"
+import { circle, colorForBoolean, COLOR_DARK_RED, COLOR_WIRE_BORDER, dist, GRID_STEP } from "../drawutils"
 import { Wire } from "./Wire"
 
 
@@ -71,33 +71,37 @@ abstract class NodeBase extends DrawableWithPosition {
             return
         }
 
-        fillForBoolean(this.value)
+        g.fillStyle = colorForBoolean(this.value)
 
         const [circleColor, thickness] =
             isDefined(this._forceValue) && mode >= Mode.FULL
                 ? [COLOR_DARK_RED, 3] // show forced nodes with red border if not in teacher mode
-                : [[0, 0, 0], 1]   // show normally
+                : [COLOR_WIRE_BORDER, 1]   // show normally
 
-        stroke(circleColor)
-        strokeWeight(thickness)
-        circle(this.posX, this.posY, DIAMETER)
+        g.strokeStyle = circleColor
+        g.lineWidth = thickness
+        g.beginPath()
+        circle(g, this.posX, this.posY, DIAMETER)
+        g.fill()
+        g.stroke()
 
         if (ctx.isMouseOver) {
-            fill(128, 128)
-            circle(this.posX, this.posY, DIAMETER * 2)
+            g.fillStyle = "rgba(128,128,128,0.5)"
+            g.beginPath()
+            circle(g, this.posX, this.posY, DIAMETER * 2)
+            g.fill()
+            g.stroke()
         }
 
-        noStroke()
         if (mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
             // forced value to something that is contrary to normal output
-            textAlign(CENTER, CENTER)
-            fill(circleColor)
-            textSize(14)
-            textStyle(BOLD)
+            g.textAlign = "center"
+            g.fillStyle = circleColor
+            g.font = "bold 14px sans-serif"
 
             ctx.inNonTransformedFrame(ctx => {
                 const parentOrient = this.parent.orient
-                text("!!", ...ctx.rotatePoint(
+                g.fillText("!!", ...ctx.rotatePoint(
                     this.posX + (isOrientationVertical(parentOrient) ? 13 : 0),
                     this.posY + (isOrientationVertical(parentOrient) ? 0 : -13),
                 ))

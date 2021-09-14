@@ -1,8 +1,13 @@
 import { HasPosition } from "./components/Drawable"
-import { isUnset, TriState, unset, Unset } from "./utils"
+import { isArray, isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { components, wrapHandler } from "./simulator"
 import { RedrawManager } from "./RedrawRecalcManager"
+
+
+//
+// GRID, GENERAL
+//
 
 export const GRID_STEP = 10
 
@@ -10,24 +15,47 @@ export function pxToGrid(x: number) {
     return Math.round(x / GRID_STEP)
 }
 
-export type Color = [number, number, number]
+export function dist(x0: number, y0: number, x1: number, y1: number): number {
+    const dx = x1 - x0
+    const dy = y1 - y0
+    return Math.sqrt(dx * dx + dy * dy)
+}
 
-export let COLOR_BACKGROUND: number
-export let COLOR_BACKGROUND_UNUSED_REGION: number
-export let COLOR_BORDER: number
-export let COLOR_GRID_LINES: number
-export let COLOR_LABEL_OFF: number
-export let COLOR_LABEL_ON: number
-export let COLOR_COMPONENT_BORDER: number
-export let COLOR_COMPONENT_INNER_LABELS: number
-export let COLOR_WIRE_BORDER: number
-export let COLOR_MOUSE_OVER: Color
-export let COLOR_FULL: Color
-export let COLOR_LED_ON: Color
-export let COLOR_DARK_RED: Color
-export let COLOR_EMPTY: Color
-export let COLOR_UNSET: Color
-export let COLOR_GATE_NAMES: Color
+export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
+    const w2 = width / 2
+    const h2 = height / 2
+    return pointX >= centerX - w2 && pointX < centerX + w2 &&
+        pointY >= centerY - h2 && pointY < centerY + h2
+}
+
+
+//
+// COLORS
+//
+
+export type ColorGreyLevel = number
+export type ColorComponents = [number, number, number]
+export type ColorString = string
+
+export let COLOR_BACKGROUND: ColorString
+export let COLOR_BACKGROUND_UNUSED_REGION: ColorString
+export let COLOR_BORDER: ColorString
+export let COLOR_GRID_LINES: ColorString
+export let COLOR_LABEL_OFF: ColorString
+export let COLOR_LABEL_ON: ColorString
+export let COLORCOMP_COMPONENT_BORDER: ColorGreyLevel
+export let COLOR_COMPONENT_BORDER: ColorString
+export let COLOR_COMPONENT_INNER_LABELS: ColorString
+export let COLOR_WIRE_BORDER: ColorString
+export let COLOR_MOUSE_OVER: ColorString
+export let COLORCOMPS_FULL: ColorComponents
+export let COLOR_FULL: ColorString
+export let COLOR_LED_ON: ColorString
+export let COLOR_DARK_RED: ColorString
+export let COLORCOMPS_EMPTY: ColorComponents
+export let COLOR_EMPTY: ColorString
+export let COLOR_UNSET: ColorString
+export let COLOR_GATE_NAMES: ColorString
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
 darkModeQuery.onchange = wrapHandler(() => {
@@ -39,81 +67,134 @@ setColors(darkModeQuery.matches)
 function setColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
-        COLOR_BACKGROUND = 0xFF
-        COLOR_BACKGROUND_UNUSED_REGION = 0xEE
-        COLOR_BORDER = 200
-        COLOR_GRID_LINES = 240
-        COLOR_LABEL_OFF = 0xFF
-        COLOR_LABEL_ON = 0
-        COLOR_COMPONENT_BORDER = 0x00
-        COLOR_COMPONENT_INNER_LABELS = 0xAA
-        COLOR_WIRE_BORDER = 80
-        COLOR_MOUSE_OVER = [0, 0x7B, 0xFF]
-        COLOR_FULL = [255, 193, 7]
-        COLOR_LED_ON = [20, 255, 20]
-        COLOR_DARK_RED = [180, 0, 0]
-        COLOR_EMPTY = [52, 58, 64]
-        COLOR_UNSET = [152, 158, 164]
-        COLOR_GATE_NAMES = [190, 190, 190]
+        COLOR_BACKGROUND = ColorString(0xFF)
+        COLOR_BACKGROUND_UNUSED_REGION = ColorString(0xEE)
+        COLOR_BORDER = ColorString(200)
+        COLOR_GRID_LINES = ColorString(240)
+        COLOR_LABEL_OFF = ColorString(0xFF)
+        COLOR_LABEL_ON = ColorString(0)
+        COLORCOMP_COMPONENT_BORDER = 0x00
+        COLOR_COMPONENT_INNER_LABELS = ColorString(0xAA)
+        COLOR_WIRE_BORDER = ColorString(80)
+        COLOR_MOUSE_OVER = ColorString([0, 0x7B, 0xFF])
+        COLORCOMPS_FULL = [255, 193, 7]
+        COLOR_LED_ON = ColorString([20, 255, 20])
+        COLOR_DARK_RED = ColorString([180, 0, 0])
+        COLORCOMPS_EMPTY = [52, 58, 64]
+        COLOR_UNSET = ColorString([152, 158, 164])
+        COLOR_GATE_NAMES = ColorString([190, 190, 190])
     } else {
         // Dark Theme
-        COLOR_BACKGROUND = 43
-        COLOR_BACKGROUND_UNUSED_REGION = 55
-        COLOR_BORDER = 0x55
-        COLOR_GRID_LINES = 0x2D
-        COLOR_LABEL_OFF = 185
+        COLOR_BACKGROUND = ColorString(43)
+        COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
+        COLOR_BORDER = ColorString(0x55)
+        COLOR_GRID_LINES = ColorString(30)
+        COLOR_LABEL_OFF = ColorString(185)
         COLOR_LABEL_ON = COLOR_BACKGROUND
-        COLOR_COMPONENT_BORDER = 200
-        COLOR_COMPONENT_INNER_LABELS = 0x8B
-        COLOR_WIRE_BORDER = 175
-        COLOR_MOUSE_OVER = [0, 0x7B, 0xFF]
-        COLOR_FULL = [255, 193, 7]
-        COLOR_LED_ON = [11, 144, 11]
-        COLOR_DARK_RED = [180, 0, 0]
-        COLOR_EMPTY = [80, 89, 99]
-        COLOR_UNSET = [108, 106, 98]
-        COLOR_GATE_NAMES = [95, 95, 95]
+        COLORCOMP_COMPONENT_BORDER = 200
+        COLOR_COMPONENT_INNER_LABELS = ColorString(0x8B)
+        COLOR_WIRE_BORDER = ColorString(175)
+        COLOR_MOUSE_OVER = ColorString([0, 0x7B, 0xFF])
+        COLORCOMPS_FULL = [255, 193, 7]
+        COLOR_LED_ON = ColorString([11, 144, 11])
+        COLOR_DARK_RED = ColorString([180, 0, 0])
+        COLORCOMPS_EMPTY = [80, 89, 99]
+        COLOR_UNSET = ColorString([108, 106, 98])
+        COLOR_GATE_NAMES = ColorString([95, 95, 95])
     }
+    COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
+    COLOR_FULL = ColorString(COLORCOMPS_FULL)
+    COLOR_EMPTY = ColorString(COLORCOMPS_EMPTY)
 }
 
-export function colorForBoolean(value: TriState): Color {
+export function ColorString(input: ColorGreyLevel | ColorComponents): ColorString {
+    if (isArray(input)) {
+        return `rgb(${input[0]},${input[1]},${input[2]})`
+    }
+    // else, grey
+    return `rgb(${input},${input},${input})`
+}
+
+export function colorComps(c: ColorString) {
+    const PREFIX = "rgb("
+    if (c.startsWith(PREFIX)) {
+        c = c.substring(PREFIX.length)
+    }
+    const SUFFIX = ")"
+    if (c.endsWith(SUFFIX)) {
+        c = c.substring(0, c.length - SUFFIX.length)
+    }
+    return c.split(',').map(compStr => parseInt(compStr))
+}
+
+export function colorForBoolean(value: TriState): ColorString {
     return isUnset(value) ? COLOR_UNSET : value ? COLOR_FULL : COLOR_EMPTY
 }
 
-export function fillForBoolean(value: TriState): Color {
-    const c = colorForBoolean(value)
-    fill(...c)
-    return c
-}
-
-export function colorForFraction(fraction: number): Color {
-    const c: Color = [
-        (COLOR_FULL[0] - COLOR_EMPTY[0]) * fraction + COLOR_EMPTY[0],
-        (COLOR_FULL[1] - COLOR_EMPTY[1]) * fraction + COLOR_EMPTY[1],
-        (COLOR_FULL[2] - COLOR_EMPTY[2]) * fraction + COLOR_EMPTY[2],
+export function colorForFraction(fraction: number): ColorString {
+    const c: ColorComponents = [
+        (COLORCOMPS_FULL[0] - COLORCOMPS_EMPTY[0]) * fraction + COLORCOMPS_EMPTY[0],
+        (COLORCOMPS_FULL[1] - COLORCOMPS_EMPTY[1]) * fraction + COLORCOMPS_EMPTY[1],
+        (COLORCOMPS_FULL[2] - COLORCOMPS_EMPTY[2]) * fraction + COLORCOMPS_EMPTY[2],
     ]
-    return c
+    return ColorString(c)
 }
 
-export function wireLineToComponent(node: Node, x1: number, y1: number, withTriangle = false) {
+
+//
+// DRAWING
+//
+
+// Adding to current path
+
+export function triangle(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number) {
+    g.moveTo(x0, y0)
+    g.lineTo(x1, y1)
+    g.lineTo(x2, y2)
+    g.closePath()
+}
+
+export function circle(g: CanvasRenderingContext2D, cx: number, cy: number, d: number) {
+    const r = d / 2
+    g.ellipse(cx, cy, r, r, 0, 0, 2 * Math.PI)
+}
+
+// Stroking/filling
+
+export function strokeSingleLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) {
+    g.beginPath()
+    g.moveTo(x0, y0)
+    g.lineTo(x1, y1)
+    g.stroke()
+}
+
+export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number, anchorX0: number, anchorY0: number, anchorX1: number, anchorY1: number, x1: number, y1: number) {
+    g.beginPath()
+    g.moveTo(x0, y0)
+    g.bezierCurveTo(anchorX0, anchorY0, anchorX1, anchorY1, x1, y1)
+    g.stroke()
+}
+
+export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
-    wireLine(x0, y0, x1, y1, node.value)
+    drawWireLine(g, x0, y0, x1, y1, node.value)
     if (withTriangle) {
-        stroke(COLOR_COMPONENT_BORDER)
-        fill(COLOR_COMPONENT_BORDER)
-        const shift = node.isOutput ? 3 : 0
+        g.strokeStyle = COLOR_COMPONENT_BORDER
+        g.fillStyle = COLOR_COMPONENT_BORDER
+        g.beginPath()
+        const shift = node.isOutput ? 2 : -1
         if (x0 === x1) {
             // vertical line
             const pointsDown = (node.isOutput && y1 <= y0) || (!node.isOutput && y0 <= y1)
             if (pointsDown) {
-                triangle(
+                triangle(g,
                     x1 - 3, y1 - 2 + shift,
                     x1 + 3, y1 - 2 + shift,
                     x1, y1 + 1 + shift,
                 )
             } else {
-                triangle(
+                triangle(g,
                     x1 - 3, y1 - 2 - shift,
                     x1 + 3, y1 - 2 - shift,
                     x1, y1 - 5 - shift,
@@ -123,13 +204,13 @@ export function wireLineToComponent(node: Node, x1: number, y1: number, withTria
             // horizontal line
             const pointsRight = (node.isOutput && x1 <= x0) || (!node.isOutput && x0 <= x1)
             if (pointsRight) {
-                triangle(
+                triangle(g,
                     x1 - 2 + shift, y1 - 3,
                     x1 - 2 + shift, y1 + 3,
                     x1 + 1 + shift, y1,
                 )
             } else {
-                triangle(
+                triangle(g,
                     x1 + 2 - shift, y1 - 3,
                     x1 + 2 - shift, y1 + 3,
                     x1 - 1 - shift, y1,
@@ -138,53 +219,64 @@ export function wireLineToComponent(node: Node, x1: number, y1: number, withTria
         } else {
             console.log(`ERROR  wireLineToComponent cannot draw triangle as line is not vertical or horizontal between (${x0}, ${y0}) and (${x1}, ${y1})`)
         }
+        g.fill()
+        g.stroke()
     }
 }
 
-export function wireLineBetweenComponents(node: Node, x1: number, y1: number) {
+export function drawWireLineBetweenComponents(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number) {
     const x0 = node.posX
     const y0 = node.posY
-    wireLine(x0, y0, x1, y1, node.value)
+    drawWireLine(g, x0, y0, x1, y1, node.value)
 }
 
-function wireLine(x0: number, y0: number, x1: number, y1: number, value: TriState) {
-    stroke(COLOR_WIRE_BORDER)
-    strokeWeight(4)
-    line(x0, y0, x1, y1)
 
-    stroke(...colorForBoolean(value))
-    strokeWeight(2)
-    const f = x0 < x1 ? 1 : -1
-    line(x0 - f, y0, x1 + f, y1)
+function drawWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState) {
+    const oldLineCap = g.lineCap
+    g.lineCap = "butt"
+
+    g.beginPath()
+    g.moveTo(x0, y0)
+    g.lineTo(x1, y1)
+
+    g.strokeStyle = COLOR_WIRE_BORDER
+    g.lineWidth = 4
+    g.stroke()
+
+    g.strokeStyle = colorForBoolean(value)
+    g.lineWidth = 2
+    g.stroke()
+
+    g.lineCap = oldLineCap
 }
 
-export function roundValue(comp: HasPosition & { value: TriState }) {
+export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & { value: TriState }) {
     const value = comp.value
-    textSize(18)
-    textAlign(CENTER, CENTER)
+    g.textAlign = "center"
+
+    let boldSpec = ""
+    let label = ""
 
     if (isUnset(value)) {
-        fill(COLOR_LABEL_OFF)
-        textStyle(BOLD)
-        text('?', comp.posX, comp.posY)
+        g.fillStyle = COLOR_LABEL_OFF
+        boldSpec = "bold "
+        label = '?'
     } else if (value) {
-        fill(COLOR_LABEL_ON)
-        textStyle(BOLD)
-        text('1', comp.posX, comp.posY)
+        g.fillStyle = COLOR_LABEL_ON
+        boldSpec = "bold "
+        label = '1'
     } else {
-        fill(COLOR_LABEL_OFF)
-        textStyle(NORMAL)
-        text('0', comp.posX, comp.posY)
+        g.fillStyle = COLOR_LABEL_OFF
+        label = '0'
     }
+    g.font = `${boldSpec}18px sans-serif`
+    g.fillText(label, comp.posX, comp.posY)
 }
 
 
-export function inRect(centerX: number, centerY: number, width: number, height: number, pointX: number, pointY: number): boolean {
-    const w2 = width / 2
-    const h2 = height / 2
-    return pointX >= centerX - w2 && pointX < centerX + w2 &&
-        pointY >= centerY - h2 && pointY < centerY + h2
-}
+//
+// MISC
+//
 
 export function guessCanvasHeight(): number {
     let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
@@ -199,8 +291,6 @@ export function guessCanvasHeight(): number {
     }
     return highestY + lowestY // add lower margin equal to top margin
 }
-
-
 
 export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
     let binaryStringRep = ""

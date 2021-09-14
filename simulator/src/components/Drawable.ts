@@ -1,7 +1,7 @@
 import { Expand, isDefined, isNotNull, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode } from "../simulator"
+import { mode, mouseX, mouseY } from "../simulator"
 import { Modifier, ModifierObject } from "../htmlgen"
 import { RedrawManager } from "../RedrawRecalcManager"
 

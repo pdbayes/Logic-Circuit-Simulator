@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, wireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
@@ -44,7 +44,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
     }
-    
+
     public get componentType() {
         return "Display" as const
     }
@@ -87,60 +87,60 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         const maxValue = (1 << this.inputs.length) - 1
         const backColor = isUnset(value) ? COLOR_UNSET : colorForFraction(value / maxValue)
-        fill(...backColor)
+        g.fillStyle = backColor
 
         if (ctx.isMouseOver) {
-            stroke(...COLOR_MOUSE_OVER)
+            g.strokeStyle = COLOR_MOUSE_OVER
         } else if (this._showAsUnknown) {
-            stroke(...COLOR_UNSET)
+            g.strokeStyle = COLOR_UNSET
         } else {
-            stroke(COLOR_COMPONENT_BORDER)
+            g.strokeStyle = COLOR_COMPONENT_BORDER
         }
 
-        strokeWeight(4)
+        g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
-        rect(this.posX - width / 2, this.posY - height / 2, width, height)
+        g.beginPath()
+        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
+        g.fill()
+        g.stroke()
 
         for (const input of this.inputs) {
-            wireLineToComponent(input, this.posX - width / 2 - 2, input.posYInParentTransform)
+            drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
         ctx.inNonTransformedFrame(ctx => {
-            noStroke()
-            fill(COLOR_COMPONENT_BORDER)
-            textSize(18)
-            textStyle(ITALIC)
-            textAlign(LEFT, CENTER)
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.textAlign = "start"
+            g.font = "italic 18px sans-serif"
             if (isDefined(this.name)) {
-                text(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
+                g.fillText(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
             }
 
             const isVertical = isOrientationVertical(this.orient)
 
-            const textColor = backColor[0] + backColor[1] + backColor[2] > 3 * 127 ? 0 : 0xFF
-            fill(textColor)
+            const backColorComps = colorComps(backColor)
+            const textColor = ColorString(backColorComps[0] + backColorComps[1] + backColorComps[2] > 3 * 127 ? 0 : 0xFF)
+            g.fillStyle = textColor
 
-            textSize(10)
-            textAlign(CENTER, CENTER)
-            textStyle(NORMAL)
-            text(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+            g.textAlign = "center"
+            g.font = "10px sans-serif"
+            g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
 
-            textSize(18)
-            textStyle(BOLD)
+            g.font = "bold 18px sans-serif"
 
             let stringRep: string
             if (this._showAsUnknown) {
                 stringRep = "?"
                 if (!isUnset(value)) {
                     // otherwise we get the same color for background and text
-                    fill(...COLOR_UNSET)
+                    g.fillStyle = COLOR_UNSET
                 }
             } else {
                 stringRep = formatWithRadix(value, this._radix)
             }
-            text(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
+            g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })
     }
 

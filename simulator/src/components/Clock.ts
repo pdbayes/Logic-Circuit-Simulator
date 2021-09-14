@@ -122,29 +122,30 @@ export class Clock extends LogicInputBase<ClockRepr> {
             const w = 40
             const h = 10
             const offsetY = this.orient === "s" ? -36 : 26
-            stroke(COLOR_COMPONENT_BORDER)
-            strokeWeight(1)
+            g.strokeStyle = COLOR_COMPONENT_BORDER
+            g.lineWidth = 1
             const left = this.posX - w / 2
             const mid1 = left + w * this.phase / this.period
             const mid2 = mid1 + w * this.dutycycle / 100
             const right = this.posX + w / 2
             const bottom = this.posY + offsetY + h / 2
             const top = this.posY + offsetY - h / 2
-            line(left, bottom, mid1, bottom)
-            line(mid1, bottom, mid1, top)
-            line(mid1, top, mid2, top)
-            line(mid2, top, mid2, bottom)
-            line(mid2, bottom, right, bottom)
+            g.beginPath()
+            g.moveTo(left, bottom)
+            g.lineTo(mid1, bottom)
+            g.lineTo(mid1, top)
+            g.lineTo(mid2, top)
+            g.lineTo(mid2, bottom)
+            g.lineTo(right, bottom)
+            g.stroke()
 
-            noStroke()
-            fill(COLOR_COMPONENT_BORDER)
-            textSize(10)
-            textAlign(CENTER, CENTER)
-            textStyle(NORMAL)
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.textAlign = "center"
+            g.font = "10px sans-serif"
             const periodStr = this.period >= 1000
                 ? (this.period / 1000) + " s"
                 : this.period + " ms"
-            text(periodStr, this.posX, bottom + 8)
+            g.fillText(periodStr, this.posX, bottom + 8)
         })
     }
 

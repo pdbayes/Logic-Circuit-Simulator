@@ -1,7 +1,7 @@
 import { isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, wireLineToComponent } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent } from "../drawutils"
 import { DrawContext, isOrientationVertical } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 
@@ -84,37 +84,35 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        fill(COLOR_BACKGROUND)
-
-        if (ctx.isMouseOver) {
-            stroke(...COLOR_MOUSE_OVER)
-        } else {
-            stroke(COLOR_COMPONENT_BORDER)
-        }
-
-        strokeWeight(3)
-
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
-        rect(this.posX - width / 2, this.posY - height / 2, width, height)
+
+        g.fillStyle = COLOR_BACKGROUND
+        g.lineWidth = 3
+        if (ctx.isMouseOver) {
+            g.strokeStyle = COLOR_MOUSE_OVER
+        } else {
+            g.strokeStyle = COLOR_COMPONENT_BORDER
+        }
+
+        g.beginPath()
+        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
+        g.fill()
+        g.stroke()
+
+        drawWireLineToComponent(g, this.inputs[INPUT_A], this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs[INPUT_B], this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs[INPUT_Cin], this.posX + width / 2 + 2, this.inputs[INPUT_Cin].posYInParentTransform, true)
 
 
-        wireLineToComponent(this.inputs[INPUT_A], this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 - 2, true)
-        wireLineToComponent(this.inputs[INPUT_B], this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 - 2, true)
-        wireLineToComponent(this.inputs[INPUT_Cin], this.posX + width / 2 + 2, this.inputs[INPUT_Cin].posYInParentTransform, true)
-
-
-        wireLineToComponent(this.outputs[OUTPUT_S], this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 + 2, true)
-        wireLineToComponent(this.outputs[OUTPUT_Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT_Cout].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT_S], this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 + 2, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT_Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT_Cout].posYInParentTransform, true)
 
 
         ctx.inNonTransformedFrame(ctx => {
-            noStroke()
-
-            fill(COLOR_COMPONENT_INNER_LABELS)
-            textSize(11)
-            textStyle(NORMAL)
-            textAlign(CENTER, CENTER)
+            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+            g.textAlign = "center"
+            g.font = "11px sans-serif"
 
             let spacingTop = 8
             let spacingRight = 10
@@ -128,18 +126,16 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
                 spacingLeft -= 3
             }
 
-            text("A", ...ctx.rotatePoint(this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            text("B", ...ctx.rotatePoint(this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            text("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT_Cin].posYInParentTransform))
+            g.fillText("A", ...ctx.rotatePoint(this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            g.fillText("B", ...ctx.rotatePoint(this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            g.fillText("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT_Cin].posYInParentTransform))
 
-            text("S", ...ctx.rotatePoint(this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
-            text("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT_Cout].posYInParentTransform))
+            g.fillText("S", ...ctx.rotatePoint(this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
+            g.fillText("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT_Cout].posYInParentTransform))
 
-            fill(COLOR_COMPONENT_BORDER)
-            textSize(30)
-            textStyle(BOLD)
-            textAlign(CENTER, CENTER)
-            text("+", this.posX, this.posY - 2)
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.font = "bold 30px sans-serif"
+            g.fillText("+", this.posX, this.posY - 2)
         })
     }
 

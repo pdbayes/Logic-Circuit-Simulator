@@ -22,7 +22,8 @@ See <https://jp.pellet.name/hep/logiga/>
 ## Differences with Original Version
 
  * This fork is written in TypeScript
- * Interface is drawnly differently, all with p5/canvas calls and no external images
+ * Dependency on p5 was removed
+ * Interface is drawnly differently, all with canvas calls and no external images
  * Screen is only refreshed when needed and not 60 times per second no matter what
  * Components have been added: bit display, segment display, nibble display, half adder, etc.
  * Mouseovers have been added

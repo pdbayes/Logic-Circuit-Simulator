@@ -13,5 +13,6 @@
         "**/CVS": true,
         "**/.DS_Store": true,
         "index.html": true
-    }
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
 }
