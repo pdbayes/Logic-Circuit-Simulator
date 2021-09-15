@@ -1,11 +1,10 @@
 import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
+import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
-import { NAME_POSITION_SETTINGS } from "./LogicInput"
 
 
 export const LogicOutputDef =
@@ -92,19 +91,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
             if (isDefined(this.name)) {
-                const [hAlign, vAlign, deltaX] = (() => {
-                    switch (this.orient) {
-                        case "e": return NAME_POSITION_SETTINGS.right
-                        case "w": return NAME_POSITION_SETTINGS.left
-                        case "n": return NAME_POSITION_SETTINGS.top
-                        case "s": return NAME_POSITION_SETTINGS.bottom
-                    }
-                })()
-                g.textAlign = hAlign
-                g.textBaseline = vAlign
-                g.font = "italic 18px sans-serif"
-                g.fillText(this.name, ...ctx.rotatePoint(this.posX + deltaX, this.posY))
-                g.textBaseline = "middle"
+                drawComponentName(g, ctx, this.name, this, true)
             }
             drawRoundValue(g, this)
         })

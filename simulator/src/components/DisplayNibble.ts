@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
@@ -112,11 +112,9 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            
+
             if (isDefined(this.name)) {
-                g.textAlign = "start"
-                g.font = "italic 18px sans-serif"
-                g.fillText(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
+                drawComponentName(g, ctx, this.name, this, true)
             }
 
             const isVertical = isOrientationVertical(this.orient)

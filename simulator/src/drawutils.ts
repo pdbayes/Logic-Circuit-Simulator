@@ -1,8 +1,10 @@
-import { HasPosition } from "./components/Drawable"
+import { DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { isArray, isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { components, wrapHandler } from "./simulator"
 import { RedrawManager } from "./RedrawRecalcManager"
+import { Component } from "./components/Component"
+import { boolean } from "fp-ts"
 
 
 //
@@ -287,6 +289,8 @@ export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & 
 // MISC
 //
 
+export const INPUT_OUTPUT_DIAMETER = 26
+
 export function guessCanvasHeight(): number {
     let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
     for (const comp of components) {
@@ -299,6 +303,41 @@ export function guessCanvasHeight(): number {
         }
     }
     return highestY + lowestY // add lower margin equal to top margin
+}
+
+const NAME_POSITION_SETTINGS = {
+    right: ["start", "middle", 7],
+    left: ["end", "middle", 9],
+    top: ["center", "bottom", 5],
+    bottom: ["center", "top", 5],
+} as const
+
+function textSettingsForName(onRight: boolean, orient: Orientation) {
+    if (onRight) {
+        switch (orient) {
+            case "e": return NAME_POSITION_SETTINGS.right
+            case "w": return NAME_POSITION_SETTINGS.left
+            case "n": return NAME_POSITION_SETTINGS.top
+            case "s": return NAME_POSITION_SETTINGS.bottom
+        }
+    } else {
+        switch (orient) {
+            case "e": return NAME_POSITION_SETTINGS.left
+            case "w": return NAME_POSITION_SETTINGS.right
+            case "n": return NAME_POSITION_SETTINGS.bottom
+            case "s": return NAME_POSITION_SETTINGS.top
+        }
+    }
+}
+
+export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextExt, name: string, comp: Component, onRight: boolean) {
+    const [hAlign, vAlign, deltaX] = textSettingsForName(onRight, comp.orient)
+    g.textAlign = hAlign
+    g.textBaseline = vAlign
+    g.font = "italic 18px sans-serif"
+    const point = ctx.rotatePoint(comp.posX + (onRight ? 1 : -1) * (comp.unrotatedWidth / 2 + deltaX), comp.posY)
+    g.fillText(name, ...point)
+    g.textBaseline = "middle"
 }
 
 export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {

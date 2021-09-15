@@ -693,5 +693,3 @@ export function extendComponent<NumInputs extends FixedArraySize, NumOutputs ext
         get reprType(): ReprType<typeof repr> { throw new Error() },
     } as const
 }
-
-export const INPUT_OUTPUT_DIAMETER = 25

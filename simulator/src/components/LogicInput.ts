@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, extendComponent, INPUT_OUTPUT_DIAMETER } from "./Component"
+import { ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
@@ -12,13 +12,6 @@ export const LogicInputBaseDef =
     }, "LogicInputBase"))
 
 export type LogicInputBaseRepr = typeof LogicInputBaseDef.reprType
-
-export const NAME_POSITION_SETTINGS = {
-    right: ["start", "middle", 20],
-    left: ["end", "middle", 22],
-    top: ["center", "bottom", 18],
-    bottom: ["center", "top", 18],
-} as const
 
 export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
 
@@ -91,19 +84,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
             if (isDefined(this.name)) {
-                const [hAlign, vAlign, deltaX] = (() => {
-                    switch (this.orient) {
-                        case "e": return NAME_POSITION_SETTINGS.left
-                        case "w": return NAME_POSITION_SETTINGS.right
-                        case "n": return NAME_POSITION_SETTINGS.bottom
-                        case "s": return NAME_POSITION_SETTINGS.top
-                    }
-                })()
-                g.textAlign = hAlign
-                g.textBaseline = vAlign
-                g.font = "italic 18px sans-serif"
-                g.fillText(this.name, ...ctx.rotatePoint(this.posX - deltaX, this.posY))
-                g.textBaseline = "middle"
+                drawComponentName(g, ctx, this.name, this, false)
             }
             drawRoundValue(g, this)
         })

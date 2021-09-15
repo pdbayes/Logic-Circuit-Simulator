@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
 import { mode } from "../simulator"
@@ -108,9 +108,9 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             g.fillStyle = COLOR_COMPONENT_BORDER
 
             if (isDefined(this.name)) {
-                g.textAlign = "start"
-                g.font = "italic 18px sans-serif"
-                g.fillText(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
+                if (isDefined(this.name)) {
+                    drawComponentName(g, ctx, this.name, this, true)
+                }
             }
 
             const isVertical = isOrientationVertical(this.orient)
