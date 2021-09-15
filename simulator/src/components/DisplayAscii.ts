@@ -106,13 +106,12 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            g.textAlign = "start"
-            g.font = "italic 18px sans-serif"
+
             if (isDefined(this.name)) {
+                g.textAlign = "start"
+                g.font = "italic 18px sans-serif"
                 g.fillText(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
             }
-
-            g.fillStyle = COLOR_COMPONENT_BORDER
 
             const isVertical = isOrientationVertical(this.orient)
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)

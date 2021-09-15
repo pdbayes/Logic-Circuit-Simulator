@@ -112,9 +112,10 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            g.textAlign = "start"
-            g.font = "italic 18px sans-serif"
+            
             if (isDefined(this.name)) {
+                g.textAlign = "start"
+                g.font = "italic 18px sans-serif"
                 g.fillText(this.name, ...ctx.rotatePoint(this.posX + width / 2 + 5, this.posY))
             }
 

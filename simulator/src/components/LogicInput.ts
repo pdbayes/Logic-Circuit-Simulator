@@ -13,6 +13,13 @@ export const LogicInputBaseDef =
 
 export type LogicInputBaseRepr = typeof LogicInputBaseDef.reprType
 
+export const NAME_POSITION_SETTINGS = {
+    right: ["start", "middle", 20],
+    left: ["end", "middle", 22],
+    top: ["center", "bottom", 18],
+    bottom: ["center", "top", 18],
+} as const
+
 export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
 
     protected readonly name: string | undefined = undefined
@@ -83,10 +90,20 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            g.textAlign = "end"
-            g.font = "italic 18px sans-serif"
             if (isDefined(this.name)) {
-                g.fillText(this.name, ...ctx.rotatePoint(this.posX - 25, this.posY))
+                const [hAlign, vAlign, deltaX] = (() => {
+                    switch (this.orient) {
+                        case "e": return NAME_POSITION_SETTINGS.left
+                        case "w": return NAME_POSITION_SETTINGS.right
+                        case "n": return NAME_POSITION_SETTINGS.bottom
+                        case "s": return NAME_POSITION_SETTINGS.top
+                    }
+                })()
+                g.textAlign = hAlign
+                g.textBaseline = vAlign
+                g.font = "italic 18px sans-serif"
+                g.fillText(this.name, ...ctx.rotatePoint(this.posX - deltaX, this.posY))
+                g.textBaseline = "middle"
             }
             drawRoundValue(g, this)
         })
