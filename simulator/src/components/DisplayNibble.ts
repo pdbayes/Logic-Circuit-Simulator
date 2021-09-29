@@ -22,14 +22,14 @@ type DisplayNibbleRepr = typeof DisplayNibbleDef.reprType
 
 export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [string, number | unset]> {
 
-    private readonly name: string | undefined = undefined
+    private _name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
     private _showAsUnknown = false
 
     public constructor(savedData: DisplayNibbleRepr | null) {
         super(["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
         if (isNotNull(savedData)) {
-            this.name = savedData.name
+            this._name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX
             this._showAsUnknown = savedData.showAsUnknown ?? false
         }
@@ -39,7 +39,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         return {
             type: "nibble" as const,
             ...this.toJSONBase(),
-            name: this.name,
+            name: this._name,
             radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
@@ -62,6 +62,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             switch (this._radix) {
                 case 2: return "binaire"
                 case 10: return "décimale"
+                case -10: return "décimale signée"
                 case 16: return "hexadécimale"
                 default: return `en base ${this._radix}`
             }
@@ -113,8 +114,8 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
 
-            if (isDefined(this.name)) {
-                drawComponentName(g, ctx, this.name, this, true)
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, this, true)
             }
 
             const isVertical = isOrientationVertical(this.orient)
@@ -137,7 +138,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
                     g.fillStyle = COLOR_UNSET
                 }
             } else {
-                stringRep = formatWithRadix(value, this._radix)
+                stringRep = formatWithRadix(value, this._radix, 4)
             }
             g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })
@@ -155,6 +156,11 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             return true
         }
         return false
+    }
+
+    private doSetName(name: string | undefined) {
+        this._name = name
+        this.setNeedsRedraw("name changed")
     }
 
     private doSetShowAsUnknown(showAsUnknown: boolean) {
@@ -187,8 +193,11 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
         return [
             ["mid", makeItemShowRadix(10, "en décimal")],
+            ["mid", makeItemShowRadix(-10, "en décimal signé")],
             ["mid", makeItemShowRadix(16, "en hexadécimal")],
             ["mid", makeItemShowAs("comme inconnu", () => this.doSetShowAsUnknown(false), this._showAsUnknown)],
+            ["mid", ContextMenuData.sep()],
+            ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }
 

@@ -355,18 +355,30 @@ export function displayValuesFromInputs(inputs: readonly Node[]): [string, numbe
     return [binaryStringRep, value]
 }
 
-export function formatWithRadix(value: number | unset, radix: number): string {
+export function formatWithRadix(value: number | unset, radix: number, width: number): string {
     if (isUnset(value)) {
         return Unset
     }
-    const caption = value.toString(radix).toUpperCase()
-    const prefix = (() => {
-        switch (radix) {
-            case 16: return "0x"
-            case 8: return "0o"
-            case 2: return "0b"
-            default: return ""
+    if (radix === -10) {
+        // signed int
+        const asBinStr = (value >>> 0).toString(2).padStart(width, '0')
+        if (asBinStr[0] === '1') {
+            // negative
+            const rest = parseInt(asBinStr.substring(1), 2)
+            return String(-Math.pow(2, width - 1) + rest)
+        } else {
+            return String(value)
         }
-    })()
-    return prefix + caption
+    } else {
+        const caption = value.toString(radix).toUpperCase()
+        const prefix = (() => {
+            switch (radix) {
+                case 16: return "0x"
+                case 8: return "0o"
+                case 2: return "0b"
+                default: return ""
+            }
+        })()
+        return prefix + caption
+    }
 }

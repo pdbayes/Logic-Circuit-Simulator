@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const LogicInputBaseDef =
     defineComponent(0, 1, t.type({
@@ -15,19 +15,19 @@ export type LogicInputBaseRepr = typeof LogicInputBaseDef.reprType
 
 export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
 
-    protected readonly name: string | undefined = undefined
+    private _name: string | undefined = undefined
 
     protected constructor(initialValue: TriState, savedData: Repr | null) {
         super(initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
         if (isNotNull(savedData)) {
-            this.name = savedData.name
+            this._name = savedData.name
         }
     }
 
     override toJSONBase() {
         return {
             ...super.toJSONBase(),
-            name: this.name,
+            name: this._name,
         }
     }
 
@@ -83,11 +83,22 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            if (isDefined(this.name)) {
-                drawComponentName(g, ctx, this.name, this, false)
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, this, false)
             }
             drawRoundValue(g, this)
         })
+    }
+
+    protected doSetName(name: string | undefined) {
+        this._name = name
+        this.setNeedsRedraw("name changed")
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        return [
+            ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
+        ]
     }
 
 }

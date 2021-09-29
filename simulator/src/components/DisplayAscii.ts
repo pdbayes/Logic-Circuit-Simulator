@@ -22,7 +22,7 @@ type DisplayAsciiRepr = typeof DisplayAsciiDef.reprType
 
 export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string, number | "?"]> {
 
-    private readonly name: string | undefined = undefined
+    private _name: string | undefined = undefined
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
@@ -31,7 +31,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             inOffsets: [[-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"]],
         })
         if (isNotNull(savedData)) {
-            this.name = savedData.name
+            this._name = savedData.name
             this._additionalReprRadix = savedData.additionalReprRadix
             this._showAsUnknown = savedData.showAsUnknown ?? false
         }
@@ -41,7 +41,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return {
             type: "ascii" as const,
             ...this.toJSONBase(),
-            name: this.name,
+            name: this._name,
             additionalReprRadix: this._additionalReprRadix,
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
@@ -107,10 +107,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
 
-            if (isDefined(this.name)) {
-                if (isDefined(this.name)) {
-                    drawComponentName(g, ctx, this.name, this, true)
-                }
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, this, true)
             }
 
             const isVertical = isOrientationVertical(this.orient)
@@ -131,7 +129,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
             let mainTextPosY = this.posY + (isVertical ? 4 : 0)
 
             if (hasAdditionalRepresentation) {
-                const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10)
+                const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10, 7)
                 g.font = "bold 11px sans-serif"
                 if (isVertical) {
                     // upper right
@@ -186,6 +184,11 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         return false
     }
 
+    private doSetName(name: string | undefined) {
+        this._name = name
+        this.setNeedsRedraw("name changed")
+    }
+
     private doSetShowAsUnknown(showAsUnknown: boolean) {
         this._showAsUnknown = showAsUnknown
         this.setNeedsRedraw("display as unknown changed")
@@ -220,6 +223,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
 
             ])],
             ["mid", makeItemShowAs("Afficher comme inconnu", () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
+            ["mid", ContextMenuData.sep()],
+            ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }
 

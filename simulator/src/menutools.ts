@@ -9,6 +9,8 @@ import { DisplayAscii } from "./components/DisplayAscii"
 import { DisplayBar } from "./components/DisplayBar"
 import { Component } from "./components/Component"
 import { Adder } from "./components/Adder"
+import { ALU } from "./components/ALU"
+import { RedrawManager } from "./RedrawRecalcManager"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -65,8 +67,10 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
             }
             switch (icType) {
                 case "Adder":
-                default:
                     return new Adder(null)
+                case "ALU":
+                default:
+                    return new ALU(null)
             }
         },
     },
@@ -106,6 +110,7 @@ export function setCurrentMouseAction(action: MouseAction) {
     }
 
     setHandlersFor(action)
+    RedrawManager.addReason("mouse action changed", null)
 }
 
 
@@ -118,7 +123,10 @@ function activeTool(elTool: HTMLElement) {
 
     // Main edit buttons on the right
     if (MouseActions.isValue(tool)) {
-        setCurrentMouseAction(tool)
+        wrapHandler(() => {
+            setCurrentMouseAction(tool)
+        })()
+
         return
     }
 

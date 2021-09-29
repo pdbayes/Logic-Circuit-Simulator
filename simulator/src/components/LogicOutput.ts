@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
 export const LogicOutputDef =
@@ -16,19 +16,19 @@ type LogicOutputRepr = typeof LogicOutputDef.reprType
 
 export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> {
 
-    private readonly name: string | undefined = undefined
+    private _name: string | undefined = undefined
 
     public constructor(savedData: LogicOutputRepr | null) {
         super(false, savedData, { inOffsets: [[-3, 0, "w"]] })
         if (isNotNull(savedData)) {
-            this.name = savedData.name
+            this._name = savedData.name
         }
     }
 
     toJSON() {
         return {
             ...this.toJSONBase(),
-            name: this.name,
+            name: this._name,
         }
     }
 
@@ -90,11 +90,22 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            if (isDefined(this.name)) {
-                drawComponentName(g, ctx, this.name, this, true)
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, this, true)
             }
             drawRoundValue(g, this)
         })
+    }
+
+    private doSetName(name: string | undefined) {
+        this._name = name
+        this.setNeedsRedraw("name changed")
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        return [
+            ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
+        ]
     }
 
 }

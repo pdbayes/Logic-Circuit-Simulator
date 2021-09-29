@@ -1,12 +1,15 @@
-import { Adder, AdderDef, AdderRepr } from "./Adder"
+import * as t from "io-ts"
+import { Adder, AdderDef } from "./Adder"
+import { ALU, ALUDef } from "./ALU"
 
 export type IC = Adder
 
-export const ICDef = AdderDef //t.union([
-// AdderDef.repr,
-// ], "IC")
+export const ICDef = t.union([
+    AdderDef.repr,
+    ALUDef.repr,
+], "IC")
 
-type ICRepr = AdderRepr
+type ICRepr = t.TypeOf<typeof ICDef>
 
 export const ICFactory = {
 
@@ -14,6 +17,8 @@ export const ICFactory = {
         switch (savedData.type) {
             case "adder":
                 return new Adder(savedData)
+            case "alu":
+                return new ALU(savedData)
         }
     },
 

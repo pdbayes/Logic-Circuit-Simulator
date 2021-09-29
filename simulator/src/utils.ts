@@ -159,7 +159,7 @@ import * as t from "io-ts"
 
 // Fixed-size arrays up to 8 to model inputs statically
 
-export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
 export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
 
@@ -172,7 +172,9 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 5 ? readonly [T, T, T, T, T]
     : N extends 6 ? readonly [T, T, T, T, T, T]
     : N extends 7 ? readonly [T, T, T, T, T, T, T]
-    : /*N extends 8 ? */readonly [T, T, T, T, T, T, T, T]
+    : N extends 8 ? readonly [T, T, T, T, T, T, T, T]
+    : N extends 9 ? readonly [T, T, T, T, T, T, T, T, T]
+    :/*N extends10*/readonly [T, T, T, T, T, T, T, T, T, T]
 
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
