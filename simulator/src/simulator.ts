@@ -966,6 +966,11 @@ export function setup() {
                 wireMgr.tryCancelWire()
                 return
 
+            case "Backspace":
+            case "Delete":
+                tryDeleteComponentsWhere(comp => _currentMouseOverComp === comp)
+                return
+
             case "e":
                 setCurrentMouseAction("edit")
                 return
