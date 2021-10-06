@@ -54,12 +54,12 @@ export let COLOR_MOUSE_OVER_NORMAL: ColorString
 export let COLOR_MOUSE_OVER_DANGER: ColorString
 export let COLORCOMPS_FULL: ColorComponents
 export let COLOR_FULL: ColorString
-export let COLOR_LED_ON: ColorString
 export let COLOR_DARK_RED: ColorString
 export let COLORCOMPS_EMPTY: ColorComponents
 export let COLOR_EMPTY: ColorString
 export let COLOR_UNSET: ColorString
 export let COLOR_GATE_NAMES: ColorString
+export let COLOR_LED_ON: { green: ColorString, red: ColorString, yellow: ColorString }
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
 darkModeQuery.onchange = wrapHandler(() => {
@@ -83,11 +83,15 @@ function setColors(darkMode: boolean) {
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
         COLORCOMPS_FULL = [255, 193, 7]
-        COLOR_LED_ON = ColorString([20, 255, 20])
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [52, 58, 64]
         COLOR_UNSET = ColorString([152, 158, 164])
         COLOR_GATE_NAMES = ColorString([190, 190, 190])
+        COLOR_LED_ON = {
+            green: ColorString([20, 255, 20]),
+            red: ColorString([255, 20, 20]),
+            yellow: ColorString([255, 255, 20]),
+        }
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
@@ -102,11 +106,15 @@ function setColors(darkMode: boolean) {
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
         COLORCOMPS_FULL = [255, 193, 7]
-        COLOR_LED_ON = ColorString([11, 144, 11])
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [80, 89, 99]
         COLOR_UNSET = ColorString([108, 106, 98])
         COLOR_GATE_NAMES = ColorString([95, 95, 95])
+        COLOR_LED_ON = {
+            green: ColorString([11, 144, 11]),
+            red: ColorString([144, 11, 11]),
+            yellow: ColorString([144, 144, 11]),
+        }
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
     setColorMouseOverIsDanger(false)

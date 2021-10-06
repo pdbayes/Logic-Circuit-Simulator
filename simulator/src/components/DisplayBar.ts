@@ -1,8 +1,8 @@
-import { isNotNull, isUnset, TriState, Unset } from "../utils"
+import { isNotNull, isUnset, TriState, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON } from "../drawutils"
-import { asValue, Modifier, mods, tooltipContent } from "../htmlgen"
+import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
@@ -15,7 +15,20 @@ export const DisplayBarTypes = {
 
 type DisplayBarType = keyof typeof DisplayBarTypes
 
-const DEFAULT_BAR_DISPLAY: DisplayBarType = "h"
+
+export const LedColors = {
+    green: null,
+    red: null,
+    yellow: null,
+} as const
+
+type LedColor = keyof typeof LedColors
+
+
+const DisplayBarDefaults = {
+    display: "h" as DisplayBarType,
+    color: "green" as LedColor,
+}
 const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
 
@@ -24,18 +37,21 @@ export const DisplayBarDef =
     defineComponent(1, 0, t.type({
         type: t.literal("bar"),
         display: t.keyof(DisplayBarTypes, "DisplayBarType"),
+        color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
     }, "DisplayBar"))
 
 type DisplayBarRepr = typeof DisplayBarDef.reprType
 
 export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
 
-    private _display = DEFAULT_BAR_DISPLAY
+    private _display = DisplayBarDefaults.display
+    private _color = DisplayBarDefaults.color
 
     public constructor(savedData: DisplayBarRepr | null) {
         super(false, savedData, { inOffsets: [[0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
+            this._color = savedData.color ?? DisplayBarDefaults.color
         } else {
             this.updateInputOffsetX()
         }
@@ -46,6 +62,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             type: "bar" as const,
             ...super.toJSONBase(),
             display: this._display,
+            color: this._color === DisplayBarDefaults.color ? undefined : this._color,
         }
     }
 
@@ -87,7 +104,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const backColor = isUnset(value) ? COLOR_UNSET : (value) ? COLOR_LED_ON : COLOR_WIRE_BORDER
+        const backColor = isUnset(value) ? COLOR_UNSET : (value) ? COLOR_LED_ON[this._color] : COLOR_WIRE_BORDER
         g.fillStyle = backColor
         const [w, h] = this.getWidthAndHeight()
         g.beginPath()
@@ -137,6 +154,11 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         this.setNeedsRedraw("display mode changed")
     }
 
+    private doSetColor(color: LedColor) {
+        this._color = color
+        this.setNeedsRedraw("color changed")
+    }
+
     private updateInputOffsetX() {
         const width = this.getWidthAndHeight()[0]
         this.inputs[0].gridOffsetX = -pxToGrid(width / 2) - 2
@@ -151,6 +173,14 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             return ContextMenuData.item(icon, desc, action)
         }
 
+        const makeItemUseColor = (desc: string, color: LedColor) => {
+            const isCurrent = this._color === color
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetColor(color)
+            const cssColor = COLOR_LED_ON[color]
+            return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 16px; background-color: ${cssColor}; margin-right: 8px`)), action)
+        }
+
         return [
             ["mid", ContextMenuData.submenu("eye", "Affichage", [
                 makeItemShowAs("Barre verticale", "v"),
@@ -159,6 +189,11 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
                 makeItemShowAs("Gros carré", "PX"),
                 ContextMenuData.sep(),
                 ContextMenuData.text("Changez l’affichage avec un double-clic sur le composant"),
+            ])],
+            ["mid", ContextMenuData.submenu("tint", "Couleur", [
+                makeItemUseColor("Vert", "green"),
+                makeItemUseColor("Rouge", "red"),
+                makeItemUseColor("Jaune", "yellow"),
             ])],
         ]
     }
