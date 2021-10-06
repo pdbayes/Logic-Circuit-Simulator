@@ -1,14 +1,12 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
 import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
-import { DrawableWithPosition, DrawContext, isOrientationVertical, Orientation } from "./Drawable"
+import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { NodeManager } from "../NodeManager"
-import { circle, colorForBoolean, COLOR_DARK_RED, COLOR_WIRE_BORDER, dist, GRID_STEP } from "../drawutils"
+import { dist, drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
 import { Wire } from "./Wire"
 
 
-const DIAMETER = 8
-const HIT_RANGE = DIAMETER + 4
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems
@@ -48,17 +46,17 @@ abstract class NodeBase extends DrawableWithPosition {
     }
 
     get unrotatedWidth() {
-        return DIAMETER
+        return WAYPOINT_DIAMETER
     }
 
     get unrotatedHeight() {
-        return DIAMETER
+        return WAYPOINT_DIAMETER
     }
 
     override isOver(x: number, y: number) {
         return mode >= Mode.CONNECT
             && this.acceptsMoreConnections
-            && dist(x, y, this.posX, this.posY) < HIT_RANGE / 2
+            && isOverWaypoint(x, y, this.posX, this.posY) 
     }
 
     destroy() {
@@ -71,42 +69,10 @@ abstract class NodeBase extends DrawableWithPosition {
             return
         }
 
-        g.fillStyle = colorForBoolean(this.value)
-
-        const [circleColor, thickness] =
-            isDefined(this._forceValue) && mode >= Mode.FULL
-                ? [COLOR_DARK_RED, 3] // show forced nodes with red border if not in teacher mode
-                : [COLOR_WIRE_BORDER, 1]   // show normally
-
-        g.strokeStyle = circleColor
-        g.lineWidth = thickness
-        g.beginPath()
-        circle(g, this.posX, this.posY, DIAMETER)
-        g.fill()
-        g.stroke()
-
-        if (ctx.isMouseOver) {
-            g.fillStyle = "rgba(128,128,128,0.5)"
-            g.beginPath()
-            circle(g, this.posX, this.posY, DIAMETER * 2)
-            g.fill()
-            g.stroke()
-        }
-
-        if (mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value) {
-            // forced value to something that is contrary to normal output
-            g.textAlign = "center"
-            g.fillStyle = circleColor
-            g.font = "bold 14px sans-serif"
-
-            ctx.inNonTransformedFrame(ctx => {
-                const parentOrient = this.parent.orient
-                g.fillText("!!", ...ctx.rotatePoint(
-                    this.posX + (isOrientationVertical(parentOrient) ? 13 : 0),
-                    this.posY + (isOrientationVertical(parentOrient) ? 0 : -13),
-                ))
-            })
-        }
+        const showForced = isDefined(this._forceValue) && mode >= Mode.FULL
+        const showForcedWarning = mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value
+        const parentOrientIsVertical = Orientation.isVertical(this.parent.orient)
+        drawWaypoint(g, ctx, this.posX, this.posY, this.value, ctx.isMouseOver, showForced, showForcedWarning, parentOrientIsVertical)
     }
 
     public get isAlive() {
@@ -180,44 +146,32 @@ abstract class NodeBase extends DrawableWithPosition {
         ) ?? [this.posX, this.posY]
     }
 
-    public wireBezierAnchor(distX: number, distY: number): [number, number] {
-        const wireProlongDirection = (() => {
-            switch (this.parent.orient) {
-                case "e":
-                    switch (this.relativePosition) {
-                        case "e": return "w"
-                        case "w": return "e"
-                        case "s": return "n"
-                        case "n": return "s"
-                    }
-                    break
-                case "w": return this.relativePosition
-                case "s":
-                    switch (this.relativePosition) {
-                        case "e": return "n"
-                        case "w": return "s"
-                        case "s": return "e"
-                        case "n": return "w"
-                    }
-                    break
-                case "n":
-                    switch (this.relativePosition) {
-                        case "e": return "s"
-                        case "w": return "n"
-                        case "s": return "w"
-                        case "n": return "e"
-                    }
-            }
-        })()
-        switch (wireProlongDirection) {
-            case "e": // going east, so anchor point is before on X
-                return [this.posX - distX, this.posY]
-            case "w": // going west, so anchor point is after on X
-                return [this.posX + distX, this.posY]
-            case "s":// going south, so anchor point is before on Y
-                return [this.posX, this.posY - distY]
-            case "n":// going north, so anchor point is after on Y
-                return [this.posX, this.posY + distY]
+    public get wireProlongDirection(): Orientation {
+        switch (this.parent.orient) {
+            case "e":
+                switch (this.relativePosition) {
+                    case "e": return "w"
+                    case "w": return "e"
+                    case "s": return "n"
+                    case "n": return "s"
+                }
+                break
+            case "w": return this.relativePosition
+            case "s":
+                switch (this.relativePosition) {
+                    case "e": return "n"
+                    case "w": return "s"
+                    case "s": return "e"
+                    case "n": return "w"
+                }
+                break
+            case "n":
+                switch (this.relativePosition) {
+                    case "e": return "s"
+                    case "w": return "n"
+                    case "s": return "w"
+                    case "n": return "e"
+                }
         }
     }
 

@@ -1,20 +1,120 @@
-import { Mode, isNull, isNotNull, isDefined } from "../utils"
-import { mode, mouseX, mouseY, setToolCursor } from "../simulator"
+import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
+import { mode, mouseX, mouseY, offsetXY, setToolCursor, wireMgr } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
-import { drawWireLineBetweenComponents, colorForBoolean, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, strokeSingleLine, strokeBezier, dist } from "../drawutils"
-import { Drawable, DrawContext } from "./Drawable"
+import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
+import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { RedrawManager } from "../RedrawRecalcManager"
 
-export const WireRepr = t.tuple([NodeID, NodeID], "Wire")
-export type WireRepr = t.TypeOf<typeof WireRepr>
+export const WaypointRepr = t.union([
+    t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
+    t.tuple([t.number, t.number]),
+], "Wire")
 
-const WIRE_WIDTH = 8
+export type WaypointRepr = t.TypeOf<typeof WaypointRepr>
+
+
+export class Waypoint extends DrawableWithDraggablePosition {
+
+    static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
+        if (isNull(saved)) {
+            return null
+        }
+        return {
+            pos: [saved[0], saved[1]],
+            orient: saved[2],
+        }
+    }
+
+    constructor(
+        savedData: WaypointRepr | null,
+        public readonly parent: Wire,
+    ) {
+        super(Waypoint.toSuperRepr(savedData))
+    }
+
+    toJSON(): WaypointRepr {
+        if (this.orient === Orientation.default) {
+            return [this.posX, this.posY]
+        } else {
+            return [this.posX, this.posY, this.orient]
+        }
+    }
+
+    get unrotatedWidth(): number {
+        return WAYPOINT_DIAMETER
+    }
+
+    get unrotatedHeight(): number {
+        return WAYPOINT_DIAMETER
+    }
+
+    public override isOver(x: number, y: number) {
+        return mode >= Mode.CONNECT && isOverWaypoint(x, y, this.posX, this.posY)
+    }
+
+    override get cursorWhenMouseover() {
+        return "grab"
+    }
+
+    public removeFromParent() {
+        this.parent.removeWaypoint(this)
+    }
+
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+        if (mode < Mode.CONNECT) {
+            return
+        }
+
+        drawWaypoint(g, ctx, this.posX, this.posY, this.parent.startNode.value, ctx.isMouseOver, false, false, false)
+    }
+
+    override mouseDown(e: MouseEvent | TouchEvent) {
+        if (mode >= Mode.CONNECT) {
+            this.tryStartMoving(e)
+        }
+        return { lockMouseOver: true }
+    }
+
+    override mouseDragged(e: MouseEvent | TouchEvent) {
+        if (mode >= Mode.CONNECT) {
+            this.updateWhileMoving(e)
+        }
+    }
+
+    override mouseUp(__: MouseEvent | TouchEvent) {
+        this.tryStopMoving()
+    }
+
+    public override makeContextMenu(): ContextMenuData {
+        return [
+            this.makeChangeOrientationContextMenuItem(),
+            ContextMenuData.sep(),
+            ContextMenuData.item("trash-o", "Supprimer", () => {
+                this.removeFromParent()
+            }, true),
+        ]
+    }
+}
+
+
+export const WireRepr = t.union([
+    t.tuple([
+        NodeID, NodeID,
+        t.type({
+            waypoints: t.array(WaypointRepr),
+        }),
+    ]), // alternative with more fields first
+    t.tuple([NodeID, NodeID]),
+], "Wire")
+
+export type WireRepr = t.TypeOf<typeof WireRepr>
 
 export class Wire extends Drawable {
 
     private _endNode: NodeIn | null = null
+    private _waypoints: Waypoint[] = []
 
     constructor(
         private _startNode: Node
@@ -24,7 +124,12 @@ export class Wire extends Drawable {
 
     toJSON(): WireRepr {
         const endID = this._endNode?.id ?? -1
-        return [this._startNode.id, endID]
+        if (this._waypoints.length === 0) {
+            return [this._startNode.id, endID]
+        } else {
+            const waypoints = this._waypoints.map(w => w.toJSON())
+            return [this._startNode.id, endID, { waypoints }]
+        }
     }
 
     public get startNode(): Node {
@@ -33,6 +138,14 @@ export class Wire extends Drawable {
 
     public get endNode(): Node | null {
         return this._endNode
+    }
+
+    public get waypoints(): readonly Waypoint[] {
+        return this._waypoints
+    }
+
+    public setWaypoints(reprs: WaypointRepr[]) {
+        this._waypoints = reprs.map(repr => new Waypoint(repr, this))
     }
 
     public setSecondNode(secondNode: Node | null) {
@@ -73,6 +186,9 @@ export class Wire extends Drawable {
         if (isNotNull(this._endNode)) {
             this._endNode.incomingWire = null
         }
+        // for (const waypoint of this._waypoints) {
+        //     waypoint.destroy()
+        // }
     }
 
     get isAlive() {
@@ -83,43 +199,108 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
+    public addWaypoint(e: MouseEvent | TouchEvent) {
+        const [x, y] = offsetXY(e)
+        let coordData = this.indexOfNextWaypointIfMouseover(x, y)
+        if (isUndefined(coordData)) {
+            // shouldn't happen since we're calling this form a context menu
+            // which was invoked when we were in a mouseover state
+            coordData = [
+                0,
+                [this.startNode.posX, this.startNode.posY],
+                [this.endNode?.posX ?? this.startNode.posX + 20, this.endNode?.posY ?? this.startNode.posY + 20],
+            ]
+        }
+
+        // determine inial direction
+        const [i, [startX, startY], [endX, endY]] = coordData
+        const deltaX = endX - startX
+        const deltaY = endY - startY
+        let orient: Orientation
+        if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+            // initial orientation will be horizontal
+            if (endX >= startX) {
+                orient = "e"
+            } else {
+                orient = "w"
+            }
+        } else {
+            // initial orientation will be vertical
+            if (endY >= startY) {
+                orient = "s"
+            } else {
+                orient = "n"
+            }
+        }
+
+        const waypoint = new Waypoint([x, y, orient], this)
+        this._waypoints.splice(i, 0, waypoint)
+    }
+
+    public removeWaypoint(waypoint: Waypoint) {
+        const i = this._waypoints.indexOf(waypoint)
+        if (i !== -1) {
+            this._waypoints.splice(i, 1)
+            this.setNeedsRedraw("waypoint deleted")
+        }
+    }
+
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        g.strokeStyle = COLOR_COMPONENT_BORDER
-        const mainStrokeWidth = WIRE_WIDTH / 2
-        g.lineWidth = mainStrokeWidth
+        const wireValue = this.startNode.value
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            drawWireLineBetweenComponents(g, this.startNode, mouseX, mouseY)
+            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, mouseX, mouseY, wireValue)
 
         } else {
-            const bezierAnchorPointDistX = Math.max(25, Math.abs(this.endNode.posX - this.startNode.posX) / 3)
-            const bezierAnchorPointDistY = Math.max(25, Math.abs(this.endNode.posY - this.startNode.posY) / 3)
+            let prevX = this.startNode.posX
+            let prevY = this.startNode.posY
+            let prevProlong = this.startNode.wireProlongDirection
+            g.beginPath()
+            g.moveTo(prevX, prevY)
 
-            // just a straight line if nodes are aligned on X or Y
-            const doDrawWire = (this.startNode.posX === this.endNode.posX || this.startNode.posY === this.endNode.posY)
-                ? () => strokeSingleLine(g,
-                    this.startNode.posX, this.startNode.posY,
-                    this.endNode!.posX, this.endNode!.posY)
-                : () => strokeBezier(g,
-                    this.startNode.posX, this.startNode.posY,
-                    ...this.startNode.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
-                    ...this.endNode!.wireBezierAnchor(bezierAnchorPointDistX, bezierAnchorPointDistY),
-                    this.endNode!.posX, this.endNode!.posY)
+            const lastWaypointData = { posX: this.endNode.posX, posY: this.endNode.posY, orient: this.endNode.wireProlongDirection }
+            const allWaypoints = [...this._waypoints, lastWaypointData]
+            for (const waypoint of allWaypoints) {
+                const nextX = waypoint.posX
+                const nextY = waypoint.posY
+                const deltaX = nextX - prevX
+                const deltaY = nextY - prevY
+                const nextProlong = waypoint.orient
+                if (prevX === nextX || prevY === nextY) {
+                    // straight line
+                    g.lineTo(nextX, nextY)
+                } else {
+                    // bezier curve
+                    const bezierAnchorPointDistX = Math.max(25, Math.abs(deltaX) / 3)
+                    const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3)
 
-            if (ctx.isMouseOver) {
-                g.lineWidth = mainStrokeWidth + 2
-                g.strokeStyle = COLOR_MOUSE_OVER
-            } else {
-                g.strokeStyle = COLOR_WIRE_BORDER
+                    const wireBezierAnchor = (wireProlongDirection: Orientation, x: number, y: number, distX: number, distY: number): [number, number] => {
+                        switch (wireProlongDirection) {
+                            case "e": // going east, so anchor point is before on X
+                                return [x - distX, y]
+                            case "w": // going west, so anchor point is after on X
+                                return [x + distX, y]
+                            case "s":// going south, so anchor point is before on Y
+                                return [x, y - distY]
+                            case "n":// going north, so anchor point is after on Y
+                                return [x, y + distY]
+                        }
+                    }
+
+                    g.bezierCurveTo(
+                        ...wireBezierAnchor(prevProlong, prevX, prevY, bezierAnchorPointDistX, bezierAnchorPointDistY),
+                        ...wireBezierAnchor(nextProlong, nextX, nextY, bezierAnchorPointDistX, bezierAnchorPointDistY),
+                        nextX, nextY,
+                    )
+                }
+
+                prevX = nextX
+                prevY = nextY
+                prevProlong = Orientation.invert(nextProlong)
             }
 
-            doDrawWire()
-
-            g.lineWidth = mainStrokeWidth - 2
-            g.strokeStyle = colorForBoolean(this.startNode.value)
-            doDrawWire()
-
+            strokeAsWireLine(g, wireValue, ctx.isMouseOver)
         }
     }
 
@@ -127,21 +308,39 @@ export class Wire extends Drawable {
         if (mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode || !this.endNode.isAlive) {
             return false
         }
+        return isDefined(this.indexOfNextWaypointIfMouseover(x, y))
+    }
 
-        const distance = []
-
-        distance.push(dist(this.startNode.posX, this.startNode.posY,
-            x, y))
-        distance.push(dist(this.endNode.posX, this.endNode.posY,
-            x, y))
-        const wireLength = dist(this.startNode.posX, this.startNode.posY,
-            this.endNode.posX, this.endNode.posY)
-
-        if (distance[0] + distance[1] >= wireLength - (WIRE_WIDTH / (10 * 2)) &&
-            distance[0] + distance[1] <= wireLength + (WIRE_WIDTH / (10 * 2))) {
-            return true
+    private indexOfNextWaypointIfMouseover(x: number, y: number): undefined | [number, [number, number], [number, number]] {
+        if (!this.endNode) {
+            return undefined
         }
-        return false
+        const waypoints: DrawableWithPosition[] = [this.startNode, ...this._waypoints, this.endNode]
+        const tol = WIRE_WIDTH / (10 * 2)
+        for (let i = 0; i < waypoints.length - 1; i++) {
+            const startX = waypoints[i].posX
+            const startY = waypoints[i].posY
+            const endX = waypoints[i + 1].posX
+            const endY = waypoints[i + 1].posY
+            const sumDist = dist(startX, startY, x, y) + dist(endX, endY, x, y)
+            const wireLength = dist(startX, startY, endX, endY)
+            if (sumDist >= wireLength - tol && sumDist <= wireLength + tol) {
+                return [i, [startX, startY], [endX, endY]]
+            }
+        }
+        return undefined
+    }
+
+    public override makeContextMenu(): ContextMenuData {
+        return [
+            ContextMenuData.item("plus-circle", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
+                this.addWaypoint(contextEvent)
+            }),
+            ContextMenuData.sep(),
+            ContextMenuData.item("trash-o", "Supprimer", () => {
+                wireMgr.deleteWire(this)
+            }, true),
+        ]
     }
 
 }
@@ -163,6 +362,9 @@ export class WireManager {
         this.removeDeadWires()
         for (const wire of this._wires) {
             wire.draw(g, mouseOverComp)
+            for (const waypoint of wire.waypoints) {
+                waypoint.draw(g, mouseOverComp)
+            }
         }
     }
 
@@ -179,7 +381,8 @@ export class WireManager {
         }
     }
 
-    addNode(newNode: Node) {
+    addNode(newNode: Node): Wire | undefined {
+        let completedWire = undefined
         if (!this._isAddingWire) {
             // start drawing a new wire
             this._wires.push(new Wire(newNode))
@@ -211,12 +414,15 @@ export class WireManager {
             if (!created) {
                 delete this._wires[currentWireIndex]
                 this._wires.length--
+            } else {
+                completedWire = currentWire
             }
 
             this._isAddingWire = false
             setToolCursor(null)
         }
         RedrawManager.addReason("started or stopped wire", null)
+        return completedWire
     }
 
     deleteWire(wire: Wire) {
@@ -227,6 +433,7 @@ export class WireManager {
                 break
             }
         }
+        RedrawManager.addReason("deleted wire", null)
     }
 
     clearAllWires() {
@@ -234,6 +441,7 @@ export class WireManager {
             wire.destroy()
         }
         this._wires.splice(0, this._wires.length)
+        RedrawManager.addReason("deleted wires", null)
     }
 
     tryCancelWire() {

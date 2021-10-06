@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
@@ -118,7 +118,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
                 drawComponentName(g, ctx, this._name, this, true)
             }
 
-            const isVertical = isOrientationVertical(this.orient)
+            const isVertical = Orientation.isVertical(this.orient)
 
             const backColorComps = colorComps(backColor)
             const textColor = ColorString(backColorComps[0] + backColorComps[1] + backColorComps[2] > 3 * 127 ? 0 : 0xFF)

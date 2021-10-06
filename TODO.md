@@ -13,12 +13,12 @@
 
 ## Low priority
 
- * Insert midpoints for wires to route them better
  * ...
 
 
 ### DONE
 
+ * Insert midpoints for wires to route them better
  * Get rid of p5
  * Add contextual menu to displays and adder
  * Refactor component hierarachy, in-memory list and JSON repr

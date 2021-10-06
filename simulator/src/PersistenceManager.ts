@@ -7,7 +7,7 @@ import { stringifySmart } from "./stringifySmart"
 import { WireRepr } from "./components/Wire"
 import { DisplayDef, DisplayFactory } from "./components/Display"
 import { NodeManager } from "./NodeManager"
-import { isArray, isString, isUndefined, keysOf } from "./utils"
+import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 import { RecalcManager } from "./RedrawRecalcManager"
@@ -113,12 +113,15 @@ class _PersistenceManager {
         // now all components are marked as needing recalculating
         RecalcManager.recalculateIfNeeded()
 
-        loadField("wires", WireRepr, ([nodeID1, nodeID2]) => {
+        loadField("wires", WireRepr, ([nodeID1, nodeID2, waypointsObj]) => {
             const node1 = NodeManager.findNode(nodeID1)
             const node2 = NodeManager.findNode(nodeID2)
             if (!isUndefined(node1) && !isUndefined(node2)) {
                 wireMgr.addNode(node1)
-                wireMgr.addNode(node2)
+                const completedWire = wireMgr.addNode(node2)
+                if (isDefined(completedWire) && isDefined(waypointsObj)) {
+                    completedWire.setWaypoints(waypointsObj.waypoints)
+                }
                 RecalcManager.recalculateIfNeeded()
             }
         })

@@ -1,8 +1,8 @@
-import { mode, offsetXY, setComponentMoving, setComponentStoppedMoving, tryDeleteComponentsWhere } from "../simulator"
-import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isDefined, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
+import { mode, setDrawableMoving, tryDeleteComponentsWhere } from "../simulator"
+import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { NodeManager } from "../NodeManager"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DEFAULT_ORIENTATION, DrawableWithPosition, Orientation, PositionSupportRepr } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
 
@@ -142,22 +142,15 @@ export const ComponentTypes = RichStringEnum.withProps<{
 
 export type ComponentType = typeof ComponentTypes.type
 
-interface DragContext {
-    mouseOffsetX: number
-    mouseOffsetY: number
-    lastAnchorX: number
-    lastAnchorY: number
-}
 
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs
     NumOutputs extends FixedArraySize, // statically know the number of outputs
     Repr extends ComponentRepr<NumInputs, NumOutputs>, // JSON representation, varies according to input/output number
     Value // usually TriState or number
-    > extends DrawableWithPosition {
+    > extends DrawableWithDraggablePosition {
 
     private _state: ComponentState
-    private _isMovingWithContext: undefined | DragContext = undefined
     protected readonly inputs: FixedArray<NodeIn, NumInputs>
     protected readonly outputs: FixedArray<NodeOut, NumOutputs>
 
@@ -191,7 +184,7 @@ export abstract class ComponentBase<
         } else {
             // newly placed
             this._state = ComponentState.SPAWNING
-            setComponentMoving(this)
+            setDrawableMoving(this)
         }
 
         // build node specs either from scratch if new or from saved data
@@ -213,10 +206,9 @@ export abstract class ComponentBase<
 
     // typically used by subclasses to provide only their specific JSON,
     // splatting in the result of super.toJSONBase() in the object
-    protected toJSONBase(): ComponentRepr<NumInputs, NumOutputs> {
+    protected override toJSONBase(): ComponentRepr<NumInputs, NumOutputs> {
         return {
-            pos: [this.posX, this.posY] as const,
-            orient: this.orient === DEFAULT_ORIENTATION ? undefined : this.orient,
+            ...super.toJSONBase(),
             ...this.buildNodesRepr(),
         }
     }
@@ -392,10 +384,6 @@ export abstract class ComponentBase<
         return this._state
     }
 
-    public get isMoving() {
-        return isDefined(this._isMovingWithContext)
-    }
-
     public get allowsForcedOutputs() {
         return true
     }
@@ -442,14 +430,6 @@ export abstract class ComponentBase<
         RecalcManager.addComponentNeedingRecalc(this)
     }
 
-    private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
-        const newPos = this.updateSelfPositionIfNeeded(e)
-        if (isDefined(newPos)) { // position changed
-            this.updateNodePositions()
-        }
-        return newPos
-    }
-
     private updateNodePositions() {
         this.forEachNode((node) => {
             node.updatePositionFromParent()
@@ -457,68 +437,40 @@ export abstract class ComponentBase<
         })
     }
 
-    private updateSelfPositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
-        const [x, y] = offsetXY(e)
-        const snapToGrid = !e.metaKey
-        if (this._state === ComponentState.SPAWNING) {
-            return this.setPosition(x, y, snapToGrid)
-        }
-        if (isDefined(this._isMovingWithContext)) {
-            const { mouseOffsetX, mouseOffsetY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
-            let targetX = x + mouseOffsetX
-            let targetY = y + mouseOffsetY
-            if (e.shiftKey) {
-                // normal move
-                const dx = Math.abs(lastAnchorX - targetX)
-                const dy = Math.abs(lastAnchorY - targetY)
-                if (dx <= dy) {
-                    targetX = lastAnchorX
-                } else {
-                    targetY = lastAnchorY
-                }
-            }
-            return this.setPosition(targetX, targetY, snapToGrid)
-
-        }
-        return undefined
-    }
-
     override mouseDown(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
-            if (isUndefined(this._isMovingWithContext)) {
-                const [offsetX, offsetY] = offsetXY(e)
-                this._isMovingWithContext = {
-                    mouseOffsetX: this.posX - offsetX,
-                    mouseOffsetY: this.posY - offsetY,
-                    lastAnchorX: this.posX,
-                    lastAnchorY: this.posY,
-                }
-            }
+            this.tryStartMoving(e)
         }
         return { lockMouseOver: true }
     }
 
     override mouseDragged(e: MouseEvent | TouchEvent) {
         if (mode >= Mode.CONNECT) {
-            this.updatePositionIfNeeded(e)
-            setComponentMoving(this)
+            this.updateWhileMoving(e)
         }
     }
 
     override mouseUp(__: MouseEvent | TouchEvent) {
-        let tryConnectNodes = false
+        let wasSpawning = false
         if (this._state === ComponentState.SPAWNING) {
             this._state = ComponentState.SPAWNED
-            tryConnectNodes = true
+            wasSpawning = true
         }
-        if (isDefined(this._isMovingWithContext)) {
-            this._isMovingWithContext = undefined
-            tryConnectNodes = true
-        }
-        setComponentStoppedMoving(this)
-        if (tryConnectNodes) {
+        const wasMoving = this.tryStopMoving()
+        if (wasSpawning || wasMoving) {
             NodeManager.tryConnectNodesOf(this)
         }
+    }
+
+    protected override updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
+        if (this._state === ComponentState.SPAWNING) {
+            return this.setPosition(x, y, snapToGrid)
+        }
+        return super.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
+    }
+
+    protected override positionChanged() {
+        this.updateNodePositions()
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {

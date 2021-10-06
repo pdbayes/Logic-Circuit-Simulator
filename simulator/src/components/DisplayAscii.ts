@@ -3,7 +3,7 @@ import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, isOrientationVertical } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { mode } from "../simulator"
 
 const GRID_WIDTH = 4
@@ -111,7 +111,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
                 drawComponentName(g, ctx, this._name, this, true)
             }
 
-            const isVertical = isOrientationVertical(this.orient)
+            const isVertical = Orientation.isVertical(this.orient)
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
 
             g.font = "9px sans-serif"

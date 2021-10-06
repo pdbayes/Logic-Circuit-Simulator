@@ -1,10 +1,9 @@
-import { DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
+import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { isArray, isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { components, wrapHandler } from "./simulator"
 import { RedrawManager } from "./RedrawRecalcManager"
 import { Component } from "./components/Component"
-import { boolean } from "fp-ts"
 
 
 //
@@ -12,6 +11,10 @@ import { boolean } from "fp-ts"
 //
 
 export const GRID_STEP = 10
+export const WIRE_WIDTH = 8
+export const WAYPOINT_DIAMETER = 8
+const WAYPOINT_HIT_RANGE = WAYPOINT_DIAMETER + 4
+
 
 export function pxToGrid(x: number) {
     return Math.round(x / GRID_STEP)
@@ -197,7 +200,7 @@ export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number
 export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
-    drawWireLine(g, x0, y0, x1, y1, node.value)
+    drawStraightWireLine(g, x0, y0, x1, y1, node.value)
     if (withTriangle) {
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.fillStyle = COLOR_COMPONENT_BORDER
@@ -243,30 +246,74 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawWireLineBetweenComponents(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number) {
-    const x0 = node.posX
-    const y0 = node.posY
-    drawWireLine(g, x0, y0, x1, y1, node.value)
-}
-
-
-function drawWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState) {
-    const oldLineCap = g.lineCap
-    g.lineCap = "butt"
-
+export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
+    strokeAsWireLine(g, value, false)
+}
 
-    g.strokeStyle = COLOR_WIRE_BORDER
-    g.lineWidth = 4
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean) {
+    const oldLineCap = g.lineCap
+    g.lineCap = "butt"
+
+    const mainStrokeWidth = WIRE_WIDTH / 2
+    if (isMouseOver) {
+        g.lineWidth = mainStrokeWidth + 2
+        g.strokeStyle = COLOR_MOUSE_OVER
+    } else {
+        g.lineWidth = mainStrokeWidth
+        g.strokeStyle = COLOR_WIRE_BORDER
+    }
     g.stroke()
 
     g.strokeStyle = colorForBoolean(value)
-    g.lineWidth = 2
+    g.lineWidth = mainStrokeWidth - 2
     g.stroke()
 
     g.lineCap = oldLineCap
+}
+
+export function isOverWaypoint(x: number, y: number, waypointX: number, waypointY: number): boolean {
+    return dist(x, y, waypointX, waypointY) < WAYPOINT_HIT_RANGE / 2
+}
+
+export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: TriState, isMouseOver: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
+    g.fillStyle = colorForBoolean(value)
+
+    const [circleColor, thickness] =
+        showForced
+            ? [COLOR_DARK_RED, 3] // show forced nodes with red border if not in teacher mode
+            : [COLOR_WIRE_BORDER, 1]   // show normally
+
+    g.strokeStyle = circleColor
+    g.lineWidth = thickness
+    g.beginPath()
+    circle(g, x, y, WAYPOINT_DIAMETER)
+    g.fill()
+    g.stroke()
+
+    if (isMouseOver) {
+        g.fillStyle = "rgba(128,128,128,0.5)"
+        g.beginPath()
+        circle(g, x, y, WAYPOINT_DIAMETER * 2)
+        g.fill()
+        g.stroke()
+    }
+
+    if (showForcedWarning) {
+        // forced value to something that is contrary to normal output
+        g.textAlign = "center"
+        g.fillStyle = circleColor
+        g.font = "bold 14px sans-serif"
+
+        ctx.inNonTransformedFrame(ctx => {
+            g.fillText("!!", ...ctx.rotatePoint(
+                x + (parentOrientIsVertical ? 13 : 0),
+                y + (parentOrientIsVertical ? 0 : -13),
+            ))
+        })
+    }
 }
 
 export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & { value: TriState }) {

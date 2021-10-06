@@ -2,7 +2,7 @@ import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 
 import { makeComponentFactoryForButton, MouseAction, setCurrentMouseAction } from "./menutools"
 import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNotNull, isNull, isNullOrUndefined, isUndefined, TimeoutHandle } from "./utils"
-import { Wire, WireManager } from "./components/Wire"
+import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { Mode } from "./utils"
 import { PersistenceManager } from "./PersistenceManager"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
@@ -64,26 +64,26 @@ export function setOptions(opts: Record<string, unknown> | undefined) {
 }
 
 
-const _movingComponents = new Set<Component>()
+const _movingDrawables = new Set<DrawableWithPosition>()
 
-function changeMovingComponents(change: () => void) {
-    const emptyBefore = _movingComponents.size === 0
+function changeMovingDrawables(change: () => void) {
+    const emptyBefore = _movingDrawables.size === 0
     change()
-    const emptyAfter = _movingComponents.size === 0
+    const emptyAfter = _movingDrawables.size === 0
     if (emptyBefore !== emptyAfter) {
         updateCursor()
-        RedrawManager.addReason("started or stopped moving components", null)
+        RedrawManager.addReason("started or stopped moving drawables", null)
     }
 }
 
-export function setComponentMoving(comp: Component) {
-    changeMovingComponents(() => {
-        _movingComponents.add(comp)
+export function setDrawableMoving(comp: DrawableWithPosition) {
+    changeMovingDrawables(() => {
+        _movingDrawables.add(comp)
     })
 }
-export function setComponentStoppedMoving(comp: Component) {
-    changeMovingComponents(() => {
-        _movingComponents.delete(comp)
+export function setDrawableStoppedMoving(comp: DrawableWithPosition) {
+    changeMovingDrawables(() => {
+        _movingDrawables.delete(comp)
     })
 }
 
@@ -325,6 +325,11 @@ function updateMouseOver([x, y]: [number, number]) {
 
             // check if we're over a wire
             for (const wire of wireMgr.wires) {
+                for (const waypoint of wire.waypoints) {
+                    if (waypoint.isOver(x, y)) {
+                        return waypoint
+                    }
+                }
                 if (wire.isOver(x, y)) {
                     return wire
                 }
@@ -338,7 +343,7 @@ function updateMouseOver([x, y]: [number, number]) {
 
 function updateCursor() {
     canvasContainer.style.cursor =
-        _movingComponents.size !== 0
+        _movingDrawables.size !== 0
             ? "grabbing"
             : _toolCursor
             ?? _currentMouseOverComp?.cursorWhenMouseover
@@ -471,7 +476,9 @@ class _EditHandlers extends ToolHandlers {
                         return li(cls("menu-item-static"), item.caption).render()
                     case "item": {
                         const but = mkButton(item, item.danger ?? false).render()
-                        but.addEventListener("click", wrapHandler(item.action))
+                        but.addEventListener("click", wrapHandler((itemEvent: MouseEvent | TouchEvent) => {
+                            item.action(itemEvent, e)
+                        }))
                         return li(cls("menu-item"), but).render()
                     }
                     case "submenu": {
@@ -536,6 +543,8 @@ class _DeleteHandlers extends ToolHandlers {
             tryDeleteComponentsWhere(c => c === comp)
         } else if (comp instanceof Wire) {
             wireMgr.deleteWire(comp)
+        } else if (comp instanceof Waypoint) {
+            comp.removeFromParent()
         }
     }
 }
@@ -545,15 +554,30 @@ class _MoveHandlers extends ToolHandlers {
         for (const comp of components) {
             comp.mouseDown(e)
         }
+        for (const wire of wireMgr.wires) {
+            for (const waypoint of wire.waypoints) {
+                waypoint.mouseDown(e)
+            }
+        }
     }
     override mouseDraggedOnBackground(e: MouseEvent) {
         for (const comp of components) {
             comp.mouseDragged(e)
         }
+        for (const wire of wireMgr.wires) {
+            for (const waypoint of wire.waypoints) {
+                waypoint.mouseDragged(e)
+            }
+        }
     }
     override mouseUpOnBackground(e: MouseEvent) {
         for (const comp of components) {
             comp.mouseUp(e)
+        }
+        for (const wire of wireMgr.wires) {
+            for (const waypoint of wire.waypoints) {
+                waypoint.mouseUp(e)
+            }
         }
     }
 }
@@ -1104,7 +1128,7 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
             }
         }
 
-        const isMovingComponent = _movingComponents.size > 0
+        const isMovingComponent = _movingDrawables.size > 0
         if (isMovingComponent) {
             g.strokeStyle = COLOR_GRID_LINES
             g.lineWidth = 1

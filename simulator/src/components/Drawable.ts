@@ -1,7 +1,7 @@
-import { Expand, isDefined, isNotNull, Mode, RichStringEnum, typeOrUndefined } from "../utils"
+import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode, mouseX, mouseY } from "../simulator"
+import { mode, mouseX, mouseY, offsetXY, setDrawableMoving, setDrawableStoppedMoving } from "../simulator"
 import { Modifier, ModifierObject } from "../htmlgen"
 import { RedrawManager } from "../RedrawRecalcManager"
 
@@ -17,7 +17,7 @@ export interface DrawContextExt extends DrawContext {
 export type ContextMenuItem =
     | { _tag: "sep" }
     | { _tag: "text", caption: Modifier }
-    | { _tag: "item", icon: string | undefined, caption: Modifier, danger: boolean | undefined, action: () => unknown }
+    | { _tag: "item", icon: string | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown }
     | { _tag: "submenu", icon: string | undefined, caption: Modifier, items: ContextMenuData }
 
 export type ContextMenuData = ContextMenuItem[]
@@ -28,7 +28,7 @@ export const ContextMenuData = {
     text(caption: Modifier): ContextMenuItem {
         return { _tag: "text", caption }
     },
-    item(icon: string | undefined, caption: Modifier, action: () => unknown, danger?: boolean): ContextMenuItem {
+    item(icon: string | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): ContextMenuItem {
         return { _tag: "item", icon, caption, action, danger }
     },
     submenu(icon: string | undefined, caption: Modifier, items: ContextMenuData): ContextMenuItem {
@@ -164,7 +164,7 @@ export interface HasPosition {
 
 }
 
-const Orientations_ = {
+export const Orientations_ = {
     "e": { localDesc: "Vers la droite (par défaut)" },
     "s": { localDesc: "Vers le bas" },
     "w": { localDesc: "Vers la gauche" },
@@ -178,8 +178,19 @@ export const Orientations = RichStringEnum.withProps<{
 
 export type Orientation = typeof Orientations.type
 
-export function isOrientationVertical(orient: Orientation): orient is "s" | "n" {
-    return orient === "s" || orient === "n"
+export const Orientation = {
+    default: "e" as Orientation,
+    invert(o: Orientation): Orientation {
+        switch (o) {
+            case "e": return "w"
+            case "w": return "e"
+            case "n": return "s"
+            case "s": return "n"
+        }
+    },
+    isVertical(o: Orientation): o is "s" | "n" {
+        return o === "s" || o === "n"
+    },
 }
 
 
@@ -191,8 +202,6 @@ export const PositionSupportRepr = t.type({
 
 export type PositionSupportRepr = Expand<t.TypeOf<typeof PositionSupportRepr>>
 
-
-export const DEFAULT_ORIENTATION: Orientation = "e"
 
 export abstract class DrawableWithPosition extends Drawable implements HasPosition {
 
@@ -210,12 +219,19 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             // restoring from saved object
             this._posX = savedData.pos[0]
             this._posY = savedData.pos[1]
-            this._orient = savedData.orient ?? DEFAULT_ORIENTATION
+            this._orient = savedData.orient ?? Orientation.default
         } else {
             // creating new object
             this._posX = Math.max(0, mouseX)
             this._posY = mouseY
-            this._orient = DEFAULT_ORIENTATION
+            this._orient = Orientation.default
+        }
+    }
+
+    protected toJSONBase(): PositionSupportRepr {
+        return {
+            pos: [this.posX, this.posY] as const,
+            orient: this.orient === Orientation.default ? undefined : this.orient,
         }
     }
 
@@ -238,11 +254,11 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     public get width(): number {
-        return isOrientationVertical(this._orient) ? this.unrotatedHeight : this.unrotatedWidth
+        return Orientation.isVertical(this._orient) ? this.unrotatedHeight : this.unrotatedWidth
     }
 
     public get height(): number {
-        return isOrientationVertical(this._orient) ? this.unrotatedWidth : this.unrotatedHeight
+        return Orientation.isVertical(this._orient) ? this.unrotatedWidth : this.unrotatedHeight
     }
 
     public abstract get unrotatedWidth(): number
@@ -298,6 +314,90 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             ContextMenuData.sep(),
             ContextMenuData.text("Changez l’orientation avec Commande + double-clic sur le composant"),
         ])
+    }
+
+}
+
+
+interface DragContext {
+    mouseOffsetX: number
+    mouseOffsetY: number
+    lastAnchorX: number
+    lastAnchorY: number
+}
+
+
+export abstract class DrawableWithDraggablePosition extends DrawableWithPosition {
+
+    private _isMovingWithContext: undefined | DragContext = undefined
+
+    protected constructor(savedData: PositionSupportRepr | null) {
+        super(savedData)
+    }
+
+    public get isMoving() {
+        return isDefined(this._isMovingWithContext)
+    }
+
+    protected tryStartMoving(e: MouseEvent | TouchEvent) {
+        if (isUndefined(this._isMovingWithContext)) {
+            const [offsetX, offsetY] = offsetXY(e)
+            this._isMovingWithContext = {
+                mouseOffsetX: this.posX - offsetX,
+                mouseOffsetY: this.posY - offsetY,
+                lastAnchorX: this.posX,
+                lastAnchorY: this.posY,
+            }
+        }
+    }
+
+    protected updateWhileMoving(e: MouseEvent | TouchEvent) {
+        this.updatePositionIfNeeded(e)
+        setDrawableMoving(this)
+    }
+
+    protected tryStopMoving(): boolean {
+        let wasMoving = false
+        if (isDefined(this._isMovingWithContext)) {
+            this._isMovingWithContext = undefined
+            wasMoving = true
+        }
+        setDrawableStoppedMoving(this)
+        return wasMoving
+    }
+
+    private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
+        const [x, y] = offsetXY(e)
+        const snapToGrid = !e.metaKey
+        const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
+        if (isDefined(newPos)) { // position changed
+            this.positionChanged()
+        }
+        return newPos
+    }
+
+    protected positionChanged() {
+        // do nothing by default
+    }
+
+    protected updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
+        if (isDefined(this._isMovingWithContext)) {
+            const { mouseOffsetX, mouseOffsetY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
+            let targetX = x + mouseOffsetX
+            let targetY = y + mouseOffsetY
+            if (e.shiftKey) {
+                // mvoe along axis only
+                const dx = Math.abs(lastAnchorX - targetX)
+                const dy = Math.abs(lastAnchorY - targetY)
+                if (dx <= dy) {
+                    targetX = lastAnchorX
+                } else {
+                    targetY = lastAnchorY
+                }
+            }
+            return this.setPosition(targetX, targetY, snapToGrid)
+        }
+        return undefined
     }
 
 }
