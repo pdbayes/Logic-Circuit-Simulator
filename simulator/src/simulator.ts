@@ -599,6 +599,15 @@ export function setHandlersFor(action: MouseAction) {
     setColorMouseOverIsDanger(action === "delete")
 }
 
+export function offsetXYForContextMenu(e: MouseEvent | TouchEvent): [number, number] {
+    if ("offsetX" in e && e.offsetX === 0 && e.offsetY === 0 && e.target === mainCanvas) {
+        const canvasRect = mainCanvas.getBoundingClientRect()
+        return [e.clientX - canvasRect.x, e.clientY - canvasRect.y]
+    } else {
+        return offsetXY(e)
+    }
+}
+
 export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
     const [unscaledX, unscaledY] = (() => {
         if ("offsetX" in e) {

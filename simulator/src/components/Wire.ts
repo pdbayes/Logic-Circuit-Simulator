@@ -1,5 +1,5 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
-import { mode, mouseX, mouseY, offsetXY, setToolCursor, wireMgr } from "../simulator"
+import { mode, mouseX, mouseY, offsetXY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -200,7 +200,7 @@ export class Wire extends Drawable {
     }
 
     public addWaypoint(e: MouseEvent | TouchEvent) {
-        const [x, y] = offsetXY(e)
+        const [x, y] = offsetXYForContextMenu(e)
         let coordData = this.indexOfNextWaypointIfMouseover(x, y)
         if (isUndefined(coordData)) {
             // shouldn't happen since we're calling this form a context menu
@@ -261,7 +261,8 @@ export class Wire extends Drawable {
 
             const lastWaypointData = { posX: this.endNode.posX, posY: this.endNode.posY, orient: this.endNode.wireProlongDirection }
             const allWaypoints = [...this._waypoints, lastWaypointData]
-            for (const waypoint of allWaypoints) {
+            for (let i = 0; i < allWaypoints.length; i++) {
+                const waypoint = allWaypoints[i]
                 const nextX = waypoint.posX
                 const nextY = waypoint.posY
                 const deltaX = nextX - prevX
@@ -269,28 +270,22 @@ export class Wire extends Drawable {
                 const nextProlong = waypoint.orient
                 if (prevX === nextX || prevY === nextY) {
                     // straight line
+                    if (i === 0) {
+                        g.moveTo(...bezierAnchorForWire(prevProlong, prevX, prevY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2))
+                        g.lineTo(prevX, prevY)
+                    }
                     g.lineTo(nextX, nextY)
+                    if (i === allWaypoints.length - 1) {
+                        g.lineTo(...bezierAnchorForWire(nextProlong, nextX, nextY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2))
+                    }
                 } else {
                     // bezier curve
                     const bezierAnchorPointDistX = Math.max(25, Math.abs(deltaX) / 3)
                     const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3)
 
-                    const wireBezierAnchor = (wireProlongDirection: Orientation, x: number, y: number, distX: number, distY: number): [number, number] => {
-                        switch (wireProlongDirection) {
-                            case "e": // going east, so anchor point is before on X
-                                return [x - distX, y]
-                            case "w": // going west, so anchor point is after on X
-                                return [x + distX, y]
-                            case "s":// going south, so anchor point is before on Y
-                                return [x, y - distY]
-                            case "n":// going north, so anchor point is after on Y
-                                return [x, y + distY]
-                        }
-                    }
-
                     g.bezierCurveTo(
-                        ...wireBezierAnchor(prevProlong, prevX, prevY, bezierAnchorPointDistX, bezierAnchorPointDistY),
-                        ...wireBezierAnchor(nextProlong, nextX, nextY, bezierAnchorPointDistX, bezierAnchorPointDistY),
+                        ...bezierAnchorForWire(prevProlong, prevX, prevY, bezierAnchorPointDistX, bezierAnchorPointDistY),
+                        ...bezierAnchorForWire(nextProlong, nextX, nextY, bezierAnchorPointDistX, bezierAnchorPointDistY),
                         nextX, nextY,
                     )
                 }
@@ -343,6 +338,19 @@ export class Wire extends Drawable {
         ]
     }
 
+}
+
+function bezierAnchorForWire(wireProlongDirection: Orientation, x: number, y: number, distX: number, distY: number): [number, number] {
+    switch (wireProlongDirection) {
+        case "e": // going east, so anchor point is before on X
+            return [x - distX, y]
+        case "w": // going west, so anchor point is after on X
+            return [x + distX, y]
+        case "s":// going south, so anchor point is before on Y
+            return [x, y - distY]
+        case "n":// going north, so anchor point is after on Y
+            return [x, y + distY]
+    }
 }
 
 export class WireManager {
