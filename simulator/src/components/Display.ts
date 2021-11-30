@@ -2,6 +2,7 @@ import { DisplayAscii, DisplayAsciiDef } from "./DisplayAscii"
 import { DisplayBar, DisplayBarDef } from "./DisplayBar"
 import { DisplayNibble, DisplayNibbleDef } from "./DisplayNibble"
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 
 export type Display = DisplayNibble | DisplayAscii | DisplayBar
 
@@ -15,14 +16,14 @@ type DisplayRepr = t.TypeOf<typeof DisplayDef>
 
 export const DisplayFactory = {
 
-    make: (savedData: DisplayRepr) => {
+    make: (editor: LogicEditor, savedData: DisplayRepr) => {
         switch (savedData.type) {
             case "nibble":
-                return new DisplayNibble(savedData)
+                return new DisplayNibble(editor, savedData)
             case "ascii":
-                return new DisplayAscii(savedData)
+                return new DisplayAscii(editor, savedData)
             case "bar":
-                return new DisplayBar(savedData)
+                return new DisplayBar(editor, savedData)
         }
     },
 

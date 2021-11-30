@@ -1,4 +1,5 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { Adder, AdderDef } from "./Adder"
 import { ALU, ALUDef } from "./ALU"
 
@@ -13,12 +14,12 @@ type ICRepr = t.TypeOf<typeof ICDef>
 
 export const ICFactory = {
 
-    make: (savedData: ICRepr) => {
+    make: (editor: LogicEditor, savedData: ICRepr) => {
         switch (savedData.type) {
             case "adder":
-                return new Adder(savedData)
+                return new Adder(editor, savedData)
             case "alu":
-                return new ALU(savedData)
+                return new ALU(editor, savedData)
         }
     },
 

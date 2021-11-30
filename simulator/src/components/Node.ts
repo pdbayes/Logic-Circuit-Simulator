@@ -1,10 +1,9 @@
 import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
-import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
-import { NodeManager } from "../NodeManager"
-import { dist, drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
+import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
 import { Wire } from "./Wire"
+import { LogicEditor } from "../LogicEditor"
 
 
 
@@ -22,18 +21,19 @@ abstract class NodeBase extends DrawableWithPosition {
     protected _forceValue: TriState | undefined
 
     constructor(
+        editor: LogicEditor,
         nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
         private relativePosition: Orientation,
     ) {
-        super(null)
+        super(editor, null)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
             this._forceValue = toTriState(nodeSpec.force)
         }
-        NodeManager.addLiveNode(this.asNode)
+        this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
     }
 
@@ -54,17 +54,18 @@ abstract class NodeBase extends DrawableWithPosition {
     }
 
     override isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT
+        return this.editor.mode >= Mode.CONNECT
             && this.acceptsMoreConnections
-            && isOverWaypoint(x, y, this.posX, this.posY) 
+            && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
     destroy() {
         this._isAlive = false
-        NodeManager.removeLiveNode(this.asNode)
+        this.editor.nodeMgr.removeLiveNode(this.asNode)
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        const mode = this.editor.mode
         if (mode < Mode.CONNECT) {
             return
         }
@@ -180,12 +181,12 @@ abstract class NodeBase extends DrawableWithPosition {
     }
 
     override mouseDown(__: MouseEvent | TouchEvent) {
-        wireMgr.addNode(this.asNode)
+        this.editor.wireMgr.addNode(this.asNode)
         return { lockMouseOver: false }
     }
 
     override mouseUp(__: MouseEvent | TouchEvent) {
-        wireMgr.addNode(this.asNode)
+        this.editor.wireMgr.addNode(this.asNode)
     }
 
 }
@@ -268,7 +269,7 @@ export class NodeOut extends NodeBase {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-        if (mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
+        if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
             this.forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset

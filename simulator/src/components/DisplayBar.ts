@@ -4,6 +4,7 @@ import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { LogicEditor } from "../LogicEditor"
 
 
 export const DisplayBarTypes = {
@@ -47,8 +48,8 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     private _display = DisplayBarDefaults.display
     private _color = DisplayBarDefaults.color
 
-    public constructor(savedData: DisplayBarRepr | null) {
-        super(false, savedData, { inOffsets: [[0, 0, "w"]] })
+    public constructor(editor: LogicEditor, savedData: DisplayBarRepr | null) {
+        super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
             this._color = savedData.color ?? DisplayBarDefaults.color

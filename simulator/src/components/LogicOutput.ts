@@ -2,9 +2,9 @@ import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
-import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { LogicEditor } from "../LogicEditor"
 
 
 export const LogicOutputDef =
@@ -18,8 +18,8 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
 
     private _name: string | undefined = undefined
 
-    public constructor(savedData: LogicOutputRepr | null) {
-        super(false, savedData, { inOffsets: [[-3, 0, "w"]] })
+    public constructor(editor: LogicEditor, savedData: LogicOutputRepr | null) {
+        super(editor, false, savedData, { inOffsets: [[-3, 0, "w"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
         }
@@ -49,7 +49,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
     }
 
     override isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+        return this.editor.mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
     public override makeTooltip() {

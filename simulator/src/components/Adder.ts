@@ -4,6 +4,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent } from "../drawutils"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 5
@@ -24,8 +25,8 @@ export type AdderRepr = typeof AdderDef.reprType
 
 export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> {
 
-    public constructor(savedData: AdderRepr | null) {
-        super([false, false], savedData, {
+    public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
+        super(editor, [false, false], savedData, {
             inOffsets: [[-2, -4, "n"], [2, -4, "n"], [5, 0, "e"]],
             outOffsets: [[0, 4, "s"], [-5, 0, "w"]],
         })

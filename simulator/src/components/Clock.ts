@@ -6,6 +6,7 @@ import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { DrawContext } from "./Drawable"
 import { Timeline } from "../Timeline"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
+import { LogicEditor } from "../LogicEditor"
 
 
 const ClockMandatoryParams = t.type({
@@ -32,9 +33,8 @@ export class Clock extends LogicInputBase<ClockRepr> {
     public readonly phase: number = DEFAULT_PHASE
     public readonly showLabel: boolean = DEFAULT_SHOW_LABEL
 
-    constructor(savedData: ClockRepr | ClockMandatoryParams) {
-        super(
-            false,
+    constructor(editor: LogicEditor, savedData: ClockRepr | ClockMandatoryParams) {
+        super(editor, false,
             "id" in savedData ? savedData : null
         )
         this.period = savedData.period
@@ -48,7 +48,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
             this.showLabel = savedData.showLabel
         }
         // sets the value and schedules the next tick
-        this.tickCallback(Timeline.adjustedTime())
+        this.tickCallback(editor.timeline.adjustedTime())
     }
 
     toJSON() {
@@ -107,7 +107,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
         const [value, nextTick] = this.currentClockValue(theoreticalTime)
         this.doSetValue(value)
         if (this.state !== ComponentState.DEAD) {
-            Timeline.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
+            this.editor.timeline.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
         }
     }
 

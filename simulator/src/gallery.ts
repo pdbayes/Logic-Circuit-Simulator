@@ -3,7 +3,7 @@ import { DisplayDef } from "./components/Display"
 import { GateDef } from "./components/Gate"
 import { LogicInputDef } from "./components/LogicInput"
 import { LogicOutputDef } from "./components/LogicOutput"
-import { WireRepr } from "./components/Wire"
+import { Wire } from "./components/Wire"
 import { PartialWhereUndefinedRecursively } from "./utils"
 
 const Circuit = t.partial({
@@ -11,7 +11,7 @@ const Circuit = t.partial({
     out: t.array(LogicOutputDef.repr),
     displays: t.array(DisplayDef),
     gates: t.array(GateDef),
-    wires: t.array(WireRepr),
+    wires: t.array(Wire.Repr),
 })
 type Circuit = PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
 

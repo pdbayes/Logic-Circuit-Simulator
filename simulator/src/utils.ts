@@ -156,7 +156,6 @@ export function isBoolean(arg: unknown): arg is boolean {
 
 import * as t from "io-ts"
 
-
 // Fixed-size arrays up to 8 to model inputs statically
 
 export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
@@ -219,6 +218,28 @@ export function getURLParameter(sParam: string, defaultValue: any) {
     return defaultValue
 }
 
+export function setVisible(elem: HTMLElement, visible: boolean) {
+    if (visible) {
+        const prevDisplay = elem.getAttribute("data-prev-display")
+        if (prevDisplay === null) {
+            if (elem.style.display === "none") {
+                elem.style.removeProperty("display")
+            } else {
+                // not hidden
+            }
+        } else {
+            elem.removeAttribute("data-prev-display")
+            elem.style.display = prevDisplay
+        }
+    } else {
+        const currentDisplay = elem.style.display
+        if (currentDisplay.length !== 0 && currentDisplay !== "none") {
+            elem.setAttribute("data-prev-display", currentDisplay)
+        }
+        elem.style.display = "none"
+    }
+}
+
 
 // More general-purpose utility functions
 
@@ -249,6 +270,8 @@ export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
 
 // Unset; TriState
 
+export const HighImpedance = "F" as const // "floating"
+export type HighImpedance = typeof HighImpedance
 export const Unset = "?" as const
 export type unset = typeof Unset
 export function isUnset<T>(v: T | unset): v is unset {

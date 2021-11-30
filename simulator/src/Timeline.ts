@@ -1,4 +1,4 @@
-import { wrapHandler } from "./simulator"
+import { LogicEditor } from "./LogicEditor"
 import { isDefined, isEmpty, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
 
 export type Callback = (theoreticalTime: number) => unknown
@@ -12,7 +12,9 @@ function areStatesEqual(s1: TimelineState, s2: TimelineState): boolean {
 
 type ScheduledCallbacks = { [time: number]: [Callback, string][] }
 
-class _Timeline {
+export class Timeline {
+
+    public readonly editor: LogicEditor
 
     // what in the system time is our zero time (adjusted on pause, reset on reload)
     private _epochStart!: number
@@ -29,7 +31,8 @@ class _Timeline {
     // public callback function
     public onStateChanged: (state: TimelineState) => unknown = __ => null
 
-    public constructor() {
+    public constructor(editor: LogicEditor) {
+        this.editor = editor
         this.reset()
     }
 
@@ -85,6 +88,7 @@ class _Timeline {
                     break
                 }
                 if (time < this._sortedNextCallbackTimes[i]) {
+                    // insert at position i
                     this._sortedNextCallbackTimes.splice(i, 0, time)
                     break
                 }
@@ -105,7 +109,6 @@ class _Timeline {
 
     private rescheduleNextIfNeeded() {
         // schedules a timeout for the next wanted tick time
-
         if (isDefined(this._nextTimeoutHandle)) {
             clearTimeout(this._nextTimeoutHandle)
         }
@@ -130,7 +133,6 @@ class _Timeline {
 
     private handleNextTick() {
         // run all the handlers from the next tick
-
         const wantedTime = this._sortedNextCallbackTimes.shift() ?? -1
         if (wantedTime === -1) {
             return
@@ -152,7 +154,7 @@ class _Timeline {
 
         // use wrapHandler to do any recalc/redraws after
         // calling the handlers if necessary
-        wrapHandler(runCallback)()
+        this.editor.wrapHandler(runCallback)()
 
         // move on to the next tick
         this.rescheduleNextIfNeeded()
@@ -201,5 +203,3 @@ class _Timeline {
         }
     }
 }
-
-export const Timeline = new _Timeline

@@ -299,3 +299,13 @@ input[type="file"] {
   -webkit-transition-delay: 100ms;
   transition-delay: 300ms;
 }
+
+logic-editor {
+  display: block
+}
+
+logic-editor:not(:defined) {
+  opacity: 0;
+  width: 100%;
+  height: 20px;
+}

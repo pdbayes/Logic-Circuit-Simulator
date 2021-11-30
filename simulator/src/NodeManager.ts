@@ -1,74 +1,75 @@
 import { Component } from "./components/Component"
 import { Node } from "./components/Node"
-import { wireMgr } from "./simulator"
 import { isUndefined } from "./utils"
 
 
-export const NodeManager = (() => {
-    let lastGivenNodeID = -1
-    const usedIDs = new Set<number>()
-    const allLiveNodes: Node[] = []
 
-    return {
-        newID: function (): number {
-            while (usedIDs.has(++lastGivenNodeID)) {
-                // empty block, condition does the increment
-            }
-            usedIDs.add(lastGivenNodeID)
-            // console.log(`gave out new node id ${lastGivenNodeID}`)
-            return lastGivenNodeID
-        },
-        markIDUsed: function (id: number): void {
-            if (usedIDs.has(id)) {
-                console.warn(`WARN: loaded node with id ${id}, which is already taken`)
-            }
-            usedIDs.add(id)
-        },
+export class NodeManager {
 
-        addLiveNode: function (node: Node) {
-            if (!usedIDs.has(node.id)) {
-                console.warn(`WARN inserting live node with unreserved id ${node.id}`)
-            }
-            allLiveNodes[node.id] = node
-        },
+    private lastGivenNodeID = -1
+    private usedIDs = new Set<number>()
+    private allLiveNodes: Node[] = []
 
-        removeLiveNode: function (node: Node) {
-            delete allLiveNodes[node.id]
-            usedIDs.delete(node.id)
-        },
+    newID(): number {
+        while (this.usedIDs.has(++this.lastGivenNodeID)) {
+            // empty block, condition does the increment
+        }
+        this.usedIDs.add(this.lastGivenNodeID)
+        // console.log(`gave out new node id ${lastGivenNodeID}`)
+        return this.lastGivenNodeID
+    }
 
-        clearAllLiveNodes: function () {
-            allLiveNodes.splice(0, allLiveNodes.length)
-            usedIDs.clear()
-            lastGivenNodeID = -1
-        },
+    markIDUsed(id: number): void {
+        if (this.usedIDs.has(id)) {
+            console.warn(`WARN: loaded node with id ${id}, which is already taken`)
+        }
+        this.usedIDs.add(id)
+    }
 
-        findNode: function (nodeID: number): Node | undefined {
-            return allLiveNodes[nodeID]
-        },
+    addLiveNode(node: Node) {
+        if (!this.usedIDs.has(node.id)) {
+            console.warn(`WARN inserting live node with unreserved id ${node.id}`)
+        }
+        this.allLiveNodes[node.id] = node
+    }
 
-        tryConnectNodesOf: function (comp: Component) {
-            comp.forEachNode(node => {
-                if (node.acceptsMoreConnections) {
-                    const nodeX = node.posX
-                    const nodeY = node.posY
-                    const parent = node.parent
-                    for (const other of allLiveNodes) {
-                        if (!isUndefined(other) && other.parent !== parent && other.acceptsMoreConnections) {
-                            if (other.posX === nodeX && other.posY === nodeY) {
-                                // the wire manager will take care of determining whether
-                                // they can actually be connected or not
-                                wireMgr.addNode(node)
-                                wireMgr.addNode(other)
-                            }
+    removeLiveNode(node: Node) {
+        delete this.allLiveNodes[node.id]
+        this.usedIDs.delete(node.id)
+    }
+
+    clearAllLiveNodes() {
+        this.allLiveNodes.splice(0, this.allLiveNodes.length)
+        this.usedIDs.clear()
+        this.lastGivenNodeID = -1
+    }
+
+    findNode(nodeID: number): Node | undefined {
+        return this.allLiveNodes[nodeID]
+    }
+
+    tryConnectNodesOf(comp: Component) {
+        const wireMgr = comp.editor.wireMgr
+        comp.forEachNode(node => {
+            if (node.acceptsMoreConnections) {
+                const nodeX = node.posX
+                const nodeY = node.posY
+                const parent = node.parent
+                for (const other of this.allLiveNodes) {
+                    if (!isUndefined(other) && other.parent !== parent && other.acceptsMoreConnections) {
+                        if (other.posX === nodeX && other.posY === nodeY) {
+                            // the wire manager will take care of determining whether
+                            // they can actually be connected or not
+                            wireMgr.addNode(node)
+                            wireMgr.addNode(other)
                         }
                     }
                 }
-                return true
-            })
-        },
-
+            }
+            return true
+        })
     }
-})()
+
+}
 
 

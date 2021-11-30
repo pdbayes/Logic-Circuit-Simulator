@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { mode } from "../simulator"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -26,8 +26,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
-    public constructor(savedData: DisplayAsciiRepr | null) {
-        super(["0000000", 0], savedData, {
+    public constructor(editor: LogicEditor, savedData: DisplayAsciiRepr | null) {
+        super(editor, ["0000000", 0], savedData, {
             inOffsets: [[-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"]],
         })
         if (isNotNull(savedData)) {
@@ -167,6 +167,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
+        const mode = this.editor.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return true

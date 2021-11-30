@@ -2,9 +2,9 @@ import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriSta
 import { ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
-import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { LogicEditor } from "../LogicEditor"
 
 export const LogicInputBaseDef =
     defineComponent(0, 1, t.type({
@@ -17,8 +17,8 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 
     private _name: string | undefined = undefined
 
-    protected constructor(initialValue: TriState, savedData: Repr | null) {
-        super(initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
+    protected constructor(editor: LogicEditor, initialValue: TriState, savedData: Repr | null) {
+        super(editor, initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
         }
@@ -44,7 +44,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
     }
 
     override isOver(x: number, y: number) {
-        return mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+        return this.editor.mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
     override get allowsForcedOutputs() {
@@ -113,8 +113,9 @@ export type LogicInputRepr = typeof LogicInputDef.reprType
 
 export class LogicInput extends LogicInputBase<LogicInputRepr> {
 
-    public constructor(savedData: LogicInputRepr | null) {
+    public constructor(editor: LogicEditor, savedData: LogicInputRepr | null) {
         super(
+            editor,
             // initial value may be given by saved data
             isNotNull(savedData) ? toTriState(savedData.val) : false,
             savedData,
@@ -147,6 +148,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
         this.doSetValue((() => {
+            const mode = this.editor.mode
             switch (this.value) {
                 case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false
                 case false: return (mode >= Mode.FULL && e.altKey) ? Unset : true

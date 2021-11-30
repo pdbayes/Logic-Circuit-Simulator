@@ -2,9 +2,9 @@ import { FixedArraySizeNonZero, isDefined, isUndefined, isUnset, Mode, RichStrin
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { circle, COLORCOMP_COMPONENT_BORDER, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
-import { mode, options } from "../simulator"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { LogicEditor } from "../LogicEditor"
 
 
 
@@ -172,8 +172,8 @@ export abstract class GateBase<
     private _poseAs: G | undefined = undefined
     private _showAsUnknown = false
 
-    protected constructor(savedData: Repr | GateMandatoryParams<G>, nodeOffsets: NodeOffsets<NumInput, 1>) {
-        super(false, "in" in savedData ? savedData : null, nodeOffsets)
+    protected constructor(editor: LogicEditor, savedData: Repr | GateMandatoryParams<G>, nodeOffsets: NodeOffsets<NumInput, 1>) {
+        super(editor, false, "in" in savedData ? savedData : null, nodeOffsets)
         this._type = savedData.type
         if ("poseAs" in savedData) {
             this._poseAs = savedData.poseAs
@@ -250,7 +250,7 @@ export abstract class GateBase<
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (mode >= Mode.FULL && e.altKey) {
+        if (this.editor.mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return true
         }
@@ -286,7 +286,7 @@ export abstract class GateBase<
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
-        const gateBorderColor: ColorString = (isFake && mode >= Mode.FULL) ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        const gateBorderColor: ColorString = (isFake && this.editor.mode >= Mode.FULL) ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
         g.lineWidth = 3
         g.strokeStyle = gateBorderColor
 
@@ -458,7 +458,7 @@ export abstract class GateBase<
                 break
         }
 
-        if (options.showGateTypes && !isUnset(type)) {
+        if (this.editor.displayOptions.showGateTypes && !isUnset(type)) {
             const gateShortName = this.gateTypeEnum.propsOf(type).shortName
             if (isDefined(gateShortName)) {
                 g.fillStyle = COLOR_GATE_NAMES
@@ -533,8 +533,8 @@ export abstract class GateBase<
 type Gate1Repr = GateRepr<1, Gate1Type>
 export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
-    constructor(savedData: Gate1Repr | Gate1MandatoryParams) {
-        super(savedData, {
+    constructor(editor: LogicEditor, savedData: Gate1Repr | Gate1MandatoryParams) {
+        super(editor, savedData, {
             inOffsets: [[-4, 0, "w"]],
             outOffsets: [[+4, 0, "e"]],
         })
@@ -606,7 +606,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-        if (mode >= Mode.DESIGN) {
+        if (this.editor.mode >= Mode.DESIGN) {
             this.doSetType(this.type === "BUF" ? "NOT" : "BUF")
             return true
         }
@@ -618,8 +618,8 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 type Gate2Repr = GateRepr<2, Gate2Type>
 export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
-    constructor(savedData: Gate2Repr | Gate2MandatoryParams) {
-        super(savedData, {
+    constructor(editor: LogicEditor, savedData: Gate2Repr | Gate2MandatoryParams) {
+        super(editor, savedData, {
             inOffsets: [[-4, -1, "w"], [-4, +1, "w"]],
             outOffsets: [[+4, 0, "e"]],
         })
@@ -689,7 +689,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-        if (mode >= Mode.DESIGN) {
+        if (this.editor.mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant
             const newType = (() => {
                 switch (this.type) {
@@ -738,13 +738,13 @@ const makeGateTooltip = (title: Modifier, description: Modifier, explanation: Mo
 
 export const GateFactory = {
 
-    make: <N extends FixedArraySizeNonZero>(savedData: GateRepr<N, GateType> | GateMandatoryParams<GateType>) => {
+    make: <N extends FixedArraySizeNonZero>(editor: LogicEditor, savedData: GateRepr<N, GateType> | GateMandatoryParams<GateType>) => {
         if (Gate1Types.isValue(savedData.type)) {
             const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate1(sameSavedDataWithBetterTyping)
+            return new Gate1(editor, sameSavedDataWithBetterTyping)
         } else {
             const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate2(sameSavedDataWithBetterTyping)
+            return new Gate2(editor, sameSavedDataWithBetterTyping)
         }
     },
 

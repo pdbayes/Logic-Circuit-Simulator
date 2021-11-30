@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { mode } from "../simulator"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -26,8 +26,8 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
     private _radix = DEFAULT_RADIX
     private _showAsUnknown = false
 
-    public constructor(savedData: DisplayNibbleRepr | null) {
-        super(["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
+    public constructor(editor: LogicEditor, savedData: DisplayNibbleRepr | null) {
+        super(editor, ["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX
@@ -148,6 +148,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
+        const mode = this.editor.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return true

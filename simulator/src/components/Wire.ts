@@ -1,21 +1,21 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
-import { mode, mouseX, mouseY, offsetXY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
 import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
-import { RedrawManager } from "../RedrawRecalcManager"
+import { LogicEditor } from "../LogicEditor"
 
-export const WaypointRepr = t.union([
-    t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
-    t.tuple([t.number, t.number]),
-], "Wire")
-
-export type WaypointRepr = t.TypeOf<typeof WaypointRepr>
-
+export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
 export class Waypoint extends DrawableWithDraggablePosition {
+
+    static get Repr() {
+        return t.union([
+            t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
+            t.tuple([t.number, t.number]),
+        ], "Wire")
+    }
 
     static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
         if (isNull(saved)) {
@@ -28,10 +28,11 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     constructor(
+        editor: LogicEditor,
         savedData: WaypointRepr | null,
         public readonly parent: Wire,
     ) {
-        super(Waypoint.toSuperRepr(savedData))
+        super(editor, Waypoint.toSuperRepr(savedData))
     }
 
     toJSON(): WaypointRepr {
@@ -51,7 +52,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public override isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && isOverWaypoint(x, y, this.posX, this.posY)
+        return this.editor.mode >= Mode.CONNECT && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
     override get cursorWhenMouseover() {
@@ -63,7 +64,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
-        if (mode < Mode.CONNECT) {
+        if (this.editor.mode < Mode.CONNECT) {
             return
         }
 
@@ -71,14 +72,14 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     override mouseDown(e: MouseEvent | TouchEvent) {
-        if (mode >= Mode.CONNECT) {
+        if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
         return { lockMouseOver: true }
     }
 
     override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (mode >= Mode.CONNECT) {
+        if (this.editor.mode >= Mode.CONNECT) {
             this.updateWhileMoving(e)
         }
     }
@@ -99,19 +100,21 @@ export class Waypoint extends DrawableWithDraggablePosition {
 }
 
 
-export const WireRepr = t.union([
-    t.tuple([
-        NodeID, NodeID,
-        t.type({
-            waypoints: t.array(WaypointRepr),
-        }),
-    ]), // alternative with more fields first
-    t.tuple([NodeID, NodeID]),
-], "Wire")
-
-export type WireRepr = t.TypeOf<typeof WireRepr>
+export type WireRepr = t.TypeOf<typeof Wire.Repr>
 
 export class Wire extends Drawable {
+
+    static get Repr() {
+        return t.union([
+            t.tuple([
+                NodeID, NodeID,
+                t.type({
+                    waypoints: t.array(Waypoint.Repr),
+                }),
+            ]), // alternative with more fields first
+            t.tuple([NodeID, NodeID]),
+        ], "Wire")
+    }
 
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
@@ -119,7 +122,7 @@ export class Wire extends Drawable {
     constructor(
         private _startNode: Node
     ) {
-        super()
+        super(_startNode.editor)
     }
 
     toJSON(): WireRepr {
@@ -145,7 +148,7 @@ export class Wire extends Drawable {
     }
 
     public setWaypoints(reprs: WaypointRepr[]) {
-        this._waypoints = reprs.map(repr => new Waypoint(repr, this))
+        this._waypoints = reprs.map(repr => new Waypoint(this.editor, repr, this))
     }
 
     public setSecondNode(secondNode: Node | null) {
@@ -200,7 +203,7 @@ export class Wire extends Drawable {
     }
 
     public addWaypoint(e: MouseEvent | TouchEvent) {
-        const [x, y] = offsetXYForContextMenu(e)
+        const [x, y] = this.editor.offsetXYForContextMenu(e)
         let coordData = this.indexOfNextWaypointIfMouseover(x, y)
         if (isUndefined(coordData)) {
             // shouldn't happen since we're calling this form a context menu
@@ -233,7 +236,7 @@ export class Wire extends Drawable {
             }
         }
 
-        const waypoint = new Waypoint([x, y, orient], this)
+        const waypoint = new Waypoint(this.editor, [x, y, orient], this)
         this._waypoints.splice(i, 0, waypoint)
     }
 
@@ -250,7 +253,7 @@ export class Wire extends Drawable {
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, mouseX, mouseY, wireValue)
+            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue)
 
         } else {
             let prevX = this.startNode.posX
@@ -300,7 +303,7 @@ export class Wire extends Drawable {
     }
 
     isOver(x: number, y: number): boolean {
-        if (mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode || !this.endNode.isAlive) {
+        if (this.editor.mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode || !this.endNode.isAlive) {
             return false
         }
         return isDefined(this.indexOfNextWaypointIfMouseover(x, y))
@@ -333,7 +336,7 @@ export class Wire extends Drawable {
             }),
             ContextMenuData.sep(),
             ContextMenuData.item("trash-o", "Supprimer", () => {
-                wireMgr.deleteWire(this)
+                this.editor.wireMgr.deleteWire(this)
             }, true),
         ]
     }
@@ -355,8 +358,13 @@ function bezierAnchorForWire(wireProlongDirection: Orientation, x: number, y: nu
 
 export class WireManager {
 
+    public readonly editor: LogicEditor
     private readonly _wires: Wire[] = []
     private _isAddingWire = false
+
+    constructor(editor: LogicEditor) {
+        this.editor = editor
+    }
 
     public get wires(): readonly Wire[] {
         return this._wires
@@ -395,7 +403,7 @@ export class WireManager {
             // start drawing a new wire
             this._wires.push(new Wire(newNode))
             this._isAddingWire = true
-            setToolCursor("crosshair")
+            this.editor.setToolCursor("crosshair")
 
         } else {
             // complete the new wire
@@ -427,9 +435,9 @@ export class WireManager {
             }
 
             this._isAddingWire = false
-            setToolCursor(null)
+            this.editor.setToolCursor(null)
         }
-        RedrawManager.addReason("started or stopped wire", null)
+        this.editor.redrawMgr.addReason("started or stopped wire", null)
         return completedWire
     }
 
@@ -441,7 +449,7 @@ export class WireManager {
                 break
             }
         }
-        RedrawManager.addReason("deleted wire", null)
+        this.editor.redrawMgr.addReason("deleted wire", null)
     }
 
     clearAllWires() {
@@ -449,7 +457,7 @@ export class WireManager {
             wire.destroy()
         }
         this._wires.splice(0, this._wires.length)
-        RedrawManager.addReason("deleted wires", null)
+        this.editor.redrawMgr.addReason("deleted wires", null)
     }
 
     tryCancelWire() {

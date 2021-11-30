@@ -2,7 +2,7 @@ import { Component } from "./components/Component"
 import { Drawable } from "./components/Drawable"
 import { Dict, isUndefined, isEmptyObject, isDefined, isNotNull } from "./utils"
 
-class _RedrawManager {
+export class RedrawManager {
 
     private _canvasRedrawReasons: Dict<unknown[]> = {}
 
@@ -48,10 +48,8 @@ class _RedrawManager {
         return reasonParts.join("")
     }
 }
-export const RedrawManager = new _RedrawManager()
 
-
-class _RecalcManager {
+export class RecalcManager {
 
     private _componentNeedingRecalc = new Set<Component>()
 
@@ -96,5 +94,3 @@ class _RecalcManager {
     }
 
 }
-
-export const RecalcManager = new _RecalcManager()

@@ -1,9 +1,8 @@
 import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode, mouseX, mouseY, offsetXY, setDrawableMoving, setDrawableStoppedMoving } from "../simulator"
 import { Modifier, ModifierObject } from "../htmlgen"
-import { RedrawManager } from "../RedrawRecalcManager"
+import { LogicEditor } from "../LogicEditor"
 
 export interface DrawContext {
     isMouseOver: boolean
@@ -80,12 +79,15 @@ function mult(m: DOMMatrix, x: number, y: number): [x: number, y: number] {
 
 export abstract class Drawable {
 
-    protected constructor() {
+    public readonly editor: LogicEditor
+
+    protected constructor(editor: LogicEditor) {
+        this.editor = editor
         this.setNeedsRedraw("newly created")
     }
 
     protected setNeedsRedraw(reason: string) {
-        RedrawManager.addReason(reason, this)
+        this.editor.redrawMgr.addReason(reason, this)
     }
 
     public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
@@ -209,8 +211,8 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     private _posY: number
     private _orient: Orientation
 
-    protected constructor(savedData: PositionSupportRepr | null) {
-        super()
+    protected constructor(editor: LogicEditor, savedData: PositionSupportRepr | null) {
+        super(editor)
 
         // using null and not undefined to prevent subclasses from
         // unintentionally skipping the parameter
@@ -222,8 +224,8 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             this._orient = savedData.orient ?? Orientation.default
         } else {
             // creating new object
-            this._posX = Math.max(0, mouseX)
-            this._posY = mouseY
+            this._posX = Math.max(0, this.editor.mouseX)
+            this._posY = this.editor.mouseY
             this._orient = Orientation.default
         }
     }
@@ -283,7 +285,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     public isOver(x: number, y: number) {
-        return mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
+        return this.editor.mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
     protected setPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
@@ -331,8 +333,8 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     private _isMovingWithContext: undefined | DragContext = undefined
 
-    protected constructor(savedData: PositionSupportRepr | null) {
-        super(savedData)
+    protected constructor(editor: LogicEditor, savedData: PositionSupportRepr | null) {
+        super(editor, savedData)
     }
 
     public get isMoving() {
@@ -341,7 +343,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     protected tryStartMoving(e: MouseEvent | TouchEvent) {
         if (isUndefined(this._isMovingWithContext)) {
-            const [offsetX, offsetY] = offsetXY(e)
+            const [offsetX, offsetY] = this.editor.offsetXY(e)
             this._isMovingWithContext = {
                 mouseOffsetX: this.posX - offsetX,
                 mouseOffsetY: this.posY - offsetY,
@@ -353,7 +355,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     protected updateWhileMoving(e: MouseEvent | TouchEvent) {
         this.updatePositionIfNeeded(e)
-        setDrawableMoving(this)
+        this.editor.moveMgr.setDrawableMoving(this)
     }
 
     protected tryStopMoving(): boolean {
@@ -362,12 +364,12 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             this._isMovingWithContext = undefined
             wasMoving = true
         }
-        setDrawableStoppedMoving(this)
+        this.editor.moveMgr.setDrawableStoppedMoving(this)
         return wasMoving
     }
 
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
-        const [x, y] = offsetXY(e)
+        const [x, y] =  this.editor.offsetXY(e)
         const snapToGrid = !e.metaKey
         const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
         if (isDefined(newPos)) { // position changed

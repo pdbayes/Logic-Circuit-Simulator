@@ -4,6 +4,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 6
 const GRID_HEIGHT = 19
@@ -52,8 +53,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
 
     private _showOp = ALUDefaults.showOp
 
-    public constructor(savedData: ALURepr | null) {
-        super([[false, false, false, false], false, true], savedData, {
+    public constructor(editor: LogicEditor, savedData: ALURepr | null) {
+        super(editor, [[false, false, false, false], false, true], savedData, {
             inOffsets: [
                 [-4, -8, "w"], [-4, -6, "w"], [-4, -4, "w"], [-4, -2, "w"], // A
                 [-4, 2, "w"], [-4, 4, "w"], [-4, 6, "w"], [-4, 8, "w"], // B

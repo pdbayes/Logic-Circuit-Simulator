@@ -1,10 +1,9 @@
-import { mode, setDrawableMoving, tryDeleteComponentsWhere } from "../simulator"
 import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
-import { NodeManager } from "../NodeManager"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { RecalcManager } from "../RedrawRecalcManager"
+import { LogicEditor } from "../LogicEditor"
 
 
 // Node IDs are just represented by a non-negative number
@@ -155,10 +154,11 @@ export abstract class ComponentBase<
     protected readonly outputs: FixedArray<NodeOut, NumOutputs>
 
     protected constructor(
+        editor: LogicEditor,
         private _value: Value,
         savedData: Repr | null,
         nodeOffsets: NodeOffsets<NumInputs, NumOutputs>) {
-        super(savedData)
+        super(editor, savedData)
 
         // hack to get around the inOffsets and outOffsets properties
         // being inferred as nonexistant (basically, the '"key" in savedData'
@@ -184,7 +184,7 @@ export abstract class ComponentBase<
         } else {
             // newly placed
             this._state = ComponentState.SPAWNING
-            setDrawableMoving(this)
+            editor.moveMgr.setDrawableMoving(this)
         }
 
         // build node specs either from scratch if new or from saved data
@@ -218,6 +218,7 @@ export abstract class ComponentBase<
     private makeNodes<N extends Node>(
         offsets: readonly [number, number, Orientation][],
         specs: readonly (InputNodeRepr | OutputNodeRepr)[], node: new (
+            editor: LogicEditor,
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
             _gridOffsetX: number,
@@ -228,7 +229,7 @@ export abstract class ComponentBase<
         const nodes: N[] = []
         for (let i = 0; i < offsets.length; i++) {
             const gridOffset = offsets[i]
-            nodes.push(new node(specs[i], this, gridOffset[0], gridOffset[1], gridOffset[2]))
+            nodes.push(new node(this.editor, specs[i], this, gridOffset[0], gridOffset[1], gridOffset[2]))
         }
         return nodes
     }
@@ -239,14 +240,15 @@ export abstract class ComponentBase<
     private nodeSpecsFromRepr(_repr: NodeIDsRepr<NumInputs, NumOutputs> | null, numInputs: number, numOutputs: number): [InputNodeRepr[], OutputNodeRepr[]] {
         const inputSpecs: InputNodeRepr[] = []
         const outputSpecs: OutputNodeRepr[] = []
+        const nodeMgr = this.editor.nodeMgr
 
         if (_repr === null) {
             // build default spec for nodes
             for (let i = 0; i < numInputs; i++) {
-                inputSpecs.push({ id: NodeManager.newID() })
+                inputSpecs.push({ id: nodeMgr.newID() })
             }
             for (let i = 0; i < numOutputs; i++) {
-                outputSpecs.push({ id: NodeManager.newID() })
+                outputSpecs.push({ id: nodeMgr.newID() })
             }
 
         } else {
@@ -301,7 +303,7 @@ export abstract class ComponentBase<
             // id availability check
             for (const specs of [inputSpecs, outputSpecs]) {
                 for (const spec of specs) {
-                    NodeManager.markIDUsed(spec.id)
+                    nodeMgr.markIDUsed(spec.id)
                 }
             }
         }
@@ -427,7 +429,7 @@ export abstract class ComponentBase<
     }
 
     public setNeedsRecalc() {
-        RecalcManager.addComponentNeedingRecalc(this)
+        this.editor.recalcMgr.addComponentNeedingRecalc(this)
     }
 
     private updateNodePositions() {
@@ -438,14 +440,14 @@ export abstract class ComponentBase<
     }
 
     override mouseDown(e: MouseEvent | TouchEvent) {
-        if (mode >= Mode.CONNECT) {
+        if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
         return { lockMouseOver: true }
     }
 
     override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (mode >= Mode.CONNECT) {
+        if (this.editor.mode >= Mode.CONNECT) {
             this.updateWhileMoving(e)
         }
     }
@@ -458,7 +460,7 @@ export abstract class ComponentBase<
         }
         const wasMoving = this.tryStopMoving()
         if (wasSpawning || wasMoving) {
-            NodeManager.tryConnectNodesOf(this)
+            this.editor.nodeMgr.tryConnectNodesOf(this)
         }
     }
 
@@ -474,7 +476,7 @@ export abstract class ComponentBase<
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
-        if (mode >= Mode.CONNECT && e.metaKey) {
+        if (this.editor.mode >= Mode.CONNECT && e.metaKey) {
             this.doSetOrient((() => {
                 switch (this.orient) {
                     case "e": return "s"
@@ -553,7 +555,7 @@ export abstract class ComponentBase<
 
     protected makeDeleteContextMenuItem(): ContextMenuItem {
         return ContextMenuData.item("trash-o", "Supprimer", () => {
-            tryDeleteComponentsWhere(c => c === this)
+            this.editor.tryDeleteComponentsWhere(c => c === this)
         }, true)
     }
 

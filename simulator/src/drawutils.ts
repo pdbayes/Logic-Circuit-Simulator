@@ -1,9 +1,8 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { isArray, isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
-import { components, wrapHandler } from "./simulator"
-import { RedrawManager } from "./RedrawRecalcManager"
 import { Component } from "./components/Component"
+import { LogicEditor } from "./LogicEditor"
 
 
 //
@@ -65,10 +64,14 @@ export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { green: ColorString, red: ColorString, yellow: ColorString }
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
-darkModeQuery.onchange = wrapHandler(() => {
+darkModeQuery.onchange = () => {
     setColors(darkModeQuery.matches)
-    RedrawManager.addReason("dark/light mode switch", null)
-})
+    for (const editor of LogicEditor.allConnectedEditors) {
+        editor.wrapHandler(() => {
+            editor.redrawMgr.addReason("dark/light mode switch", null)
+        })
+    }
+}
 setColors(darkModeQuery.matches)
 
 function setColors(darkMode: boolean) {
@@ -345,20 +348,6 @@ export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & 
 //
 
 export const INPUT_OUTPUT_DIAMETER = 26
-
-export function guessCanvasHeight(): number {
-    let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
-    for (const comp of components) {
-        const y = comp.posY
-        if (y > lowestY) {
-            lowestY = y
-        }
-        if (y < highestY) {
-            highestY = y
-        }
-    }
-    return highestY + lowestY // add lower margin equal to top margin
-}
 
 const NAME_POSITION_SETTINGS = {
     right: ["start", "middle", 7],
