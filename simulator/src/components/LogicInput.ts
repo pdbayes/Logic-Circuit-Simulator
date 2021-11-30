@@ -4,7 +4,7 @@ import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const LogicInputBaseDef =
     defineComponent(0, 1, t.type({
@@ -86,7 +86,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }
-            drawRoundValue(g, this)
+            drawRoundValue(g, this.value, this)
         })
     }
 
@@ -107,11 +107,19 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 export const LogicInputDef =
     extendComponent(LogicInputBaseDef, t.type({
         val: TriStateRepr,
+        isPushButton: typeOrUndefined(t.boolean),
     }, "LogicInput"))
 
 export type LogicInputRepr = typeof LogicInputDef.reprType
 
+const LogicInputDefaults = {
+    isPushButton: false,
+}
+
+
 export class LogicInput extends LogicInputBase<LogicInputRepr> {
+
+    private _isPushButton = LogicInputDefaults.isPushButton
 
     public constructor(savedData: LogicInputRepr | null) {
         super(
@@ -119,12 +127,17 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
             isNotNull(savedData) ? toTriState(savedData.val) : false,
             savedData,
         )
+        if (isNotNull(savedData)) {
+            this._isPushButton = savedData.isPushButton ?? LogicInputDefaults.isPushButton
+        }
+
     }
 
     toJSON() {
         return {
             ...super.toJSONBase(),
             val: toTriStateRepr(this.value),
+            isPushButton: (this._isPushButton !== LogicInputDefaults.isPushButton) ? this._isPushButton : undefined,
         }
     }
 
@@ -146,6 +159,11 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
     }
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
+        if (this._isPushButton) {
+            // do nothing for normal push button
+            return false
+        }
+
         this.doSetValue((() => {
             switch (this.value) {
                 case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false
@@ -155,5 +173,52 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         })())
         return true
     }
+
+    override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+        if (this._isPushButton) {
+            this.doSetValue(true)
+        }
+        return super.mouseDown(e)
+    }
+
+    override mouseUp(e: MouseEvent | TouchEvent) {
+        const result = super.mouseUp(e)
+        if (this._isPushButton) {
+            this.doSetValue(false)
+        }
+        return result
+    }
+
+
+    private doSetIsPushButton(isPushButton: boolean) {
+        this._isPushButton = isPushButton
+        if (isPushButton) {
+            this.doSetValue(false)
+        }
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeItemBehaveAs = (desc: string, value: boolean) => {
+            const isCurrent = this._isPushButton === value
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetIsPushButton(value)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+        const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
+            ["mid", makeItemBehaveAs("Commutateur", false)],
+            ["mid", makeItemBehaveAs("Poussoir", true)],
+            ["mid", ContextMenuData.sep()],
+        ]
+
+        const superItems = super.makeComponentSpecificContextMenuItems()
+        if (isDefined(superItems)) {
+            newItems.push(...superItems)
+        }
+
+        return newItems
+    }
+
 
 }

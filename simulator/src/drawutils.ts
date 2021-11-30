@@ -316,8 +316,7 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & { value: TriState }) {
-    const value = comp.value
+export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
     g.textAlign = "center"
 
     let boldSpec = ""

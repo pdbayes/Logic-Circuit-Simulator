@@ -392,7 +392,7 @@ abstract class ToolHandlers {
         // empty
     }
     mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
-        // empty
+        return false
     }
     contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
@@ -441,7 +441,7 @@ class _EditHandlers extends ToolHandlers {
         comp.mouseClicked(e)
     }
     override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
-        comp.mouseDoubleClicked(e)
+        return comp.mouseDoubleClicked(e)
     }
     override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("contextMenuOn: %o", comp)
@@ -766,7 +766,11 @@ export function setup() {
             _currentHandlers.mouseUpOn(mouseUpTarget, e)
             if (_currentMouseDownData?.fireMouseClickedOnFinish ?? false) {
                 if (isDoubleClick(mouseUpTarget, e)) {
-                    _currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+                    const handled = _currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+                    if (!handled) {
+                        // no double click handler, so we trigger a normal click
+                        _currentHandlers.mouseClickedOn(mouseUpTarget, e)
+                    }
                 } else {
                     _currentHandlers.mouseClickedOn(mouseUpTarget, e)
                 }

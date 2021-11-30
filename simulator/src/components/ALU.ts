@@ -341,26 +341,40 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         g.stroke()
 
         ctx.inNonTransformedFrame(ctx => {
+            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+            g.font = "bold 12px sans-serif"
+
+            let opNameOffset: number
+            let vOffset: number
+            let zOffset: number
+            [g.textAlign, opNameOffset, vOffset, zOffset] = (() => {
+                switch (this.orient) {
+                    case "e":
+                    case "w":
+                        return ["center", 22, 15, 22] as const
+                    case "s":
+                        return ["right", 14, 19, 25] as const
+                    case "n":
+                        return ["left", 14, 19, 25] as const
+                }
+            })()
 
             if (this._showOp) {
-                g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-                let offset: number
-                [g.textAlign, offset] = (() => {
-                    switch (this.orient) {
-                        case "e":
-                        case "w":
-                            return ["center", 22] as const
-                        case "s":
-                            return ["right", 14] as const
-                        case "n":
-                            return ["left", 14] as const
-                    }
-                })()
-                g.font = "bold 12px sans-serif"
                 const op = this.op
                 const opName = isUnset(op) ? "???" : ALUOp.shortName(op)
-                g.fillText(opName, ...ctx.rotatePoint(this.posX, top + offset))
+                g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
             }
+
+            g.font = "12px sans-serif"
+            g.fillText("V", ...ctx.rotatePoint(this.posX - GRID_STEP, bottom - vOffset))
+            g.fillText("Z", ...ctx.rotatePoint(this.posX + GRID_STEP, bottom - zOffset))
+
+
+            g.font = "bold 14px sans-serif"
+            g.fillText("A", ...ctx.rotatePoint(this.posX - 20, top + 4 * GRID_STEP + 6))
+            g.fillText("B", ...ctx.rotatePoint(this.posX - 20, bottom - 4 * GRID_STEP - 6))
+            g.fillText("S", ...ctx.rotatePoint(this.posX + 20, this.posY))
+
 
         })
     }

@@ -11,6 +11,7 @@ import { Component } from "./components/Component"
 import { Adder } from "./components/Adder"
 import { ALU } from "./components/ALU"
 import { RedrawManager } from "./RedrawRecalcManager"
+import { FlipflopD } from "./components/FlipflopD"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -69,8 +70,10 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
                 case "Adder":
                     return new Adder(null)
                 case "ALU":
-                default:
                     return new ALU(null)
+                case "FlipflopD":
+                default:
+                    return new FlipflopD(null)
             }
         },
     },

@@ -93,7 +93,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, true)
             }
-            drawRoundValue(g, this)
+            drawRoundValue(g, this.value, this)
         })
     }
 
