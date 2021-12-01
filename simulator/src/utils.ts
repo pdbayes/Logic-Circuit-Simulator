@@ -262,6 +262,11 @@ export const TUnset = new t.Type<unset>(
 )
 
 export type TriState = boolean | unset
+export const TriState = {
+    invert(v: TriState): TriState {
+        return isUnset(v) ? v : !v
+    },
+}
 
 export type TriStateRepr = 0 | 1 | unset
 export const TriStateRepr = new t.Type<TriStateRepr>(
@@ -274,7 +279,7 @@ export const TriStateRepr = new t.Type<TriStateRepr>(
     t.identity,
 )
 
-
+// TODO put this in TriState object
 export function toTriStateRepr(v: TriState): TriStateRepr
 export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined
 export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined {

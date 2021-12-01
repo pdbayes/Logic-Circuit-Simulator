@@ -1,4 +1,4 @@
-import { isNotNull, isNull, isUnset, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset } from "../utils"
+import { isNotNull, isNull, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeSingleLine, colorForBoolean, drawRoundValue } from "../drawutils"
@@ -9,8 +9,6 @@ const GRID_WIDTH = 5
 const GRID_HEIGHT = 7
 
 const enum INPUT {
-    D,
-    Clock,
     Set,
     Reset,
 }
@@ -19,26 +17,27 @@ const enum OUTPUT {
     Q, Qb
 }
 
-export const FlipflopDDef =
-    defineComponent(4, 2, t.type({
-        type: t.literal("flipflop-d"),
+// TODO merge latches and flipflops!
+
+export const LatchSRDef =
+    defineComponent(2, 2, t.type({
+        type: t.literal("latch-sr"),
         state: typeOrUndefined(TriStateRepr),
         showContent: typeOrUndefined(t.boolean),
-    }, "FlipflopD"))
+    }, "LatchSR"))
 
-export type FlipflopDRepr = typeof FlipflopDDef.reprType
+export type LatchSRRepr = typeof LatchSRDef.reprType
 
 
-const FlipflopDDefaults = {
+const LatchSRDefaults = {
     showContent: false,
 }
 
-export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, TriState]> {
+export class LatchSR extends ComponentBase<2, 2, LatchSRRepr, [TriState, TriState]> {
 
-    private _lastClock: TriState = Unset
-    private _showContent: boolean = FlipflopDDefaults.showContent
+    private _showContent: boolean = LatchSRDefaults.showContent
 
-    private static savedStateFrom(savedData: FlipflopDRepr | null): [TriState, TriState] {
+    private static savedStateFrom(savedData: LatchSRRepr | null): [TriState, TriState] {
         if (isNull(savedData)) {
             return [false, true]
         }
@@ -46,22 +45,22 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
         return [state, TriState.invert(state)]
     }
 
-    public constructor(savedData: FlipflopDRepr | null) {
-        super(FlipflopD.savedStateFrom(savedData), savedData, {
-            inOffsets: [[-4, -2, "w"], [-4, 2, "w"], [0, -4, "n"], [0, +4, "s"]],
+    public constructor(savedData: LatchSRRepr | null) {
+        super(LatchSR.savedStateFrom(savedData), savedData, {
+            inOffsets: [[-4, 2, "w"], [-4, -2, "w"]],
             outOffsets: [[+4, -2, "e"], [+4, 2, "e"]],
         })
         if (isNotNull(savedData)) {
-            this._showContent = savedData.showContent ?? FlipflopDDefaults.showContent
+            this._showContent = savedData.showContent ?? LatchSRDefaults.showContent
         }
     }
 
     toJSON() {
         return {
-            type: "flipflop-d" as const,
+            type: "latch-sr" as const,
             ...this.toJSONBase(),
             state: toTriStateRepr(this.value[0]),
-            showContent: (this._showContent !== FlipflopDDefaults.showContent) ? this._showContent : undefined,
+            showContent: (this._showContent !== LatchSRDefaults.showContent) ? this._showContent : undefined,
         }
     }
 
@@ -71,8 +70,6 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
 
     protected override getInputName(i: number): string | undefined {
         switch (i) {
-            case INPUT.D: return "D (donnée)"
-            case INPUT.Clock: return "Clock (horloge)"
             case INPUT.Set: return "S (Set, mise à 1)"
             case INPUT.Reset: return "S (Reset, mise à 0)"
         }
@@ -96,7 +93,7 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
     }
 
     public override makeTooltip() {
-        return tooltipContent("Bascule D", mods(
+        return tooltipContent("Verrou SR", mods(
             div(`Stocke un bit.`) // TODO more info
         ))
     }
@@ -104,17 +101,14 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
     protected doRecalcValue(): [TriState, TriState] {
         const s = this.inputs[INPUT.Set].value
         const r = this.inputs[INPUT.Reset].value
-        const clock = this.inputs[INPUT.Clock].value
 
-        const oldClock = this._lastClock
-        this._lastClock = clock
 
         // handle set and reset signals
-
         if (s === true) {
             if (r === true) {
-                // both set and reset are true, set all outputs to 1
-                return [true, true]
+                // both set and reset are true, flip a coin
+                const coin = Math.random() < 0.5
+                return [coin, !coin]
             } else {
                 // set is true, reset is false, set output to 1
                 return [true, false]
@@ -123,18 +117,6 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
         if (r === true) {
             // set is false, reset is true, set output to 0
             return [false, true]
-        }
-
-        // handle normal operation
-
-        if (clock === true && oldClock === false) {
-            // clock rising edge
-            const d = this.inputs[INPUT.D].value
-            if (isUnset(d)) {
-                return [Unset, Unset]
-            } else {
-                return [d, !d]
-            }
         }
 
         // no change
@@ -171,22 +153,9 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
 
         const left = this.posX - width / 2
         const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
 
-        const clockY = this.inputs[INPUT.Clock].posYInParentTransform
-
-        drawWireLineToComponent(g, this.inputs[INPUT.D], left - 2, this.inputs[INPUT.D].posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Clock], left - 2, clockY, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Set], this.inputs[INPUT.Set].posXInParentTransform, top - 2, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Reset], this.inputs[INPUT.Reset].posXInParentTransform, bottom + 2, false)
-
-        g.strokeStyle = COLOR_COMPONENT_BORDER
-        g.beginPath()
-        g.moveTo(left, clockY - 5)
-        g.lineTo(left + 10, clockY)
-        g.lineTo(left, clockY + 5)
-        g.stroke()
+        drawWireLineToComponent(g, this.inputs[INPUT.Set], left - 2, this.inputs[INPUT.Set].posYInParentTransform, false)
+        drawWireLineToComponent(g, this.inputs[INPUT.Reset], left - 2, this.inputs[INPUT.Reset].posYInParentTransform, false)
 
         drawWireLineToComponent(g, this.outputs[OUTPUT.Q], right + 2, this.outputs[OUTPUT.Q].posYInParentTransform, false)
         drawWireLineToComponent(g, this.outputs[OUTPUT.Qb], right + 2, this.outputs[OUTPUT.Qb].posYInParentTransform, false)
@@ -210,10 +179,8 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
             g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("D", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.D].posYInParentTransform))
-            g.fillText("S", ...ctx.rotatePoint(this.inputs[INPUT.Set].posXInParentTransform, top + 8))
-            g.fillText("R", ...ctx.rotatePoint(this.inputs[INPUT.Reset].posXInParentTransform, bottom - 8))
-
+            g.fillText("S", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Set].posYInParentTransform))
+            g.fillText("R", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Reset].posYInParentTransform))
 
             g.fillText("Q", ...ctx.rotatePoint(right - 8, this.outputs[OUTPUT.Q].posYInParentTransform))
             const [qbarCenterX, qbarCenterY] = ctx.rotatePoint(right - 8, this.outputs[OUTPUT.Qb].posYInParentTransform)

@@ -2,12 +2,14 @@ import * as t from "io-ts"
 import { Adder, AdderDef } from "./Adder"
 import { ALU, ALUDef } from "./ALU"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
+import { LatchSR, LatchSRDef } from "./LatchSR"
 
 export type IC = Adder
 
 export const ICDef = t.union([
     AdderDef.repr,
     ALUDef.repr,
+    LatchSRDef.repr,
     FlipflopDDef.repr,
 ], "IC")
 
@@ -21,7 +23,9 @@ export const ICFactory = {
                 return new Adder(savedData)
             case "alu":
                 return new ALU(savedData)
-            case "d-flipflop":
+            case "latch-sr":
+                return new LatchSR(savedData)
+            case "flipflop-d":
                 return new FlipflopD(savedData)
         }
     },

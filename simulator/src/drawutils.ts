@@ -419,7 +419,8 @@ export function formatWithRadix(value: number | unset, radix: number, width: num
         if (asBinStr[0] === '1') {
             // negative
             const rest = parseInt(asBinStr.substring(1), 2)
-            return String(-Math.pow(2, width - 1) + rest)
+            // swap hyphen for minus sign as en-dash
+            return '–' + String(-(-Math.pow(2, width - 1) + rest))
         } else {
             return String(value)
         }

@@ -532,63 +532,43 @@ export const gallery = assertCircuits({
     },
 
     LatchedAdder: {
-        "components": [
-            {
-                "type": "alu",
-                "pos": [200, 240],
-                "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                "out": [10, 11, 12, 13, 14, 15],
-            },
-            {
-                "type": "d-flipflop",
-                "pos": [310, 150],
-                "in": [16, 17, 18, 19],
-                "out": [20, 21],
-            },
-            {
-                "type": "d-flipflop",
-                "pos": [360, 230],
-                "in": [22, 23, 24, 25],
-                "out": [26, 27],
-            },
-            {
-                "type": "d-flipflop",
-                "pos": [410, 310],
-                "in": [28, 29, 30, 31],
-                "out": [32, 33],
-            },
-            {
-                "type": "d-flipflop",
-                "pos": [460, 390],
-                "in": [34, 35, 36, 37],
-                "out": [38, 39],
-            },
-        ],
         "in": [
-            {
-                "pos": [350, 550],
-                "orient": "n",
-                "id": 40,
-                "name": "Reset",
-                "val": 0,
-                "isPushButton": true,
-            },
-            { "pos": [40, 250], "id": 41, "val": 0 },
+            { "pos": [350, 550], "orient": "n", "id": 40, "name": "Reset", "val": 0, "isPushButton": true },
+            { "pos": [40, 250], "id": 41, "val": 1 },
             { "pos": [40, 280], "id": 42, "val": 1 },
             { "pos": [40, 310], "id": 43, "val": 0 },
             { "pos": [40, 340], "id": 44, "val": 0 },
-            {
-                "pos": [280, 550],
-                "orient": "n",
-                "id": 45,
-                "name": "Tick",
-                "val": 0,
-                "isPushButton": true,
-            },
+            { "pos": [280, 550], "orient": "n", "id": 45, "name": "Tick", "val": 0, "isPushButton": true },
         ],
         "displays": [
             { "type": "nibble", "pos": [590, 190], "id": [46, 47, 48, 49] },
             { "type": "nibble", "pos": [170, 420], "id": [50, 51, 52, 53] },
+        ],
+        "components": [
+            {
+                "type": "alu", "pos": [200, 240],
+                "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], "out": [10, 11, 12, 13, 14, 15],
+            },
+            {
+                "type": "flipflop-d", "pos": [310, 150],
+                "in": [16, 17, 18, 19], "out": [20, 21],
+                "state": 0, "showContent": true,
+            },
+            {
+                "type": "flipflop-d", "pos": [360, 230],
+                "in": [22, 23, 24, 25], "out": [26, 27],
+                "state": 0, "showContent": true,
+            },
+            {
+                "type": "flipflop-d", "pos": [410, 310],
+                "in": [28, 29, 30, 31], "out": [32, 33],
+                "state": 1, "showContent": true,
+            },
+            {
+                "type": "flipflop-d", "pos": [460, 390],
+                "in": [34, 35, 36, 37], "out": [38, 39],
+                "state": 0, "showContent": true,
+            },
         ],
         "wires": [
             [10, 16],
@@ -599,36 +579,10 @@ export const gallery = assertCircuits({
             [40, 31],
             [40, 25],
             [40, 19],
-            [
-                20,
-                0,
-                { "waypoints": [[470, 130], [470, 80, "w"], [140, 80, "w"], [140, 160, "w"]] },
-            ],
-            [
-                26,
-                1,
-                {
-                    "waypoints": [
-                        [480, 210, "n"],
-                        [480, 70, "w"],
-                        [130, 70, "w"],
-                        [130, 180, "w"],
-                    ],
-                },
-            ],
-            [
-                32,
-                2,
-                {
-                    "waypoints": [
-                        [490, 290, "n"],
-                        [490, 60, "w"],
-                        [120, 60, "w"],
-                        [120, 200, "w"],
-                    ],
-                },
-            ],
-            [38, 3, { "waypoints": [[500, 50, "n"], [110, 50, "w"], [110, 220, "s"]] }],
+            [20, 0, { "waypoints": [[470, 130], [470, 80], [140, 80], [140, 160]] }],
+            [26, 1, { "waypoints": [[480, 210], [480, 70], [130, 70], [130, 180]] }],
+            [32, 2, { "waypoints": [[490, 290], [490, 60], [120, 60], [120, 200]] }],
+            [38, 3, { "waypoints": [[500, 50], [110, 50], [110, 220]] }],
             [41, 4],
             [42, 5],
             [43, 6],

@@ -12,6 +12,7 @@ import { Adder } from "./components/Adder"
 import { ALU } from "./components/ALU"
 import { RedrawManager } from "./RedrawRecalcManager"
 import { FlipflopD } from "./components/FlipflopD"
+import { LatchSR } from "./components/LatchSR"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -71,6 +72,8 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
                     return new Adder(null)
                 case "ALU":
                     return new ALU(null)
+                case "LatchSR":
+                    return new LatchSR(null)
                 case "FlipflopD":
                 default:
                     return new FlipflopD(null)
@@ -140,48 +143,6 @@ function activeTool(elTool: HTMLElement) {
         })()
         return
     }
-
-
-    // switch (tool) {
-    // case "SR_Latch": {
-    //     let el = document.getElementsByClassName("SR_Latch-gate")[0] as HTMLSelectElement
-    //     const gateType = el.options[el.selectedIndex].text
-    //     el = document.getElementsByClassName("SR_Latch-sync")[0] as HTMLSelectElement
-    //     const _syncType = el.selectedIndex
-    //     const stabilize = (document.getElementsByClassName("SR_stabilize")[0] as HTMLInputElement).checked
-    //     if (_syncType === SyncType.ASYNC) {
-    //         srLatches.push(new SR_LatchAsync(SR_Latch.convertToType(gateType), stabilize))
-    //     } else {
-    //         srLatches.push(new SR_LatchSync(SR_Latch.convertToType(gateType), stabilize))
-    //     }
-    //     break
-    // }
-
-    // case "FF_D": {
-    //     const el = document.getElementsByClassName("FF_D-Setting")[0] as HTMLSelectElement
-    //     const isMasterSlave = el.selectedIndex // because is 0 or 1
-    //     if (isMasterSlave) { flipflops.push(new FF_D_MasterSlave()) }
-    //     else { flipflops.push(new FF_D_Single()) }
-    //     break
-    // }
-
-    // case "FF_T": {
-    //     const el = document.getElementsByClassName("FF_T-Setting")[0] as HTMLSelectElement
-    //     const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-    //     if (isNegativeEdgeTrig) { flipflops.push(new FF_T(true)) }
-    //     else { flipflops.push(new FF_T(false)) }
-    //     break
-    // }
-
-    // case "FF_JK": {
-    //     const el = document.getElementsByClassName("FF_JK-Setting")[0] as HTMLSelectElement
-    //     const isNegativeEdgeTrig = el.selectedIndex // because is 0 or 1
-    //     if (isNegativeEdgeTrig) { flipflops.push(new FF_JK(true)) }
-    //     else { flipflops.push(new FF_JK(false)) }
-    //     break
-    // }
-
-    // }
 
 }
 window.activeTool = activeTool

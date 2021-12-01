@@ -847,6 +847,7 @@ export function setup() {
         const factory = makeComponentFactoryForButton(compButton)
 
         const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
+            setCurrentMouseAction("edit")
             e.preventDefault()
             const newComponent = factory()
             _currentMouseOverComp = newComponent

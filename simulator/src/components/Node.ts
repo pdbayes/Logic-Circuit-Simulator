@@ -3,7 +3,7 @@ import { mode, wireMgr } from "../simulator"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { NodeManager } from "../NodeManager"
-import { dist, drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
+import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
 import { Wire } from "./Wire"
 
 
