@@ -19,10 +19,17 @@ const enum OUTPUT {
     Q, Qb
 }
 
+const EdgeTrigger = {
+    rising: "rising",
+    falling: "falling",
+} as const
+type EdgeTrigger = keyof typeof EdgeTrigger
+
 export const FlipflopDDef =
     defineComponent(4, 2, t.type({
         type: t.literal("flipflop-d"),
         state: typeOrUndefined(TriStateRepr),
+        trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
         showContent: typeOrUndefined(t.boolean),
     }, "FlipflopD"))
 
@@ -30,12 +37,14 @@ export type FlipflopDRepr = typeof FlipflopDDef.reprType
 
 
 const FlipflopDDefaults = {
+    trigger: EdgeTrigger.rising,
     showContent: false,
 }
 
 export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, TriState]> {
 
     private _lastClock: TriState = Unset
+    private _trigger: EdgeTrigger = FlipflopDDefaults.trigger
     private _showContent: boolean = FlipflopDDefaults.showContent
 
     private static savedStateFrom(savedData: FlipflopDRepr | null): [TriState, TriState] {
@@ -52,6 +61,7 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
             outOffsets: [[+4, -2, "e"], [+4, 2, "e"]],
         })
         if (isNotNull(savedData)) {
+            this._trigger = savedData.trigger ?? FlipflopDDefaults.trigger
             this._showContent = savedData.showContent ?? FlipflopDDefaults.showContent
         }
     }
@@ -61,6 +71,7 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
             type: "flipflop-d" as const,
             ...this.toJSONBase(),
             state: toTriStateRepr(this.value[0]),
+            trigger: (this._trigger !== FlipflopDDefaults.trigger) ? this._trigger : undefined,
             showContent: (this._showContent !== FlipflopDDefaults.showContent) ? this._showContent : undefined,
         }
     }
@@ -127,8 +138,12 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
 
         // handle normal operation
 
-        if (clock === true && oldClock === false) {
-            // clock rising edge
+        // clock rising/falling edge?
+        const triggered =
+            (this._trigger === EdgeTrigger.rising && oldClock === false && clock === true)
+            || (this._trigger === EdgeTrigger.falling && oldClock === true && clock === false)
+
+        if (triggered) {
             const d = this.inputs[INPUT.D].value
             if (isUnset(d)) {
                 return [Unset, Unset]
@@ -225,12 +240,26 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
+            const isCurrent = this._trigger === trigger
+            const icon = isCurrent ? "check" : "none"
+            const caption = "Stocker au " + desc
+            const action = isCurrent ? () => undefined : () => {
+                this._trigger = trigger
+            }
+            return ContextMenuData.item(icon, caption, action)
+        }
+
         const icon = this._showContent ? "check" : "none"
         const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu", () => {
             this.doSetShowContent(!this._showContent)
         })
 
         return [
+            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
+            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem],
             ["mid", this.makeForceOutputsContextMenuItem()!],
         ]

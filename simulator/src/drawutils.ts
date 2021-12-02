@@ -13,7 +13,7 @@ import { Component } from "./components/Component"
 export const GRID_STEP = 10
 export const WIRE_WIDTH = 8
 export const WAYPOINT_DIAMETER = 8
-const WAYPOINT_HIT_RANGE = WAYPOINT_DIAMETER + 4
+const WAYPOINT_HIT_RANGE = WAYPOINT_DIAMETER + 5
 
 
 export function pxToGrid(x: number) {
