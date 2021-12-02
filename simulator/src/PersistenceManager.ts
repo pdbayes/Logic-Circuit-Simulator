@@ -138,11 +138,6 @@ class _PersistenceManager {
         return true
     }
 
-    // saveFile() {
-    //     const jsonWorkspace = this.buildWorkspaceJSON()
-    //     const blob = new Blob([jsonWorkspace], { type: 'application/json' })
-    // }
-
     buildWorkspaceJSON() {
         const workspace: any = {
             "opts": nonDefaultOptions(),
@@ -162,6 +157,28 @@ class _PersistenceManager {
 
         return stringifySmart(workspace, { maxLength: 85 })
     }
+
+    saveToFile() {
+        const workspaceJsonStr = this.buildWorkspaceJSON()
+        const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
+        const filename = "circuit.json"
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+
+        const clickHandler = () => {
+            setTimeout(() => {
+                URL.revokeObjectURL(url)
+                a.removeEventListener('click', clickHandler)
+            }, 150)
+        }
+
+        a.addEventListener('click', clickHandler, false)
+        a.click()
+    }
+
 }
 
 export const PersistenceManager = new _PersistenceManager()

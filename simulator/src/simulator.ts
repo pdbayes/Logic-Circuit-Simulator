@@ -687,6 +687,31 @@ export function setup() {
     setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
     canvasContainer.appendChild(mainCanvas)
 
+    mainCanvas.ondragenter = () => {
+        return false
+    }
+    mainCanvas.ondragover = () => {
+        return false
+    }
+    mainCanvas.ondragend = () => {
+        return false
+    }
+    mainCanvas.ondrop = e => {
+        e.preventDefault()
+        const file = e.dataTransfer?.files?.[0]
+        if (isDefined(file)) {
+            const reader = new FileReader()
+            reader.onload = e => {
+                const content = e.target?.result?.toString()
+                if (isDefined(content)) {
+                    window.load(content)
+                }
+            }
+            reader.readAsText(file, "utf-8")
+        }
+        return false
+    }
+
 
     const mouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
         clearHoverTimeoutHandle()
@@ -1217,3 +1242,4 @@ ${json}
 // Expose functions as part of the in-browser command-line API
 window.load = wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(jsonString))
 window.setOptions = wrapHandler(setOptions)
+window.saveToFile = PersistenceManager.saveToFile.bind(PersistenceManager)

@@ -13,6 +13,7 @@ import { ALU } from "./components/ALU"
 import { RedrawManager } from "./RedrawRecalcManager"
 import { FlipflopD } from "./components/FlipflopD"
 import { LatchSR } from "./components/LatchSR"
+import { PersistenceManager } from "./PersistenceManager"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -133,6 +134,11 @@ function activeTool(elTool: HTMLElement) {
             setCurrentMouseAction(tool)
         })()
 
+        return
+    }
+
+    if (tool === "Save") {
+        PersistenceManager.saveToFile()
         return
     }
 
