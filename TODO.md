@@ -3,17 +3,18 @@
 
 ## High priority
 
- * ...
+ * Fix flipflop update issue, e.g. in shift register
 
 
 ## Medium priority
 
  * Add contextual menu to clock
+ * Add free text and frames as elements
 
 
 ## Low priority
 
- * ...
+ * Add mouseovers to new components
 
 
 ### DONE

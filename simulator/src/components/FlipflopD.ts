@@ -1,7 +1,7 @@
 import { isNotNull, isNull, isUnset, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeSingleLine, colorForBoolean, drawRoundValue } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeSingleLine, colorForBoolean, drawRoundValue, circle } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 
@@ -166,6 +166,11 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
         this.setNeedsRedraw("show content changed")
     }
 
+    private doSetTrigger(trigger: EdgeTrigger) {
+        this._trigger = trigger
+        this.setNeedsRedraw("trigger changed")
+    }
+
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
@@ -192,9 +197,20 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
         const clockY = this.inputs[INPUT.Clock].posYInParentTransform
 
         drawWireLineToComponent(g, this.inputs[INPUT.D], left - 2, this.inputs[INPUT.D].posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Clock], left - 2, clockY, false)
         drawWireLineToComponent(g, this.inputs[INPUT.Set], this.inputs[INPUT.Set].posXInParentTransform, top - 2, false)
         drawWireLineToComponent(g, this.inputs[INPUT.Reset], this.inputs[INPUT.Reset].posXInParentTransform, bottom + 2, false)
+
+        let clockLineOffset = 2
+        if (this._trigger === EdgeTrigger.falling) {
+            clockLineOffset += 7
+            g.beginPath()
+            circle(g, left - 5, clockY, 6)
+            g.fillStyle = COLOR_BACKGROUND
+            g.fill()
+            g.stroke()
+        }
+
+        drawWireLineToComponent(g, this.inputs[INPUT.Clock], left - clockLineOffset, clockY, false)
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.beginPath()
@@ -245,16 +261,14 @@ export class FlipflopD extends ComponentBase<4, 2, FlipflopDRepr, [TriState, Tri
             const isCurrent = this._trigger === trigger
             const icon = isCurrent ? "check" : "none"
             const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined : () => {
-                this._trigger = trigger
-            }
+            const action = isCurrent ? () => undefined :
+                () => this.doSetTrigger(trigger)
             return ContextMenuData.item(icon, caption, action)
         }
 
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu", () => {
-            this.doSetShowContent(!this._showContent)
-        })
+        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
+            () => this.doSetShowContent(!this._showContent))
 
         return [
             ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],

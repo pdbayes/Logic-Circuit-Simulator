@@ -97,7 +97,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
 
     protected override getOutputName(i: number): string | undefined {
         if (i <= OUTPUT_Y[OUTPUT_Y.length - 1]) {
-            return "Y" + i
+            return "S" + i
         }
         if (i === OUTPUT_V) {
             return "V (oVerflow)"
@@ -359,11 +359,10 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                 }
             })()
 
-            if (this._showOp) {
-                const op = this.op
-                const opName = isUnset(op) ? "???" : ALUOp.shortName(op)
-                g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
-            }
+            const opName = this._showOp
+                ? isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
+                : "Op"
+            g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
 
             g.font = "12px sans-serif"
             g.fillText("V", ...ctx.rotatePoint(this.posX - GRID_STEP, bottom - vOffset))

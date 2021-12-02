@@ -409,7 +409,7 @@ export abstract class ComponentBase<
 
     protected doSetValue(newValue: Value) {
         const oldValue = this._value
-        if (newValue !== oldValue) {
+        if (newValue !== oldValue) { // TODO this says two arrays with the same content are not equal, but they should be
             this._value = newValue
             this.setNeedsRedraw("value changed")
             this.propagateNewValue(newValue)
