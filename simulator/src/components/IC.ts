@@ -1,7 +1,10 @@
 import * as t from "io-ts"
+import { isString, isUndefined } from "../utils"
 import { Adder, AdderDef } from "./Adder"
 import { ALU, ALUDef } from "./ALU"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
+import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
+import { FlipflopT, FlipflopTDef } from "./FlipflopT"
 import { LatchSR, LatchSRDef } from "./LatchSR"
 
 export type IC = Adder
@@ -10,6 +13,8 @@ export const ICDef = t.union([
     AdderDef.repr,
     ALUDef.repr,
     LatchSRDef.repr,
+    FlipflopJKDef.repr,
+    FlipflopTDef.repr,
     FlipflopDDef.repr,
 ], "IC")
 
@@ -17,18 +22,34 @@ type ICRepr = t.TypeOf<typeof ICDef>
 
 export const ICFactory = {
 
-    make: (savedData: ICRepr) => {
+    make: (savedDataOrType: ICRepr | string | undefined) => {
+        let blank
+        let savedData: ICRepr
+        if (isUndefined(savedDataOrType)) {
+            return undefined
+        }
+        if (isString(savedDataOrType)) {
+            blank = true
+            savedData = { type: savedDataOrType } as ICRepr
+        } else {
+            blank = false
+            savedData = savedDataOrType
+        }
+
         switch (savedData.type) {
             case "adder":
-                return new Adder(savedData)
+                return new Adder(blank ? null : savedData)
             case "alu":
-                return new ALU(savedData)
+                return new ALU(blank ? null : savedData)
             case "latch-sr":
-                return new LatchSR(savedData)
+                return new LatchSR(blank ? null : savedData)
+            case "flipflop-jk":
+                return new FlipflopJK(blank ? null : savedData)
+            case "flipflop-t":
+                return new FlipflopT(blank ? null : savedData)
             case "flipflop-d":
-                return new FlipflopD(savedData)
+                return new FlipflopD(blank ? null : savedData)
         }
     },
 
 }
-

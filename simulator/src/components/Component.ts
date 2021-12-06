@@ -458,13 +458,20 @@ export abstract class ComponentBase<
         }
         const wasMoving = this.tryStopMoving()
         if (wasSpawning || wasMoving) {
-            NodeManager.tryConnectNodesOf(this)
+            const newLinks = NodeManager.tryConnectNodesOf(this)
+            if (newLinks.length > 0) {
+                this.autoConnected(newLinks)
+            }
         }
+    }
+
+    protected autoConnected(__newLinks: [Node, Component, Node][]) {
+        // by default, do nothing
     }
 
     protected override updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
         if (this._state === ComponentState.SPAWNING) {
-            return this.setPosition(x, y, snapToGrid)
+            return this.trySetPosition(x, y, snapToGrid)
         }
         return super.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
     }

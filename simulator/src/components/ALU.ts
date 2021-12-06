@@ -8,13 +8,19 @@ import { tooltipContent, mods, div } from "../htmlgen"
 const GRID_WIDTH = 6
 const GRID_HEIGHT = 19
 
-const INPUT_A = [0, 1, 2, 3] as const
-const INPUT_B = [4, 5, 6, 7] as const
-const INPUT_Op = [8, 9] as const
+const INPUT = {
+    A: [0, 1, 2, 3] as const,
+    B: [4, 5, 6, 7] as const,
+    Op: 8,
+    Mode: 9,
+}
 
-const OUTPUT_Y = [0, 1, 2, 3] as const
-const OUTPUT_V = 4
-const OUTPUT_Z = 5
+const OUTPUT = {
+    S: [0, 1, 2, 3] as const,
+    V: 4,
+    Z: 5,
+}
+
 
 export const ALUDef =
     defineComponent(10, 6, t.type({
@@ -57,7 +63,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             inOffsets: [
                 [-4, -8, "w"], [-4, -6, "w"], [-4, -4, "w"], [-4, -2, "w"], // A
                 [-4, 2, "w"], [-4, 4, "w"], [-4, 6, "w"], [-4, 8, "w"], // B
-                [1, -10, "n"], [-1, -10, "n"], // Op[0] then Op[1]
+                [1, -10, "n"], [-1, -10, "n"], // left: mode; right: op
             ],
             outOffsets: [
                 [4, -3, "e"], [4, -1, "e"], [4, 1, "e"], [4, 3, "e"], // Y
@@ -83,26 +89,29 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
     }
 
     protected override getInputName(i: number): string | undefined {
-        if (i <= INPUT_A[INPUT_A.length - 1]) {
+        if (i <= INPUT.A[INPUT.A.length - 1]) {
             return "A" + i
         }
-        if (i <= INPUT_B[INPUT_B.length - 1]) {
-            return "B" + (i - INPUT_B[0])
+        if (i <= INPUT.B[INPUT.B.length - 1]) {
+            return "B" + (i - INPUT.B[0])
         }
-        if (i <= INPUT_Op[INPUT_Op.length - 1]) {
-            return "Op" + (i - INPUT_Op[0])
+        if (i === INPUT.Op) {
+            return "Op"
+        }
+        if (i === INPUT.Mode) {
+            return "Mode"
         }
         return undefined
     }
 
     protected override getOutputName(i: number): string | undefined {
-        if (i <= OUTPUT_Y[OUTPUT_Y.length - 1]) {
+        if (i <= OUTPUT.S[OUTPUT.S.length - 1]) {
             return "S" + i
         }
-        if (i === OUTPUT_V) {
+        if (i === OUTPUT.V) {
             return "V (oVerflow)"
         }
-        if (i === OUTPUT_Z) {
+        if (i === OUTPUT.Z) {
             return "Z (Zero)"
         }
         return undefined
@@ -129,10 +138,11 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
     }
 
     public get op(): ALUOp | unset {
-        const opcode = this.inputValues<2>(INPUT_Op)
-        switch (opcode[1]) {
-            case false:
-                switch (opcode[0]) {
+        const mode = this.inputs[INPUT.Mode].value
+        const op = this.inputs[INPUT.Op].value
+        switch (mode) {
+            case false: // arithmetic
+                switch (op) {
                     case false: // 00
                         return "add"
                     case true: // 01
@@ -141,8 +151,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                         return Unset
                 }
                 break
-            case true:
-                switch (opcode[0]) {
+            case true: // logic
+                switch (op) {
                     case false: // 10
                         return "or" // opcode logic: "only one 1 needed"
                     case true: // 11
@@ -163,8 +173,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             return [[Unset, Unset, Unset, Unset], Unset, Unset]
         }
 
-        const a = this.inputValues<4>(INPUT_A)
-        const b = this.inputValues<4>(INPUT_B)
+        const a = this.inputValues<4>(INPUT.A)
+        const b = this.inputValues<4>(INPUT.B)
 
 
         function allZeros(vals: TriState[]): TriState {
@@ -282,11 +292,11 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
     }
 
     protected override propagateNewValue(newValue: [FixedArray<TriState, 4>, TriState, TriState]) {
-        for (let i = 0; i < OUTPUT_Y.length; i++) {
-            this.outputs[OUTPUT_Y[i]].value = newValue[0][i]
+        for (let i = 0; i < OUTPUT.S.length; i++) {
+            this.outputs[OUTPUT.S[i]].value = newValue[0][i]
         }
-        this.outputs[OUTPUT_V].value = newValue[1]
-        this.outputs[OUTPUT_Z].value = newValue[2]
+        this.outputs[OUTPUT.V].value = newValue[1]
+        this.outputs[OUTPUT.Z].value = newValue[2]
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -299,24 +309,24 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         const bottom = this.posY + height / 2
 
         // inputs
-        for (let i = 0; i < INPUT_A.length; i++) {
-            const inputi = this.inputs[INPUT_A[i]]
+        for (let i = 0; i < INPUT.A.length; i++) {
+            const inputi = this.inputs[INPUT.A[i]]
             drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
         }
-        for (let i = 0; i < INPUT_B.length; i++) {
-            const inputi = this.inputs[INPUT_B[i]]
+        for (let i = 0; i < INPUT.B.length; i++) {
+            const inputi = this.inputs[INPUT.B[i]]
             drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.inputs[INPUT_Op[1]], this.inputs[INPUT_Op[1]].posXInParentTransform, top + 6)
-        drawWireLineToComponent(g, this.inputs[INPUT_Op[0]], this.inputs[INPUT_Op[0]].posXInParentTransform, top + 13)
+        drawWireLineToComponent(g, this.inputs[INPUT.Mode], this.inputs[INPUT.Mode].posXInParentTransform, top + 6)
+        drawWireLineToComponent(g, this.inputs[INPUT.Op], this.inputs[INPUT.Op].posXInParentTransform, top + 13)
 
         // outputs
-        for (let i = 0; i < OUTPUT_Y.length; i++) {
-            const outputi = this.outputs[OUTPUT_Y[i]]
+        for (let i = 0; i < OUTPUT.S.length; i++) {
+            const outputi = this.outputs[OUTPUT.S[i]]
             drawWireLineToComponent(g, outputi, right, outputi.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.outputs[OUTPUT_V], this.outputs[OUTPUT_V].posXInParentTransform, bottom - 6)
-        drawWireLineToComponent(g, this.outputs[OUTPUT_Z], this.outputs[OUTPUT_Z].posXInParentTransform, bottom - 13)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.V], this.outputs[OUTPUT.V].posXInParentTransform, bottom - 6)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.Z], this.outputs[OUTPUT.Z].posXInParentTransform, bottom - 13)
 
 
         // outline

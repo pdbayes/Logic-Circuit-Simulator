@@ -44,6 +44,7 @@ export type ColorString = string
 
 export let COLOR_BACKGROUND: ColorString
 export let COLOR_BACKGROUND_UNUSED_REGION: ColorString
+export let COLOR_BACKGROUND_INVALID: ColorString
 export let COLOR_BORDER: ColorString
 export let COLOR_GRID_LINES: ColorString
 export let COLOR_LABEL_OFF: ColorString
@@ -75,6 +76,7 @@ function setColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
         COLOR_BACKGROUND = ColorString(0xFF)
+        COLOR_BACKGROUND_INVALID = ColorString([0xFF, 0xBB, 0xBB])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(0xEE)
         COLOR_BORDER = ColorString(200)
         COLOR_GRID_LINES = ColorString(240)
@@ -98,6 +100,7 @@ function setColors(darkMode: boolean) {
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
+        COLOR_BACKGROUND_INVALID = ColorString([0xA8, 0x14, 0x14])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
         COLOR_BORDER = ColorString(0x55)
         COLOR_GRID_LINES = ColorString(30)

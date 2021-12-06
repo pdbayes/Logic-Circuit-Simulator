@@ -4,6 +4,14 @@
 ## High priority
 
  * Fix flipflop update issue, e.g. in shift register
+ * 4-bit register
+ * 4-bit dip switch showing value
+ * 16 x 4 bit memory
+ * 4 bit adder with carry in and out
+ * set clock frequency from context menu
+ * add register by drag-and-drop
+ * edge detector
+
 
 
 ## Medium priority
@@ -15,6 +23,7 @@
 ## Low priority
 
  * Add mouseovers to new components
+ * switch to https://www.floating-ui.com for tooltips
 
 
 ### DONE

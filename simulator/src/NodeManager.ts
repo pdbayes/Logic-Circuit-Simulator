@@ -1,7 +1,7 @@
 import { Component } from "./components/Component"
 import { Node } from "./components/Node"
 import { wireMgr } from "./simulator"
-import { isUndefined } from "./utils"
+import { isDefined, isUndefined } from "./utils"
 
 
 export const NodeManager = (() => {
@@ -48,6 +48,7 @@ export const NodeManager = (() => {
         },
 
         tryConnectNodesOf: function (comp: Component) {
+            const addedConnections: [Node, Component, Node][] = []
             comp.forEachNode(node => {
                 if (node.acceptsMoreConnections) {
                     const nodeX = node.posX
@@ -59,13 +60,17 @@ export const NodeManager = (() => {
                                 // the wire manager will take care of determining whether
                                 // they can actually be connected or not
                                 wireMgr.addNode(node)
-                                wireMgr.addNode(other)
+                                const wire = wireMgr.addNode(other)
+                                if(isDefined(wire)) {
+                                    addedConnections.push([node, other.parent as Component, other])
+                                }
                             }
                         }
                     }
                 }
                 return true
             })
+            return addedConnections
         },
 
     }

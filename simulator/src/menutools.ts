@@ -14,6 +14,8 @@ import { RedrawManager } from "./RedrawRecalcManager"
 import { FlipflopD } from "./components/FlipflopD"
 import { LatchSR } from "./components/LatchSR"
 import { PersistenceManager } from "./PersistenceManager"
+import { FlipflopJK } from "./components/FlipflopJK"
+import { ICFactory } from "./components/IC"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -65,20 +67,11 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
     "IC": {
         make: (elem) => {
             const icType = elem.dataset["type"]
-            if (isUndefined(icType)) {
+            const newComp = ICFactory.make(icType)
+            if (isUndefined(newComp)) {
                 throw new Error(`undefined IC type - elem: ` + elem.outerHTML)
             }
-            switch (icType) {
-                case "Adder":
-                    return new Adder(null)
-                case "ALU":
-                    return new ALU(null)
-                case "LatchSR":
-                    return new LatchSR(null)
-                case "FlipflopD":
-                default:
-                    return new FlipflopD(null)
-            }
+            return newComp
         },
     },
 })

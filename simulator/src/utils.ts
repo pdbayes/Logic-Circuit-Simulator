@@ -103,6 +103,14 @@ type _PartialWhereUndefinedRecursively<T> =
     // other types
     : T
 
+// use for statically typing the number of flipflop inputs while adding 2 in the base class
+export type Plus3<N extends number> =
+    N extends 0 ? 3 :
+    N extends 1 ? 4 :
+    N extends 2 ? 5 :
+    N extends 3 ? 6 :
+    never
+
 
 // Series of type-assertion functions
 

@@ -1,10 +1,11 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, extendComponent } from "./Component"
+import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Node, NodeIn } from "../components/Node"
 
 export const LogicInputBaseDef =
     defineComponent(0, 1, t.type({
@@ -88,6 +89,36 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             }
             drawRoundValue(g, this.value, this)
         })
+    }
+
+    protected override autoConnected(newLinks: [Node, Component, Node][]) {
+        if (newLinks.length !== 1) {
+            return
+        }
+        const [outNode, comp, inNode] = newLinks[0]
+        if (inNode instanceof NodeIn && inNode._prefersSpike && this instanceof LogicInput) {
+            this.doSetIsPushButton(true)
+        }
+        if (outNode.orient !== "e") {
+            return
+        }
+        switch (Orientation.add(comp.orient, inNode.orient)) {
+            case "w":
+                // nothing to do
+                return
+            case "e":
+                this.doSetOrient("w")
+                this.setPosition(this.posX + GRID_STEP * 6, this.posY)
+                return
+            case "s":
+                this.doSetOrient("n")
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY + GRID_STEP * 3)
+                return
+            case "n":
+                this.doSetOrient("s")
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY - GRID_STEP * 3)
+                return
+        }
     }
 
     protected doSetName(name: string | undefined) {
@@ -190,7 +221,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
     }
 
 
-    private doSetIsPushButton(isPushButton: boolean) {
+    public doSetIsPushButton(isPushButton: boolean) {
         this._isPushButton = isPushButton
         if (isPushButton) {
             this.doSetValue(false)

@@ -26,7 +26,7 @@ abstract class NodeBase extends DrawableWithPosition {
         public readonly parent: NodeParent,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
-        private relativePosition: Orientation,
+        relativePosition: Orientation,
     ) {
         super(null)
         this.id = nodeSpec.id
@@ -35,6 +35,7 @@ abstract class NodeBase extends DrawableWithPosition {
         }
         NodeManager.addLiveNode(this.asNode)
         this.updatePositionFromParent()
+        this.doSetOrient(relativePosition)
     }
 
     private get asNode(): Node {
@@ -139,7 +140,7 @@ abstract class NodeBase extends DrawableWithPosition {
                 case "n": return [+this._gridOffsetY, -this._gridOffsetX]
             }
         })()
-        return this.setPosition(
+        return this.trySetPosition(
             this.parent.posX + appliedGridOffsetX * GRID_STEP,
             this.parent.posY + appliedGridOffsetY * GRID_STEP,
             false
@@ -149,16 +150,16 @@ abstract class NodeBase extends DrawableWithPosition {
     public get wireProlongDirection(): Orientation {
         switch (this.parent.orient) {
             case "e":
-                switch (this.relativePosition) {
+                switch (this.orient) {
                     case "e": return "w"
                     case "w": return "e"
                     case "s": return "n"
                     case "n": return "s"
                 }
                 break
-            case "w": return this.relativePosition
+            case "w": return this.orient
             case "s":
-                switch (this.relativePosition) {
+                switch (this.orient) {
                     case "e": return "n"
                     case "w": return "s"
                     case "s": return "e"
@@ -166,7 +167,7 @@ abstract class NodeBase extends DrawableWithPosition {
                 }
                 break
             case "n":
-                switch (this.relativePosition) {
+                switch (this.orient) {
                     case "e": return "s"
                     case "w": return "n"
                     case "s": return "w"
@@ -195,6 +196,7 @@ export class NodeIn extends NodeBase {
     public readonly _tag = "_nodein"
 
     private _incomingWire: Wire | null = null
+    public _prefersSpike = false
 
     get incomingWire() {
         return this._incomingWire

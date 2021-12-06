@@ -188,8 +188,32 @@ export const Orientation = {
             case "s": return "n"
         }
     },
+    nextClockwise(o: Orientation): Orientation {
+        switch (o) {
+            case "e": return "s"
+            case "s": return "w"
+            case "w": return "n"
+            case "n": return "e"
+        }
+    },
+    nextCounterClockwise(o: Orientation): Orientation {
+        switch (o) {
+            case "e": return "n"
+            case "n": return "w"
+            case "w": return "s"
+            case "s": return "e"
+        }
+    },
     isVertical(o: Orientation): o is "s" | "n" {
         return o === "s" || o === "n"
+    },
+    add(compOrient: Orientation, nodeOrient: Orientation): Orientation {
+        switch (compOrient) {
+            case "e": return nodeOrient
+            case "w": return Orientation.invert(nodeOrient)
+            case "s": return Orientation.nextClockwise(nodeOrient)
+            case "n": return Orientation.nextCounterClockwise(nodeOrient)
+        }
     },
 }
 
@@ -286,7 +310,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
-    protected setPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
+    protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
         if (snapToGrid) {
             posX = Math.round(posX / GRID_STEP) * GRID_STEP
             posY = Math.round(posY / GRID_STEP) * GRID_STEP
@@ -369,11 +393,19 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const [x, y] = offsetXY(e)
         const snapToGrid = !e.metaKey
+        this.setPosition
         const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
         if (isDefined(newPos)) { // position changed
             this.positionChanged()
         }
         return newPos
+    }
+
+    public setPosition(x: number, y: number) {
+        const newPos = this.trySetPosition(x, y, false)
+        if (isDefined(newPos)) { // position changed
+            this.positionChanged()
+        }
     }
 
     protected positionChanged() {
@@ -395,7 +427,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
                     targetY = lastAnchorY
                 }
             }
-            return this.setPosition(targetX, targetY, snapToGrid)
+            return this.trySetPosition(targetX, targetY, snapToGrid)
         }
         return undefined
     }

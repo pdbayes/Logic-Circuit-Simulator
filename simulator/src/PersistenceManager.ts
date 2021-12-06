@@ -104,9 +104,12 @@ class _PersistenceManager {
             components.push(GateFactory.make(d))
         )
 
-        loadField("components", ICDef, (d) =>
-            components.push(ICFactory.make(d))
-        )
+        loadField("components", ICDef, (d) => {
+            const comp = ICFactory.make(d)
+            if (isDefined(comp)) {
+                components.push(comp)
+            }
+        })
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right

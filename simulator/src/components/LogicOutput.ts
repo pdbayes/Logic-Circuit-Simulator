@@ -1,10 +1,11 @@
 import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Node, NodeIn } from "../components/Node"
 
 
 export const LogicOutputDef =
@@ -95,6 +96,33 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
             }
             drawRoundValue(g, this.value, this)
         })
+    }
+
+    protected override autoConnected(newLinks: [Node, Component, Node][]) {
+        if (newLinks.length !== 1) {
+            return
+        }
+        const [outNode, comp, inNode] = newLinks[0]
+        if (outNode.orient !== "w") {
+            return
+        }
+        switch (Orientation.add(comp.orient, inNode.orient)) {
+            case "e":
+                // nothing to do
+                return
+            case "w":
+                this.doSetOrient("w")
+                this.setPosition(this.posX - GRID_STEP * 6, this.posY)
+                return
+            case "s":
+                this.doSetOrient("s")
+                this.setPosition(this.posX - GRID_STEP * 3, this.posY + GRID_STEP * 3)
+                return
+            case "n":
+                this.doSetOrient("n")
+                this.setPosition(this.posX - GRID_STEP * 3, this.posY - GRID_STEP * 3)
+                return
+        }
     }
 
     private doSetName(name: string | undefined) {

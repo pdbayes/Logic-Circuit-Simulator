@@ -1,5 +1,5 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
-import { mode, mouseX, mouseY, offsetXY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
+import { mode, mouseX, mouseY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
