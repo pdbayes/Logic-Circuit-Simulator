@@ -1,7 +1,7 @@
 #!/bin/bash
 
 bundle_file="./simulator/lib/bundle.js"
-template_index="./index-template.html"
+template_index="./simulator/html/index-template.html"
 out_index="./index.html"
 
 md5=$(md5sum "$bundle_file" | cut -f 1 -d ' ')

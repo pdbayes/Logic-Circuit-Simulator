@@ -15,7 +15,6 @@
 
  * Add contextual menu to clock
  * Add free text and frames as elements
- * Use esbuild to create bundle
  * set clock frequency from context menu
 
 
@@ -30,6 +29,9 @@
 
 ### DONE
 
+ * Use esbuild to create bundle
+ * Add 4-bit register
+ * Add 4-bit dip switch showing value
  * Insert midpoints for wires to route them better
  * Get rid of p5
  * Add contextual menu to displays and adder
