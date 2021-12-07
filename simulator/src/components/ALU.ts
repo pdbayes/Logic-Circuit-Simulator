@@ -1,4 +1,4 @@
-import { FixedArray, FixedArraySize, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
+import { FixedArray, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS } from "../drawutils"
@@ -133,7 +133,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         ))
     }
 
-    private inputValues = <N extends FixedArraySize>(inds: FixedArray<number, N>): FixedArray<TriState, N> => {
+    private inputValues = <N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<TriState, N> => {
         return inds.map(i => this.inputs[i].value) as any as FixedArray<TriState, N>
     }
 
@@ -357,24 +357,30 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             let opNameOffset: number
             let vOffset: number
             let zOffset: number
-            [g.textAlign, opNameOffset, vOffset, zOffset] = (() => {
+            let mOffset: number
+            let opOffset: number
+            [g.textAlign, opNameOffset, vOffset, zOffset, mOffset, opOffset] = (() => {
                 switch (this.orient) {
                     case "e":
                     case "w":
-                        return ["center", 22, 15, 22] as const
+                        return ["center", 22, 15, 22, 17, 24] as const
                     case "s":
-                        return ["right", 14, 19, 25] as const
+                        return ["right", 14, 19, 25, 13, 19] as const
                     case "n":
-                        return ["left", 14, 19, 25] as const
+                        return ["left", 14, 19, 25, 13, 19] as const
                 }
             })()
 
-            const opName = this._showOp
-                ? isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
-                : "Op"
-            g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
+            if (this._showOp) {
+                const opName = isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
+                g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
+                g.font = "12px sans-serif"
+            } else {
+                g.font = "12px sans-serif"
+                g.fillText("M", ...ctx.rotatePoint(this.posX - GRID_STEP, top + mOffset))
+                g.fillText("Op", ...ctx.rotatePoint(this.posX + GRID_STEP, top + opOffset))
+            }
 
-            g.font = "12px sans-serif"
             g.fillText("V", ...ctx.rotatePoint(this.posX - GRID_STEP, bottom - vOffset))
             g.fillText("Z", ...ctx.rotatePoint(this.posX + GRID_STEP, bottom - zOffset))
 

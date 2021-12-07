@@ -1,9 +1,9 @@
 import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { Node } from "../components/Node"
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawRoundValue, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawRoundValue, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { NodeIn } from "./Node"
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 7
@@ -97,8 +97,8 @@ export abstract class FlipflopOrLatch<
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = this.posX + width / 2
 
@@ -107,7 +107,7 @@ export abstract class FlipflopOrLatch<
         g.lineWidth = 3
 
         g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
+        g.rect(left, this.posY - height / 2, width, height)
         g.fill()
         g.stroke()
         g.fillStyle = COLOR_BACKGROUND
@@ -119,19 +119,10 @@ export abstract class FlipflopOrLatch<
 
         ctx.inNonTransformedFrame(ctx => {
             if (this._showContent) {
-                const centerLabelWidth = 20
-                const centerLabelHeight = 26
-                g.strokeStyle = COLOR_COMPONENT_BORDER
-                g.fillStyle = colorForBoolean(this.value[OUTPUT.Q])
-                g.lineWidth = 2
-                g.beginPath()
-                g.rect(this.posX - centerLabelWidth / 2, this.posY - centerLabelHeight / 2, centerLabelWidth, centerLabelHeight)
-                g.fill()
-                g.stroke()
-                drawRoundValue(g, this.value[OUTPUT.Q], this)
+                FlipflopOrLatch.drawStoredValue(g, this.value[OUTPUT.Q], this.posX, this.posY, 26)
             }
 
-            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.textAlign = "center"
             g.font = "12px sans-serif"
 
@@ -147,6 +138,17 @@ export abstract class FlipflopOrLatch<
 
     protected abstract doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number): void
 
+    public static drawStoredValue(g: CanvasRenderingContext2D, value: TriState, x: number, y: number, cellHeight: number) {
+        const centerLabelWidth = 20
+        g.strokeStyle = COLOR_COMPONENT_BORDER
+        g.fillStyle = colorForBoolean(value)
+        g.lineWidth = 2
+        g.beginPath()
+        g.rect(x - centerLabelWidth / 2, y - cellHeight / 2, centerLabelWidth, cellHeight)
+        g.fill()
+        g.stroke()
+        drawRoundValue(g, value, x, y)
+    }
 
 }
 
@@ -181,11 +183,18 @@ const enum INPUT {
     Clear,
 }
 
+interface SyncComponent<State> {
+    trigger: EdgeTrigger
+    value: State
+    makeInvalidState(): State
+    makeStateFromMainValue(val: TriState): State
+    makeStateAfterClock(): State
+}
 
 export abstract class Flipflop<
     NumInputs extends FixedArraySizeNonZero,
     Repr extends FlipflopRepr<Plus3<NumInputs>>,
-    > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> {
+    > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[TriState, TriState]> {
 
     protected _lastClock: TriState = Unset
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
@@ -214,6 +223,10 @@ export abstract class Flipflop<
         }
     }
 
+    get trigger() {
+        return this._trigger
+    }
+
     protected override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.Clock: return "Clock (horloge)"
@@ -223,41 +236,57 @@ export abstract class Flipflop<
         return undefined
     }
 
-    protected doRecalcValue(): [TriState, TriState] {
-        const preset = this.inputs[INPUT.Preset].value
-        const clear = this.inputs[INPUT.Clear].value
-        const clock = this.inputs[INPUT.Clock].value
 
-        const oldClock = this._lastClock
-        this._lastClock = clock
-
-        // assume this state is valid
-        this._isInInvalidState = false
-
+    public static doRecalcValueForSyncComponent<State>(comp: SyncComponent<State>, prevClock: TriState, clock: TriState, preset: TriState, clear: TriState): { isInInvalidState: boolean, newState: State } {
         // handle set and reset signals
         if (preset === true) {
             if (clear === true) {
-                this._isInInvalidState = true
-                return [false, false]
+                return { isInInvalidState: true, newState: comp.makeInvalidState() }
             } else {
                 // preset is true, clear is false, set output to 1
-                return [true, false]
+                return { isInInvalidState: false, newState: comp.makeStateFromMainValue(true) }
             }
         }
         if (clear === true) {
             // clear is true, preset is false, set output to 0
-            return [false, true]
+            return { isInInvalidState: false, newState: comp.makeStateFromMainValue(false) }
         }
 
         // handle normal operation
 
         // clock rising/falling edge?
         const triggered =
-            (this._trigger === EdgeTrigger.rising && oldClock === false && clock === true)
-            || (this._trigger === EdgeTrigger.falling && oldClock === true && clock === false)
+            (comp.trigger === EdgeTrigger.rising && prevClock === false && clock === true)
+            || (comp.trigger === EdgeTrigger.falling && prevClock === true && clock === false)
 
-        const q = triggered ? this.doRecalcValueAfterClock() : this.outputs[OUTPUT.Q].value
-        return [q, TriState.invert(q)]
+        if (!triggered) {
+            return { isInInvalidState: false, newState: comp.value }
+        } else {
+            return { isInInvalidState: false, newState: comp.makeStateAfterClock() }
+        }
+    }
+
+    protected doRecalcValue(): [TriState, TriState] {
+        const prevClock = this._lastClock
+        const clock = this._lastClock = this.inputs[INPUT.Clock].value
+        const { isInInvalidState, newState } =
+            Flipflop.doRecalcValueForSyncComponent(this, prevClock, clock,
+                this.inputs[INPUT.Preset].value,
+                this.inputs[INPUT.Clear].value)
+        this._isInInvalidState = isInInvalidState
+        return newState
+    }
+
+    makeInvalidState(): [TriState, TriState] {
+        return [false, false]
+    }
+
+    makeStateFromMainValue(val: TriState): [TriState, TriState] {
+        return [val, TriState.invert(val)]
+    }
+
+    makeStateAfterClock(): [TriState, TriState] {
+        return this.makeStateFromMainValue(this.doRecalcValueAfterClock())
     }
 
     protected abstract doRecalcValueAfterClock(): TriState
@@ -267,17 +296,13 @@ export abstract class Flipflop<
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
-
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        const clockNode = this.inputs[INPUT.Clock]
+    public static drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: NodeIn, trigger: EdgeTrigger) {
         const clockY = clockNode.posYInParentTransform
         let clockLineOffset = 2
         g.strokeStyle = COLOR_COMPONENT_BORDER
+        g.lineWidth = 2
 
-        if (this._trigger === EdgeTrigger.falling) {
+        if (trigger === EdgeTrigger.falling) {
             clockLineOffset += 7
             g.beginPath()
             circle(g, left - 5, clockY, 6)
@@ -292,12 +317,20 @@ export abstract class Flipflop<
         g.stroke()
 
         drawWireLineToComponent(g, clockNode, left - clockLineOffset, clockY, false)
+    }
+
+    protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
+
+        const top = this.posY - height / 2
+        const bottom = this.posY + height / 2
+
+        Flipflop.drawClockInput(g, left, this.inputs[INPUT.Clock], this._trigger)
 
         drawWireLineToComponent(g, this.inputs[INPUT.Preset], this.inputs[INPUT.Preset].posXInParentTransform, top - 2, false)
         drawWireLineToComponent(g, this.inputs[INPUT.Clear], this.inputs[INPUT.Clear].posXInParentTransform, bottom + 2, false)
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.textAlign = "center"
             g.font = "12px sans-serif"
 

@@ -1,5 +1,5 @@
 import { isDefined, TriState } from "../utils"
-import { COLOR_COMPONENT_BORDER, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_INNER_LABELS, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflop, Flipflop } from "./FlipflopOrLatch"
@@ -60,7 +60,7 @@ export class FlipflopD extends Flipflop<1, FlipflopDRepr> {
         drawWireLineToComponent(g, this.inputs[INPUT.D], left - 2, this.inputs[INPUT.D].posYInParentTransform, false)
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.textAlign = "center"
             g.font = "12px sans-serif"
 

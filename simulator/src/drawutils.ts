@@ -319,7 +319,11 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
+    drawRoundValue(g, value, comp.posX, comp.posY)
+}
+
+export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, x: number, y: number) {
     g.textAlign = "center"
 
     let boldSpec = ""
@@ -338,7 +342,7 @@ export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, com
         label = '0'
     }
     g.font = `${boldSpec}18px sans-serif`
-    g.fillText(label, comp.posX, comp.posY)
+    g.fillText(label, x, y)
 }
 
 

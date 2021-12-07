@@ -8,13 +8,8 @@ import { DisplayNibble } from "./components/DisplayNibble"
 import { DisplayAscii } from "./components/DisplayAscii"
 import { DisplayBar } from "./components/DisplayBar"
 import { Component } from "./components/Component"
-import { Adder } from "./components/Adder"
-import { ALU } from "./components/ALU"
 import { RedrawManager } from "./RedrawRecalcManager"
-import { FlipflopD } from "./components/FlipflopD"
-import { LatchSR } from "./components/LatchSR"
 import { PersistenceManager } from "./PersistenceManager"
-import { FlipflopJK } from "./components/FlipflopJK"
 import { ICFactory } from "./components/IC"
 
 

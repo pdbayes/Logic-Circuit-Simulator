@@ -9,7 +9,7 @@ import { Component, ComponentBase, ComponentState } from "./components/Component
 import { applyModifiersTo, applyModifierTo, attrBuilder, button, cls, div, emptyMod, faglyph, li, Modifier, ModifierObject, mods, raw, span, style, title, type, ul } from "./htmlgen"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, dist, GRID_STEP, guessCanvasHeight, setColorMouseOverIsDanger, strokeSingleLine } from "./drawutils"
 import { Node } from "./components/Node"
-import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
+import { ContextMenuItem, Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { RecalcManager, RedrawManager } from './RedrawRecalcManager'
 import { Timeline, TimelineState } from './Timeline'
 import { gallery } from './gallery'
@@ -537,6 +537,13 @@ export function tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
     }
 }
 
+function trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
+    if (isDefined(_currentMouseOverComp) && _currentMouseOverComp instanceof DrawableWithPosition) {
+        _currentMouseOverComp.doSetOrient(orient)
+        e.preventDefault()
+    }
+}
+
 class _DeleteHandlers extends ToolHandlers {
     override mouseClickedOn(comp: Drawable, __: MouseEvent) {
         if (comp instanceof ComponentBase) {
@@ -641,6 +648,22 @@ export function offsetXY(e: MouseEvent | TouchEvent): [number, number] {
         }
     })()
     return [unscaledX / currentScale, unscaledY / currentScale]
+}
+
+export function offsetXYForComponent(e: MouseEvent | TouchEvent, comp: Component): [number, number] {
+    const offset = offsetXY(e)
+    if (comp.orient === Orientation.default) {
+        return offset
+    }
+    const [x, y] = offset
+    const dx = x - comp.posX
+    const dy = y - comp.posY
+    switch (comp.orient) {
+        case "e": return offset // done before anyway
+        case "w": return [comp.posX - dx, comp.posY - dy]
+        case "s": return [comp.posX - dy, comp.posY - dx]
+        case "n": return [comp.posX + dy, comp.posY + dx]
+    }
 }
 
 let _lastTouchEnd: [Drawable, number] | undefined = undefined
@@ -1037,14 +1060,26 @@ export function setup() {
             case "e":
                 setCurrentMouseAction("edit")
                 return
-
             case "d":
                 setCurrentMouseAction("delete")
                 return
-
             case "m":
                 setCurrentMouseAction("move")
                 return
+
+            case "ArrowRight":
+                trySetCurrentComponentOrientation("e", e)
+                return
+            case "ArrowLeft":
+                trySetCurrentComponentOrientation("w", e)
+                return
+            case "ArrowUp":
+                trySetCurrentComponentOrientation("n", e)
+                return
+            case "ArrowDown":
+                trySetCurrentComponentOrientation("s", e)
+                return
+
         }
     }))
 

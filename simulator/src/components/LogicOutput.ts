@@ -1,11 +1,11 @@
 import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValueCentered, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { Node, NodeIn } from "../components/Node"
+import { Node } from "../components/Node"
 
 
 export const LogicOutputDef =
@@ -94,7 +94,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, true)
             }
-            drawRoundValue(g, this.value, this)
+            drawRoundValueCentered(g, this.value, this)
         })
     }
 

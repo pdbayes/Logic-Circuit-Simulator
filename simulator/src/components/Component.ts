@@ -495,7 +495,7 @@ export abstract class ComponentBase<
         return false
     }
 
-    protected override doSetOrient(orient: Orientation) {
+    public override doSetOrient(orient: Orientation) {
         super.doSetOrient(orient)
         this.updateNodePositions()
     }

@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
+import { drawWireLineToComponent, drawRoundValueCentered, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
@@ -87,7 +87,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }
-            drawRoundValue(g, this.value, this)
+            drawRoundValueCentered(g, this.value, this)
         })
     }
 
@@ -150,6 +150,14 @@ const LogicInputDefaults = {
 
 export class LogicInput extends LogicInputBase<LogicInputRepr> {
 
+    static nextValue(value: TriState, mode: Mode, altKey: boolean): TriState {
+        switch (value) {
+            case true: return (mode >= Mode.FULL && altKey) ? Unset : false
+            case false: return (mode >= Mode.FULL && altKey) ? Unset : true
+            case Unset: return mode >= Mode.FULL ? false : Unset
+        }
+    }
+
     private _isPushButton = LogicInputDefaults.isPushButton
 
     public constructor(savedData: LogicInputRepr | null) {
@@ -195,13 +203,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
             return false
         }
 
-        this.doSetValue((() => {
-            switch (this.value) {
-                case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false
-                case false: return (mode >= Mode.FULL && e.altKey) ? Unset : true
-                case Unset: return mode >= Mode.FULL ? false : Unset
-            }
-        })())
+        this.doSetValue(LogicInput.nextValue(this.value, mode, e.altKey))
         return true
     }
 

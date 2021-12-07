@@ -109,6 +109,9 @@ export type Plus3<N extends number> =
     N extends 1 ? 4 :
     N extends 2 ? 5 :
     N extends 3 ? 6 :
+    N extends 4 ? 7 :
+    N extends 5 ? 8 :
+    N extends 6 ? 9 :
     never
 
 
@@ -172,6 +175,19 @@ export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
 export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
 
 export type FixedArray<T, N extends FixedArraySize> =
+    N extends 0 ? []
+    : N extends 1 ? [T]
+    : N extends 2 ? [T, T]
+    : N extends 3 ? [T, T, T]
+    : N extends 4 ? [T, T, T, T]
+    : N extends 5 ? [T, T, T, T, T]
+    : N extends 6 ? [T, T, T, T, T, T]
+    : N extends 7 ? [T, T, T, T, T, T, T]
+    : N extends 8 ? [T, T, T, T, T, T, T, T]
+    : N extends 9 ? [T, T, T, T, T, T, T, T, T]
+    :/*N extends10*/[T, T, T, T, T, T, T, T, T, T]
+
+export type FixedReadonlyArray<T, N extends FixedArraySize> =
     N extends 0 ? readonly []
     : N extends 1 ? readonly [T]
     : N extends 2 ? readonly [T, T]
@@ -183,7 +199,6 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 8 ? readonly [T, T, T, T, T, T, T, T]
     : N extends 9 ? readonly [T, T, T, T, T, T, T, T, T]
     :/*N extends10*/readonly [T, T, T, T, T, T, T, T, T, T]
-
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
