@@ -1,5 +1,5 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
-import { mode, mouseX, mouseY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
+import { EditorSelection, mode, mouseX, mouseY, offsetXYForContextMenu, setToolCursor, wireMgr } from "../simulator"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -138,6 +138,10 @@ export class Wire extends Drawable {
 
     public get endNode(): Node | null {
         return this._endNode
+    }
+
+    public isInRect(__rect: DOMRect) {
+        return false
     }
 
     public get waypoints(): readonly Waypoint[] {
@@ -366,12 +370,12 @@ export class WireManager {
         return this._isAddingWire
     }
 
-    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
+    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selectionRect: EditorSelection | undefined) {
         this.removeDeadWires()
         for (const wire of this._wires) {
-            wire.draw(g, mouseOverComp)
+            wire.draw(g, mouseOverComp, selectionRect)
             for (const waypoint of wire.waypoints) {
-                waypoint.draw(g, mouseOverComp)
+                waypoint.draw(g, mouseOverComp, selectionRect)
             }
         }
     }

@@ -20,6 +20,7 @@
 
 ## Low priority
 
+ * embed images with esbuild's dataurl loader; import CSS and HTML templates as well?
  * Add mouseovers to new components
  * switch to https://www.floating-ui.com for tooltips?
  * Lock component to some "parent" to move them more intuitively?

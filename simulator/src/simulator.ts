@@ -244,6 +244,9 @@ let _currentMouseDownData: MouseDownData | null = null
 let _startHoverTimeoutHandle: TimeoutHandle | null = null
 let _startDragTimeoutHandle: TimeoutHandle | null = null
 
+export type EditorSelection = { allRects: DOMRect[], latestRect: DOMRect, visible: boolean }
+let _currentSelection: EditorSelection | undefined = undefined
+
 function setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
     _startDragTimeoutHandle = setTimeout(
         wrapHandler(() => {
@@ -517,8 +520,44 @@ class _EditHandlers extends ToolHandlers {
             }, 200)
         }
     }
+
+    override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
+        if (isDefined(_currentSelection)) {
+            const [left, top] = offsetXY(e)
+            if (e.shiftKey) {
+                // augment selection
+                const rect = new DOMRect(left, top, 1, 1)
+                _currentSelection.allRects.push(rect)
+                _currentSelection.latestRect = rect
+                _currentSelection.visible = true
+            } else {
+                // clear selection
+                _currentSelection = undefined
+            }
+            RedrawManager.addReason("selection rect changed", null)
+        }
+    }
+    override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
+        // TODO smarter selection handling:
+        // - if shift key is pressed, add to selection, also individual component
+        // - shift-click or drag inverses selection state
+        const [x, y] = offsetXY(e)
+        if (isUndefined(_currentSelection)) {
+            const rect = new DOMRect(x, y, 1, 1)
+            _currentSelection = { allRects: [rect], latestRect: rect, visible: true }
+        } else {
+            const rect = _currentSelection.latestRect
+            rect.width = x - rect.x
+            rect.height = y - rect.y
+            RedrawManager.addReason("selection rect changed", null)
+        }
+    }
     override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         wireMgr.tryCancelWire()
+        if (isDefined(_currentSelection)) {
+            _currentSelection.visible = false
+            RedrawManager.addReason("selection rect changed", null)
+        }
     }
 }
 
@@ -1221,14 +1260,25 @@ export function wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (..
         g.scale(currentScale, currentScale)
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
-        wireMgr.draw(g, _currentMouseOverComp)
+        wireMgr.draw(g, _currentMouseOverComp, undefined)// never show wires as selected
 
         for (const comp of components) {
-            comp.draw(g, _currentMouseOverComp)
+            comp.draw(g, _currentMouseOverComp, _currentSelection)
             comp.forEachNode((node) => {
-                node.draw(g, _currentMouseOverComp)
+                node.draw(g, _currentMouseOverComp, undefined) // never show nodes as selected
                 return true
             })
+        }
+
+        if (isDefined(_currentSelection) && _currentSelection.visible) {
+            const rect = _currentSelection.latestRect
+            g.lineWidth = 1.5
+            g.strokeStyle = "rgb(100,100,255)"
+            g.fillStyle = "rgba(100,100,255,0.2)"
+            g.beginPath()
+            g.rect(rect.x, rect.y, rect.width, rect.height)
+            g.stroke()
+            g.fill()
         }
 
         const newRedrawReasons = RedrawManager.getReasonsAndClear()

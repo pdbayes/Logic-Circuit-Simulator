@@ -22,7 +22,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "server": "python3 -m http.server --cgi 8088",
-    "esbuild": "./node_modules/.bin/esbuild --bundle --sourcemap --minify simulator/src/simulator.ts --outfile=simulator/lib/bundle.js && tools/insert_md5_into_index.sh",
+    "esbuild": "./node_modules/.bin/esbuild --bundle --minify --sourcemap simulator/src/simulator.ts --target=es6 --outfile=simulator/lib/bundle.js && tools/insert_md5_into_index.sh",
     "esbuild-watch": "npm-watch esbuild",
     "babel-disabled": "babel --extensions '.ts' simulator/src -d lib",
     "coverage": "typescript-coverage-report"

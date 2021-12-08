@@ -1,7 +1,7 @@
 import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { mode, mouseX, mouseY, offsetXY, setDrawableMoving, setDrawableStoppedMoving } from "../simulator"
+import { EditorSelection, mode, mouseX, mouseY, offsetXY, setDrawableMoving, setDrawableStoppedMoving } from "../simulator"
 import { Modifier, ModifierObject } from "../htmlgen"
 import { RedrawManager } from "../RedrawRecalcManager"
 
@@ -88,8 +88,17 @@ export abstract class Drawable {
         RedrawManager.addReason(reason, this)
     }
 
-    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
-        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp)
+    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selection: EditorSelection | undefined) {
+        let inSelectionRect = false
+        if (isDefined(selection)) {
+            for (const rect of selection.allRects) {
+                if (this.isInRect(rect)) {
+                    inSelectionRect = true
+                    break
+                }
+            }
+        }
+        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp || inSelectionRect)
         this.doDraw(g, ctx)
         ctx.exit()
     }
@@ -101,6 +110,8 @@ export abstract class Drawable {
     protected abstract doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void
 
     public abstract isOver(x: number, y: number): boolean
+
+    public abstract isInRect(rect: DOMRect): boolean
 
     public get cursorWhenMouseover(): string | undefined {
         return undefined
@@ -265,6 +276,10 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public get posY() {
         return this._posY
+    }
+
+    public isInRect(rect: DOMRect) {
+        return this._posX >= rect.left && this._posX <= rect.right && this._posY >= rect.top && this._posY <= rect.bottom
     }
 
     public get orient() {

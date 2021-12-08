@@ -1,6 +1,6 @@
 // Inpired by http://www.webtoolkit.info/javascript-base64.html
 
-const B64 = {
+export const B64 = {
 
     alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     lookup: null as null | { [key: string]: number },
