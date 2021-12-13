@@ -6,7 +6,6 @@
  * Fix flipflop update issue, e.g. in shift register
  * 16 x 4 bit memory
  * 4 bit adder with carry in and out
- * edge detector
  * show value on dip switch and register
 
 
@@ -16,6 +15,8 @@
  * Add contextual menu to clock
  * Add free text and frames as elements
  * set clock frequency from context menu
+ * undo/redo
+ * edge detector
 
 
 ## Low priority

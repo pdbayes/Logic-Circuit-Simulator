@@ -254,6 +254,10 @@ export function any(bools: boolean[]): boolean {
     return false
 }
 
+export function repeatString(c: string, n: number) {
+    return Array(n + 1).join(c)
+}
+
 
 // io-ts utils
 

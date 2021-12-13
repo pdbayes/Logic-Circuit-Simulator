@@ -69,7 +69,7 @@ export abstract class FlipflopOrLatch<
         return "IC" as const
     }
 
-    protected override getOutputName(i: number): string | undefined {
+    override getOutputName(i: number): string | undefined {
         switch (i) {
             case OUTPUT.Q: return "Q (sortie)"
             case OUTPUT.Qb: return "Q' (sortie inversée)"
@@ -211,9 +211,7 @@ export abstract class Flipflop<
         if (isNotNull(savedData)) {
             this._trigger = savedData.trigger ?? FlipflopDefaults.trigger
         }
-        for (const i of [INPUT.Clock, INPUT.Preset, INPUT.Clear]) {
-            this.inputs[i]._prefersSpike = true
-        }
+        this.setInputsPreferSpike(INPUT.Clock, INPUT.Preset, INPUT.Clear)
     }
 
     override toJSONBase() {
@@ -227,7 +225,7 @@ export abstract class Flipflop<
         return this._trigger
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.Clock: return "Clock (horloge)"
             case INPUT.Preset: return "P (Preset, mise à 1)"
@@ -253,17 +251,16 @@ export abstract class Flipflop<
         }
 
         // handle normal operation
-
-        // clock rising/falling edge?
-        const triggered =
-            (comp.trigger === EdgeTrigger.rising && prevClock === false && clock === true)
-            || (comp.trigger === EdgeTrigger.falling && prevClock === true && clock === false)
-
-        if (!triggered) {
+        if (!Flipflop.isClockTrigger(comp.trigger, prevClock, clock)) {
             return { isInInvalidState: false, newState: comp.value }
         } else {
             return { isInInvalidState: false, newState: comp.makeStateAfterClock() }
         }
+    }
+
+    public static isClockTrigger(trigger: EdgeTrigger, prevClock: TriState, clock: TriState): boolean {
+        return (trigger === EdgeTrigger.rising && prevClock === false && clock === true)
+        || (trigger === EdgeTrigger.falling && prevClock === true && clock === false)
     }
 
     protected doRecalcValue(): [TriState, TriState] {

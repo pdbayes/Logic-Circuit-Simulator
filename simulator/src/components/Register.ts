@@ -65,10 +65,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
             this._showContent = savedData.showContent ?? RegisterDefaults.showContent
             this._trigger = savedData.trigger ?? RegisterDefaults.trigger
         }
-
-        for (const i of [INPUT.Clock, INPUT.Preset, INPUT.Clear]) {
-            this.inputs[i]._prefersSpike = true
-        }
+        this.setInputsPreferSpike(INPUT.Clock, INPUT.Preset, INPUT.Clear)
     }
 
     toJSON() {
@@ -97,7 +94,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return this._trigger
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.Clock: return "Clock (horloge)"
             case INPUT.Preset: return "P (Preset, mise à 1)"
@@ -109,7 +106,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return undefined
     }
 
-    protected override getOutputName(i: number): string | undefined {
+    override getOutputName(i: number): string | undefined {
         if (i <= OUTPUT.Q[OUTPUT.Q.length - 1]) {
             return "Q" + (i - OUTPUT.Q[0])
         }

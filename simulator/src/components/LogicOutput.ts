@@ -1,11 +1,11 @@
-import { isDefined, isNotNull, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUndefined, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValueCentered, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
 import { mode } from "../simulator"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { Node } from "../components/Node"
+import { Node, NodeOut } from "../components/Node"
 
 
 export const LogicOutputDef =
@@ -102,7 +102,16 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
         if (newLinks.length !== 1) {
             return
         }
-        const [outNode, comp, inNode] = newLinks[0]
+        const [inNode, comp, outNode] = newLinks[0]
+        if (outNode instanceof NodeOut) {
+            if (isUndefined(this._name)) {
+                const name = comp.getOutputNodeName(outNode)
+                if (isDefined(name)) {
+                    this.doSetName(name)
+                }
+            }
+        }
+
         if (outNode.orient !== "w") {
             return
         }

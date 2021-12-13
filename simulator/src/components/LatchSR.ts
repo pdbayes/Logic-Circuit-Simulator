@@ -20,10 +20,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
         super(savedData, {
             inOffsets: [[-4, 2, "w"], [-4, -2, "w"]],
         })
-
-        for (const i of [INPUT.Set, INPUT.Reset]) {
-            this.inputs[i]._prefersSpike = true
-        }
+        this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
     }
 
     toJSON() {
@@ -33,7 +30,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
         }
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.Set: return "S (Set, mise à 1)"
             case INPUT.Reset: return "S (Reset, mise à 0)"

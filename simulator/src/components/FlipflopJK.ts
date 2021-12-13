@@ -33,7 +33,7 @@ export class FlipflopJK extends Flipflop<2, FlipflopJKRepr> {
         }
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         const superName = super.getInputName(i)
         if (isDefined(superName)) {
             return superName

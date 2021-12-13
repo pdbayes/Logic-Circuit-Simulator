@@ -184,7 +184,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
 
         const myItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("none", "Période", periodPresets.map(makeItemSetPeriod))],
+            ["mid", ContextMenuData.submenu("history", "Période", periodPresets.map(makeItemSetPeriod))],
         ]
 
         newItems.push(...myItems)

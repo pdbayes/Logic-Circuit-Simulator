@@ -1118,7 +1118,6 @@ export function setup() {
             case "ArrowDown":
                 trySetCurrentComponentOrientation("s", e)
                 return
-
         }
     }))
 

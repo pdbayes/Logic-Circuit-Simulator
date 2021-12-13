@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined, isUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValueCentered, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, GRID_STEP } from "../drawutils"
@@ -96,8 +96,16 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             return
         }
         const [outNode, comp, inNode] = newLinks[0]
-        if (inNode instanceof NodeIn && inNode._prefersSpike && this instanceof LogicInput) {
-            this.doSetIsPushButton(true)
+        if (inNode instanceof NodeIn && this instanceof LogicInput) {
+            if (inNode._prefersSpike) {
+                this.doSetIsPushButton(true)
+            }
+            if (isUndefined(this._name)) {
+                const name = comp.getInputNodeName(inNode)
+                if (isDefined(name)) {
+                    this.doSetName(name)
+                }
+            }
         }
         if (outNode.orient !== "e") {
             return

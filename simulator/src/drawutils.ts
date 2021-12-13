@@ -401,15 +401,20 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle"
 }
 
-export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
+export function displayValuesFromArray(values: TriState[], mostSignificantFirst: boolean): [string, number | unset] {
+    // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false
-    for (const input of inputs) {
-        if (isUnset(input.value)) {
+    const add: (v: any) => void = mostSignificantFirst
+        ? v => binaryStringRep = binaryStringRep + v
+        : v => binaryStringRep = v + binaryStringRep
+
+    for (const value of values) {
+        if (isUnset(value)) {
             hasUnset = true
-            binaryStringRep = Unset + binaryStringRep
+            add(Unset)
         } else {
-            binaryStringRep = +input.value + binaryStringRep
+            add(+value)
         }
     }
     const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)

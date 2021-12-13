@@ -370,13 +370,37 @@ export abstract class ComponentBase<
         return result
     }
 
+    protected setInputsPreferSpike(...inputs: number[]) {
+        for (const i of inputs) {
+            this.inputs[i]._prefersSpike = true
+        }
+    }
+
     public abstract get componentType(): ComponentType
 
-    protected getInputName(__i: number): string | undefined {
+    public getInputName(__i: number): string | undefined {
         return undefined
     }
 
-    protected getOutputName(__i: number): string | undefined {
+    public getInputNodeName(node: NodeIn): string | undefined {
+        for (let i = 0; i < this.inputs.length; i++) {
+            if (this.inputs[i] === node) {
+                return this.getInputName(i)
+            }
+        }
+        return undefined
+    }
+
+    public getOutputName(__i: number): string | undefined {
+        return undefined
+    }
+
+    public getOutputNodeName(node: NodeOut): string | undefined {
+        for (let i = 0; i < this.outputs.length; i++) {
+            if (this.outputs[i] === node) {
+                return this.getOutputName(i)
+            }
+        }
         return undefined
     }
 

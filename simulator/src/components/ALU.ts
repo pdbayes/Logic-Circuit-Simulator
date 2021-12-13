@@ -88,7 +88,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         return "IC" as const
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         if (i <= INPUT.A[INPUT.A.length - 1]) {
             return "A" + i
         }
@@ -104,7 +104,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         return undefined
     }
 
-    protected override getOutputName(i: number): string | undefined {
+    override getOutputName(i: number): string | undefined {
         if (i <= OUTPUT.S[OUTPUT.S.length - 1]) {
             return "S" + i
         }

@@ -43,7 +43,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         return "IC" as const
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.A: return "A"
             case INPUT.B: return "B"
@@ -52,7 +52,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         return undefined
     }
 
-    protected override getOutputName(i: number): string | undefined {
+    override getOutputName(i: number): string | undefined {
         switch (i) {
             case OUTPUT.S: return "S (somme)"
             case OUTPUT.Cout: return "Cout (retenue)"

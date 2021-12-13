@@ -1,10 +1,10 @@
-import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode, FixedArray, TriState, TriStateRepr, isNull, toTriState, toTriStateRepr } from "../utils"
+import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, TriState, TriStateRepr, isNull, toTriState, toTriStateRepr } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
-import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { mode, offsetXY, offsetXYForComponent } from "../simulator"
+import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
+import { tooltipContent, mods } from "../htmlgen"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { mode, offsetXYForComponent } from "../simulator"
 import { LogicInput } from "./LogicInput"
 
 const GRID_WIDTH = 2
