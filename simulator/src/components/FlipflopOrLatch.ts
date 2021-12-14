@@ -24,7 +24,7 @@ export type FlipflopOrLatchRepr<NumInputs extends FixedArraySize> =
     }
 
 const FlipflorOrLatchDefaults = {
-    showContent: false,
+    showContent: true,
 }
 
 export const enum OUTPUT {

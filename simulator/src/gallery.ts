@@ -13,7 +13,7 @@ const Circuit = t.partial({
     components: t.array(ICDef),
     wires: t.array(WireRepr),
 })
-type Circuit = PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
+type Circuit = { v: number } & PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
 
 function assertCircuits<T extends Record<string, Circuit>>(v: T): T {
     // remove prototype to have a nice, clean completion in the console
@@ -22,6 +22,7 @@ function assertCircuits<T extends Record<string, Circuit>>(v: T): T {
 
 export const gallery = assertCircuits({
     CharacterComparator: {
+        "v": 1,
         "in": [
             { "pos": [50, 130], "id": 0, "val": 1 },
             { "pos": [50, 160], "id": 1, "val": 1 },
@@ -105,6 +106,7 @@ export const gallery = assertCircuits({
         ],
     },
     Counters: {
+        "v": 1,
         "in": [
             { "type": "clock", "pos": [70, 40], "id": 0, "name": "bit 0", "period": 2000, "phase": 1000, "showLabel": false },
             { "type": "clock", "pos": [70, 80], "id": 10, "name": "bit 1", "period": 4000, "phase": 2000, "showLabel": false },
@@ -128,6 +130,7 @@ export const gallery = assertCircuits({
         ],
     },
     AllGates: {
+        "v": 1,
         "in": [
             { "pos": [40, 320], "id": 0, "val": 0 },
             { "pos": [40, 490], "id": 1, "val": 0 },
@@ -218,6 +221,7 @@ export const gallery = assertCircuits({
         ],
     },
     SevenSegmentDisplay: {
+        "v": 1,
         "in": [
             { type: "clock", "pos": [90, 60], "orient": "s", "id": 21, "period": 16000, "phase": 8000 },
             { type: "clock", "pos": [130, 60], "orient": "s", "id": 22, "period": 8000, "phase": 4000 },
@@ -337,6 +341,7 @@ export const gallery = assertCircuits({
         ],
     },
     NibbleAdder: {
+        "v": 1,
         "in": [
             { "pos": [100, 40], "orient": "s", "id": 3, "name": "A3", "val": 0 },
             { "pos": [200, 40], "orient": "s", "id": 0, "name": "A2", "val": 0 },
@@ -395,6 +400,7 @@ export const gallery = assertCircuits({
         ],
     },
     ALU: {
+        "v": 1,
         "in": [
             { "pos": [290, 60], "orient": "s", "id": 16, "name": "Op1", "val": 0 },
             { "pos": [330, 60], "orient": "s", "id": 17, "name": "Op0", "val": 0 },
@@ -461,6 +467,7 @@ export const gallery = assertCircuits({
     },
 
     MiniAlu: {
+        "v": 1,
         "in": [
             { "pos": [340, 40], "orient": "s", "id": 10, "val": 1 },
             { "pos": [470, 40], "orient": "s", "id": 11, "val": 1 },
@@ -528,6 +535,7 @@ export const gallery = assertCircuits({
     },
 
     LatchedAdder: {
+        "v": 1,
         "in": [
             { "pos": [340, 570], "orient": "n", "id": 40, "name": "Reset", "val": 0, "isPushButton": true },
             { "pos": [40, 220], "id": 41, "val": 0 },
@@ -588,6 +596,7 @@ export const gallery = assertCircuits({
     },
 
     LatchedCounter: {
+        "v": 1,
         "components": [
             { "type": "flipflop-d", "pos": [170, 160], "in": [7, 8, 9, 6], "out": [10, 11], "state": 0, "trigger": "falling", "showContent": true },
             { "type": "flipflop-d", "pos": [300, 160], "in": [15, 16, 17, 14], "out": [18, 19], "state": 0, "trigger": "falling", "showContent": true },
@@ -620,6 +629,7 @@ export const gallery = assertCircuits({
     },
 
     Decoder2To4: {
+        "v": 1,
         "in": [
             { "pos": [60, 80], "id": 0, "name": "S0", "val": 0 },
             { "pos": [60, 220], "id": 1, "name": "S1", "val": 0 },
@@ -661,6 +671,7 @@ export const gallery = assertCircuits({
     },
 
     Decoder3To8: {
+        "v": 1,
         "in": [
             { "pos": [60, 130], "id": 26, "name": "S0", "val": 1 },
             { "pos": [60, 290], "id": 27, "name": "S1", "val": 1 },
@@ -735,6 +746,7 @@ export const gallery = assertCircuits({
     },
 
     ParityGenerator: {
+        "v": 1,
         "in": [
             { "pos": [70, 180], "id": 0, "name": "D1", "val": 0 },
             { "pos": [70, 300], "id": 1, "name": "D2", "val": 0 },
@@ -782,6 +794,7 @@ export const gallery = assertCircuits({
     },
 
     ShiftRegister: {
+        "v": 1,
         "in": [
             { "pos": [110, 130], "id": 0, "name": "D", "val": 1 },
             { "pos": [100, 210], "id": 1, "name": "Horloge", "val": 0, "isPushButton": true },

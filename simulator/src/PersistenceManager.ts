@@ -48,6 +48,12 @@ class _PersistenceManager {
             }
         }
 
+        let jsonVersion = parsedContents["v"] ?? 0
+        if (jsonVersion === 0) {
+            migrate0To1(parsedContents)
+            jsonVersion = 1
+        }
+
         for (const elem of components) {
             elem.destroy()
         }
@@ -133,6 +139,7 @@ class _PersistenceManager {
 
     buildWorkspaceJSON() {
         const workspace: any = {
+            "v": 1,
             "opts": nonDefaultOptions(),
         }
 
@@ -175,3 +182,48 @@ class _PersistenceManager {
 }
 
 export const PersistenceManager = new _PersistenceManager()
+
+
+function migrate0To1(workspace: any) {
+    console.log("Migrating JSON from version 0 to 1")
+
+    // all displays are now out
+    if ("displays" in workspace) {
+        const displays = workspace.displays
+        delete workspace.displays
+        if (!("out" in workspace)) {
+            workspace.out = []
+        }
+        for (const display of displays) {
+            workspace.out.push(display)
+        }
+    }
+
+    // all clocks are now in
+    if ("clocks" in workspace) {
+        const clocks = workspace.clocks
+        delete workspace.clocks
+        if (!("in" in workspace)) {
+            workspace.in = []
+        }
+        for (const clock of clocks) {
+            clock.type = "clock"
+            workspace.in.push(clock)
+        }
+    }
+
+    // flipflops have a different input node order
+    if ("components" in workspace) {
+        const components = workspace.components
+        for (const comp of components) {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (comp.type.startsWith("flipflop")) {
+                // extract last three inputs
+                const inputs: Array<number> = comp.in
+                const lastThree = inputs.splice(-3)
+                comp.in = [...lastThree, ...inputs]
+            }
+        }
+    }
+}
+
