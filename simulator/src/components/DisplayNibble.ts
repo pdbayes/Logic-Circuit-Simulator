@@ -46,7 +46,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {

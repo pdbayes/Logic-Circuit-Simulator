@@ -48,7 +48,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {

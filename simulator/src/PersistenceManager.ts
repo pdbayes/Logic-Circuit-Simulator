@@ -1,19 +1,17 @@
 import { wireMgr, components, nonDefaultOptions, setOptions } from "./simulator"
-import { LogicInput, LogicInputDef } from "./components/LogicInput"
-import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
-import { Clock, ClockDef } from "./components/Clock"
 import { GateDef, GateFactory } from "./components/Gate"
 import { stringifySmart } from "./stringifySmart"
 import { WireRepr } from "./components/Wire"
-import { DisplayDef, DisplayFactory } from "./components/Display"
+import { OutputDef, OutputFactory } from "./components/Outputs"
 import { NodeManager } from "./NodeManager"
 import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 import { RecalcManager } from "./RedrawRecalcManager"
 import { Timeline } from "./Timeline"
-import { Component, ComponentTypes } from "./components/Component"
+import { Component, ComponentTypes, MainJsonFieldName } from "./components/Component"
 import { ICDef, ICFactory } from "./components/IC"
+import { InputDef, InputFactory } from "./components/Inputs"
 
 class _PersistenceManager {
 
@@ -58,7 +56,7 @@ class _PersistenceManager {
         NodeManager.clearAllLiveNodes()
         Timeline.reset()
 
-        function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
+        function loadField<T>(fieldName: MainJsonFieldName | "wires", repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
             if (!(fieldName in parsedContents)) {
                 return
             }
@@ -84,20 +82,12 @@ class _PersistenceManager {
             }
         }
 
-        loadField("in", LogicInputDef, (d) =>
-            components.push(new LogicInput(d))
-        )
+        loadField("in", InputDef, (d) => {
+            components.push(InputFactory.make(d))
+        })
 
-        loadField("out", LogicOutputDef, (d) =>
-            components.push(new LogicOutput(d))
-        )
-
-        loadField("displays", DisplayDef, (d) =>
-            components.push(DisplayFactory.make(d))
-        )
-
-        loadField("clocks", ClockDef, (d) =>
-            components.push(new Clock(d))
+        loadField("out", OutputDef, (d) =>
+            components.push(OutputFactory.make(d))
         )
 
         loadField("gates", GateDef, (d) =>
@@ -158,7 +148,7 @@ class _PersistenceManager {
             workspace.wires = wireMgr.wires
         }
 
-        return stringifySmart(workspace, { maxLength: 85 })
+        return stringifySmart(workspace, { maxLength: 150 })
     }
 
     saveToFile() {

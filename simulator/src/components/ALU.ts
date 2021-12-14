@@ -85,7 +85,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
     }
 
     public get componentType() {
-        return "IC" as const
+        return "ic" as const
     }
 
     override getInputName(i: number): string | undefined {

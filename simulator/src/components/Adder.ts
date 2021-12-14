@@ -40,7 +40,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
     }
 
     public get componentType() {
-        return "IC" as const
+        return "ic" as const
     }
 
     override getInputName(i: number): string | undefined {

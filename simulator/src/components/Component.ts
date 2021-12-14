@@ -129,19 +129,19 @@ export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentR
 
 
 
+const ComponentTypes_ = {
+    in: { jsonFieldName: "in" },
+    out: { jsonFieldName: "out" },
+    gate: { jsonFieldName: "gates" },
+    ic: { jsonFieldName: "components" },
+} as const
+
 export const ComponentTypes = RichStringEnum.withProps<{
     jsonFieldName: string
-}>()({
-    LogicInput: { jsonFieldName: "in" },
-    LogicOutput: { jsonFieldName: "out" },
-    Display: { jsonFieldName: "displays" },
-    Clock: { jsonFieldName: "clocks" },
-    Gate: { jsonFieldName: "gates" },
-    IC: { jsonFieldName: "components" },
-})
+}>()(ComponentTypes_)
 
 export type ComponentType = typeof ComponentTypes.type
-
+export type MainJsonFieldName = typeof ComponentTypes_[ComponentType]["jsonFieldName"]
 
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs

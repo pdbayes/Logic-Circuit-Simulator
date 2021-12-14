@@ -79,7 +79,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
     }
 
     get componentType() {
-        return "IC" as const
+        return "ic" as const
     }
 
     get unrotatedWidth() {

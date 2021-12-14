@@ -34,7 +34,7 @@ export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> 
     }
 
     public get componentType() {
-        return "LogicOutput" as const
+        return "out" as const
     }
 
     protected override toStringDetails(): string {

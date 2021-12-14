@@ -1,28 +1,26 @@
 import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
-import { isDefined, isUnset, TriState, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, TriState, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { Timeline } from "../Timeline"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
-import { RedrawManager } from "../RedrawRecalcManager"
 
-
-const ClockMandatoryParams = t.type({
-    period: t.number,
-    dutycycle: typeOrUndefined(t.number),
-    phase: typeOrUndefined(t.number),
-    showLabel: typeOrUndefined(t.boolean),
-}, "Clock")
-type ClockMandatoryParams = t.TypeOf<typeof ClockMandatoryParams>
 
 export const ClockDef =
-    extendComponent(LogicInputBaseDef, ClockMandatoryParams)
+    extendComponent(LogicInputBaseDef, t.type({
+        type: t.literal("clock"),
+        period: t.number,
+        dutycycle: typeOrUndefined(t.number),
+        phase: typeOrUndefined(t.number),
+        showLabel: typeOrUndefined(t.boolean),
+    }, "Clock"))
 
 export type ClockRepr = typeof ClockDef.reprType
 
 const ClockDefaults = {
+    period: 2000,
     dutycycle: 50,
     phase: 0,
     showLabel: true,
@@ -30,25 +28,22 @@ const ClockDefaults = {
 
 export class Clock extends LogicInputBase<ClockRepr> {
 
-    private _period: number
+    private _period: number = ClockDefaults.period
     private _dutycycle: number = ClockDefaults.dutycycle
     private _phase: number = ClockDefaults.phase
     private _showLabel: boolean = ClockDefaults.showLabel
 
-    constructor(savedData: ClockRepr | ClockMandatoryParams) {
-        super(
-            false,
-            "id" in savedData ? savedData : null
-        )
-        this._period = savedData.period
-        if (isDefined(savedData.dutycycle)) {
-            this._dutycycle = savedData.dutycycle % 100
-        }
-        if (isDefined(savedData.phase)) {
-            this._phase = savedData.phase % savedData.period
-        }
-        if (isDefined(savedData.showLabel)) {
-            this._showLabel = savedData.showLabel
+    constructor(savedData: ClockRepr | null) {
+        super(false, savedData)
+        if(isNotNull(savedData)) {
+            this._period = savedData.period
+            if (isDefined(savedData.dutycycle)) {
+                this._dutycycle = savedData.dutycycle % 100
+            }
+            if (isDefined(savedData.phase)) {
+                this._phase = savedData.phase % savedData.period
+            }
+            this._showLabel = savedData.showLabel ?? ClockDefaults.showLabel
         }
         // sets the value and schedules the next tick
         this.tickCallback(Timeline.adjustedTime())
@@ -56,6 +51,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
 
     toJSON() {
         return {
+            type: "clock" as const,
             ...this.toJSONBase(),
             period: this._period,
             dutycycle: (this._dutycycle === ClockDefaults.dutycycle) ? undefined : this._dutycycle,
@@ -65,7 +61,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
     }
 
     public get componentType() {
-        return "Clock" as const
+        return "in" as const
     }
 
     public override makeTooltip() {

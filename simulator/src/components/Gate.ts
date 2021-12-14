@@ -304,7 +304,7 @@ export abstract class GateBase<
     }
 
     public get componentType() {
-        return "Gate" as const
+        return "gate" as const
     }
 
     public get type() {

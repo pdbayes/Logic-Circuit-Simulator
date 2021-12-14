@@ -1,4 +1,4 @@
-import { FixedArray, isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset } from "../utils"
+import { isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toTriStateRepr, TriState, typeOrUndefined, Unset } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -44,13 +44,13 @@ export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
 
 export const ShiftBufferOutDef =
     defineComponent(3, 0, t.type({
-        type: t.literal("shiftbufferout"),
-        state: typeOrUndefined(t.array(TriStateRepr)),
+        type: t.literal("shiftbuffer"),
+        state: typeOrUndefined(t.string),
         decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),
         groupEvery: typeOrUndefined(t.number),
         maxItems: typeOrUndefined(t.number),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-    }, "Register"))
+    }, "OutputShiftBuffer"))
 
 export type ShiftBufferOutRepr = typeof ShiftBufferOutDef.reprType
 
@@ -72,11 +72,22 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
     protected _trigger: EdgeTrigger = ShiftBufferOutDefaults.trigger
     protected _lastClock: TriState = Unset
 
-    private static savedStateFrom(savedData: { state: Array<TriStateRepr> | undefined } | null): ShiftBufferOutState {
+    private static savedStateFrom(savedData: { state: string | undefined } | null): ShiftBufferOutState {
         if (isNull(savedData) || isUndefined(savedData.state)) {
             return { incoming: [], decoded: [] }
         }
-        return { incoming: savedData.state.map(t => toTriState(t)), decoded: [] }
+        const incoming: TriState[] = []
+        for (let i = 0; i < savedData.state.length; i++) {
+            const c = savedData.state.charAt(i)
+            if (c === '1') {
+                incoming.push(true)
+            } else if (c === '0') {
+                incoming.push(false)
+            } else {
+                incoming.push(Unset)
+            }
+        }
+        return { incoming, decoded: [] }
     }
 
     public constructor(savedData: ShiftBufferOutRepr | null) {
@@ -97,10 +108,11 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
     }
 
     toJSON() {
+        const stateArray = allBitsOf(this.value).map(b => toTriStateRepr(b))
         return {
-            type: "shiftbufferout" as const,
+            type: "shiftbuffer" as const,
             ...this.toJSONBase(),
-            state: allBitsOf(this.value).map(b => toTriStateRepr(b)),
+            state: stateArray.length === 0 ? undefined : stateArray.join(""),
             decodeAs: (this._decodeAs !== ShiftBufferOutDefaults.decodeAs) ? this._decodeAs : undefined,
             groupEvery: this._groupEvery,
             maxItems: this._maxItems,
@@ -109,7 +121,7 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
     }
 
     get componentType() {
-        return "IC" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {
@@ -204,8 +216,6 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
             g.font = "12px sans-serif"
 
             g.fillText("C", ...ctx.rotatePoint(this.inputs[INPUT.Clear].posXInParentTransform, bottom - 8))
-
-            g.font = "bold 12px sans-serif"
             g.fillText("D", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Data].posYInParentTransform))
 
         })

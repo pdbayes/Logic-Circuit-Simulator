@@ -11,6 +11,8 @@ import { Component } from "./components/Component"
 import { RedrawManager } from "./RedrawRecalcManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { ICFactory } from "./components/IC"
+import { ShiftBufferOut } from "./components/ShiftBufferOut"
+import { InputNibble } from "./components/InputNibble"
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -46,7 +48,15 @@ export const ComponentFactoryTypes = RichStringEnum.withProps<{
     },
 
     "Clock": {
-        make: () => new Clock({ period: 2000, dutycycle: undefined, phase: undefined, showLabel: undefined }),
+        make: () => new Clock(null),
+    },
+
+    "InputNibble": {
+        make: () => new InputNibble(null),
+    },
+
+    "OutputShiftBuffer": {
+        make: () => new ShiftBufferOut(null),
     },
 
     "Gate": {

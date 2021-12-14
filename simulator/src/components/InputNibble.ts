@@ -12,11 +12,11 @@ const GRID_HEIGHT = 8
 
 export const InputNibbleDef =
     defineComponent(0, 4, t.type({
-        type: t.literal("input-nibble"),
+        type: t.literal("nibble"),
         val: t.tuple([TriStateRepr, TriStateRepr, TriStateRepr, TriStateRepr]),
         name: typeOrUndefined(t.string),
         // radix: typeOrUndefined(t.number),
-    }, "DisplayNibble"))
+    }, "InputNibble"))
 
 type InputNibbleRepr = typeof InputNibbleDef.reprType
 
@@ -44,7 +44,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
     toJSON() {
         return {
-            type: "input-nibble" as const,
+            type: "nibble" as const,
             ...this.toJSONBase(),
             val: this.value.map(v => toTriStateRepr(v)) as unknown as FixedArray<TriStateRepr, 4>,
             name: this._name,
@@ -52,7 +52,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     public get componentType() {
-        return "IC" as const
+        return "in" as const
     }
 
     override get cursorWhenMouseover() {

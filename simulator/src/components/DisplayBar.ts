@@ -72,7 +72,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {

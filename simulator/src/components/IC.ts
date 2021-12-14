@@ -5,15 +5,12 @@ import { ALU, ALUDef } from "./ALU"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
 import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
 import { FlipflopT, FlipflopTDef } from "./FlipflopT"
-import { InputNibble, InputNibbleDef } from "./InputNibble"
 import { LatchSR, LatchSRDef } from "./LatchSR"
 import { Register, RegisterDef } from "./Register"
-import { ShiftBufferOut, ShiftBufferOutDef } from "./ShiftBufferOut"
 
 export type IC = Adder
 
 export const ICDef = t.union([
-    InputNibbleDef.repr,
     AdderDef.repr,
     ALUDef.repr,
     LatchSRDef.repr,
@@ -21,7 +18,6 @@ export const ICDef = t.union([
     FlipflopTDef.repr,
     FlipflopDDef.repr,
     RegisterDef.repr,
-    ShiftBufferOutDef.repr,
 ], "IC")
 
 type ICRepr = t.TypeOf<typeof ICDef>
@@ -43,8 +39,6 @@ export const ICFactory = {
         }
 
         switch (savedData.type) {
-            case "input-nibble":
-                return new InputNibble(blank ? null : savedData)
             case "adder":
                 return new Adder(blank ? null : savedData)
             case "alu":
@@ -59,9 +53,6 @@ export const ICFactory = {
                 return new FlipflopD(blank ? null : savedData)
             case "register":
                 return new Register(blank ? null : savedData)
-            case "shiftbufferout":
-                return new ShiftBufferOut(blank ? null : savedData)
-
         }
     },
 

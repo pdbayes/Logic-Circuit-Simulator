@@ -189,7 +189,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
     }
 
     public get componentType() {
-        return "LogicInput" as const
+        return "in" as const
     }
 
     override get cursorWhenMouseover() {

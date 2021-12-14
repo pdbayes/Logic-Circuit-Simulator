@@ -66,7 +66,7 @@ export abstract class FlipflopOrLatch<
     }
 
     public get componentType() {
-        return "IC" as const
+        return "ic" as const
     }
 
     override getOutputName(i: number): string | undefined {
