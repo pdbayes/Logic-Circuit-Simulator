@@ -7,7 +7,6 @@ import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, 
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
-
 type GateProps = {
     includeInContextMenu: boolean
     includeInPoseAs: boolean
@@ -15,6 +14,36 @@ type GateProps = {
     shortName: string | undefined
     localDesc: string
 }
+
+
+// Gates with one input
+
+const Gate1Types_ = {
+    NOT: {
+        out: (in1: boolean) => !in1,
+        localName: "NON", shortName: "NON", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie est égale à l’entrée inversée.",
+    },
+    BUF: {
+        out: (in1: boolean) => in1,
+        localName: "OUI", shortName: "OUI", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie est égale à l’entrée.",
+    },
+} as const
+
+export const Gate1Types = RichStringEnum.withProps<GateProps & {
+    out: (in1: boolean) => boolean
+}>()(Gate1Types_)
+
+export type Gate1Type = typeof Gate1Types.type
+
+const Gate1MandatoryParams = t.type({
+    type: t.keyof(Gate1Types_),
+})
+type Gate1MandatoryParams = t.TypeOf<typeof Gate1MandatoryParams>
+
+
+// Gates with two inputs
 
 const Gate2Types_ = {
     // usual suspects
@@ -100,56 +129,132 @@ export const Gate2Types = RichStringEnum.withProps<GateProps & {
 
 export type Gate2Type = typeof Gate2Types.type
 
-
-const Gate1Types_ = {
-    NOT: {
-        out: (in1: boolean) => !in1,
-        localName: "NON", shortName: "NON", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie est égale à l’entrée inversée.",
-    },
-    BUF: {
-        out: (in1: boolean) => in1,
-        localName: "OUI", shortName: "OUI", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie est égale à l’entrée.",
-    },
-} as const
-
-export const Gate1Types = RichStringEnum.withProps<GateProps & {
-    out: (in1: boolean) => boolean
-}>()(Gate1Types_)
-
-export type Gate1Type = typeof Gate1Types.type
-
-
-export type GateType = Gate2Type | Gate1Type
-export const GateTypes = {
-    isValue: (str: string | null | undefined): str is GateType => {
-        return Gate2Types.isValue(str) || Gate1Types.isValue(str)
-    },
-}
-
-
-const Gate1MandatoryParams = t.type({
-    type: t.keyof(Gate1Types_),
-})
-type Gate1MandatoryParams = t.TypeOf<typeof Gate1MandatoryParams>
-
 const Gate2MandatoryParams = t.type({
     type: t.keyof(Gate2Types_),
 })
 type Gate2MandatoryParams = t.TypeOf<typeof Gate2MandatoryParams>
 
 
+
+// Gates with three inputs
+
+const Gate3Types_ = {
+    AND3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => in1 && in2 && in3,
+        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsque les trois entrées valent 1.",
+    },
+    OR3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => in1 || in2 || in3,
+        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsqu’au moins une des troie entrées vaut 1.",
+    },
+    XOR3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => (Number(in1) + Number(in2) + Number(in3)) % 2 === 1,
+        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1.",
+    },
+    NAND3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => !(in1 && in2 && in3),
+        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les trois entrées ne valent 1.",
+    },
+    NOR3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => !(in1 || in2 || in3),
+        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les trois entrées valent 0.",
+    },
+    XNOR3: {
+        out: (in1: boolean, in2: boolean, in3: boolean) => (Number(in1) + Number(in2) + Number(in3)) % 2 === 0,
+        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1.",
+    },
+} as const
+
+export const Gate3Types = RichStringEnum.withProps<GateProps & {
+    out: (in1: boolean, in2: boolean, in3: boolean) => boolean
+}>()(Gate3Types_)
+
+export type Gate3Type = typeof Gate3Types.type
+
+const Gate3MandatoryParams = t.type({
+    type: t.keyof(Gate3Types_),
+})
+type Gate3MandatoryParams = t.TypeOf<typeof Gate3MandatoryParams>
+
+
+
+// Gates with four inputs
+
+const Gate4Types_ = {
+    AND4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => in1 && in2 && in3 && in4,
+        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsque les quatre entrées valent 1.",
+    },
+    OR4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => in1 || in2 || in3 || in4,
+        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsqu’au moins une des quatre entrées vaut 1.",
+    },
+    XOR4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => (Number(in1) + Number(in2) + Number(in3) + Number(in4)) % 2 === 1,
+        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1.",
+    },
+    NAND4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => !(in1 && in2 && in3 && in4),
+        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les quatre entrées ne valent 1.",
+    },
+    NOR4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => !(in1 || in2 || in3 || in4),
+        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les quatre entrées valent 0.",
+    },
+    XNOR4: {
+        out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => (Number(in1) + Number(in2) + Number(in3) + Number(in4)) % 2 === 0,
+        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
+        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1.",
+    },
+} as const
+
+export const Gate4Types = RichStringEnum.withProps<GateProps & {
+    out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => boolean
+}>()(Gate4Types_)
+
+export type Gate4Type = typeof Gate4Types.type
+
+const Gate4MandatoryParams = t.type({
+    type: t.keyof(Gate4Types_),
+})
+type Gate4MandatoryParams = t.TypeOf<typeof Gate4MandatoryParams>
+
+
+// Putting all gates together
+
+export type GateType = Gate2Type | Gate1Type | Gate3Type | Gate4Type
+export const GateTypes = {
+    isValue: (str: string | null | undefined): str is GateType => {
+        return Gate2Types.isValue(str) || Gate1Types.isValue(str) || Gate3Types.isValue(str) || Gate4Types.isValue(str)
+    },
+}
+
+
+
 type GateMandatoryParams<G extends GateType> = { type: G }
 
 const Gate2Def = defineComponent(2, 1, Gate2MandatoryParams)
 const Gate1Def = defineComponent(1, 1, Gate1MandatoryParams)
+const Gate3Def = defineComponent(3, 1, Gate3MandatoryParams)
+const Gate4Def = defineComponent(4, 1, Gate4MandatoryParams)
 
 export const GateDef = t.union([
     Gate2Def.repr,
     Gate1Def.repr,
+    Gate3Def.repr,
+    Gate4Def.repr,
 ], "Gate")
-
 
 
 type GateRepr<N extends FixedArraySizeNonZero, G extends GateType> = ComponentRepr<N, 1> & GateMandatoryParams<G> & {
@@ -157,8 +262,14 @@ type GateRepr<N extends FixedArraySizeNonZero, G extends GateType> = ComponentRe
     showAsUnknown: boolean | undefined
 }
 
-const GRID_WIDTH = 7
-const GRID_HEIGHT = 4
+const GRID_WIDTH_1_2 = 7
+const GRID_HEIGHT_1_2 = 4
+
+const GRID_WIDTH_3 = 9
+const GRID_HEIGHT_3 = 6
+
+const GRID_WIDTH_4 = 11
+const GRID_HEIGHT_4 = 8
 
 export type Gate = GateBase<GateType, any, GateRepr<any, GateType>>
 
@@ -231,11 +342,11 @@ export abstract class GateBase<
     }
 
     get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return GRID_WIDTH_1_2 * GRID_STEP
     }
 
     get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return GRID_HEIGHT_1_2 * GRID_STEP
     }
 
     protected override propagateNewValue(newValue: TriState) {
@@ -260,8 +371,8 @@ export abstract class GateBase<
     protected drawGate(g: CanvasRenderingContext2D, type: G | unset, isFake: boolean, ctx: DrawContext) {
         const output = this.outputs[0]
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const top = this.posY - height / 2
         const bottom = this.posY + height / 2
@@ -282,7 +393,7 @@ export abstract class GateBase<
             g.stroke()
         }
 
-        const gateWidth = 40
+        const gateWidth = (2 * Math.max(2, this.inputs.length)) * GRID_STEP
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
@@ -332,8 +443,14 @@ export abstract class GateBase<
                 nameDeltaX -= 6
                 break
 
+
+
             case "AND":
+            case "AND3":
+            case "AND4":
             case "NAND":
+            case "NAND3":
+            case "NAND4":
             case "NIMPLY":
             case "RNIMPLY": {
                 g.moveTo(this.posX, bottom)
@@ -343,7 +460,7 @@ export abstract class GateBase<
                 g.arc(this.posX, this.posY, height / 2, -pi2, pi2)
                 g.closePath()
                 g.stroke()
-                if (type === "NAND") {
+                if (type.startsWith("NAND")) {
                     drawRightCircle()
                 }
                 let shortUp = false, shortDown = false
@@ -359,10 +476,20 @@ export abstract class GateBase<
                 break
             }
 
+
+
             case "OR":
+            case "OR3":
+            case "OR4":
             case "NOR":
+            case "NOR3":
+            case "NOR4":
             case "XOR":
+            case "XOR3":
+            case "XOR4":
             case "XNOR":
+            case "XNOR3":
+            case "XNOR4":
             case "IMPLY":
             case "RIMPLY": {
                 g.beginPath()
@@ -378,7 +505,7 @@ export abstract class GateBase<
                 g.stroke()
                 const savedGateLeft = gateLeft
                 gateLeft += 4
-                if (type === "NOR" || type === "XNOR") {
+                if (type.startsWith("NOR") || type.startsWith("XNOR")) {
                     drawRightCircle()
                 }
                 let shortUp = false, shortDown = false
@@ -390,7 +517,7 @@ export abstract class GateBase<
                     shortDown = true
                 }
                 drawWireEnds(shortUp, shortDown)
-                if (type === "XOR" || type === "XNOR") {
+                if (type.startsWith("X")) {
                     gateLeft = savedGateLeft
                     g.strokeStyle = gateBorderColor
                     g.lineWidth = 3
@@ -718,6 +845,182 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 }
 
 
+
+type Gate3Repr = GateRepr<3, Gate3Type>
+export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
+
+    constructor(savedData: Gate3Repr | Gate3MandatoryParams) {
+        super(savedData, {
+            inOffsets: [[-5, -2, "w"], [-5, 0, "w"], [-5, +2, "w"]],
+            outOffsets: [[+5, 0, "e"]],
+        })
+    }
+
+    toJSON() {
+        return super.toJSONBase()
+    }
+
+    protected get gateTypeEnum() {
+        return Gate3Types
+    }
+
+    override get unrotatedWidth() {
+        return GRID_WIDTH_3 * GRID_STEP
+    }
+
+    override get unrotatedHeight() {
+        return GRID_HEIGHT_3 * GRID_STEP
+    }
+
+    public override makeTooltip() {
+        if (this.showAsUnknown) {
+            return div("Porte cachée")
+        }
+
+        const gateProps = Gate3Types.propsOf(this.type)
+        const myIn0 = this.inputs[0].value
+        const myIn1 = this.inputs[1].value
+        const myIn2 = this.inputs[2].value
+        const myOut = this.value
+
+        const genTruthTableData = () => {
+            const header = ["Entrée 1", "Entrée 2", "Entrée 3", "Sortie"]
+            const rows: TruthTableRowData[] = []
+            for (const in0 of [false, true]) {
+                for (const in1 of [false, true]) {
+                    for (const in2 of [false, true]) {
+                        const matchesCurrent = myIn0 === in0 && myIn1 === in1 && myIn2 === in2
+                        const out = gateProps.out(in0, in1, in2)
+                        rows.push({ matchesCurrent, cells: [in0, in1, in2, out] })
+                    }
+                }
+            }
+            return [header, rows] as const
+        }
+
+        const nodeOut = this.outputs[0].value
+        const desc = nodeOut === myOut
+            ? "Actuellement, elle livre"
+            : "Actuellement, elle devrait livrer"
+
+        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const explanation = gateIsUnspecified
+            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
+            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+
+        return makeGateTooltip(
+            mods("Porte ", b(gateProps.localName)),
+            gateProps.localDesc,
+            explanation,
+            makeTruthTable(genTruthTableData())
+        )
+
+    }
+
+    protected doRecalcValue(): TriState {
+        const in0 = this.inputs[0].value
+        const in1 = this.inputs[1].value
+        const in2 = this.inputs[2].value
+        if (isUnset(in0) || isUnset(in1) || isUnset(in2)) {
+            return Unset
+        }
+        const gateProps = Gate3Types.propsOf(this.type)
+        return gateProps.out(in0, in1, in2)
+    }
+
+}
+
+
+
+type Gate4Repr = GateRepr<4, Gate4Type>
+export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
+
+    constructor(savedData: Gate4Repr | Gate4MandatoryParams) {
+        super(savedData, {
+            inOffsets: [[-6, -3, "w"], [-6, -1, "w"], [-6, +1, "w"], [-6, +3, "w"]],
+            outOffsets: [[+6, 0, "e"]],
+        })
+    }
+
+    toJSON() {
+        return super.toJSONBase()
+    }
+
+    protected get gateTypeEnum() {
+        return Gate4Types
+    }
+
+    override get unrotatedWidth() {
+        return GRID_WIDTH_4 * GRID_STEP
+    }
+
+    override get unrotatedHeight() {
+        return GRID_HEIGHT_4 * GRID_STEP
+    }
+
+    public override makeTooltip() {
+        // TODO extract this in superclass?
+        if (this.showAsUnknown) {
+            return div("Porte cachée")
+        }
+
+        const gateProps = Gate4Types.propsOf(this.type)
+        const myIn0 = this.inputs[0].value
+        const myIn1 = this.inputs[1].value
+        const myIn2 = this.inputs[2].value
+        const myIn3 = this.inputs[3].value
+        const myOut = this.value
+
+        const genTruthTableData = () => {
+            const header = ["Entrée 1", "Entrée 2", "Entrée 3", "Entrée 4", "Sortie"]
+            const rows: TruthTableRowData[] = []
+            for (const in0 of [false, true]) {
+                for (const in1 of [false, true]) {
+                    for (const in2 of [false, true]) {
+                        for (const in3 of [false, true]) {
+                            const matchesCurrent = myIn0 === in0 && myIn1 === in1 && myIn2 === in2 && myIn3 === in3
+                            const out = gateProps.out(in0, in1, in2, in3)
+                            rows.push({ matchesCurrent, cells: [in0, in1, in2, in3, out] })
+                        }
+                    }
+                }
+            }
+            return [header, rows] as const
+        }
+
+        const nodeOut = this.outputs[0].value
+        const desc = nodeOut === myOut
+            ? "Actuellement, elle livre"
+            : "Actuellement, elle devrait livrer"
+
+        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const explanation = gateIsUnspecified
+            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
+            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+
+        return makeGateTooltip(
+            mods("Porte ", b(gateProps.localName)),
+            gateProps.localDesc,
+            explanation,
+            makeTruthTable(genTruthTableData())
+        )
+    }
+
+    protected doRecalcValue(): TriState {
+        const in0 = this.inputs[0].value
+        const in1 = this.inputs[1].value
+        const in2 = this.inputs[2].value
+        const in3 = this.inputs[3].value
+        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isUnset(in3)) {
+            return Unset
+        }
+        const gateProps = Gate4Types.propsOf(this.type)
+        return gateProps.out(in0, in1, in2, in3)
+    }
+
+}
+
+
 // Truth table generation helpers
 
 type TruthTableRowData = { matchesCurrent: boolean, cells: boolean[] }
@@ -742,9 +1045,15 @@ export const GateFactory = {
         if (Gate1Types.isValue(savedData.type)) {
             const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
             return new Gate1(sameSavedDataWithBetterTyping)
-        } else {
+        } else if (Gate2Types.isValue(savedData.type)) {
             const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
             return new Gate2(sameSavedDataWithBetterTyping)
+        } else if (Gate3Types.isValue(savedData.type)) {
+            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
+            return new Gate3(sameSavedDataWithBetterTyping)
+        } else {
+            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
+            return new Gate4(sameSavedDataWithBetterTyping)
         }
     },
 

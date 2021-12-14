@@ -17,6 +17,7 @@
  * set clock frequency from context menu
  * undo/redo
  * edge detector
+ * Rename: OutputBit, OutputAscii, OutputBar, OutputNibble, OutputShiftBuffer; InputBit, Clock, InputNibble, InputShiftBuffer
 
 
 ## Low priority
