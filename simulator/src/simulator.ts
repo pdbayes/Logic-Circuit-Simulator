@@ -1121,6 +1121,26 @@ export function setup() {
         }
     }))
 
+    window.addEventListener("keydown", wrapHandler(e => {
+        switch (e.key) {
+            case "z":
+                if (e.metaKey) {
+                    if (e.shiftKey) {
+                        redo()
+                    } else {
+                        undo()
+                    }
+                    e.preventDefault()
+                }
+                return
+            case "y":
+                if (e.metaKey) {
+                    redo()
+                    e.preventDefault()
+                }
+                return
+        }
+    }))
 
     window.addEventListener("resize", wrapHandler(__ => {
         if (isUndefined(canvasContainer)) {
@@ -1160,6 +1180,14 @@ export function setup() {
 window.addEventListener('DOMContentLoaded', () => {
     setup()
 })
+
+function undo() {
+    console.log("undo")
+}
+
+function redo() {
+    console.log("redo")
+}
 
 function setVisible(elem: HTMLElement, visible: boolean) {
     if (visible) {
