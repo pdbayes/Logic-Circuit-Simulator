@@ -34,8 +34,8 @@ export type ALUOp = "add" | "sub" | "and" | "or"
 export const ALUOp = {
     shortName(op: ALUOp): string {
         switch (op) {
-            case "add": return "Add."
-            case "sub": return "Soustr."
+            case "add": return "+"
+            case "sub": return "–"
             case "and": return "ET"
             case "or": return "OU"
         }
@@ -240,7 +240,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                 if (!isUndefined(aInt) && !isUndefined(bInt)) {
                     // otherwise, stick with default Unset values everywhere
                     let yInt = aInt - bInt
-                    console.log(`${aInt} - ${bInt} = ${yInt}`)
+                    // console.log(`${aInt} - ${bInt} = ${yInt}`)
                     // we can get anything from (max - (-min)) = 7 - (-8) = 15
                     // to (min - max) = -8 - 7 = -15
                     if (yInt < 0) {
@@ -371,26 +371,25 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                 }
             })()
 
-            if (this._showOp) {
-                const opName = isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
-                g.fillText(opName, ...ctx.rotatePoint(this.posX, top + opNameOffset))
-                g.font = "12px sans-serif"
-            } else {
-                g.font = "12px sans-serif"
-                g.fillText("M", ...ctx.rotatePoint(this.posX - GRID_STEP, top + mOffset))
-                g.fillText("Op", ...ctx.rotatePoint(this.posX + GRID_STEP, top + opOffset))
-            }
+            g.font = "12px sans-serif"
+            g.fillText("M", ...ctx.rotatePoint(this.posX - GRID_STEP, top + mOffset))
+            g.fillText("Op", ...ctx.rotatePoint(this.posX + GRID_STEP, top + opOffset))
 
             g.fillText("V", ...ctx.rotatePoint(this.posX - GRID_STEP, bottom - vOffset))
             g.fillText("Z", ...ctx.rotatePoint(this.posX + GRID_STEP, bottom - zOffset))
 
-
             g.font = "bold 14px sans-serif"
             g.fillText("A", ...ctx.rotatePoint(this.posX - 20, top + 4 * GRID_STEP + 6))
             g.fillText("B", ...ctx.rotatePoint(this.posX - 20, bottom - 4 * GRID_STEP - 6))
-            g.fillText("S", ...ctx.rotatePoint(this.posX + 20, this.posY))
+            g.fillText("S", ...ctx.rotatePoint(this.posX + 21, this.posY))
 
-
+            if (this._showOp) {
+                const opName = isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
+                const size = 25 - 13 * (opName.length - 1)
+                g.font = `bold ${size}px sans-serif`
+                g.fillStyle = COLOR_COMPONENT_BORDER
+                g.fillText(opName, this.posX + 4, this.posY)
+            }
         })
     }
 
