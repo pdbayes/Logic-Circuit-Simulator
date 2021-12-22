@@ -5,6 +5,7 @@ import { NodeID } from "./Component"
 import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { EditorSelection } from "../CursorMovementManager"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -12,9 +13,9 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
     static get Repr() {
         return t.union([
-    t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
-    t.tuple([t.number, t.number]),
-], "Wire")
+            t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
+            t.tuple([t.number, t.number]),
+        ], "Wire")
     }
 
     static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
@@ -106,14 +107,14 @@ export class Wire extends Drawable {
 
     static get Repr() {
         return t.union([
-    t.tuple([
-        NodeID, NodeID,
-        t.type({
+            t.tuple([
+                NodeID, NodeID,
+                t.type({
                     waypoints: t.array(Waypoint.Repr),
-        }),
-    ]), // alternative with more fields first
-    t.tuple([NodeID, NodeID]),
-], "Wire")
+                }),
+            ]), // alternative with more fields first
+            t.tuple([NodeID, NodeID]),
+        ], "Wire")
     }
 
     private _endNode: NodeIn | null = null

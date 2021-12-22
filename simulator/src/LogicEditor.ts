@@ -18,6 +18,7 @@ import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUnd
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
+import { DrawableWithPosition, Orientation } from "./components/Drawable"
 // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // // @ts-ignore
 // import LogicEditorCSS from "../css/LogicEditor.css"
@@ -200,6 +201,11 @@ export class LogicEditor extends HTMLElement {
             return
         }
 
+        if (tool === "Save") {
+            PersistenceManager.saveToFile(this)
+            return
+        }
+
         this.setCurrentMouseAction("edit")
         if (tool === "Reset") {
             this.wrapHandler(() => {
@@ -225,9 +231,35 @@ export class LogicEditor extends HTMLElement {
     }
 
     connectedCallback() {
-        const canvasContainer = this.html.canvasContainer
+        const { canvasContainer, mainCanvas } = this.html
         this._baseTransform = this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
         this.trySetModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
+
+        // TODO move this in SelectionMgr?
+        mainCanvas.ondragenter = () => {
+            return false
+        }
+        mainCanvas.ondragover = () => {
+            return false
+        }
+        mainCanvas.ondragend = () => {
+            return false
+        }
+        mainCanvas.ondrop = e => {
+            e.preventDefault()
+            const file = e.dataTransfer?.files?.[0]
+            if (isDefined(file)) {
+                const reader = new FileReader()
+                reader.onload = e => {
+                    const content = e.target?.result?.toString()
+                    if (isDefined(content)) {
+                        window.load(content)
+                    }
+                }
+                reader.readAsText(file, "utf-8")
+            }
+            return false
+        }
 
         // TODO clear all redrawmanager
         // TODO add initial reason to redraw
@@ -290,6 +322,40 @@ export class LogicEditor extends HTMLElement {
 
                     case "m":
                         this.setCurrentMouseAction("move")
+                        return
+
+                    case "ArrowRight":
+                        this.trySetCurrentComponentOrientation("e", e)
+                        return
+                    case "ArrowLeft":
+                        this.trySetCurrentComponentOrientation("w", e)
+                        return
+                    case "ArrowUp":
+                        this.trySetCurrentComponentOrientation("n", e)
+                        return
+                    case "ArrowDown":
+                        this.trySetCurrentComponentOrientation("s", e)
+                        return
+                }
+            }))
+
+            window.addEventListener("keydown", this.wrapHandler(e => {
+                switch (e.key) {
+                    case "z":
+                        if (e.metaKey) {
+                            if (e.shiftKey) {
+                                redo()
+                            } else {
+                                undo()
+                            }
+                            e.preventDefault()
+                        }
+                        return
+                    case "y":
+                        if (e.metaKey) {
+                            redo()
+                            e.preventDefault()
+                        }
                         return
                 }
             }))
@@ -614,7 +680,15 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    private setCurrentMouseAction(action: MouseAction) {
+    trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
+        const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
+        if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition) {
+            currentMouseOverComp.doSetOrient(orient)
+            e.preventDefault()
+        }
+    }
+
+    public setCurrentMouseAction(action: MouseAction) {
         this._currentMouseAction = action
         this.setToolCursor(MouseActions.propsOf(action).cursor)
 
@@ -688,6 +762,22 @@ export class LogicEditor extends HTMLElement {
         })()
         const currentScale = this._currentScale
         return [unscaledX / currentScale, unscaledY / currentScale]
+    }
+
+    offsetXYForComponent(e: MouseEvent | TouchEvent, comp: Component): [number, number] {
+        const offset = this.offsetXY(e)
+        if (comp.orient === Orientation.default) {
+            return offset
+        }
+        const [x, y] = offset
+        const dx = x - comp.posX
+        const dy = y - comp.posY
+        switch (comp.orient) {
+            case "e": return offset // done before anyway
+            case "w": return [comp.posX - dx, comp.posY - dy]
+            case "s": return [comp.posX - dy, comp.posY - dx]
+            case "n": return [comp.posX + dy, comp.posY + dx]
+        }
     }
 
     private guessCanvasHeight(): number {
@@ -803,14 +893,27 @@ export class LogicEditor extends HTMLElement {
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
-        this.wireMgr.draw(g, currentMouseOverComp)
+        this.wireMgr.draw(g, currentMouseOverComp, undefined) // never show wires as selected
 
+        const currentSelection = this.cursorMovementManager._currentSelection
         for (const comp of this.components) {
-            comp.draw(g, currentMouseOverComp)
+            comp.draw(g, currentMouseOverComp, currentSelection)
             comp.forEachNode((node) => {
-                node.draw(g, currentMouseOverComp)
+                node.draw(g, currentMouseOverComp, undefined) // never show nodes as selected
+
                 return true
             })
+        }
+
+        if (isDefined(currentSelection) && currentSelection.visible) {
+            const rect = currentSelection.latestRect
+            g.lineWidth = 1.5
+            g.strokeStyle = "rgb(100,100,255)"
+            g.fillStyle = "rgba(100,100,255,0.2)"
+            g.beginPath()
+            g.rect(rect.x, rect.y, rect.width, rect.height)
+            g.stroke()
+            g.fill()
         }
 
         const newRedrawReasons = this.redrawMgr.getReasonsAndClear()
@@ -842,3 +945,13 @@ window.customElements.define('logic-editor', LogicEditor)
 //         trySetMode(wantedMode)
 //     }
 // }
+
+function undo() {
+    // TODO stubs
+    console.log("undo")
+}
+
+function redo() {
+    // TODO stubs
+    console.log("redo")
+}

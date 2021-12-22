@@ -4,8 +4,8 @@ import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
 import { tooltipContent, mods } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { mode, offsetXYForComponent } from "../simulator"
-import { LogicInput } from "./LogicInput"
+import { InputBit } from "./InputBit"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 2
 const GRID_HEIGHT = 8
@@ -33,8 +33,8 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     private _name: string | undefined = undefined
     // private _radix = DEFAULT_RADIX
 
-    public constructor(savedData: InputNibbleRepr | null) {
-        super(InputNibble.savedStateFrom(savedData), savedData, {
+    public constructor(editor: LogicEditor, savedData: InputNibbleRepr | null) {
+        super(editor, InputNibble.savedStateFrom(savedData), savedData, {
             outOffsets: [[2, -3, "e"], [2, -1, "e"], [2, +1, "e"], [2, +3, "e"]],
         })
         if (isNotNull(savedData)) {
@@ -68,7 +68,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     override isOver(x: number, y: number) {
-        return mode >= Mode.TRYOUT && inRect(this.posX, this.posY, this.width, this.height, x, y)
+        return this.editor.mode >= Mode.TRYOUT && inRect(this.posX, this.posY, this.width, this.height, x, y)
     }
 
     public override makeTooltip() {
@@ -148,12 +148,13 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
         // TODO rotate coordinates here
+        const editor = this.editor
         const h = this.unrotatedHeight
-        const y = offsetXYForComponent(e, this)[1] - this.posY + h / 2
+        const y = editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
         const i = Math.floor(y * 4 / h)
 
         const newValues = [...this.value]
-        newValues[i] = LogicInput.nextValue(newValues[i], mode, e.altKey)
+        newValues[i] = InputBit.nextValue(newValues[i], editor.mode, e.altKey)
 
         this.doSetValue(newValues as unknown as FixedArray<TriState, 4>)
         return true

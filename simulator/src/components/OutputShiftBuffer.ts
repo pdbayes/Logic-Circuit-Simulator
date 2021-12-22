@@ -5,7 +5,8 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
-import { DisplayAscii } from "./DisplayAscii"
+import { OutputAscii } from "./OutputAscii"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 25
 const GRID_HEIGHT = 5
@@ -21,8 +22,8 @@ export const ShiftBufferDecoders_ = {
     "raw": { decodeWidth: 1, maxDisplayWidth: 16, decode: (v: number) => v.toString() },
     "octal": { decodeWidth: 3, maxDisplayWidth: 16, decode: (v: number) => v.toString() },
     "hex": { decodeWidth: 4, maxDisplayWidth: 16, decode: (v: number) => v.toString(16).toUpperCase() },
-    "ascii": { decodeWidth: 7, maxDisplayWidth: 12, decode: (v: number) => DisplayAscii.numberToAscii(v) },
-    "ascii8": { decodeWidth: 8, maxDisplayWidth: 12, decode: (v: number) => DisplayAscii.numberToAscii(v & 0x7F) },
+    "ascii": { decodeWidth: 7, maxDisplayWidth: 12, decode: (v: number) => OutputAscii.numberToAscii(v) },
+    "ascii8": { decodeWidth: 8, maxDisplayWidth: 12, decode: (v: number) => OutputAscii.numberToAscii(v & 0x7F) },
     "uint4": { decodeWidth: 4, maxDisplayWidth: 8, decode: (v: number) => v.toString() },
     "int4": { decodeWidth: 4, maxDisplayWidth: 8, decode: (v: number) => (v > 7 ? v - 16 : v).toString() },
     "uint8": { decodeWidth: 8, maxDisplayWidth: 4, decode: (v: number) => v.toString() },
@@ -42,7 +43,7 @@ export const ShiftBufferDecoders =
 
 export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
 
-export const ShiftBufferOutDef =
+export const OutputShiftBufferDef =
     defineComponent(3, 0, t.type({
         type: t.literal("shiftbuffer"),
         state: typeOrUndefined(t.string),
@@ -52,27 +53,27 @@ export const ShiftBufferOutDef =
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
     }, "OutputShiftBuffer"))
 
-export type ShiftBufferOutRepr = typeof ShiftBufferOutDef.reprType
+export type OutputShiftBufferRepr = typeof OutputShiftBufferDef.reprType
 
-const ShiftBufferOutDefaults = {
+const OutputShiftBufferDefaults = {
     decodeAs: "raw" as ShiftBufferDecoder,
     trigger: EdgeTrigger.rising,
 }
 
-type ShiftBufferOutState = {
+type OutputShiftBufferState = {
     incoming: TriState[]
     decoded: [string, TriState[]][]
 }
 
-export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, ShiftBufferOutState> {
+export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr, OutputShiftBufferState> {
 
-    protected _decodeAs: ShiftBufferDecoder = ShiftBufferOutDefaults.decodeAs
+    protected _decodeAs: ShiftBufferDecoder = OutputShiftBufferDefaults.decodeAs
     protected _groupEvery: number | undefined = undefined
     protected _maxItems: number | undefined = undefined
-    protected _trigger: EdgeTrigger = ShiftBufferOutDefaults.trigger
+    protected _trigger: EdgeTrigger = OutputShiftBufferDefaults.trigger
     protected _lastClock: TriState = Unset
 
-    private static savedStateFrom(savedData: { state: string | undefined } | null): ShiftBufferOutState {
+    private static savedStateFrom(savedData: { state: string | undefined } | null): OutputShiftBufferState {
         if (isNull(savedData) || isUndefined(savedData.state)) {
             return { incoming: [], decoded: [] }
         }
@@ -90,8 +91,8 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
         return { incoming, decoded: [] }
     }
 
-    public constructor(savedData: ShiftBufferOutRepr | null) {
-        super(ShiftBufferOut.savedStateFrom(savedData), savedData, {
+    public constructor(editor: LogicEditor, savedData: OutputShiftBufferRepr | null) {
+        super(editor, OutputShiftBuffer.savedStateFrom(savedData), savedData, {
             inOffsets: [
                 [-14, +1, "w"], // Clock
                 [-10, +3, "s"], // Clear
@@ -99,9 +100,9 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
             ],
         })
         if (isNotNull(savedData)) {
-            this._decodeAs = savedData.decodeAs ?? ShiftBufferOutDefaults.decodeAs
+            this._decodeAs = savedData.decodeAs ?? OutputShiftBufferDefaults.decodeAs
             this._maxItems = savedData.maxItems
-            this._trigger = savedData.trigger ?? ShiftBufferOutDefaults.trigger
+            this._trigger = savedData.trigger ?? OutputShiftBufferDefaults.trigger
         }
         this.setInputsPreferSpike(INPUT.Clock, INPUT.Clear)
         this.redecodeAll()
@@ -113,10 +114,10 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
             type: "shiftbuffer" as const,
             ...this.toJSONBase(),
             state: stateArray.length === 0 ? undefined : stateArray.join(""),
-            decodeAs: (this._decodeAs !== ShiftBufferOutDefaults.decodeAs) ? this._decodeAs : undefined,
+            decodeAs: (this._decodeAs !== OutputShiftBufferDefaults.decodeAs) ? this._decodeAs : undefined,
             groupEvery: this._groupEvery,
             maxItems: this._maxItems,
-            trigger: (this._trigger !== ShiftBufferOutDefaults.trigger) ? this._trigger : undefined,
+            trigger: (this._trigger !== OutputShiftBufferDefaults.trigger) ? this._trigger : undefined,
         }
     }
 
@@ -151,7 +152,7 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
         ))
     }
 
-    protected doRecalcValue(): ShiftBufferOutState {
+    protected doRecalcValue(): OutputShiftBufferState {
         if (this.inputs[INPUT.Clear].value === true) {
             return { incoming: [], decoded: [] }
         }
@@ -163,19 +164,19 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
             const newBit = this.inputs[INPUT.Data].value
             const decoder = ShiftBufferDecoders.propsOf(this._decodeAs)
             const maxItems = this._maxItems ?? decoder.maxDisplayWidth
-            return ShiftBufferOut.valueByAddingNewBit(newBit, oldValue, decoder, maxItems)
+            return OutputShiftBuffer.valueByAddingNewBit(newBit, oldValue, decoder, maxItems)
         }
         return oldValue
     }
 
-    private static valueByAddingNewBit(newBit: TriState, oldValue: ShiftBufferOutState, decoder: ShiftBufferDecoderProps, maxItems: number): ShiftBufferOutState {
+    private static valueByAddingNewBit(newBit: TriState, oldValue: OutputShiftBufferState, decoder: ShiftBufferDecoderProps, maxItems: number): OutputShiftBufferState {
         const newIncoming = [newBit, ...oldValue.incoming]
         if (newIncoming.length < decoder.decodeWidth) {
             return { incoming: newIncoming, decoded: oldValue.decoded }
         }
         const valAsInt = displayValuesFromArray(newIncoming, true)[1]
         const decoded = isUnset(valAsInt) ? Unset : decoder.decode(valAsInt)
-        const newDecoded: ShiftBufferOutState["decoded"] = [[decoded, newIncoming], ...oldValue.decoded]
+        const newDecoded: OutputShiftBufferState["decoded"] = [[decoded, newIncoming], ...oldValue.decoded]
         if (newDecoded.length > maxItems) {
             newDecoded.splice(maxItems, newDecoded.length - maxItems)
         }
@@ -295,9 +296,9 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
         const decoder = ShiftBufferDecoders.propsOf(this._decodeAs)
         const allBits = allBitsOf(this.value)
         const maxItems = this._maxItems ?? decoder.maxDisplayWidth
-        let value: ShiftBufferOutState = { incoming: [], decoded: [] }
+        let value: OutputShiftBufferState = { incoming: [], decoded: [] }
         for (const newBit of allBits.reverse()) {
-            value = ShiftBufferOut.valueByAddingNewBit(newBit, value, decoder, maxItems)
+            value = OutputShiftBuffer.valueByAddingNewBit(newBit, value, decoder, maxItems)
         }
         this.doSetValue(value)
     }
@@ -368,7 +369,7 @@ export class ShiftBufferOut extends ComponentBase<3, 0, ShiftBufferOutRepr, Shif
     }
 }
 
-function allBitsOf({ incoming, decoded }: ShiftBufferOutState): TriState[] {
+function allBitsOf({ incoming, decoded }: OutputShiftBufferState): TriState[] {
     const allBits = [...incoming]
     for (const [__stringRep, bits] of decoded) {
         allBits.push(...bits)

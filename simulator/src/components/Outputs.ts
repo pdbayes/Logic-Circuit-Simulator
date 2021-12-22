@@ -1,38 +1,56 @@
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
-import { DisplayAscii, DisplayAsciiDef } from "./DisplayAscii"
-import { DisplayBar, DisplayBarDef } from "./DisplayBar"
-import { DisplayNibble, DisplayNibbleDef } from "./DisplayNibble"
-import { LogicOutput, LogicOutputDef } from "./LogicOutput"
-import { ShiftBufferOut, ShiftBufferOutDef } from "./ShiftBufferOut"
+import { OutputAscii, OutputAsciiDef } from "./OutputAscii"
+import { OutputBar, OutputBarDef } from "./OutputBar"
+import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
+import { OutputBit, OutputBitDef } from "./OutputBit"
+import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
+import { isUndefined, isString } from "../utils"
 
-export type Output = LogicOutput | DisplayNibble | DisplayAscii | DisplayBar | ShiftBufferOut
+export type Output = OutputBit | OutputNibble | OutputAscii | OutputBar | OutputShiftBuffer
 
 export const OutputDef = t.union([
-    LogicOutputDef.repr,
-    DisplayNibbleDef.repr,
-    DisplayAsciiDef.repr,
-    DisplayBarDef.repr,
-    ShiftBufferOutDef.repr,
+    OutputBitDef.repr,
+    OutputNibbleDef.repr,
+    OutputAsciiDef.repr,
+    OutputBarDef.repr,
+    OutputShiftBufferDef.repr,
 ], "Output")
 
 type OutputRepr = t.TypeOf<typeof OutputDef>
 
 export const OutputFactory = {
 
-    make: (editor: LogicEditor, savedData: OutputRepr) => {
+    make: (editor: LogicEditor, savedDataOrType: OutputRepr | string | undefined) => {
+        let blank
+        let savedData: OutputRepr
+
+        if (isUndefined(savedDataOrType)) {
+            // default, typeless option
+            blank = true
+            savedData = {} as OutputRepr
+        } else if (isString(savedDataOrType)) {
+            // specific subtype
+            blank = true
+            savedData = { type: savedDataOrType } as OutputRepr
+        } else {
+            // as saved
+            blank = false
+            savedData = savedDataOrType
+        }
+
         if (!("type" in savedData)) {
-            return new LogicOutput(editor, savedData)
+            return new OutputBit(editor, blank ? null : savedData)
         }
         switch (savedData.type) {
             case "nibble":
-                return new DisplayNibble(editor, savedData)
+                return new OutputNibble(editor, blank ? null : savedData)
             case "ascii":
-                return new DisplayAscii(editor, savedData)
+                return new OutputAscii(editor, blank ? null : savedData)
             case "bar":
-                return new DisplayBar(editor, savedData)
+                return new OutputBar(editor, blank ? null : savedData)
             case "shiftbuffer":
-                return new ShiftBufferOut(editor, savedData)
+                return new OutputShiftBuffer(editor, blank ? null : savedData)
         }
     },
 

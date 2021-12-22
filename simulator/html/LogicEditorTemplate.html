@@ -12,32 +12,32 @@
 
         <div id="inOutHeader" class="leftToolbarHeader">
             Entrées/sorties</div>
-        <button type="button" data-component="LogicInput" title="Entrée""
+        <button type="button" data-component="in" title="Entrée""
             class=" list-group-item list-group-item-action sim-component-button">
-            <img src="simulator/img/LogicInput.svg" class="" width="32">
+            <img src="simulator/img/InputBit.svg" class="" width="32">
         </button>
-        <button type="button" data-component="LogicOutput" title="Sortie""
+        <button type="button" data-component="out" title="Sortie""
             class=" list-group-item list-group-item-action sim-component-button">
-            <img src="simulator/img/LogicOutput.svg" class="" width="32">
+            <img src="simulator/img/OutputBit.svg" class="" width="32">
         </button>
-        <button type="button" data-component="DisplayNibble" title="Affichage de 4 bits""
+        <button type="button" data-component="out" data-type="nibble" title="Affichage de 4 bits""
             class=" list-group-item list-group-item-action sim-component-button">
-            <img src="simulator/img/DisplayNibble.svg" class="" width="32">
+            <img src="simulator/img/OutputNibble.svg" class="" width="32">
         </button>
-        <button type="button" data-component="DisplayAscii" title="Affichage d’un caractère ASCII""
+        <button type="button" data-component="out" data-type="ascii" title="Affichage d’un caractère ASCII""
             class=" list-group-item list-group-item-action sim-component-button">
-            <img src="simulator/img/DisplayAscii.svg" class="" width="32">
+            <img src="simulator/img/OutputAscii.svg" class="" width="32">
         </button>
-        <button type="button" data-component="DisplayBar" title="Affichage d’un bit sous forme de segment lumineux" onclick="activeTool(this)" class="list-group-item list-group-item-action sim-component-button">
-            <img src="simulator/img/DisplayBar.svg" class="" width="32">
+        <button type="button" data-component="out" data-type="bar" title="Affichage d’un bit sous forme de segment lumineux" onclick="activeTool(this)" class="list-group-item list-group-item-action sim-component-button">
+            <img src="simulator/img/OutputBar.svg" class="" width="32">
         </button>
-        <button type="button" data-component="Clock" title="Horloge" onclick="activeTool(this)" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="in" data-type="clock" title="Horloge" onclick="activeTool(this)" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/Clock.svg" class="" width="50">
         </button>
-        <button type="button" data-component="InputNibble" title="Entrée semioctet" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="in" data-type="nibble" title="Entrée semioctet" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/InputNibble.svg" width="32">
         </button>
-        <button type="button" data-component="OutputShiftBuffer" title="Affichage avec buffer à décalage" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="out" data-type="shiftbuffer" title="Affichage avec buffer à décalage" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/OutputShiftBuffer.svg" width="50">
         </button>
 
@@ -47,97 +47,97 @@
         <div id="gatesHeader" class="leftToolbarHeader">
             Portes</div>
 
-        <button type="button" data-component="Gate" data-type="NOT" title="Porte NON" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NOT" title="Porte NON" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NOT.svg" width="50">
             <span class="gate-label">NON</span>
         </button>
-        <button type="button" data-component="Gate" data-type="AND" title="Porte ET" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="AND" title="Porte ET" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/AND.svg" width="50">
             <span class="gate-label">ET</span>
         </button>
-        <button type="button" data-component="Gate" data-type="OR" title="Porte OU" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="OR" title="Porte OU" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/OR.svg" width="50">
             <span class="gate-label">OU</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XOR" title="Porte OU-X" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XOR" title="Porte OU-X" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XOR.svg" width="50">
             <span class="gate-label">OU-X</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NAND" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NAND" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NAND.svg" width="50">
             <span class="gate-label">NON-ET</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NOR" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NOR" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NOR.svg" width="50">
             <span class="gate-label">NON-OU</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XNOR" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XNOR" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XNOR.svg" width="50">
             <span class="gate-label">NON-OU-X</span>
         </button>
-        <button type="button" data-component="Gate" data-type="IMPLY" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="IMPLY" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/IMPLY.svg" width="50">
             <span class="gate-label">IMPLIQUE</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NIMPLY" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NIMPLY" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NIMPLY.svg" width="50">
             <span class="gate-label">NON-IMPL.</span>
         </button>
-        <button type="button" data-component="Gate" data-type="TXA" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="TXA" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/TXA.svg" width="50">
             <span class="gate-label">TRANSF.</span>
         </button>
-        <button type="button" data-component="Gate" data-type="BUF" title="Buffer" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="BUF" title="Buffer" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/BUF.svg" width="50">
             <span class="gate-label">OUI</span>
         </button>
 
-        <button type="button" data-component="Gate" data-type="AND3" title="Porte ET à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="AND3" title="Porte ET à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/AND3.svg" width="50">
             <span class="gate-label">ET (3)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="OR3" title="Porte OU à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="OR3" title="Porte OU à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/OR3.svg" width="50">
             <span class="gate-label">OU (3)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XOR3" title="Porte OU-X à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XOR3" title="Porte OU-X à 3 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XOR3.svg" width="50">
             <span class="gate-label">OU-X (3)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NAND3" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NAND3" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NAND3.svg" width="50">
             <span class="gate-label">NON-ET (3)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NOR3" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NOR3" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NOR3.svg" width="50">
             <span class="gate-label">NON-OU (3)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XNOR3" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XNOR3" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XNOR3.svg" width="50">
             <span class="gate-label">NON-OU-X (3)</span>
         </button>
 
-        <button type="button" data-component="Gate" data-type="AND4" title="Porte ET à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="AND4" title="Porte ET à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/AND4.svg" width="50">
             <span class="gate-label">ET (4)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="OR4" title="Porte OU à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="OR4" title="Porte OU à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/OR4.svg" width="50">
             <span class="gate-label">OU (4)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XOR4" title="Porte OU-X à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XOR4" title="Porte OU-X à 4 entrées" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XOR4.svg" width="50">
             <span class="gate-label">OU-X (4)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NAND4" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NAND4" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NAND4.svg" width="50">
             <span class="gate-label">NON-ET (4)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="NOR4" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="NOR4" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/NOR4.svg" width="50">
             <span class="gate-label">NON-OU (4)</span>
         </button>
-        <button type="button" data-component="Gate" data-type="XNOR4" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="gate" data-type="XNOR4" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/XNOR4.svg" width="50">
             <span class="gate-label">NON-OU-X (4)</span>
         </button>
@@ -147,67 +147,67 @@
         <div id="icHeader" class="leftToolbarHeader">
             Compo- sants</div>
 
-        <button type="button" data-component="IC" data-type="adder" title="Additionneur" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="adder" title="Additionneur" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/Adder.svg" width="50">
             <span class="gate-label">Add.</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="alu" title="ALU" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="alu" title="ALU" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">ALU</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-2to1" title="Multiplexeur 2 vers 1" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-2to1" title="Multiplexeur 2 vers 1" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 2-1</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-4to1" title="Multiplexeur 4 vers 1" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-4to1" title="Multiplexeur 4 vers 1" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 4-1</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-8to1" title="Multiplexeur 8 vers 1" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-8to1" title="Multiplexeur 8 vers 1" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 8-1</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-4to2" title="Multiplexeur 4 vers 2" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-4to2" title="Multiplexeur 4 vers 2" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 4-2</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-8to2" title="Multiplexeur 8 vers 2" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-8to2" title="Multiplexeur 8 vers 2" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 8-2</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="mux-8to4" title="Multiplexeur 8 vers 4" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="mux-8to4" title="Multiplexeur 8 vers 4" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/ALU.svg" width="50">
             <span class="gate-label">Mux 8-4</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="latch-sr" title="Verrou SR" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="latch-sr" title="Verrou SR" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/LatchSR.svg" width="50">
             <span class="gate-label">Verrou SR</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="flipflop-jk" title="Bascule JK" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="flipflop-jk" title="Bascule JK" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/FlipflopJK.svg" width="50">
             <span class="gate-label">Basc. JK</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="flipflop-t" title="Bascule T" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="flipflop-t" title="Bascule T" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/FlipflopT.svg" width="50">
             <span class="gate-label">Basc. T</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="flipflop-d" title="Bascule D" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="flipflop-d" title="Bascule D" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/FlipflopD.svg" width="50">
             <span class="gate-label">Basc. D</span>
         </button>
 
-        <button type="button" data-component="IC" data-type="register" title="Registre" class="list-group-item list-group-item-action sim-component-button">
+        <button type="button" data-component="component" data-type="register" title="Registre" class="list-group-item list-group-item-action sim-component-button">
             <img src="simulator/img/Register.svg" width="50">
             <span class="gate-label">Registre</span>
         </button>

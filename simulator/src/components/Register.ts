@@ -5,6 +5,7 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 15
@@ -49,8 +50,8 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return savedData.state.map(toTriState) as unknown as FixedArray<TriState, 4>
     }
 
-    public constructor(savedData: RegisterRepr | null) {
-        super(Register.savedStateFrom(savedData), savedData, {
+    public constructor(editor: LogicEditor, savedData: RegisterRepr | null) {
+        super(editor, Register.savedStateFrom(savedData), savedData, {
             inOffsets: [
                 [-5, +6, "w"], // Clock
                 [0, -8, "n"], // Preset

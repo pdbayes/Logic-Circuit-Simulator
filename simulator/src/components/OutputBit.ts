@@ -1,24 +1,24 @@
 import { isDefined, isNotNull, isUndefined, isUnset, Mode, TriState, typeOrUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
+import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { Node, NodeOut } from "./Node"
 
-
-export const LogicOutputDef =
+export const OutputBitDef =
     defineComponent(1, 0, t.type({
         name: typeOrUndefined(t.string),
-    }, "LogicOutput"))
+    }, "OutputBit"))
 
-type LogicOutputRepr = typeof LogicOutputDef.reprType
+type OutputBitRepr = typeof OutputBitDef.reprType
 
-export class LogicOutput extends ComponentBase<1, 0, LogicOutputRepr, TriState> {
+export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, TriState> {
 
     private _name: string | undefined = undefined
 
-    public constructor(editor: LogicEditor, savedData: LogicOutputRepr | null) {
+    public constructor(editor: LogicEditor, savedData: OutputBitRepr | null) {
         super(editor, false, savedData, { inOffsets: [[-3, 0, "w"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name

@@ -2,7 +2,6 @@ import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, for
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
-import { RecalcManager } from "../RedrawRecalcManager"
 import { LogicEditor } from "../LogicEditor"
 
 
@@ -197,7 +196,7 @@ export abstract class ComponentBase<
         this.outputs = this.makeNodes(outOffsets, outputSpecs, NodeOut) as FixedArray<NodeOut, NumOutputs>
 
         // both propagateNewValue and setNeedsRecalc are needed:
-        // * propagateNewValue allows the current value (e.g. for LogicInputs)
+        // * propagateNewValue allows the current value (e.g. for InputBits)
         //   to be set to the outputs
         // * setNeedsRecalc schedules a recalculation (e.g. for Gates)
         this.propagateNewValue(_value)

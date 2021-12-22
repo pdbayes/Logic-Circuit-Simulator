@@ -7,14 +7,14 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { LogicEditor } from "../LogicEditor"
 
 
-export const DisplayBarTypes = {
+export const OutputBarTypes = {
     v: null,
     h: null,
     px: null,
     PX: null,
 } as const
 
-type DisplayBarType = keyof typeof DisplayBarTypes
+type OutputBarType = keyof typeof OutputBarTypes
 
 
 export const LedColors = {
@@ -26,8 +26,8 @@ export const LedColors = {
 type LedColor = keyof typeof LedColors
 
 
-const DisplayBarDefaults = {
-    display: "h" as DisplayBarType,
+const OutputBarDefaults = {
+    display: "h" as OutputBarType,
     color: "green" as LedColor,
     transparent: false,
 }
@@ -35,28 +35,28 @@ const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
 
 
-export const DisplayBarDef =
+export const OutputBarDef =
     defineComponent(1, 0, t.type({
         type: t.literal("bar"),
-        display: t.keyof(DisplayBarTypes, "DisplayBarType"),
+        display: t.keyof(OutputBarTypes, "OutputBarType"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
         transparent: typeOrUndefined(t.boolean),
-    }, "DisplayBar"))
+    }, "OutputBar"))
 
-type DisplayBarRepr = typeof DisplayBarDef.reprType
+type OutputBarRepr = typeof OutputBarDef.reprType
 
-export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
+export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
 
-    private _display = DisplayBarDefaults.display
-    private _color = DisplayBarDefaults.color
-    private _transparent = DisplayBarDefaults.transparent
+    private _display = OutputBarDefaults.display
+    private _color = OutputBarDefaults.color
+    private _transparent = OutputBarDefaults.transparent
 
-    public constructor(editor: LogicEditor, savedData: DisplayBarRepr | null) {
+    public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
         super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
-            this._color = savedData.color ?? DisplayBarDefaults.color
-            this._transparent = savedData.transparent ?? DisplayBarDefaults.transparent
+            this._color = savedData.color ?? OutputBarDefaults.color
+            this._transparent = savedData.transparent ?? OutputBarDefaults.transparent
         } else {
             this.updateInputOffsetX()
         }
@@ -67,8 +67,8 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             type: "bar" as const,
             ...super.toJSONBase(),
             display: this._display,
-            color: this._color === DisplayBarDefaults.color ? undefined : this._color,
-            transparent: this._transparent === DisplayBarDefaults.transparent ? undefined : this._transparent,
+            color: this._color === OutputBarDefaults.color ? undefined : this._color,
+            transparent: this._transparent === OutputBarDefaults.transparent ? undefined : this._transparent,
         }
     }
 
@@ -156,7 +156,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         return true
     }
 
-    private doSetDisplay(newDisplay: DisplayBarType) {
+    private doSetDisplay(newDisplay: OutputBarType) {
         this._display = newDisplay
         this.updateInputOffsetX()
         this.setNeedsRedraw("display mode changed")
@@ -179,7 +179,7 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
-        const makeItemShowAs = (desc: string, display: DisplayBarType) => {
+        const makeItemShowAs = (desc: string, display: OutputBarType) => {
             const isCurrent = this._display === display
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetDisplay(display)

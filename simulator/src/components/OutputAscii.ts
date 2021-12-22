@@ -10,23 +10,23 @@ const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
 
-export const DisplayAsciiDef =
+export const OutputAsciiDef =
     defineComponent(7, 0, t.type({
         type: t.literal("ascii"),
         name: typeOrUndefined(t.string),
         additionalReprRadix: typeOrUndefined(t.number),
         showAsUnknown: typeOrUndefined(t.boolean),
-    }, "DisplayAscii"))
+    }, "OutputAscii"))
 
-type DisplayAsciiRepr = typeof DisplayAsciiDef.reprType
+type OutputAsciiRepr = typeof OutputAsciiDef.reprType
 
-export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string, number | "?"]> {
+export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, number | "?"]> {
 
     private _name: string | undefined = undefined
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
-    public constructor(editor: LogicEditor, savedData: DisplayAsciiRepr | null) {
+    public constructor(editor: LogicEditor, savedData: OutputAsciiRepr | null) {
         super(editor, ["0000000", 0], savedData, {
             inOffsets: [[-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"]],
         })
@@ -145,7 +145,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
                 }
                 mainText = "?"
             } else {
-                mainText = DisplayAscii.numberToAscii(value)
+                mainText = OutputAscii.numberToAscii(value)
                 if (value < 32) {
                     // non-printable
                     g.font = "16px sans-serif"

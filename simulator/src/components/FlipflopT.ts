@@ -3,6 +3,7 @@ import { COLOR_COMPONENT_INNER_LABELS, drawWireLineToComponent } from "../drawut
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflop, Flipflop, OUTPUT } from "./FlipflopOrLatch"
+import { LogicEditor } from "../LogicEditor"
 
 
 const enum INPUT {
@@ -19,8 +20,8 @@ export type FlipflopTRepr = typeof FlipflopTDef.reprType
 
 export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
 
-    public constructor(savedData: FlipflopTRepr | null) {
-        super(savedData, {
+    public constructor(editor: LogicEditor, savedData: FlipflopTRepr | null) {
+        super(editor, savedData, {
             inOffsets: [[-4, -2, "w"]],
             clockYOffset: 2,
         })

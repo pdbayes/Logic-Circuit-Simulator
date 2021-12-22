@@ -3,6 +3,7 @@ import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { EditorSelection } from "../CursorMovementManager"
 
 export interface DrawContext {
     isMouseOver: boolean

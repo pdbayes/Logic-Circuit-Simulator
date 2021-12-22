@@ -849,8 +849,8 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 type Gate3Repr = GateRepr<3, Gate3Type>
 export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
-    constructor(savedData: Gate3Repr | Gate3MandatoryParams) {
-        super(savedData, {
+    constructor(editor: LogicEditor, savedData: Gate3Repr | Gate3MandatoryParams) {
+        super(editor, savedData, {
             inOffsets: [[-5, -2, "w"], [-5, 0, "w"], [-5, +2, "w"]],
             outOffsets: [[+5, 0, "e"]],
         })
@@ -935,8 +935,8 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 type Gate4Repr = GateRepr<4, Gate4Type>
 export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
 
-    constructor(savedData: Gate4Repr | Gate4MandatoryParams) {
-        super(savedData, {
+    constructor(editor: LogicEditor, savedData: Gate4Repr | Gate4MandatoryParams) {
+        super(editor, savedData, {
             inOffsets: [[-6, -3, "w"], [-6, -1, "w"], [-6, +1, "w"], [-6, +3, "w"]],
             outOffsets: [[+6, 0, "e"]],
         })

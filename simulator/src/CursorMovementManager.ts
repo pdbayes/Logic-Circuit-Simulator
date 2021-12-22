@@ -16,6 +16,12 @@ type MouseDownData = {
     triggeredContextMenu: boolean
 }
 
+export type EditorSelection = {
+    allRects: DOMRect[],
+    latestRect: DOMRect,
+    visible: boolean
+}
+
 
 export class CursorMovementManager {
 
@@ -27,6 +33,9 @@ export class CursorMovementManager {
     private _startDragTimeoutHandle: TimeoutHandle | null = null
     private _currentHandlers: ToolHandlers
     private _lastTouchEnd: [Drawable, number] | undefined = undefined
+
+    public _currentSelection: EditorSelection | undefined = undefined
+
 
     constructor(editor: LogicEditor) {
         this.editor = editor
@@ -358,6 +367,7 @@ export class CursorMovementManager {
             const factory = ComponentFactory.makeFactoryForButton(compButton)
 
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
+                this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 const newComponent = factory(editor)
                 this._currentMouseOverComp = newComponent
@@ -556,8 +566,56 @@ class EditHandlers extends ToolHandlers {
         }
         return false // unhandled
     }
+
+
+    override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
+        const editor = this.editor
+        const cursorMovementMgr = editor.cursorMovementManager
+        const currentSelection = cursorMovementMgr._currentSelection
+        if (isDefined(currentSelection)) {
+            const [left, top] = editor.offsetXY(e)
+            if (e.shiftKey) {
+                // augment selection
+                const rect = new DOMRect(left, top, 1, 1)
+                currentSelection.allRects.push(rect)
+                currentSelection.latestRect = rect
+                currentSelection.visible = true
+            } else {
+                // clear selection
+                cursorMovementMgr._currentSelection = undefined
+            }
+            editor.redrawMgr.addReason("selection rect changed", null)
+        }
+    }
+    override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
+        // TODO smarter selection handling:
+        // - if shift key is pressed, add to selection, also individual component
+        // - shift-click or drag inverses selection state
+        const editor = this.editor
+        const cursorMovementMgr = editor.cursorMovementManager
+        const currentSelection = cursorMovementMgr._currentSelection
+        const [x, y] = editor.offsetXY(e)
+        if (isUndefined(currentSelection)) {
+            const rect = new DOMRect(x, y, 1, 1)
+            cursorMovementMgr._currentSelection = { allRects: [rect], latestRect: rect, visible: true }
+        } else {
+            const rect = currentSelection.latestRect
+            rect.width = x - rect.x
+            rect.height = y - rect.y
+            editor.redrawMgr.addReason("selection rect changed", null)
+        }
+    }
+
     override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
-        this.editor.wireMgr.tryCancelWire()
+        const editor = this.editor
+        editor.wireMgr.tryCancelWire()
+
+        const cursorMovementMgr = editor.cursorMovementManager
+        const currentSelection = cursorMovementMgr._currentSelection
+        if (isDefined(currentSelection)) {
+            currentSelection.visible = false
+            editor.redrawMgr.addReason("selection rect changed", null)
+        }
     }
 }
 

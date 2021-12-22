@@ -1,7 +1,7 @@
 import * as t from "io-ts"
 import { OutputDef } from "./components/Outputs"
 import { GateDef } from "./components/Gate"
-import { WireRepr } from "./components/Wire"
+import { Wire } from "./components/Wire"
 import { PartialWhereUndefinedRecursively } from "./utils"
 import { InputDef } from "./components/Inputs"
 import { ICDef } from "./components/IC"

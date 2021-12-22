@@ -10,7 +10,7 @@ const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 const DEFAULT_RADIX = 10
 
-export const DisplayNibbleDef =
+export const OutputNibbleDef =
     defineComponent(4, 0, t.type({
         type: t.literal("nibble"),
         name: typeOrUndefined(t.string),
@@ -18,15 +18,15 @@ export const DisplayNibbleDef =
         showAsUnknown: typeOrUndefined(t.boolean),
     }, "DisplayNibble"))
 
-type DisplayNibbleRepr = typeof DisplayNibbleDef.reprType
+type OutputNibbleRepr = typeof OutputNibbleDef.reprType
 
-export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [string, number | unset]> {
+export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | unset]> {
 
     private _name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
     private _showAsUnknown = false
 
-    public constructor(editor: LogicEditor, savedData: DisplayNibbleRepr | null) {
+    public constructor(editor: LogicEditor, savedData: OutputNibbleRepr | null) {
         super(editor, ["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name

@@ -1,19 +1,20 @@
 import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined, isUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
+import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { Node, NodeIn } from "./Node"
 
-export const LogicInputBaseDef =
+export const InputBitBaseDef =
     defineComponent(0, 1, t.type({
         name: typeOrUndefined(t.string),
-    }, "LogicInputBase"))
+    }, "InputBitBase"))
 
-export type LogicInputBaseRepr = typeof LogicInputBaseDef.reprType
+export type InputBitBaseRepr = typeof InputBitBaseDef.reprType
 
-export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
+export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
 
     private _name: string | undefined = undefined
 
@@ -95,7 +96,7 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             return
         }
         const [outNode, comp, inNode] = newLinks[0]
-        if (inNode instanceof NodeIn && this instanceof LogicInput) {
+        if (inNode instanceof NodeIn && this instanceof InputBit) {
             if (inNode._prefersSpike) {
                 this.doSetIsPushButton(true)
             }
@@ -142,20 +143,20 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 }
 
 
-export const LogicInputDef =
-    extendComponent(LogicInputBaseDef, t.type({
+export const InputBitDef =
+    extendComponent(InputBitBaseDef, t.type({
         val: TriStateRepr,
         isPushButton: typeOrUndefined(t.boolean),
-    }, "LogicInput"))
+    }, "InputBit"))
 
-export type LogicInputRepr = typeof LogicInputDef.reprType
+export type InputBitRepr = typeof InputBitDef.reprType
 
-const LogicInputDefaults = {
+const InputBitDefaults = {
     isPushButton: false,
 }
 
 
-export class LogicInput extends LogicInputBase<LogicInputRepr> {
+export class InputBit extends InputBitBase<InputBitRepr> {
 
     static nextValue(value: TriState, mode: Mode, altKey: boolean): TriState {
         switch (value) {
@@ -165,9 +166,9 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         }
     }
 
-    private _isPushButton = LogicInputDefaults.isPushButton
+    private _isPushButton = InputBitDefaults.isPushButton
 
-    public constructor(editor: LogicEditor, savedData: LogicInputRepr | null) {
+    public constructor(editor: LogicEditor, savedData: InputBitRepr | null) {
         super(
             editor,
             // initial value may be given by saved data
@@ -175,7 +176,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
             savedData,
         )
         if (isNotNull(savedData)) {
-            this._isPushButton = savedData.isPushButton ?? LogicInputDefaults.isPushButton
+            this._isPushButton = savedData.isPushButton ?? InputBitDefaults.isPushButton
         }
 
     }
@@ -184,7 +185,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
         return {
             ...super.toJSONBase(),
             val: toTriStateRepr(this.value),
-            isPushButton: (this._isPushButton !== LogicInputDefaults.isPushButton) ? this._isPushButton : undefined,
+            isPushButton: (this._isPushButton !== InputBitDefaults.isPushButton) ? this._isPushButton : undefined,
         }
     }
 
@@ -211,7 +212,7 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
             return false
         }
 
-        this.doSetValue(LogicInput.nextValue(this.value, mode, e.altKey))
+        this.doSetValue(InputBit.nextValue(this.value, this.editor.mode, e.altKey))
         return true
     }
 

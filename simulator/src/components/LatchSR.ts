@@ -3,6 +3,7 @@ import { COLOR_COMPONENT_BORDER, drawWireLineToComponent } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
+import { LogicEditor } from "../LogicEditor"
 
 const enum INPUT {
     Set,
@@ -16,8 +17,8 @@ export type LatchSRRepr = typeof LatchSRDef.reprType
 
 export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
-    public constructor(savedData: LatchSRRepr | null) {
-        super(savedData, {
+    public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
+        super(editor, savedData, {
             inOffsets: [[-4, 2, "w"], [-4, -2, "w"]],
         })
         this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)

@@ -4,6 +4,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import * as t from "io-ts"
 import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawRoundValue, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { NodeIn } from "./Node"
+import { LogicEditor } from "../LogicEditor"
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 7
@@ -47,8 +48,8 @@ export abstract class FlipflopOrLatch<
     protected _showContent: boolean = FlipflorOrLatchDefaults.showContent
     protected _isInInvalidState = false
 
-    protected constructor(savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0>) {
-        super(FlipflopOrLatch.savedStateFrom(savedData), savedData, {
+    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0>) {
+        super(editor, FlipflopOrLatch.savedStateFrom(savedData), savedData, {
             inOffsets: (nodeInOffsets as any).inOffsets,
             outOffsets: [[+4, -2, "e"], [+4, 2, "e"]],
         })
@@ -199,8 +200,8 @@ export abstract class Flipflop<
     protected _lastClock: TriState = Unset
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
 
-    protected constructor(savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0> & { clockYOffset: number }) {
-        super(savedData, {
+    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0> & { clockYOffset: number }) {
+        super(editor, savedData, {
             inOffsets: [
                 [-4, nodeInOffsets.clockYOffset, "w"], // Clock
                 [0, -4, "n"], // Preset

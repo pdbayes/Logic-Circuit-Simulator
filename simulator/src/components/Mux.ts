@@ -4,6 +4,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 
 
 type MuxInputIndices<NumOutputs extends FixedArraySize> = {
@@ -118,12 +119,12 @@ export abstract class Mux<
 
     private _showWiring = MuxDefaults.showWiring
 
-    protected constructor(savedData: Repr | null,
+    protected constructor(editor: LogicEditor, savedData: Repr | null,
         public readonly numFrom: number,
         public readonly numSel: number,
         public readonly numTo: NumOutputs,
     ) {
-        super(FixedArrayFill(false as TriState, numTo), savedData, {
+        super(editor, FixedArrayFill(false as TriState, numTo), savedData, {
             inOffsets: Mux.generateInOffsets(numFrom, numSel, numTo),
             outOffsets: Mux.generateOutOffsets(numSel, numTo),
         } as unknown as NodeOffsets<NumInputs, NumOutputs>)
@@ -338,8 +339,8 @@ export class Mux2To1 extends Mux<3, 1, Mux2To1Repr> {
     protected static INPUT = Mux.generateInputIndices(2, 1, 1)
     protected static OUTPUT = Mux.generateOutputIndices(1)
 
-    public constructor(savedData: Mux2To1Repr | null) {
-        super(savedData, 2, 1, 1)
+    public constructor(editor: LogicEditor, savedData: Mux2To1Repr | null) {
+        super(editor, savedData, 2, 1, 1)
     }
 
     toJSON() {
@@ -357,8 +358,8 @@ export class Mux4To1 extends Mux<6, 1, Mux4To1Repr> {
     protected static INPUT = Mux.generateInputIndices(4, 2, 1)
     protected static OUTPUT = Mux.generateOutputIndices(1)
 
-    public constructor(savedData: Mux4To1Repr | null) {
-        super(savedData, 4, 2, 1)
+    public constructor(editor: LogicEditor, savedData: Mux4To1Repr | null) {
+        super(editor, savedData, 4, 2, 1)
     }
 
     toJSON() {
@@ -376,8 +377,8 @@ export class Mux8To1 extends Mux<11, 1, Mux8To1Repr> {
     protected static INPUT = Mux.generateInputIndices(8, 3, 1)
     protected static OUTPUT = Mux.generateOutputIndices(1)
 
-    public constructor(savedData: Mux8To1Repr | null) {
-        super(savedData, 8, 3, 1)
+    public constructor(editor: LogicEditor, savedData: Mux8To1Repr | null) {
+        super(editor, savedData, 8, 3, 1)
     }
 
     toJSON() {
@@ -395,8 +396,8 @@ export class Mux4To2 extends Mux<5, 2, Mux4To2Repr> {
     protected static INPUT = Mux.generateInputIndices(4, 1, 2)
     protected static OUTPUT = Mux.generateOutputIndices(2)
 
-    public constructor(savedData: Mux4To2Repr | null) {
-        super(savedData, 4, 1, 2)
+    public constructor(editor: LogicEditor, savedData: Mux4To2Repr | null) {
+        super(editor, savedData, 4, 1, 2)
     }
 
     toJSON() {
@@ -414,8 +415,8 @@ export class Mux8To2 extends Mux<10, 2, Mux8To2Repr> {
     protected static INPUT = Mux.generateInputIndices(8, 2, 2)
     protected static OUTPUT = Mux.generateOutputIndices(2)
 
-    public constructor(savedData: Mux8To2Repr | null) {
-        super(savedData, 8, 2, 2)
+    public constructor(editor: LogicEditor, savedData: Mux8To2Repr | null) {
+        super(editor, savedData, 8, 2, 2)
     }
 
     toJSON() {
@@ -433,8 +434,8 @@ export class Mux8To4 extends Mux<9, 4, Mux8To4Repr> {
     protected static INPUT = Mux.generateInputIndices(8, 1, 4)
     protected static OUTPUT = Mux.generateOutputIndices(4)
 
-    public constructor(savedData: Mux8To4Repr | null) {
-        super(savedData, 8, 1, 4)
+    public constructor(editor: LogicEditor, savedData: Mux8To4Repr | null) {
+        super(editor, savedData, 8, 1, 4)
     }
 
     toJSON() {

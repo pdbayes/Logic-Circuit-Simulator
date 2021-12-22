@@ -1,16 +1,15 @@
-import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
+import { InputBitBase, InputBitBaseDef } from "./InputBit"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
 import { isDefined, isNotNull, TriState, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { Timeline } from "../Timeline"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 
 
 export const ClockDef =
-    extendComponent(LogicInputBaseDef, t.type({
+    extendComponent(InputBitBaseDef, t.type({
         type: t.literal("clock"),
         period: t.number,
         dutycycle: typeOrUndefined(t.number),
@@ -27,7 +26,7 @@ const ClockDefaults = {
     showLabel: true,
 }
 
-export class Clock extends LogicInputBase<ClockRepr> {
+export class Clock extends InputBitBase<ClockRepr> {
 
     private _period: number = ClockDefaults.period
     private _dutycycle: number = ClockDefaults.dutycycle

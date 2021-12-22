@@ -1,16 +1,14 @@
-import { LogicInput, LogicInputDef } from "./components/LogicInput"
-import { LogicOutput, LogicOutputDef } from "./components/LogicOutput"
-import { Clock, ClockDef } from "./components/Clock"
 import { GateDef, GateFactory } from "./components/Gate"
 import { stringifySmart } from "./stringifySmart"
 import { Wire } from "./components/Wire"
-import { DisplayDef, DisplayFactory } from "./components/Display"
 import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
-import { Component, ComponentTypes } from "./components/Component"
+import { Component, ComponentTypes, MainJsonFieldName } from "./components/Component"
 import { ICDef, ICFactory } from "./components/IC"
 import { LogicEditor } from "./LogicEditor"
+import { InputDef, InputFactory } from "./components/Inputs"
+import { OutputDef, OutputFactory } from "./components/Outputs"
 
 class _PersistenceManager {
 
@@ -92,24 +90,23 @@ class _PersistenceManager {
             }
         }
 
-        loadField("in", InputDef, (d) => {
-            components.push(InputFactory.make(editor, d))
-        })
+        type Factory<T> = {
+            make: (editor: LogicEditor, savedDataOrType: T) => Component | undefined
+        }
 
-        loadField("out", OutputDef, (d) =>
-            components.push(OutputFactory.make(d))
-        )
+        function loadComponentField<T>(fieldName: MainJsonFieldName, repr: t.Type<T, any> | { repr: t.Type<T, any> }, factory: Factory<T>) {
+            loadField(fieldName, repr, (d) => {
+                const comp = factory.make(editor, d)
+                if (isDefined(comp)) {
+                    components.push(comp)
+                }
+            })
+        }
 
-        loadField("gates", GateDef, (d) =>
-            components.push(GateFactory.make(editor, d))
-        )
-
-        loadField("components", ICDef, (d) => {
-            const comp = ICFactory.make(editor, d)
-            if (isDefined(comp)) {
-                components.push(comp)
-            }
-        })
+        loadComponentField("in", InputDef, InputFactory)
+        loadComponentField("out", OutputDef, OutputFactory)
+        loadComponentField("gates", GateDef, GateFactory)
+        loadComponentField("components", ICDef, ICFactory)
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
@@ -145,7 +142,7 @@ class _PersistenceManager {
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
             "v": 1,
-            "opts": nonDefaultOptions(),
+            "opts": editor.nonDefaultDisplayOptions(),
         }
 
         for (const comp of editor.components) {
@@ -165,8 +162,8 @@ class _PersistenceManager {
         return stringifySmart(workspace, { maxLength: 150 })
     }
 
-    saveToFile() {
-        const workspaceJsonStr = this.buildWorkspaceJSON()
+    saveToFile(editor: LogicEditor) {
+        const workspaceJsonStr = this.buildWorkspaceJSON(editor)
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
         const filename = "circuit.json"
 

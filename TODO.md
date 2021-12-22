@@ -29,7 +29,6 @@
  * edge detector
  * mux graphics
  * demux
- * Rename: OutputBit, OutputAscii, OutputBar, OutputNibble, OutputShiftBuffer; InputBit, Clock, InputNibble, InputShiftBuffer
  * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
  * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
  * [Ivan Moura] dans la vue "static", il serait intéressant de désactiver la coloration des connexions et des entrées/sorties, ce qui permettrait de présenter le schéma "neutre".
