@@ -53,6 +53,7 @@ class _PersistenceManager {
             migrate0To1(parsedContents)
             jsonVersion = 1
         }
+        delete parsedContents["v"]
 
         for (const elem of components) {
             elem.destroy()

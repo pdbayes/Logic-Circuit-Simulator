@@ -17,6 +17,8 @@
  * set clock frequency from context menu
  * undo/redo
  * edge detector
+ * mux graphics
+ * demux
  * Rename: OutputBit, OutputAscii, OutputBar, OutputNibble, OutputShiftBuffer; InputBit, Clock, InputNibble, InputShiftBuffer
 
 
@@ -32,6 +34,7 @@
 
 ### DONE
 
+ * Multiplexers
  * Use esbuild to create bundle
  * Add 4-bit register
  * Add 4-bit dip switch showing value

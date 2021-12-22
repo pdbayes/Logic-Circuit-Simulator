@@ -103,7 +103,37 @@ type _PartialWhereUndefinedRecursively<T> =
     // other types
     : T
 
-// use for statically typing the number of flipflop inputs while adding 2 in the base class
+// uses for statically typing the number of component inputs
+export type Plus<A extends number, B extends number> =
+    B extends 1 ? Plus1<A> :
+    B extends 2 ? Plus2<A> :
+    B extends 3 ? Plus3<A> :
+    never
+
+export type Plus1<N extends number> =
+    N extends 0 ? 1 :
+    N extends 1 ? 2 :
+    N extends 2 ? 3 :
+    N extends 3 ? 4 :
+    N extends 4 ? 5 :
+    N extends 5 ? 6 :
+    N extends 6 ? 7 :
+    N extends 7 ? 8 :
+    N extends 8 ? 9 :
+    never
+
+export type Plus2<N extends number> =
+    N extends 0 ? 2 :
+    N extends 1 ? 3 :
+    N extends 2 ? 4 :
+    N extends 3 ? 5 :
+    N extends 4 ? 6 :
+    N extends 5 ? 7 :
+    N extends 6 ? 8 :
+    N extends 7 ? 9 :
+    N extends 8 ? 10 :
+    never
+
 export type Plus3<N extends number> =
     N extends 0 ? 3 :
     N extends 1 ? 4 :
@@ -112,6 +142,8 @@ export type Plus3<N extends number> =
     N extends 4 ? 7 :
     N extends 5 ? 8 :
     N extends 6 ? 9 :
+    N extends 7 ? 10 :
+    N extends 8 ? 11 :
     never
 
 
@@ -170,7 +202,7 @@ import * as t from "io-ts"
 
 // Fixed-size arrays up to 8 to model inputs statically
 
-export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
 export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
 
@@ -185,7 +217,9 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 7 ? [T, T, T, T, T, T, T]
     : N extends 8 ? [T, T, T, T, T, T, T, T]
     : N extends 9 ? [T, T, T, T, T, T, T, T, T]
-    :/*N extends10*/[T, T, T, T, T, T, T, T, T, T]
+    : N extends 10 ? [T, T, T, T, T, T, T, T, T, T]
+    : N extends 11 ? [T, T, T, T, T, T, T, T, T, T, T]
+    :/*N extends 12*/[T, T, T, T, T, T, T, T, T, T, T, T]
 
 export type FixedReadonlyArray<T, N extends FixedArraySize> =
     N extends 0 ? readonly []
@@ -198,7 +232,9 @@ export type FixedReadonlyArray<T, N extends FixedArraySize> =
     : N extends 7 ? readonly [T, T, T, T, T, T, T]
     : N extends 8 ? readonly [T, T, T, T, T, T, T, T]
     : N extends 9 ? readonly [T, T, T, T, T, T, T, T, T]
-    :/*N extends10*/readonly [T, T, T, T, T, T, T, T, T, T]
+    : N extends 10 ? readonly [T, T, T, T, T, T, T, T, T, T]
+    : N extends 11 ? readonly [T, T, T, T, T, T, T, T, T, T, T]
+    :/*N extends 12*/readonly [T, T, T, T, T, T, T, T, T, T, T, T]
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
@@ -212,6 +248,10 @@ export const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, 
         (arr): arr is t.Branded<[t.TypeOf<T>], HasSizeNBrand<N>> => arr.length === n,
         "HasSizeN"
     )
+
+export function FixedArrayFill<T, N extends FixedArraySize>(val: T, n: N): FixedArray<T, N> {
+    return Array(n).fill(val) as FixedArray<T, N>
+}
 
 // This seemingly identity function allows to convert back from a fixed-size tuple
 // to a regular array. It is a safe type cast, in a way, and allows to see the

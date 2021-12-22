@@ -107,15 +107,17 @@ export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs
     return t.intersection([ComponentRepr(n, m), savedData], savedData.name)
 }
 
+export type NodeOffset = [number, number, Orientation]
+
 // Node offsets are not stored in JSON, but provided by the concrete
 // subclasses to the Component superclass to indicate where to place
 // the input and output nodes. Strong typing allows us to check the
 // size of the passed arrays in the super() call.
 export type NodeOffsets<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>
     // eslint-disable-next-line @typescript-eslint/ban-types
-    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<[number, number, Orientation], NumInputs> })
+    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<NodeOffset, NumInputs> })
     // eslint-disable-next-line @typescript-eslint/ban-types
-    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<[number, number, Orientation], NumOutputs> })
+    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<NodeOffset, NumOutputs> })
 
 
 export enum ComponentState {
