@@ -9,12 +9,13 @@ import { LogicEditor } from "../LogicEditor"
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 5
 
-const INPUT_A = 0
-const INPUT_B = 1
-const INPUT_Cin = 2
+const enum INPUT {
+    A, B, Cin
+}
 
-const OUTPUT_S = 0
-const OUTPUT_Cout = 1
+const enum OUTPUT {
+    S, Cout
+}
 
 export const AdderDef =
     defineComponent(3, 2, t.type({
@@ -40,22 +41,22 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
     }
 
     public get componentType() {
-        return "IC" as const
+        return "ic" as const
     }
 
-    protected override getInputName(i: number): string | undefined {
+    override getInputName(i: number): string | undefined {
         switch (i) {
-            case INPUT_A: return "A"
-            case INPUT_B: return "B"
-            case INPUT_Cin: return "Cin (retenue précédente)"
+            case INPUT.A: return "A"
+            case INPUT.B: return "B"
+            case INPUT.Cin: return "Cin (retenue précédente)"
         }
         return undefined
     }
 
-    protected override getOutputName(i: number): string | undefined {
+    override getOutputName(i: number): string | undefined {
         switch (i) {
-            case OUTPUT_S: return "S (somme)"
-            case OUTPUT_Cout: return "Cout (retenue)"
+            case OUTPUT.S: return "S (somme)"
+            case OUTPUT.Cout: return "Cout (retenue)"
         }
         return undefined
     }
@@ -75,9 +76,9 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
     }
 
     protected doRecalcValue(): [TriState, TriState] {
-        const a = this.inputs[INPUT_A].value
-        const b = this.inputs[INPUT_B].value
-        const cIn = this.inputs[INPUT_Cin].value
+        const a = this.inputs[INPUT.A].value
+        const b = this.inputs[INPUT.B].value
+        const cIn = this.inputs[INPUT.Cin].value
 
         if (isUnset(a) || isUnset(b) || isUnset(cIn)) {
             return [Unset, Unset]
@@ -96,8 +97,8 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
     }
 
     protected override propagateNewValue(newValue: [TriState, TriState]) {
-        this.outputs[OUTPUT_S].value = newValue[OUTPUT_S]
-        this.outputs[OUTPUT_Cout].value = newValue[OUTPUT_Cout]
+        this.outputs[OUTPUT.S].value = newValue[OUTPUT.S]
+        this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -118,13 +119,13 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         g.fill()
         g.stroke()
 
-        drawWireLineToComponent(g, this.inputs[INPUT_A], this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT_B], this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT_Cin], this.posX + width / 2 + 2, this.inputs[INPUT_Cin].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.A], this.inputs[INPUT.A].posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.B], this.inputs[INPUT.B].posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.Cin], this.posX + width / 2 + 2, this.inputs[INPUT.Cin].posYInParentTransform, true)
 
 
-        drawWireLineToComponent(g, this.outputs[OUTPUT_S], this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 + 2, true)
-        drawWireLineToComponent(g, this.outputs[OUTPUT_Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT_Cout].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.S], this.outputs[OUTPUT.S].posXInParentTransform, this.posY + height / 2 + 2, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT.Cout].posYInParentTransform, true)
 
 
         ctx.inNonTransformedFrame(ctx => {
@@ -144,12 +145,12 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
                 spacingLeft -= 3
             }
 
-            g.fillText("A", ...ctx.rotatePoint(this.inputs[INPUT_A].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            g.fillText("B", ...ctx.rotatePoint(this.inputs[INPUT_B].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            g.fillText("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT_Cin].posYInParentTransform))
+            g.fillText("A", ...ctx.rotatePoint(this.inputs[INPUT.A].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            g.fillText("B", ...ctx.rotatePoint(this.inputs[INPUT.B].posXInParentTransform, this.posY - height / 2 + spacingTop))
+            g.fillText("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT.Cin].posYInParentTransform))
 
-            g.fillText("S", ...ctx.rotatePoint(this.outputs[OUTPUT_S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
-            g.fillText("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT_Cout].posYInParentTransform))
+            g.fillText("S", ...ctx.rotatePoint(this.outputs[OUTPUT.S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
+            g.fillText("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT.Cout].posYInParentTransform))
 
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 30px sans-serif"

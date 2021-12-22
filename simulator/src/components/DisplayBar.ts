@@ -29,6 +29,7 @@ type LedColor = keyof typeof LedColors
 const DisplayBarDefaults = {
     display: "h" as DisplayBarType,
     color: "green" as LedColor,
+    transparent: false,
 }
 const GRID_WIDTH = 10
 const GRID_HEIGHT = 2
@@ -39,6 +40,7 @@ export const DisplayBarDef =
         type: t.literal("bar"),
         display: t.keyof(DisplayBarTypes, "DisplayBarType"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
+        transparent: typeOrUndefined(t.boolean),
     }, "DisplayBar"))
 
 type DisplayBarRepr = typeof DisplayBarDef.reprType
@@ -47,12 +49,14 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
 
     private _display = DisplayBarDefaults.display
     private _color = DisplayBarDefaults.color
+    private _transparent = DisplayBarDefaults.transparent
 
     public constructor(editor: LogicEditor, savedData: DisplayBarRepr | null) {
         super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
             this._color = savedData.color ?? DisplayBarDefaults.color
+            this._transparent = savedData.transparent ?? DisplayBarDefaults.transparent
         } else {
             this.updateInputOffsetX()
         }
@@ -64,11 +68,12 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             ...super.toJSONBase(),
             display: this._display,
             color: this._color === DisplayBarDefaults.color ? undefined : this._color,
+            transparent: this._transparent === DisplayBarDefaults.transparent ? undefined : this._transparent,
         }
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {
@@ -111,7 +116,9 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         g.beginPath()
         g.rect(this.posX - w / 2, this.posY - h / 2, w, h)
         g.closePath()
-        g.fill()
+        if (!this._transparent || value !== false) {
+            g.fill()
+        }
         g.stroke()
 
         drawWireLineToComponent(g, input, this.posX - w / 2 - 2, this.posY)
@@ -160,6 +167,11 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
         this.setNeedsRedraw("color changed")
     }
 
+    private doSetTransparent(transparent: boolean) {
+        this._transparent = transparent
+        this.setNeedsRedraw("transparent changed")
+    }
+
     private updateInputOffsetX() {
         const width = this.getWidthAndHeight()[0]
         this.inputs[0].gridOffsetX = -pxToGrid(width / 2) - 2
@@ -182,6 +194,12 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
             return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 16px; background-color: ${cssColor}; margin-right: 8px`)), action)
         }
 
+        const itemTransparent = ContextMenuData.item(
+            this._transparent ? "check" : "none",
+            "Transparent si éteint",
+            () => this.doSetTransparent(!this._transparent)
+        )
+
         return [
             ["mid", ContextMenuData.submenu("eye", "Affichage", [
                 makeItemShowAs("Barre verticale", "v"),
@@ -195,6 +213,8 @@ export class DisplayBar extends ComponentBase<1, 0, DisplayBarRepr, TriState> {
                 makeItemUseColor("Vert", "green"),
                 makeItemUseColor("Rouge", "red"),
                 makeItemUseColor("Jaune", "yellow"),
+                ContextMenuData.sep(),
+                itemTransparent,
             ])],
         ]
     }

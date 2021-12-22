@@ -106,15 +106,17 @@ export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs
     return t.intersection([ComponentRepr(n, m), savedData], savedData.name)
 }
 
+export type NodeOffset = [number, number, Orientation]
+
 // Node offsets are not stored in JSON, but provided by the concrete
 // subclasses to the Component superclass to indicate where to place
 // the input and output nodes. Strong typing allows us to check the
 // size of the passed arrays in the super() call.
 export type NodeOffsets<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>
     // eslint-disable-next-line @typescript-eslint/ban-types
-    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<[number, number, Orientation], NumInputs> })
+    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<NodeOffset, NumInputs> })
     // eslint-disable-next-line @typescript-eslint/ban-types
-    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<[number, number, Orientation], NumOutputs> })
+    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<NodeOffset, NumOutputs> })
 
 
 export enum ComponentState {
@@ -128,19 +130,19 @@ export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentR
 
 
 
+const ComponentTypes_ = {
+    in: { jsonFieldName: "in" },
+    out: { jsonFieldName: "out" },
+    gate: { jsonFieldName: "gates" },
+    ic: { jsonFieldName: "components" },
+} as const
+
 export const ComponentTypes = RichStringEnum.withProps<{
     jsonFieldName: string
-}>()({
-    LogicInput: { jsonFieldName: "in" },
-    LogicOutput: { jsonFieldName: "out" },
-    Display: { jsonFieldName: "displays" },
-    Clock: { jsonFieldName: "clocks" },
-    Gate: { jsonFieldName: "gates" },
-    IC: { jsonFieldName: "components" },
-})
+}>()(ComponentTypes_)
 
 export type ComponentType = typeof ComponentTypes.type
-
+export type MainJsonFieldName = typeof ComponentTypes_[ComponentType]["jsonFieldName"]
 
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs
@@ -372,13 +374,37 @@ export abstract class ComponentBase<
         return result
     }
 
+    protected setInputsPreferSpike(...inputs: number[]) {
+        for (const i of inputs) {
+            this.inputs[i]._prefersSpike = true
+        }
+    }
+
     public abstract get componentType(): ComponentType
 
-    protected getInputName(__i: number): string | undefined {
+    public getInputName(__i: number): string | undefined {
         return undefined
     }
 
-    protected getOutputName(__i: number): string | undefined {
+    public getInputNodeName(node: NodeIn): string | undefined {
+        for (let i = 0; i < this.inputs.length; i++) {
+            if (this.inputs[i] === node) {
+                return this.getInputName(i)
+            }
+        }
+        return undefined
+    }
+
+    public getOutputName(__i: number): string | undefined {
+        return undefined
+    }
+
+    public getOutputNodeName(node: NodeOut): string | undefined {
+        for (let i = 0; i < this.outputs.length; i++) {
+            if (this.outputs[i] === node) {
+                return this.getOutputName(i)
+            }
+        }
         return undefined
     }
 
@@ -411,7 +437,7 @@ export abstract class ComponentBase<
 
     protected doSetValue(newValue: Value) {
         const oldValue = this._value
-        if (newValue !== oldValue) {
+        if (newValue !== oldValue) { // TODO this says two arrays with the same content are not equal, but they should be
             this._value = newValue
             this.setNeedsRedraw("value changed")
             this.propagateNewValue(newValue)
@@ -460,13 +486,20 @@ export abstract class ComponentBase<
         }
         const wasMoving = this.tryStopMoving()
         if (wasSpawning || wasMoving) {
-            this.editor.nodeMgr.tryConnectNodesOf(this)
+            const newLinks =  this.editor.nodeMgr.tryConnectNodesOf(this)
+            if (newLinks.length > 0) {
+                this.autoConnected(newLinks)
+            }
         }
+    }
+
+    protected autoConnected(__newLinks: [Node, Component, Node][]) {
+        // by default, do nothing
     }
 
     protected override updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
         if (this._state === ComponentState.SPAWNING) {
-            return this.setPosition(x, y, snapToGrid)
+            return this.trySetPosition(x, y, snapToGrid)
         }
         return super.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
     }
@@ -490,7 +523,7 @@ export abstract class ComponentBase<
         return false
     }
 
-    protected override doSetOrient(orient: Orientation) {
+    public override doSetOrient(orient: Orientation) {
         super.doSetOrient(orient)
         this.updateNodePositions()
     }

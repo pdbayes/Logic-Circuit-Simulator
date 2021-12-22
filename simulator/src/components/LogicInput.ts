@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, extendComponent } from "./Component"
+import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined, isUndefined } from "../utils"
+import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, drawRoundValue, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
@@ -86,8 +86,46 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }
-            drawRoundValue(g, this)
+            drawRoundValueCentered(g, this.value, this)
         })
+    }
+
+    protected override autoConnected(newLinks: [Node, Component, Node][]) {
+        if (newLinks.length !== 1) {
+            return
+        }
+        const [outNode, comp, inNode] = newLinks[0]
+        if (inNode instanceof NodeIn && this instanceof LogicInput) {
+            if (inNode._prefersSpike) {
+                this.doSetIsPushButton(true)
+            }
+            if (isUndefined(this._name)) {
+                const name = comp.getInputNodeName(inNode)
+                if (isDefined(name)) {
+                    this.doSetName(name)
+                }
+            }
+        }
+        if (outNode.orient !== "e") {
+            return
+        }
+        switch (Orientation.add(comp.orient, inNode.orient)) {
+            case "w":
+                // nothing to do
+                return
+            case "e":
+                this.doSetOrient("w")
+                this.setPosition(this.posX + GRID_STEP * 6, this.posY)
+                return
+            case "s":
+                this.doSetOrient("n")
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY + GRID_STEP * 3)
+                return
+            case "n":
+                this.doSetOrient("s")
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY - GRID_STEP * 3)
+                return
+        }
     }
 
     protected doSetName(name: string | undefined) {
@@ -107,11 +145,27 @@ export abstract class LogicInputBase<Repr extends LogicInputBaseRepr> extends Co
 export const LogicInputDef =
     extendComponent(LogicInputBaseDef, t.type({
         val: TriStateRepr,
+        isPushButton: typeOrUndefined(t.boolean),
     }, "LogicInput"))
 
 export type LogicInputRepr = typeof LogicInputDef.reprType
 
+const LogicInputDefaults = {
+    isPushButton: false,
+}
+
+
 export class LogicInput extends LogicInputBase<LogicInputRepr> {
+
+    static nextValue(value: TriState, mode: Mode, altKey: boolean): TriState {
+        switch (value) {
+            case true: return (mode >= Mode.FULL && altKey) ? Unset : false
+            case false: return (mode >= Mode.FULL && altKey) ? Unset : true
+            case Unset: return mode >= Mode.FULL ? false : Unset
+        }
+    }
+
+    private _isPushButton = LogicInputDefaults.isPushButton
 
     public constructor(editor: LogicEditor, savedData: LogicInputRepr | null) {
         super(
@@ -120,17 +174,22 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
             isNotNull(savedData) ? toTriState(savedData.val) : false,
             savedData,
         )
+        if (isNotNull(savedData)) {
+            this._isPushButton = savedData.isPushButton ?? LogicInputDefaults.isPushButton
+        }
+
     }
 
     toJSON() {
         return {
             ...super.toJSONBase(),
             val: toTriStateRepr(this.value),
+            isPushButton: (this._isPushButton !== LogicInputDefaults.isPushButton) ? this._isPushButton : undefined,
         }
     }
 
     public get componentType() {
-        return "LogicInput" as const
+        return "in" as const
     }
 
     override get cursorWhenMouseover() {
@@ -147,15 +206,60 @@ export class LogicInput extends LogicInputBase<LogicInputRepr> {
     }
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
-        this.doSetValue((() => {
-            const mode = this.editor.mode
-            switch (this.value) {
-                case true: return (mode >= Mode.FULL && e.altKey) ? Unset : false
-                case false: return (mode >= Mode.FULL && e.altKey) ? Unset : true
-                case Unset: return mode >= Mode.FULL ? false : Unset
-            }
-        })())
+        if (this._isPushButton) {
+            // do nothing for normal push button
+            return false
+        }
+
+        this.doSetValue(LogicInput.nextValue(this.value, mode, e.altKey))
         return true
     }
+
+    override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+        if (this._isPushButton) {
+            this.doSetValue(true)
+        }
+        return super.mouseDown(e)
+    }
+
+    override mouseUp(e: MouseEvent | TouchEvent) {
+        const result = super.mouseUp(e)
+        if (this._isPushButton) {
+            this.doSetValue(false)
+        }
+        return result
+    }
+
+
+    public doSetIsPushButton(isPushButton: boolean) {
+        this._isPushButton = isPushButton
+        if (isPushButton) {
+            this.doSetValue(false)
+        }
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+
+        const makeItemBehaveAs = (desc: string, value: boolean) => {
+            const isCurrent = this._isPushButton === value
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetIsPushButton(value)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+        const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
+            ["mid", makeItemBehaveAs("Commutateur", false)],
+            ["mid", makeItemBehaveAs("Poussoir", true)],
+            ["mid", ContextMenuData.sep()],
+        ]
+
+        const superItems = super.makeComponentSpecificContextMenuItems()
+        if (isDefined(superItems)) {
+            newItems.push(...superItems)
+        }
+
+        return newItems
+    }
+
 
 }

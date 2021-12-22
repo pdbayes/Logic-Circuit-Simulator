@@ -70,8 +70,7 @@ export class Timeline {
 
     public scheduleAt(time: number, desc: string, callback: Callback) {
         if (time < this.adjustedTime()) {
-            console.log("ERROR Scheduling this in the past, skipping: " + desc)
-            return
+            console.log("WARNING Scheduling this in the past, may behave strangely: " + desc)
         }
         // console.log(`Scheduling '${desc}' at ${time}`)
         if (time in this._schedule) {

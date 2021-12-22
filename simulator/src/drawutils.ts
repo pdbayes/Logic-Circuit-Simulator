@@ -12,7 +12,7 @@ import { LogicEditor } from "./LogicEditor"
 export const GRID_STEP = 10
 export const WIRE_WIDTH = 8
 export const WAYPOINT_DIAMETER = 8
-const WAYPOINT_HIT_RANGE = WAYPOINT_DIAMETER + 4
+const WAYPOINT_HIT_RANGE = WAYPOINT_DIAMETER + 5
 
 
 export function pxToGrid(x: number) {
@@ -43,6 +43,7 @@ export type ColorString = string
 
 export let COLOR_BACKGROUND: ColorString
 export let COLOR_BACKGROUND_UNUSED_REGION: ColorString
+export let COLOR_BACKGROUND_INVALID: ColorString
 export let COLOR_BORDER: ColorString
 export let COLOR_GRID_LINES: ColorString
 export let COLOR_LABEL_OFF: ColorString
@@ -78,6 +79,7 @@ function setColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
         COLOR_BACKGROUND = ColorString(0xFF)
+        COLOR_BACKGROUND_INVALID = ColorString([0xFF, 0xBB, 0xBB])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(0xEE)
         COLOR_BORDER = ColorString(200)
         COLOR_GRID_LINES = ColorString(240)
@@ -101,6 +103,7 @@ function setColors(darkMode: boolean) {
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
+        COLOR_BACKGROUND_INVALID = ColorString([0xA8, 0x14, 0x14])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
         COLOR_BORDER = ColorString(0x55)
         COLOR_GRID_LINES = ColorString(30)
@@ -319,8 +322,11 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & { value: TriState }) {
-    const value = comp.value
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
+    drawRoundValue(g, value, comp.posX, comp.posY)
+}
+
+export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, x: number, y: number) {
     g.textAlign = "center"
 
     let boldSpec = ""
@@ -339,7 +345,7 @@ export function drawRoundValue(g: CanvasRenderingContext2D, comp: HasPosition & 
         label = '0'
     }
     g.font = `${boldSpec}18px sans-serif`
-    g.fillText(label, comp.posX, comp.posY)
+    g.fillText(label, x, y)
 }
 
 
@@ -384,15 +390,20 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle"
 }
 
-export function displayValuesFromInputs(inputs: readonly Node[]): [string, number | unset] {
+export function displayValuesFromArray(values: TriState[], mostSignificantFirst: boolean): [string, number | unset] {
+    // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false
-    for (const input of inputs) {
-        if (isUnset(input.value)) {
+    const add: (v: any) => void = mostSignificantFirst
+        ? v => binaryStringRep = binaryStringRep + v
+        : v => binaryStringRep = v + binaryStringRep
+
+    for (const value of values) {
+        if (isUnset(value)) {
             hasUnset = true
-            binaryStringRep = Unset + binaryStringRep
+            add(Unset)
         } else {
-            binaryStringRep = +input.value + binaryStringRep
+            add(+value)
         }
     }
     const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
@@ -409,7 +420,8 @@ export function formatWithRadix(value: number | unset, radix: number, width: num
         if (asBinStr[0] === '1') {
             // negative
             const rest = parseInt(asBinStr.substring(1), 2)
-            return String(-Math.pow(2, width - 1) + rest)
+            // swap hyphen for minus sign as en-dash
+            return '–' + String(-(-Math.pow(2, width - 1) + rest))
         } else {
             return String(value)
         }

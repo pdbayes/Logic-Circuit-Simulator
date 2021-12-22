@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -48,7 +48,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {
@@ -77,7 +77,7 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
     }
 
     protected doRecalcValue() {
-        return displayValuesFromInputs(this.inputs)
+        return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -86,14 +86,8 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
         const height = GRID_HEIGHT * GRID_STEP
 
         g.fillStyle = COLOR_BACKGROUND
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-        } else if (this._showAsUnknown) {
-            g.strokeStyle = COLOR_UNSET
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-        }
 
         g.beginPath()
         g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
@@ -150,17 +144,26 @@ export class DisplayAscii extends ComponentBase<7, 0, DisplayAsciiRepr, [string,
                     g.fillStyle = COLOR_UNSET
                 }
                 mainText = "?"
-            } else if (value < 32) {
-                // non-printable
-                g.font = "16px sans-serif"
-                mainText = "\\" + value
             } else {
-                g.font = "bold 18px sans-serif"
-                mainText = "‘" + String.fromCharCode(value) + "’"
+                mainText = DisplayAscii.numberToAscii(value)
+                if (value < 32) {
+                    // non-printable
+                    g.font = "16px sans-serif"
+                } else {
+                    g.font = "bold 18px sans-serif"
+                }
             }
             g.fillText(mainText, this.posX, mainTextPosY)
 
         })
+    }
+
+    public static numberToAscii(n: number): string {
+        if (n < 32) {
+            // non-printable
+            return "\\" + n
+        }
+        return String.fromCharCode(n)
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent) {

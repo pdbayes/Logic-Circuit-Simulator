@@ -90,8 +90,17 @@ export abstract class Drawable {
         this.editor.redrawMgr.addReason(reason, this)
     }
 
-    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
-        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp)
+    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selection: EditorSelection | undefined) {
+        let inSelectionRect = false
+        if (isDefined(selection)) {
+            for (const rect of selection.allRects) {
+                if (this.isInRect(rect)) {
+                    inSelectionRect = true
+                    break
+                }
+            }
+        }
+        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp || inSelectionRect)
         this.doDraw(g, ctx)
         ctx.exit()
     }
@@ -103,6 +112,8 @@ export abstract class Drawable {
     protected abstract doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void
 
     public abstract isOver(x: number, y: number): boolean
+
+    public abstract isInRect(rect: DOMRect): boolean
 
     public get cursorWhenMouseover(): string | undefined {
         return undefined
@@ -190,8 +201,32 @@ export const Orientation = {
             case "s": return "n"
         }
     },
+    nextClockwise(o: Orientation): Orientation {
+        switch (o) {
+            case "e": return "s"
+            case "s": return "w"
+            case "w": return "n"
+            case "n": return "e"
+        }
+    },
+    nextCounterClockwise(o: Orientation): Orientation {
+        switch (o) {
+            case "e": return "n"
+            case "n": return "w"
+            case "w": return "s"
+            case "s": return "e"
+        }
+    },
     isVertical(o: Orientation): o is "s" | "n" {
         return o === "s" || o === "n"
+    },
+    add(compOrient: Orientation, nodeOrient: Orientation): Orientation {
+        switch (compOrient) {
+            case "e": return nodeOrient
+            case "w": return Orientation.invert(nodeOrient)
+            case "s": return Orientation.nextClockwise(nodeOrient)
+            case "n": return Orientation.nextCounterClockwise(nodeOrient)
+        }
     },
 }
 
@@ -245,12 +280,15 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._posY
     }
 
+    public isInRect(rect: DOMRect) {
+        return this._posX >= rect.left && this._posX <= rect.right && this._posY >= rect.top && this._posY <= rect.bottom
+    }
+
     public get orient() {
         return this._orient
     }
 
-    protected doSetOrient(newOrient: Orientation) {
-        // can't be a setter, which would require being public
+    public doSetOrient(newOrient: Orientation) {
         this._orient = newOrient
         this.setNeedsRedraw("orientation changed")
     }
@@ -288,7 +326,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this.editor.mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
-    protected setPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
+    protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
         if (snapToGrid) {
             posX = Math.round(posX / GRID_STEP) * GRID_STEP
             posY = Math.round(posY / GRID_STEP) * GRID_STEP
@@ -371,11 +409,19 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const [x, y] =  this.editor.offsetXY(e)
         const snapToGrid = !e.metaKey
+        this.setPosition
         const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
         if (isDefined(newPos)) { // position changed
             this.positionChanged()
         }
         return newPos
+    }
+
+    public setPosition(x: number, y: number) {
+        const newPos = this.trySetPosition(x, y, false)
+        if (isDefined(newPos)) { // position changed
+            this.positionChanged()
+        }
     }
 
     protected positionChanged() {
@@ -397,7 +443,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
                     targetY = lastAnchorY
                 }
             }
-            return this.setPosition(targetX, targetY, snapToGrid)
+            return this.trySetPosition(targetX, targetY, snapToGrid)
         }
         return undefined
     }

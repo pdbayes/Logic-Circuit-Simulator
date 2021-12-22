@@ -1,51 +1,50 @@
 import { LogicInputBase, LogicInputBaseDef } from "./LogicInput"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
-import { isDefined, isUnset, TriState, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, TriState, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
-import { DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { Timeline } from "../Timeline"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 
 
-const ClockMandatoryParams = t.type({
-    period: t.number,
-    dutycycle: typeOrUndefined(t.number),
-    phase: typeOrUndefined(t.number),
-    showLabel: typeOrUndefined(t.boolean),
-}, "Clock")
-type ClockMandatoryParams = t.TypeOf<typeof ClockMandatoryParams>
-
 export const ClockDef =
-    extendComponent(LogicInputBaseDef, ClockMandatoryParams)
+    extendComponent(LogicInputBaseDef, t.type({
+        type: t.literal("clock"),
+        period: t.number,
+        dutycycle: typeOrUndefined(t.number),
+        phase: typeOrUndefined(t.number),
+        showLabel: typeOrUndefined(t.boolean),
+    }, "Clock"))
 
 export type ClockRepr = typeof ClockDef.reprType
 
-const DEFAULT_DUTY_CYCLE = 50
-const DEFAULT_PHASE = 0
-const DEFAULT_SHOW_LABEL = true
+const ClockDefaults = {
+    period: 2000,
+    dutycycle: 50,
+    phase: 0,
+    showLabel: true,
+}
 
 export class Clock extends LogicInputBase<ClockRepr> {
 
-    public readonly period: number
-    public readonly dutycycle: number = DEFAULT_DUTY_CYCLE
-    public readonly phase: number = DEFAULT_PHASE
-    public readonly showLabel: boolean = DEFAULT_SHOW_LABEL
+    private _period: number = ClockDefaults.period
+    private _dutycycle: number = ClockDefaults.dutycycle
+    private _phase: number = ClockDefaults.phase
+    private _showLabel: boolean = ClockDefaults.showLabel
 
-    constructor(editor: LogicEditor, savedData: ClockRepr | ClockMandatoryParams) {
-        super(editor, false,
-            "id" in savedData ? savedData : null
-        )
-        this.period = savedData.period
-        if (isDefined(savedData.dutycycle)) {
-            this.dutycycle = savedData.dutycycle % 100
-        }
-        if (isDefined(savedData.phase)) {
-            this.phase = savedData.phase % savedData.period
-        }
-        if (isDefined(savedData.showLabel)) {
-            this.showLabel = savedData.showLabel
+    constructor(editor: LogicEditor, savedData: ClockRepr | null) {
+        super(editor, false, savedData)
+        if(isNotNull(savedData)) {
+            this._period = savedData.period
+            if (isDefined(savedData.dutycycle)) {
+                this._dutycycle = savedData.dutycycle % 100
+            }
+            if (isDefined(savedData.phase)) {
+                this._phase = savedData.phase % savedData.period
+            }
+            this._showLabel = savedData.showLabel ?? ClockDefaults.showLabel
         }
         // sets the value and schedules the next tick
         this.tickCallback(editor.timeline.adjustedTime())
@@ -53,35 +52,36 @@ export class Clock extends LogicInputBase<ClockRepr> {
 
     toJSON() {
         return {
+            type: "clock" as const,
             ...this.toJSONBase(),
-            period: this.period,
-            dutycycle: (this.dutycycle === DEFAULT_DUTY_CYCLE) ? undefined : this.dutycycle,
-            phase: (this.phase === DEFAULT_PHASE) ? undefined : this.phase,
-            showLabel: (this.showLabel === DEFAULT_SHOW_LABEL) ? undefined : this.showLabel,
+            period: this._period,
+            dutycycle: (this._dutycycle === ClockDefaults.dutycycle) ? undefined : this._dutycycle,
+            phase: (this._phase === ClockDefaults.phase) ? undefined : this._phase,
+            showLabel: (this._showLabel === ClockDefaults.showLabel) ? undefined : this._showLabel,
         }
     }
 
     public get componentType() {
-        return "Clock" as const
+        return "in" as const
     }
 
     public override makeTooltip() {
         return tooltipContent("Horloge",
-            mods(`Période: ${this.period} ms`, br, `Rapport cyclique: ${this.dutycycle}%`,
-                this.phase === 0
+            mods(`Période: ${this._period} ms`, br, `Rapport cyclique: ${this._dutycycle}%`,
+                this._phase === 0
                     ? emptyMod
-                    : mods(br, `Déphasage: ${this.phase} ms`)
+                    : mods(br, `Déphasage: ${this._phase} ms`)
             ))
     }
 
     private currentClockValue(time: number): [boolean, number] {
-        const myTime = time - this.phase
-        let timeOverPeriod = myTime % this.period
+        const myTime = time - this._phase
+        let timeOverPeriod = myTime % this._period
         if (timeOverPeriod < 0) {
-            timeOverPeriod += this.period
+            timeOverPeriod += this._period
         }
-        const onDuration = this.period * this.dutycycle / 100
-        const offDuration = this.period - onDuration
+        const onDuration = this._period * this._dutycycle / 100
+        const offDuration = this._period - onDuration
         let value: boolean
         let timeOverLastTick: number
         if (timeOverPeriod < onDuration) {
@@ -114,7 +114,7 @@ export class Clock extends LogicInputBase<ClockRepr> {
     override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
-        if (!this.showLabel) {
+        if (!this._showLabel) {
             return
         }
 
@@ -125,8 +125,8 @@ export class Clock extends LogicInputBase<ClockRepr> {
             g.strokeStyle = COLOR_COMPONENT_BORDER
             g.lineWidth = 1
             const left = this.posX - w / 2
-            const mid1 = left + w * this.phase / this.period
-            const mid2 = mid1 + w * this.dutycycle / 100
+            const mid1 = left + w * this._phase / this._period
+            const mid2 = mid1 + w * this._dutycycle / 100
             const right = this.posX + w / 2
             const bottom = this.posY + offsetY + h / 2
             const top = this.posY + offsetY - h / 2
@@ -142,16 +142,51 @@ export class Clock extends LogicInputBase<ClockRepr> {
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.textAlign = "center"
             g.font = "10px sans-serif"
-            const periodStr = this.period >= 1000
-                ? (this.period / 1000) + " s"
-                : this.period + " ms"
+            const periodStr = this._period >= 1000
+                ? (this._period / 1000) + " s"
+                : this._period + " ms"
             g.fillText(periodStr, this.posX, bottom + 8)
         })
     }
 
-    override mouseClicked(__: MouseEvent | TouchEvent): boolean {
-        this.doSetValue(isUnset(this.value) ? true : !this.value)
-        return true
+    private doSetPeriod(period: number) {
+        this._period = period
+        this.setNeedsRedraw("period changed")
     }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = []
+
+        const superItems = super.makeComponentSpecificContextMenuItems()
+        if (isDefined(superItems)) {
+            newItems.push(...superItems)
+        }
+
+        const periodPresets: [number, string][] = [
+            [100, "100 ms (10 Hz)"],
+            [250, "250 ms (4 Hz)"],
+            [500, "500 ms (2 Hz)"],
+            [1000, "1 s (1 Hz)"],
+            [2000, "2 s (0.5 Hz)"],
+            [4000, "4 s (0.25 Hz)"],
+            [8000, "8 s (0.125 Hz)"],
+        ]
+
+        const makeItemSetPeriod = (data: [number, string]) => {
+            const [period, desc] = data
+            const isCurrent = this._period === period
+            const icon = isCurrent ? "check" : "none"
+            return ContextMenuData.item(icon, desc, () => this.doSetPeriod(period))
+        }
+
+        const myItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
+            ["mid", ContextMenuData.sep()],
+            ["mid", ContextMenuData.submenu("history", "Période", periodPresets.map(makeItemSetPeriod))],
+        ]
+
+        newItems.push(...myItems)
+        return newItems
+    }
+
 
 }

@@ -23,17 +23,21 @@
 ## Medium priority
 
  * Add contextual menu to clock
+ * Add free text and frames as elements
+ * set clock frequency from context menu
+ * undo/redo
+ * edge detector
+ * mux graphics
+ * demux
+ * Rename: OutputBit, OutputAscii, OutputBar, OutputNibble, OutputShiftBuffer; InputBit, Clock, InputNibble, InputShiftBuffer
  * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
  * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
  * [Ivan Moura] dans la vue "static", il serait intéressant de désactiver la coloration des connexions et des entrées/sorties, ce qui permettrait de présenter le schéma "neutre".
- * Add free text and frames as elements
- * set clock frequency from context menu
-
 
 
 ## Low priority
 
- * ...
+ * embed images with esbuild's dataurl loader; import CSS and HTML templates as well?
  * Add mouseovers to new components
  * switch to https://www.floating-ui.com for tooltips?
  * Lock component to some "parent" to move them more intuitively?
@@ -43,7 +47,7 @@
 
 ### DONE
 
- * Use esbuild to create bundle
+ * Multiplexers
  * Use esbuild to create bundle
  * Add 4-bit register
  * Add 4-bit dip switch showing value

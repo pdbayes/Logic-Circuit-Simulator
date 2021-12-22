@@ -12,9 +12,9 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
     static get Repr() {
         return t.union([
-            t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
-            t.tuple([t.number, t.number]),
-        ], "Wire")
+    t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
+    t.tuple([t.number, t.number]),
+], "Wire")
     }
 
     static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
@@ -106,14 +106,14 @@ export class Wire extends Drawable {
 
     static get Repr() {
         return t.union([
-            t.tuple([
-                NodeID, NodeID,
-                t.type({
+    t.tuple([
+        NodeID, NodeID,
+        t.type({
                     waypoints: t.array(Waypoint.Repr),
-                }),
-            ]), // alternative with more fields first
-            t.tuple([NodeID, NodeID]),
-        ], "Wire")
+        }),
+    ]), // alternative with more fields first
+    t.tuple([NodeID, NodeID]),
+], "Wire")
     }
 
     private _endNode: NodeIn | null = null
@@ -141,6 +141,10 @@ export class Wire extends Drawable {
 
     public get endNode(): Node | null {
         return this._endNode
+    }
+
+    public isInRect(__rect: DOMRect) {
+        return false
     }
 
     public get waypoints(): readonly Waypoint[] {
@@ -374,12 +378,12 @@ export class WireManager {
         return this._isAddingWire
     }
 
-    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null) {
+    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selectionRect: EditorSelection | undefined) {
         this.removeDeadWires()
         for (const wire of this._wires) {
-            wire.draw(g, mouseOverComp)
+            wire.draw(g, mouseOverComp, selectionRect)
             for (const waypoint of wire.waypoints) {
-                waypoint.draw(g, mouseOverComp)
+                waypoint.draw(g, mouseOverComp, selectionRect)
             }
         }
     }

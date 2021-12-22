@@ -51,6 +51,13 @@ class _PersistenceManager {
             }
         }
 
+        let jsonVersion = parsedContents["v"] ?? 0
+        if (jsonVersion === 0) {
+            migrate0To1(parsedContents)
+            jsonVersion = 1
+        }
+        delete parsedContents["v"]
+
         for (const elem of components) {
             elem.destroy()
         }
@@ -59,7 +66,7 @@ class _PersistenceManager {
         nodeMgr.clearAllLiveNodes()
         editor.timeline.reset()
 
-        function loadField<T>(fieldName: string, repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
+        function loadField<T>(fieldName: MainJsonFieldName | "wires", repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
             if (!(fieldName in parsedContents)) {
                 return
             }
@@ -85,29 +92,24 @@ class _PersistenceManager {
             }
         }
 
-        loadField("in", LogicInputDef, (d) =>
-            components.push(new LogicInput(editor, d))
-        )
+        loadField("in", InputDef, (d) => {
+            components.push(InputFactory.make(editor, d))
+        })
 
-        loadField("out", LogicOutputDef, (d) =>
-            components.push(new LogicOutput(editor, d))
-        )
-
-        loadField("displays", DisplayDef, (d) =>
-            components.push(DisplayFactory.make(editor, d))
-        )
-
-        loadField("clocks", ClockDef, (d) =>
-            components.push(new Clock(editor, d))
+        loadField("out", OutputDef, (d) =>
+            components.push(OutputFactory.make(d))
         )
 
         loadField("gates", GateDef, (d) =>
             components.push(GateFactory.make(editor, d))
         )
 
-        loadField("components", ICDef, (d) =>
-            components.push(ICFactory.make(editor, d))
-        )
+        loadField("components", ICDef, (d) => {
+            const comp = ICFactory.make(editor, d)
+            if (isDefined(comp)) {
+                components.push(comp)
+            }
+        })
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
@@ -142,7 +144,8 @@ class _PersistenceManager {
 
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
-            "opts": editor.nonDefaultDisplayOptions(),
+            "v": 1,
+            "opts": nonDefaultOptions(),
         }
 
         for (const comp of editor.components) {
@@ -159,8 +162,75 @@ class _PersistenceManager {
             workspace.wires = wireMgr.wires
         }
 
-        return stringifySmart(workspace, { maxLength: 85 })
+        return stringifySmart(workspace, { maxLength: 150 })
     }
+
+    saveToFile() {
+        const workspaceJsonStr = this.buildWorkspaceJSON()
+        const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
+        const filename = "circuit.json"
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+
+        const clickHandler = () => {
+            setTimeout(() => {
+                URL.revokeObjectURL(url)
+                a.removeEventListener('click', clickHandler)
+            }, 150)
+        }
+
+        a.addEventListener('click', clickHandler, false)
+        a.click()
+    }
+
 }
 
 export const PersistenceManager = new _PersistenceManager()
+
+
+function migrate0To1(workspace: any) {
+    console.log("Migrating JSON from version 0 to 1")
+
+    // all displays are now out
+    if ("displays" in workspace) {
+        const displays = workspace.displays
+        delete workspace.displays
+        if (!("out" in workspace)) {
+            workspace.out = []
+        }
+        for (const display of displays) {
+            workspace.out.push(display)
+        }
+    }
+
+    // all clocks are now in
+    if ("clocks" in workspace) {
+        const clocks = workspace.clocks
+        delete workspace.clocks
+        if (!("in" in workspace)) {
+            workspace.in = []
+        }
+        for (const clock of clocks) {
+            clock.type = "clock"
+            workspace.in.push(clock)
+        }
+    }
+
+    // flipflops have a different input node order
+    if ("components" in workspace) {
+        const components = workspace.components
+        for (const comp of components) {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            if (comp.type.startsWith("flipflop")) {
+                // extract last three inputs
+                const inputs: Array<number> = comp.in
+                const lastThree = inputs.splice(-3)
+                comp.in = [...lastThree, ...inputs]
+            }
+        }
+    }
+}
+

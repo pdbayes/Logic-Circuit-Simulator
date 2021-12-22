@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromInputs, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -46,7 +46,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
     }
 
     public get componentType() {
-        return "Display" as const
+        return "out" as const
     }
 
     get unrotatedWidth() {
@@ -79,7 +79,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
 
 
     protected doRecalcValue() {
-        return displayValuesFromInputs(this.inputs)
+        return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -87,17 +87,9 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
         const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnset(value) ? COLOR_UNSET : colorForFraction(value / maxValue)
+        const backColor = isUnset(value) || this._showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
         g.fillStyle = backColor
-
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-        } else if (this._showAsUnknown) {
-            g.strokeStyle = COLOR_UNSET
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-        }
-
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
@@ -133,10 +125,10 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             let stringRep: string
             if (this._showAsUnknown) {
                 stringRep = "?"
-                if (!isUnset(value)) {
-                    // otherwise we get the same color for background and text
-                    g.fillStyle = COLOR_UNSET
-                }
+                // if (!isUnset(value)) {
+                //     // otherwise we get the same color for background and text
+                //     g.fillStyle = COLOR_UNSET
+                // }
             } else {
                 stringRep = formatWithRadix(value, this._radix, 4)
             }
@@ -196,7 +188,7 @@ export class DisplayNibble extends ComponentBase<4, 0, DisplayNibbleRepr, [strin
             ["mid", makeItemShowRadix(10, "en décimal")],
             ["mid", makeItemShowRadix(-10, "en décimal signé")],
             ["mid", makeItemShowRadix(16, "en hexadécimal")],
-            ["mid", makeItemShowAs("comme inconnu", () => this.doSetShowAsUnknown(false), this._showAsUnknown)],
+            ["mid", makeItemShowAs("comme inconnu", () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
