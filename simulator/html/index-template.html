@@ -1,5 +1,4 @@
 <html lang="fr">
-
 <head>
 	<!-- For header, check: https://www.matuzo.at/blog/html-boilerplate/ -->
 	<meta charset="UTF-8">
@@ -7,22 +6,13 @@
 
 	<title>Simulateur de systèmes logiques</title>
 
-
 	<link rel="stylesheet" href="simulator/css/global.css">
 	<script src="simulator/lib/bundle.js?r=BUNDLE_MD5" type="module"></script>
 
 </head>
 
 <body style="overflow: hidden">
-	<logic-editor></logic-editor>
-
-	<div id="tooltip" role="tooltip">
-		<div id="tooltipContents">My tooltip</div>
-		<div id="arrow" data-popper-arrow></div>
-	</div>
+	<logic-editor singleton></logic-editor>
 </body>
-<!-- Modal for Clock Settings -->
-
-<ul class="menu" id="mainContextMenu"></ul>
 
 </html>

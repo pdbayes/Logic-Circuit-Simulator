@@ -201,13 +201,13 @@ export class LogicEditor extends HTMLElement {
             return
         }
 
-        if (tool === "Save") {
+        if (tool === "save") {
             PersistenceManager.saveToFile(this)
             return
         }
 
         this.setCurrentMouseAction("edit")
-        if (tool === "Reset") {
+        if (tool === "reset") {
             this.wrapHandler(() => {
                 this.tryLoadFromData()
             })()
@@ -614,6 +614,9 @@ export class LogicEditor extends HTMLElement {
                 for (let i = 0; i < modifButtons.length; i++) {
                     const but = modifButtons[i] as HTMLElement
                     setVisible(but, showRightEditControls)
+                    but.addEventListener("click", () => {
+                        this.setActiveTool(but)
+                    })
                 }
 
                 const leftToolbar = this.elemWithId("leftToolbar")
