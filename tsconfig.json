@@ -1,16 +1,20 @@
 {
     "compilerOptions": {
         "allowJs": true,
-        "module": "ES6",
+        "checkJs": true,
         "target": "ES6",
-        "outDir": "simulator/js",
         "lib": [
             "DOM",
             "ES2016",
             "ES2016.Array.Include"
         ],
-        "downlevelIteration": true,
-        "sourceMap": true,
+        
+        // "module": "ES6",
+        // "outDir": "simulator/js",
+        // "downlevelIteration": true,
+        // "sourceMap": true,
+        "noEmit": true,
+
         "strict": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
