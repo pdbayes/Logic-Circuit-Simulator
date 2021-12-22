@@ -15,6 +15,16 @@ import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
 import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUndefined, isTruthyString, isUndefined, RichStringEnum, setVisible } from "./utils"
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
+// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// // @ts-ignore
+// import LogicEditorCSS from "../css/LogicEditor.css"
+// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// // @ts-ignore
+// import BootstrapCSS from "../../vendor/css/bootstrap.min.css"
+
 enum Mode {
     STATIC,  // cannot interact in any way
     TRYOUT,  // can change inputs on predefined circuit
@@ -86,7 +96,7 @@ export class LogicEditor extends HTMLElement {
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
 
-    public readonly htmlRoot: HTMLElement
+    public root: ShadowRoot
     public readonly html: {
         canvasContainer: HTMLElement,
         mainCanvas: HTMLCanvasElement,
@@ -101,8 +111,8 @@ export class LogicEditor extends HTMLElement {
 
     constructor() {
         super()
-        this.attachShadow({ mode: 'open' })
-        this.htmlRoot = template.content.cloneNode(true) as HTMLElement
+        this.root = this.attachShadow({ mode: 'open' })
+        this.root.appendChild(template.content.cloneNode(true) as HTMLElement)
 
         const html: typeof this.html = {
             canvasContainer: this.elemWithId("canvas-sim"),
@@ -113,15 +123,20 @@ export class LogicEditor extends HTMLElement {
         }
         this.html = html
 
-        this._baseTransform = this.setCanvasWidth(html.canvasContainer.clientWidth, html.canvasContainer.clientHeight)
-
-        this.shadowRoot!.appendChild(this.htmlRoot)
+        this._baseTransform = new DOMMatrix()
     }
 
     private elemWithId<E extends HTMLElement>(id: string) {
-        const elem = this.htmlRoot.querySelector(`#${id}`)
+        let elem = this.root.querySelector(`#${id}`)
         if (elem === null) {
-            throw new Error(`Could not find element with id ${id}`)
+            elem = document.querySelector(`#${id}`)
+            if (elem !== null) {
+                console.log(`WARNING found elem with id ${id} in document rather than in shadow root`)
+            }
+        }
+        if (elem === null) {
+            console.log("root", this.root)
+            throw new Error(`Could not find element with id '${id}'`)
         }
         return elem as E
     }
@@ -210,6 +225,8 @@ export class LogicEditor extends HTMLElement {
     }
 
     connectedCallback() {
+        const canvasContainer = this.html.canvasContainer
+        this._baseTransform = this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
         this.trySetModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
 
         // TODO clear all redrawmanager
@@ -217,7 +234,7 @@ export class LogicEditor extends HTMLElement {
         // draw
 
         this.cursorMovementManager.registerCanvasListenersOn(this.html.canvasContainer)
-        this.cursorMovementManager.registerButtonListenersOn(this.htmlRoot.querySelectorAll(".sim-component-button"))
+        this.cursorMovementManager.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
@@ -309,7 +326,7 @@ export class LogicEditor extends HTMLElement {
 
         const showModeChange = this._maxInstanceMode >= Mode.FULL
         if (showModeChange) {
-            const modeChangeMenu = document.getElementById("modeChangeMenu")!
+            const modeChangeMenu = this.elemWithId("modeChangeMenu")!
             div(cls("btn-group-vertical"),
                 div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
                     "Mode",
@@ -352,7 +369,7 @@ export class LogicEditor extends HTMLElement {
             setVisible(modeChangeMenu, true)
         }
 
-        const timelineControls = document.getElementById("timelineControls")!
+        const timelineControls = this.elemWithId("timelineControls")!
         const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
@@ -405,18 +422,17 @@ export class LogicEditor extends HTMLElement {
         window.gallery = gallery
 
         window.addEventListener("mousemove", e => {
-            console.log({ x: e.clientX, y: e.clientY })
+            // console.log({ x: e.clientX, y: e.clientY })
             for (const editor of LogicEditor._allConnectedEditors) {
                 const canvasContainer = editor.html.canvasContainer
                 if (isDefined(canvasContainer)) {
                     const canvasPos = canvasContainer.getBoundingClientRect()
-                    console.log(canvasContainer.getBoundingClientRect(), { x: e.clientX - canvasPos.left, y: e.clientY - canvasPos.top })
-                    // TODO
-                    // mouseX = e.clientX - canvasPos.left
-                    // mouseY = e.clientY - canvasPos.top
+                    // console.log(canvasContainer.getBoundingClientRect(), { x: e.clientX - canvasPos.left, y: e.clientY - canvasPos.top })
+                    editor.mouseX = e.clientX - canvasPos.left
+                    editor.mouseY = e.clientY - canvasPos.top
                 }
             }
-            console.log("--")
+            // console.log("--")
         }, true)
 
         window.addEventListener("resize", () => {
@@ -465,7 +481,7 @@ export class LogicEditor extends HTMLElement {
                 this.redrawMgr.addReason("mode changed", null)
 
                 // update mode active button
-                this.htmlRoot.querySelectorAll(".sim-mode-tool").forEach((elem) => {
+                this.root.querySelectorAll(".sim-mode-tool").forEach((elem) => {
                     if (elem.getAttribute("mode") === wantedModeStr) {
                         elem.classList.add("active")
                     } else {
@@ -528,7 +544,7 @@ export class LogicEditor extends HTMLElement {
                     setVisible(this.elemWithId("gates-ic-sep"), (showInOutHeader || showGatesHeader) && showICHeader)
                 }
 
-                const modifButtons = this.htmlRoot.querySelectorAll("button.sim-modification-tool")
+                const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
                 for (let i = 0; i < modifButtons.length; i++) {
                     const but = modifButtons[i] as HTMLElement
                     setVisible(but, showRightEditControls)
@@ -551,7 +567,7 @@ export class LogicEditor extends HTMLElement {
                 }
 
                 const showTxGates = mode >= Mode.FULL && (isUndefined(showOnly) || showOnly.includes("TX") || showOnly.includes("TXA"))
-                const txGateButton = this.htmlRoot.querySelector("button[data-type=TXA]") as HTMLElement
+                const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
                 setVisible(txGateButton, showTxGates)
 
                 const rightToolbarContainer = this.elemWithId("rightToolbarContainer")
@@ -602,7 +618,7 @@ export class LogicEditor extends HTMLElement {
         this._currentMouseAction = action
         this.setToolCursor(MouseActions.propsOf(action).cursor)
 
-        const toolButtons = document.getElementsByClassName("sim-modification-tool")
+        const toolButtons = this.root.querySelectorAll(".sim-modification-tool")
         for (let i = 0; i < toolButtons.length; i++) {
             const toolButton = toolButtons[i] as HTMLElement
             const setActive = toolButton.getAttribute("tool") === action
@@ -814,12 +830,8 @@ export class LogicEditor extends HTMLElement {
 
 
 const template = document.createElement('template')
-template.innerHTML = /*html*/`
-    <div style="position:relative">
-        yeah
-        <div style="position:absolute; top: 10px; right: -20px">h</div>
-    </div>
-`
+// template.innerHTML = "<style>\n" + LogicEditorCSS + "\n\n"+BootstrapCSS+"\n</style>\n\n" + LogicEditorTemplate
+template.innerHTML = LogicEditorTemplate
 
 window.customElements.define('logic-editor', LogicEditor)
 
