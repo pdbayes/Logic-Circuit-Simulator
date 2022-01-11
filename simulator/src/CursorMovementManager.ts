@@ -573,9 +573,10 @@ class EditHandlers extends ToolHandlers {
         const cursorMovementMgr = editor.cursorMovementManager
         const currentSelection = cursorMovementMgr._currentSelection
         if (isDefined(currentSelection)) {
-            const [left, top] = editor.offsetXY(e)
-            if (e.shiftKey) {
+            const allowSelection = editor.mode >= Mode.CONNECT
+            if (e.shiftKey && allowSelection) {
                 // augment selection
+                const [left, top] = editor.offsetXY(e)
                 const rect = new DOMRect(left, top, 1, 1)
                 currentSelection.allRects.push(rect)
                 currentSelection.latestRect = rect
@@ -592,17 +593,20 @@ class EditHandlers extends ToolHandlers {
         // - if shift key is pressed, add to selection, also individual component
         // - shift-click or drag inverses selection state
         const editor = this.editor
-        const cursorMovementMgr = editor.cursorMovementManager
-        const currentSelection = cursorMovementMgr._currentSelection
-        const [x, y] = editor.offsetXY(e)
-        if (isUndefined(currentSelection)) {
-            const rect = new DOMRect(x, y, 1, 1)
-            cursorMovementMgr._currentSelection = { allRects: [rect], latestRect: rect, visible: true }
-        } else {
-            const rect = currentSelection.latestRect
-            rect.width = x - rect.x
-            rect.height = y - rect.y
-            editor.redrawMgr.addReason("selection rect changed", null)
+        const allowSelection = editor.mode >= Mode.CONNECT
+        if (allowSelection) {
+            const cursorMovementMgr = editor.cursorMovementManager
+            const currentSelection = cursorMovementMgr._currentSelection
+            const [x, y] = editor.offsetXY(e)
+            if (isUndefined(currentSelection)) {
+                const rect = new DOMRect(x, y, 1, 1)
+                cursorMovementMgr._currentSelection = { allRects: [rect], latestRect: rect, visible: true }
+            } else {
+                const rect = currentSelection.latestRect
+                rect.width = x - rect.x
+                rect.height = y - rect.y
+                editor.redrawMgr.addReason("selection rect changed", null)
+            }
         }
     }
 
