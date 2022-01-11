@@ -105,14 +105,14 @@ class _PersistenceManager {
 
         loadComponentField("in", InputDef, InputFactory)
         loadComponentField("out", OutputDef, OutputFactory)
-        loadComponentField("gates", GateDef, GateFactory)
+        loadComponentField("gates", GateDef, GateFactory as any)
         loadComponentField("components", ICDef, ICFactory)
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
         // now all components are marked as needing recalculating
         const recalcMgr = editor.recalcMgr
-        recalcMgr.recalculateIfNeeded()
+        recalcMgr.recalcAndPropagateIfNeeded()
 
         loadField("wires", Wire.Repr, ([nodeID1, nodeID2, waypointsObj]) => {
             const node1 = nodeMgr.findNode(nodeID1)
@@ -123,7 +123,7 @@ class _PersistenceManager {
                 if (isDefined(completedWire) && isDefined(waypointsObj)) {
                     completedWire.setWaypoints(waypointsObj.waypoints)
                 }
-                recalcMgr.recalculateIfNeeded()
+                recalcMgr.recalcAndPropagateIfNeeded()
             }
         })
 

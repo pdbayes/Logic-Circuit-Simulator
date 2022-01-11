@@ -52,7 +52,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return false
     }
 
-    protected override propagateNewValue(newValue: TriState) {
+    protected override propagateValue(newValue: TriState) {
         this.outputs[0].value = newValue
     }
 

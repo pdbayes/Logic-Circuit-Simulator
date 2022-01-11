@@ -195,12 +195,11 @@ export abstract class ComponentBase<
         this.inputs = this.makeNodes(inOffsets, inputSpecs, NodeIn) as FixedArray<NodeIn, NumInputs>
         this.outputs = this.makeNodes(outOffsets, outputSpecs, NodeOut) as FixedArray<NodeOut, NumOutputs>
 
-        // both propagateNewValue and setNeedsRecalc are needed:
-        // * propagateNewValue allows the current value (e.g. for InputBits)
-        //   to be set to the outputs
+        // setNeedsRecalc with a force propadation is needed:
+        // * the forced propagation allows the current value (e.g. for InputBits)
+        //   to be set to the outputs, if if the "new" value is the same as the current one
         // * setNeedsRecalc schedules a recalculation (e.g. for Gates)
-        this.propagateNewValue(_value)
-        this.setNeedsRecalc()
+        this.setNeedsRecalc(true)
     }
 
     public abstract toJSON(): Repr
@@ -434,27 +433,35 @@ export abstract class ComponentBase<
         return this._value
     }
 
-    protected doSetValue(newValue: Value) {
+    protected doSetValue(newValue: Value, forcePropagate = false) {
         const oldValue = this._value
-        if (newValue !== oldValue) { // TODO this says two arrays with the same content are not equal, but they should be
+        if (forcePropagate || newValue !== oldValue) { // TODO this says two arrays with the same content are not equal, but they should be
             this._value = newValue
             this.setNeedsRedraw("value changed")
-            this.propagateNewValue(newValue)
+            this.setNeedsPropagate()
         }
     }
 
-    public recalcValue() {
-        this.doSetValue(this.doRecalcValue())
+    public recalcValue(forcePropagate: boolean) {
+        this.doSetValue(this.doRecalcValue(), forcePropagate)
     }
 
     protected abstract doRecalcValue(): Value
 
-    protected propagateNewValue(__newValue: Value) {
+    public propagateCurrentValue() {
+        this.propagateValue(this._value)
+    }
+
+    protected propagateValue(__newValue: Value) {
         // by default, do nothing
     }
 
-    public setNeedsRecalc() {
-        this.editor.recalcMgr.addComponentNeedingRecalc(this)
+    public setNeedsRecalc(forcePropagate = false) {
+        this.editor.recalcMgr.enqueueForRecalc(this, forcePropagate)
+    }
+
+    private setNeedsPropagate() {
+        this.editor.recalcMgr.enqueueForPropagate(this)
     }
 
     private updateNodePositions() {

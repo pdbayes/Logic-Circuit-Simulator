@@ -231,7 +231,7 @@ export abstract class Mux<
         // return vals as FixedArray<TriState, 4>
     }
 
-    protected override propagateNewValue(newValues: FixedArray<TriState, NumOutputs>) {
+    protected override propagateValue(newValues: FixedArray<TriState, NumOutputs>) {
         const Z = this.OUTPUT.Z
         for (let i = 0; i < Z.length; i++) {
             this.outputs[Z[i]].value = newValues[i]

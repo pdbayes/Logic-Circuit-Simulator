@@ -1,4 +1,4 @@
-import { FixedArraySizeNonZero, isDefined, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
+import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { circle, COLORCOMP_COMPONENT_BORDER, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
@@ -349,7 +349,7 @@ export abstract class GateBase<
         return GRID_HEIGHT_1_2 * GRID_STEP
     }
 
-    protected override propagateNewValue(newValue: TriState) {
+    protected override propagateValue(newValue: TriState) {
         this.outputs[0].value = newValue
     }
 
@@ -1041,20 +1041,29 @@ const makeGateTooltip = (title: Modifier, description: Modifier, explanation: Mo
 
 export const GateFactory = {
 
-    make: <N extends FixedArraySizeNonZero>(editor: LogicEditor, savedData: GateRepr<N, GateType> | GateMandatoryParams<GateType>) => {
-        if (Gate1Types.isValue(savedData.type)) {
-            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate1(editor, sameSavedDataWithBetterTyping)
-        } else if (Gate2Types.isValue(savedData.type)) {
-            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate2(editor, sameSavedDataWithBetterTyping)
-        } else if (Gate3Types.isValue(savedData.type)) {
-            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate3(editor , sameSavedDataWithBetterTyping)
+    make: <N extends FixedArraySizeNonZero>(editor: LogicEditor, savedDataOrType: GateRepr<N, GateType> | string | undefined) => {
+        let gateParams
+        if (isUndefined(savedDataOrType)) {
+            gateParams = { type: "NAND" }
+        } else if (isString(savedDataOrType)) {
+            gateParams = { type: savedDataOrType }
         } else {
-            const sameSavedDataWithBetterTyping = { ...savedData, type: savedData.type }
-            return new Gate4(editor , sameSavedDataWithBetterTyping)
+            gateParams = savedDataOrType
         }
+        if (Gate1Types.isValue(gateParams.type)) {
+            const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
+            return new Gate1(editor, sameSavedDataWithBetterTyping)
+        } else if (Gate2Types.isValue(gateParams.type)) {
+            const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
+            return new Gate2(editor, sameSavedDataWithBetterTyping)
+        } else if (Gate3Types.isValue(gateParams.type)) {
+            const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
+            return new Gate3(editor, sameSavedDataWithBetterTyping)
+        } else if (Gate4Types.isValue(gateParams.type)) {
+            const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
+            return new Gate4(editor, sameSavedDataWithBetterTyping)
+        }
+        return undefined
     },
 
 }

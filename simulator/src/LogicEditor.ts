@@ -837,7 +837,7 @@ export class LogicEditor extends HTMLElement {
     }
 
     recalcAndDrawIfNeeded() {
-        const __recalculated = this.recalcMgr.recalculateIfNeeded()
+        const __recalculated = this.recalcMgr.recalcAndPropagateIfNeeded()
 
         if (this.wireMgr.isAddingWire) {
             this.redrawMgr.addReason("adding a wire", null)

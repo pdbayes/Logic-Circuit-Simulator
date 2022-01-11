@@ -14,8 +14,8 @@ See <https://jp.pellet.name/hep/logiga/>
 
  * Checkout with git
  * `npm install`
- * Open VS Code and start compilation in watch mode
- * `npm run watch-pack` to build the bundle
+ * Open VS Code and start TypeScript compilation in watch mode
+ * `npm run esbuild-watch` to build the bundle
  * `npm run server` to serve locally for testing
 
 
@@ -23,16 +23,17 @@ See <https://jp.pellet.name/hep/logiga/>
 
  * This fork is written in TypeScript
  * Dependency on p5 was removed
- * Interface is drawnly differently, all with canvas calls and no external images
+ * Interface is drawn differently, all with canvas calls and no external images
  * Screen is only refreshed when needed and not 60 times per second no matter what
+ * Clocks can be paused
  * Components have been added: bit display, segment display, nibble display, half adder, etc.
  * Mouseovers have been added
  * Components can be edited to be faulty, for educational exercises
  * Editor can be in several modes with different capabilities
- * Some components have been removed (for now)
  * Component buttons can be hidden or shown for educational purposes with URL parameters
  * Loading and saving using JSON is much cleaner and does not include unnecessary properties
  * Demo circuits are predefined and can be loaded from the JavaScript console
+ * Circuits can be loaded from a JSON export by drag-n-drop
 
 
 ## License

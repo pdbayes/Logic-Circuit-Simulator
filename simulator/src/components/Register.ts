@@ -143,7 +143,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<TriState, 4>
     }
 
-    protected override propagateNewValue(newValue: FixedArray<TriState, 4>) {
+    protected override propagateValue(newValue: FixedArray<TriState, 4>) {
         for (let i = 0; i < newValue.length; i++) {
             this.outputs[OUTPUT.Q[i]].value = newValue[i]
         }

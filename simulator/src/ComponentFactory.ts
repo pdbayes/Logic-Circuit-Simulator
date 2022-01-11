@@ -6,7 +6,7 @@ import { ICFactory } from "./components/IC"
 import { InputFactory } from "./components/Inputs"
 import { OutputFactory } from "./components/Outputs"
 
-type Factory = { make(editor: LogicEditor, param: any): Component | undefined }
+type Factory = { make(editor: LogicEditor, type: string | undefined): Component | undefined }
 
 function makeFactory(compType: string, factory: Factory) {
     return {

@@ -3,17 +3,15 @@
 
 ## High priority
 
- * disable input of component (e.g., to make exercise to prevent alu from auto doing a subtraction)
+ * disable input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * add label
  * add rectangle
  * Switch to web components
- * Fix flipflop update issue, e.g. in shift register
  * make input constant 0 or 1
  * prevent click event if right-clik
  * handle rapid second click as a repeated click if doubleClick not handled
  * 16 x 4 bit memory
  * 4 bit adder with carry in and out
- * edge detector
  * disable input of component (e.g., to make exercise to prevent alu from auto doing a subtraction)
  * show value on dip switch and register
  * add label
@@ -46,6 +44,9 @@
 
 ### DONE
 
+
+ * edge detector -- can now be done with XOR(A, NOT(NOT(A)))) with new propagation system
+ * Fix flipflop update issue, e.g. in shift register
  * Multiplexers
  * Use esbuild to create bundle
  * Add 4-bit register

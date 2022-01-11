@@ -86,7 +86,7 @@ export abstract class FlipflopOrLatch<
         return GRID_HEIGHT * GRID_STEP
     }
 
-    protected override propagateNewValue(newValue: [TriState, TriState]) {
+    protected override propagateValue(newValue: [TriState, TriState]) {
         this.outputs[OUTPUT.Q].value = newValue[OUTPUT.Q]
         this.outputs[OUTPUT.Qb].value = newValue[OUTPUT.Qb]
     }

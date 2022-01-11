@@ -96,7 +96,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         }
     }
 
-    protected override propagateNewValue(newValue: [TriState, TriState]) {
+    protected override propagateValue(newValue: [TriState, TriState]) {
         this.outputs[OUTPUT.S].value = newValue[OUTPUT.S]
         this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }

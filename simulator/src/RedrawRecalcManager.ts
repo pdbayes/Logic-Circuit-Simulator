@@ -49,39 +49,49 @@ export class RedrawManager {
     }
 }
 
+const RECALC = "recalc"
+const PROPAGATE = "propagate"
+
+type UpdateType = typeof RECALC | typeof PROPAGATE
+
 export class RecalcManager {
 
-    private _componentNeedingRecalc = new Set<Component>()
+    private _queue: Array<[Component, UpdateType, boolean]> = []
 
-    public addComponentNeedingRecalc(comp: Component) {
-        this._componentNeedingRecalc.add(comp)
-        // console.log("Need recalc:", _componentNeedingRecalc)
+    public enqueueForRecalc(comp: Component, forcePropagate: boolean) {
+        this._queue.push([comp, RECALC, forcePropagate])
     }
 
-    public recalculateIfNeeded(): boolean {
-        if (this._componentNeedingRecalc.size !== 0) {
-            this.recalculate()
+    public enqueueForPropagate(comp: Component) {
+        this._queue.push([comp, PROPAGATE, false])
+    }
+
+    public recalcAndPropagateIfNeeded(): boolean {
+        if (this._queue.length !== 0) {
+            this.recalcAndPropagate()
             return true
         }
         return false
     }
 
-    private recalculate() {
-        // const recalculated = new Set<Component>()
-
+    private recalcAndPropagate() {
         let round = 1
         do {
-            const toRecalc = new Set<Component>(this._componentNeedingRecalc)
-            // console.log(`Recalc round ${round}: ` + [...toRecalc].map((c) => c.toString()).join(", "))
-            this._componentNeedingRecalc.clear()
-            toRecalc.forEach((comp) => {
-                // if (!recalculated.has(comp)) {
-                comp.recalcValue()
-                //     recalculated.add(comp)
-                // } else {
-                //     console.log("ERROR circular dependency")
-                // }
-            })
+            const currentQueue = [...this._queue]
+            console.log(`Recalc/propagate round ${round}: ` + currentQueue.map((c) => c.toString()).join(", "))
+            this._queue = []
+            for (const [comp, udpateType, forcePropagate] of currentQueue) {
+                switch (udpateType) {
+                    case RECALC:
+                        console.log(` -> Recalc ${comp}`)
+                        comp.recalcValue(forcePropagate)
+                        break
+                    case PROPAGATE:
+                        console.log(` -> Propagate ${comp}`)
+                        comp.propagateCurrentValue()
+                        break
+                }
+            }
 
             round++
 
@@ -90,7 +100,9 @@ export class RecalcManager {
                 console.log("ERROR circular dependency")
                 break
             }
-        } while (this._componentNeedingRecalc.size !== 0)
+        } while (this._queue.length !== 0)
+
+        console.log(`Recalc/propagate done in ${round - 1} rounds.`)
     }
 
 }

@@ -80,7 +80,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         return this.value
     }
 
-    protected override propagateNewValue(newValue: FixedArray<TriState, 4>) {
+    protected override propagateValue(newValue: FixedArray<TriState, 4>) {
         for (let i = 0; i < 4; i++) {
             this.outputs[i].value = newValue[i]
         }

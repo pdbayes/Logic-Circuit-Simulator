@@ -292,7 +292,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         return [y as any as FixedArray<TriState, 4>, v, z]
     }
 
-    protected override propagateNewValue(newValue: [FixedArray<TriState, 4>, TriState, TriState]) {
+    protected override propagateValue(newValue: [FixedArray<TriState, 4>, TriState, TriState]) {
         for (let i = 0; i < OUTPUT.S.length; i++) {
             this.outputs[OUTPUT.S[i]].value = newValue[0][i]
         }
