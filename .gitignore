@@ -2,3 +2,4 @@
 node_modules
 /simulator/js
 /index.html
+/deploy-*.sh
