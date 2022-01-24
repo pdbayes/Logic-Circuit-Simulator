@@ -185,6 +185,8 @@ export class Wire extends Drawable {
             const tempNode = this._startNode
             this._startNode = secondNode
             this._endNode = tempNode
+            const longAgo = -1 - this.editor.options.propagationDelay
+            this._propagatingValues = [[secondNode.value, longAgo]]
         }
 
         this._startNode.addOutgoingWire(this)

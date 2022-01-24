@@ -2,8 +2,8 @@
 // import { WireManager } from "./components/Wire"
 // import { isNotNull, Mode } from "./utils.js"
 
-import { Component, ComponentState } from "./components/Component"
-import { WireManager } from "./components/Wire"
+import { Component, ComponentBase, ComponentState } from "./components/Component"
+import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
@@ -18,7 +18,7 @@ import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUnd
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
-import { DrawableWithPosition, Orientation } from "./components/Drawable"
+import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // // @ts-ignore
 // import LogicEditorCSS from "../css/LogicEditor.css"
@@ -162,18 +162,6 @@ export class LogicEditor extends HTMLElement {
     setPartialOptions(opts: Partial<EditorOptions>) {
         this._options = { ...this._options, ...opts }
         this.redrawMgr.addReason("options changed", null)
-
-        // const newOpts = { ...DEFAULT_OPTIONS }
-        // if (isDefined(opts)) {
-        //     for (const _k of Object.keys(newOpts)) {
-        //         const k = _k as keyof WorkspaceOptions
-        //         if (k in opts) {
-        //             newOpts[k] = opts[k] as any // this assumes our value type is correct
-        //         }
-        //     }
-        // }
-        // options = newOpts
-        // // console.log("New options are %o", options)
     }
 
     nonDefaultOptions(): undefined | Partial<EditorOptions> {
@@ -187,7 +175,6 @@ export class LogicEditor extends HTMLElement {
             }
         }
         return set ? nonDefaultOpts : undefined
-
     }
 
 
@@ -232,14 +219,6 @@ export class LogicEditor extends HTMLElement {
         mainCanvas.style.setProperty("height", h + "px")
         // we set it and return it so that we can set it in the constructor and make the compiler happy
         return this._baseTransform = new DOMMatrix(`scale(${f})`)
-    }
-
-    lengthOfPath(svgPathDesc: string): number {
-        const p = this.html.hiddenPath
-        p.setAttribute("d", svgPathDesc)
-        const length = p.getTotalLength()
-        // console.log(`p=${svgPathDesc}, l=${length}`)
-        return length
     }
 
     connectedCallback() {
@@ -320,9 +299,13 @@ export class LogicEditor extends HTMLElement {
                         return
 
                     case "Backspace":
-                    case "Delete":
-                        this.tryDeleteComponentsWhere(comp => this.cursorMovementManager.currentMouseOverComp === comp)
+                    case "Delete": {
+                        const mouseOverComp = this.cursorMovementManager.currentMouseOverComp
+                        if (mouseOverComp !== null) {
+                            this.tryDeleteDrawable(mouseOverComp)
+                        }
                         return
+                    }
 
                     case "e":
                         this.setCurrentMouseAction("edit")
@@ -684,6 +667,16 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
+    tryDeleteDrawable(comp: Drawable) {
+        if (comp instanceof ComponentBase) {
+            this.tryDeleteComponentsWhere(c => c === comp)
+        } else if (comp instanceof Wire) {
+            this.wireMgr.deleteWire(comp)
+        } else if (comp instanceof Waypoint) {
+            comp.removeFromParent()
+        }
+    }
+
     tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
         let compDeleted = false
         const comps = this.components
@@ -697,7 +690,9 @@ export class LogicEditor extends HTMLElement {
         }
         if (compDeleted) {
             this.redrawMgr.addReason("component(s) deleted", null)
+            return true
         }
+        return false
     }
 
     trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
@@ -736,6 +731,13 @@ export class LogicEditor extends HTMLElement {
                 ?? "default"
     }
 
+    lengthOfPath(svgPathDesc: string): number {
+        const p = this.html.hiddenPath
+        p.setAttribute("d", svgPathDesc)
+        const length = p.getTotalLength()
+        // console.log(`p=${svgPathDesc}, l=${length}`)
+        return length
+    }
 
     offsetXYForContextMenu(e: MouseEvent | TouchEvent): [number, number] {
         const mainCanvas = this.html.mainCanvas

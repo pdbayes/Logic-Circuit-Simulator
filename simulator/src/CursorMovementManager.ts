@@ -630,13 +630,7 @@ class DeleteHandlers extends ToolHandlers {
     }
 
     override mouseClickedOn(comp: Drawable, __: MouseEvent) {
-        if (comp instanceof ComponentBase) {
-            this.editor.tryDeleteComponentsWhere(c => c === comp)
-        } else if (comp instanceof Wire) {
-            this.editor.wireMgr.deleteWire(comp)
-        } else if (comp instanceof Waypoint) {
-            comp.removeFromParent()
-        }
+        this.editor.tryDeleteDrawable(comp)
     }
 }
 
