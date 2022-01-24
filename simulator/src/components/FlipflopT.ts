@@ -1,5 +1,5 @@
 import { isDefined, isUnset, TriState, Unset } from "../utils"
-import { COLOR_COMPONENT_INNER_LABELS, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflop, Flipflop, OUTPUT } from "./FlipflopOrLatch"
@@ -67,10 +67,9 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("T", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.T].posYInParentTransform))
+            drawLabel(ctx, this.orient, "T", "w", left, this.inputs[INPUT.T])
         })
     }
 

@@ -1,7 +1,7 @@
 import { FixedArray, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
@@ -354,42 +354,27 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "bold 12px sans-serif"
-
-            let opNameOffset: number
-            let vOffset: number
-            let zOffset: number
-            let mOffset: number
-            let opOffset: number
-            [g.textAlign, opNameOffset, vOffset, zOffset, mOffset, opOffset] = (() => {
-                switch (this.orient) {
-                    case "e":
-                    case "w":
-                        return ["center", 22, 15, 22, 17, 24] as const
-                    case "s":
-                        return ["right", 14, 19, 25, 13, 19] as const
-                    case "n":
-                        return ["left", 14, 19, 25, 13, 19] as const
-                }
-            })()
-
             g.font = "12px sans-serif"
-            g.fillText("M", ...ctx.rotatePoint(this.posX - GRID_STEP, top + mOffset))
-            g.fillText("Op", ...ctx.rotatePoint(this.posX + GRID_STEP, top + opOffset))
 
-            g.fillText("V", ...ctx.rotatePoint(this.posX - GRID_STEP, bottom - vOffset))
-            g.fillText("Z", ...ctx.rotatePoint(this.posX + GRID_STEP, bottom - zOffset))
+            drawLabel(ctx, this.orient, "M", "n", this.inputs[INPUT.Mode], top + 7)
+            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op], top + 14)
+
+            drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V], bottom - 7)
+            drawLabel(ctx, this.orient, "Z", "s", this.outputs[OUTPUT.Z], bottom - 14)
 
             g.font = "bold 14px sans-serif"
-            g.fillText("A", ...ctx.rotatePoint(this.posX - 20, top + 4 * GRID_STEP + 6))
-            g.fillText("B", ...ctx.rotatePoint(this.posX - 20, bottom - 4 * GRID_STEP - 6))
-            g.fillText("S", ...ctx.rotatePoint(this.posX + 21, this.posY))
+            drawLabel(ctx, this.orient, "A", "w", left, top + 4 * GRID_STEP + 6)
+            drawLabel(ctx, this.orient, "B", "w", left, bottom - 4 * GRID_STEP - 6)
+            drawLabel(ctx, this.orient, "S", "e", right, this.posY)
 
             if (this._showOp) {
                 const opName = isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
                 const size = 25 - 13 * (opName.length - 1)
                 g.font = `bold ${size}px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
-                g.fillText(opName, this.posX + 4, this.posY)
+                g.textAlign = "center"
+                g.textBaseline = "middle"
+                g.fillText(opName, this.posX, this.posY)
             }
         })
     }

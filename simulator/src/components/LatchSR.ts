@@ -1,5 +1,5 @@
 import { TriState } from "../utils"
-import { COLOR_COMPONENT_BORDER, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
@@ -80,11 +80,10 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
-            g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("S", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Set].posYInParentTransform))
-            g.fillText("R", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Reset].posYInParentTransform))
+            drawLabel(ctx, this.orient, "S", "w", left, this.inputs[INPUT.Set])
+            drawLabel(ctx, this.orient, "R", "w", left, this.inputs[INPUT.Reset])
         })
     }
 

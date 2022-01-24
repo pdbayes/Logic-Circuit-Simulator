@@ -1,4 +1,4 @@
-import { asArray, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -435,7 +435,7 @@ export abstract class ComponentBase<
 
     protected doSetValue(newValue: Value, forcePropagate = false) {
         const oldValue = this._value
-        if (forcePropagate || newValue !== oldValue) { // TODO this says two arrays with the same content are not equal, but they should be
+        if (forcePropagate || !deepEquals(newValue, oldValue)) { 
             this._value = newValue
             this.setNeedsRedraw("value changed")
             this.setNeedsPropagate()

@@ -315,6 +315,23 @@ export function repeatString(c: string, n: number) {
     return Array(n + 1).join(c)
 }
 
+export function deepEquals(v1: any, v2: any) {
+    if (Array.isArray(v1) && Array.isArray(v2)) {
+        if (v1.length !== v2.length) {
+            return false
+        }
+        for (let i = 0; i < v1.length; i++) {
+            if (v1[i] !== v2[i]) {
+                return false
+            }
+        }
+        return true
+    } else {
+        return v1 === v2
+    }
+}
+
+
 
 // io-ts utils
 

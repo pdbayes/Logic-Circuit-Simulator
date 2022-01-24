@@ -1,11 +1,12 @@
-import { FixedArray, isNull, isNotNull, isUndefined, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset } from "../utils"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { FixedArray, isNull, isNotNull, isUndefined, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset, isNumber } from "../utils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, DrawContextExt, Orientation } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { LogicEditor } from "../LogicEditor"
+import { Node } from "./Node"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 15
@@ -198,15 +199,14 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
             }
 
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("P", ...ctx.rotatePoint(this.inputs[INPUT.Preset].posXInParentTransform, top + 8))
-            g.fillText("C", ...ctx.rotatePoint(this.inputs[INPUT.Clear].posXInParentTransform, bottom - 8))
+            drawLabel(ctx, this.orient, "Pre", "n", this.inputs[INPUT.Preset], top)
+            drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
 
             g.font = "bold 12px sans-serif"
-            g.fillText("Q", ...ctx.rotatePoint(right - 8, this.posY))
-            g.fillText("D", ...ctx.rotatePoint(left + 8, this.posY))
+            drawLabel(ctx, this.orient, "Q", "e", right, this.posY)
+            drawLabel(ctx, this.orient, "D", "w", left, this.posY)
         })
 
     }

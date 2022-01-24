@@ -9,13 +9,10 @@
  * Switch to web components
  * make input constant 0 or 1
  * prevent click event if right-clik
- * handle rapid second click as a repeated click if doubleClick not handled
  * 16 x 4 bit memory
  * 4 bit adder with carry in and out
  * disable input of component (e.g., to make exercise to prevent alu from auto doing a subtraction)
  * show value on dip switch and register
- * add label
- * add rectangle
 
 
 ## Medium priority
@@ -34,6 +31,7 @@
 
 ## Low priority
 
+ * handle rapid second click as a repeated click if doubleClick not handled
  * embed images with esbuild's dataurl loader; import CSS and HTML templates as well?
  * Add mouseovers to new components
  * switch to https://www.floating-ui.com for tooltips?
@@ -44,7 +42,7 @@
 
 ### DONE
 
-
+ * replace fillText with drawLabel
  * edge detector -- can now be done with XOR(A, NOT(NOT(A)))) with new propagation system
  * Fix flipflop update issue, e.g. in shift register
  * Multiplexers

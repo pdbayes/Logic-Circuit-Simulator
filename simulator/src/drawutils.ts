@@ -324,12 +324,38 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string, anchor: Orientation | undefined, x: number | Node, y: number | Node) {
+
+    const [halign, valign, dx, dy] = (() => {
+        if (isUndefined(anchor)) {
+            return ["center", "middle", 0, 0] as const
+        }
+        const rotatedAnchor = Orientation.add(compOrient, anchor)
+        switch (rotatedAnchor) {
+            case "e": return ["right", "middle", -3, 0] as const
+            case "w": return ["left", "middle", 3, 0] as const
+            case "n": return ["center", "top", 0, 2] as const
+            case "s": return ["center", "bottom", 0, -2] as const
+        }
+    })()
+
+    const xx = (isNumber(x) ? x : x.posXInParentTransform)
+    const yy = (isNumber(y) ? y : y.posYInParentTransform)
+    const [finalX, finalY] = ctx.rotatePoint(xx, yy)
+
+    const g = ctx.g
+    g.textAlign = halign
+    g.textBaseline = valign
+    g.fillText(text, finalX + dx, finalY + dy)
+}
+
 export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
     drawRoundValue(g, value, comp.posX, comp.posY)
 }
 
 export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, x: number, y: number) {
     g.textAlign = "center"
+    g.textBaseline = "middle"
 
     let boldSpec = ""
     let label = ""

@@ -1,5 +1,5 @@
 import { isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toTriStateRepr, TriState, typeOrUndefined, Unset } from "../utils"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop } from "./FlipflopOrLatch"
@@ -213,12 +213,10 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("C", ...ctx.rotatePoint(this.inputs[INPUT.Clear].posXInParentTransform, bottom - 8))
-            g.fillText("D", ...ctx.rotatePoint(left + 8, this.inputs[INPUT.Data].posYInParentTransform))
-
+            drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
+            drawLabel(ctx, this.orient, "D", "w", left, this.inputs[INPUT.Data])
         })
 
         const drawContents = () => {
@@ -236,6 +234,8 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
             g.fillText(toDraw, this.posX, this.posY)
         }
 
+        g.textAlign = "center"
+        g.textBaseline = "middle"
         if (this.orient === "w") {
             ctx.inNonTransformedFrame(drawContents)
         } else {

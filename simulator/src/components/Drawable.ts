@@ -44,6 +44,7 @@ export type ContextMenuItemPlacement = "start" | "mid" | "end" // where to inser
 class _DrawContextImpl implements DrawContext, DrawContextExt {
 
     private readonly entranceTransform: DOMMatrix
+    private readonly entranceTransformInv: DOMMatrix
     private readonly componentTransform: DOMMatrix
 
     constructor(
@@ -53,6 +54,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
         public readonly isMouseOver: boolean,
     ) {
         this.entranceTransform = g.getTransform()
+        this.entranceTransformInv = this.entranceTransform.inverse()
         comp.applyDrawTransform(g)
         this.componentTransform = g.getTransform()
     }
@@ -68,9 +70,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
     }
 
     rotatePoint(x: number, y: number): readonly [x: number, y: number] {
-        const t1 = this.componentTransform
-        const t2 = this.entranceTransform.inverse()
-        return mult(t2, ...mult(t1, x, y))
+        return mult(this.entranceTransformInv, ...mult(this.componentTransform, x, y))
     }
 
 }

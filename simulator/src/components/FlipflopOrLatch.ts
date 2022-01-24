@@ -2,7 +2,7 @@ import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toTriS
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawRoundValue, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawRoundValue, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { NodeIn } from "./Node"
 import { LogicEditor } from "../LogicEditor"
 
@@ -73,7 +73,7 @@ export abstract class FlipflopOrLatch<
     override getOutputName(i: number): string | undefined {
         switch (i) {
             case OUTPUT.Q: return "Q (sortie)"
-            case OUTPUT.Qb: return "Q' (sortie inversée)"
+            case OUTPUT.Qb: return "Q̅ (sortie inversée)"
         }
         return undefined
     }
@@ -124,15 +124,16 @@ export abstract class FlipflopOrLatch<
             }
 
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
             g.font = "12px sans-serif"
 
-            g.fillText("Q", ...ctx.rotatePoint(right - 8, this.outputs[OUTPUT.Q].posYInParentTransform))
-            const [qbarCenterX, qbarCenterY] = ctx.rotatePoint(right - 8, this.outputs[OUTPUT.Qb].posYInParentTransform)
-            g.fillText("Q", qbarCenterX, qbarCenterY)
-            const barY = qbarCenterY - 8
-            g.strokeStyle = g.fillStyle
-            strokeSingleLine(g, qbarCenterX - 4, barY, qbarCenterX + 3, barY)
+            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs[OUTPUT.Q])
+            drawLabel(ctx, this.orient, "Q̅", "e", right, this.outputs[OUTPUT.Qb])
+
+            // TODO bar placement is not great
+            // const [qbarCenterX, qbarCenterY] = ctx.rotatePoint(right - 7, this.outputs[OUTPUT.Qb].posYInParentTransform)
+            // const barY = qbarCenterY - 8
+            // g.strokeStyle = g.fillStyle
+            // strokeSingleLine(g, qbarCenterX - 4, barY, qbarCenterX + 3, barY)
         })
 
     }
@@ -261,7 +262,7 @@ export abstract class Flipflop<
 
     public static isClockTrigger(trigger: EdgeTrigger, prevClock: TriState, clock: TriState): boolean {
         return (trigger === EdgeTrigger.rising && prevClock === false && clock === true)
-        || (trigger === EdgeTrigger.falling && prevClock === true && clock === false)
+            || (trigger === EdgeTrigger.falling && prevClock === true && clock === false)
     }
 
     protected doRecalcValue(): [TriState, TriState] {
@@ -296,23 +297,28 @@ export abstract class Flipflop<
 
     public static drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: NodeIn, trigger: EdgeTrigger) {
         const clockY = clockNode.posYInParentTransform
-        let clockLineOffset = 2
+        const clockLineOffset = 2
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.lineWidth = 2
 
-        if (trigger === EdgeTrigger.falling) {
-            clockLineOffset += 7
-            g.beginPath()
-            circle(g, left - 5, clockY, 6)
-            g.fillStyle = COLOR_BACKGROUND
-            g.fill()
-            g.stroke()
-        }
+        // if (trigger === EdgeTrigger.falling) {
+        //     clockLineOffset += 7
+        //     g.beginPath()
+        //     circle(g, left - 5, clockY, 6)
+        //     g.fillStyle = COLOR_BACKGROUND
+        //     g.fill()
+        //     g.stroke()
+        // }
         g.beginPath()
-        g.moveTo(left, clockY - 5)
-        g.lineTo(left + 10, clockY)
-        g.lineTo(left, clockY + 5)
+        g.moveTo(left + 1, clockY - 4)
+        g.lineTo(left + 9, clockY)
+        g.lineTo(left + 1, clockY + 4)
         g.stroke()
+        if (trigger === EdgeTrigger.falling) {
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.closePath()
+            g.fill()
+        }
 
         drawWireLineToComponent(g, clockNode, left - clockLineOffset, clockY, false)
     }
@@ -329,11 +335,10 @@ export abstract class Flipflop<
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
-            g.font = "12px sans-serif"
+            g.font = "11px sans-serif"
 
-            g.fillText("P", ...ctx.rotatePoint(this.inputs[INPUT.Preset].posXInParentTransform, top + 8))
-            g.fillText("C", ...ctx.rotatePoint(this.inputs[INPUT.Clear].posXInParentTransform, bottom - 8))
+            drawLabel(ctx, this.orient, "Pre", "n", this.inputs[INPUT.Preset], top)
+            drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
         })
     }
 

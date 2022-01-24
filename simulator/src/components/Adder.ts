@@ -1,7 +1,7 @@
 import { isUnset, TriState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, drawLabel } from "../drawutils"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
@@ -133,27 +133,22 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
             g.textAlign = "center"
             g.font = "11px sans-serif"
 
-            let spacingTop = 8
-            let spacingRight = 10
-            let spacingBottom = 6
-            let spacingLeft = 13
+            const top = this.posY - height / 2
+            const bottom = this.posY + height / 2
+            const right = this.posX + width / 2
+            const left = this.posX - width / 2
 
-            if (Orientation.isVertical(this.orient)) {
-                spacingTop -= 1
-                spacingRight -= 0
-                spacingBottom -= 0
-                spacingLeft -= 3
-            }
-
-            g.fillText("A", ...ctx.rotatePoint(this.inputs[INPUT.A].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            g.fillText("B", ...ctx.rotatePoint(this.inputs[INPUT.B].posXInParentTransform, this.posY - height / 2 + spacingTop))
-            g.fillText("Cin", ...ctx.rotatePoint(this.posX + width / 2 - spacingRight, this.inputs[INPUT.Cin].posYInParentTransform))
-
-            g.fillText("S", ...ctx.rotatePoint(this.outputs[OUTPUT.S].posXInParentTransform, this.posY + height / 2 - spacingBottom))
-            g.fillText("Cout", ...ctx.rotatePoint(this.posX - width / 2 + spacingLeft, this.outputs[OUTPUT.Cout].posYInParentTransform))
+            drawLabel(ctx, this.orient, "A", "n", this.inputs[INPUT.A], top)
+            drawLabel(ctx, this.orient, "B", "n", this.inputs[INPUT.B], top)
+            drawLabel(ctx, this.orient, "Cin", "e", right, this.inputs[INPUT.Cin])
+            
+            drawLabel(ctx, this.orient, "S", "s", this.outputs[OUTPUT.S], bottom)
+            drawLabel(ctx, this.orient, "Cout", "w", left, this.outputs[OUTPUT.Cout])
 
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 30px sans-serif"
+            g.textAlign = "center"
+            g.textBaseline = "middle"
             g.fillText("+", this.posX, this.posY - 2)
         })
     }
