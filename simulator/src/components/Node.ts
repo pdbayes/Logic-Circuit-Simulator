@@ -260,10 +260,9 @@ export class NodeOut extends NodeBase {
     }
 
     protected propagateNewValue(newValue: TriState) {
+        const now = this.editor.timeline.adjustedTime()
         for (const wire of this._outgoingWires) {
-            if (isNotNull(wire.endNode)) {
-                wire.endNode.value = newValue
-            }
+            wire.propageNewValue(newValue, now)
         }
     }
 

@@ -1,4 +1,4 @@
-import { Mode, isNull, isNotNull, isDefined, isUndefined } from "../utils"
+import { Mode, isNull, isNotNull, isDefined, isUndefined, TriState } from "../utils"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -6,6 +6,7 @@ import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireL
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { EditorSelection } from "../CursorMovementManager"
+import { Timestamp } from "../Timeline"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -119,11 +120,15 @@ export class Wire extends Drawable {
 
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
+    private _propagatingValues: [TriState, Timestamp][] = []
 
     constructor(
         private _startNode: Node
     ) {
         super(_startNode.editor)
+        const editor = _startNode.editor
+        const longAgo = -1 - editor.options.propagationDelay // make sure it is fully propagated no matter what
+        this._propagatingValues.push([_startNode.value, longAgo])
     }
 
     toJSON(): WireRepr {
@@ -185,6 +190,12 @@ export class Wire extends Drawable {
         this._startNode.addOutgoingWire(this)
         this._endNode.incomingWire = this
         this._endNode.value = this.startNode.value
+    }
+
+    propageNewValue(newValue: TriState, now: Timestamp) {
+        if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
+            this._propagatingValues.push([newValue, now])
+        }
     }
 
     destroy() {
@@ -253,22 +264,47 @@ export class Wire extends Drawable {
         }
     }
 
+    private prunePropagatingValues(now: Timestamp, propagationDelay: number): TriState {
+        // first, prune obsolete values if needed
+        let removeBefore = 0
+        for (let i = 1; i < this._propagatingValues.length; i++) {
+            if (now >= this._propagatingValues[i][1] + propagationDelay) {
+                // item i has fully propagated
+                removeBefore = i
+            } else {
+                // item i is still propagating
+                break
+            }
+        }
+        if (removeBefore > 0) {
+            this._propagatingValues.splice(0, removeBefore)
+        }
+        return this._propagatingValues[0][0]
+    }
+
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const wireValue = this.startNode.value
+        // this has to be checked _before_ we prune the list,
+        // otherwise we won't get a chance to have a next animation frame
+        // and to run the pending updates created by possibly setting
+        // the value of the end node
+        const isAnimating = this._propagatingValues.length > 1
+
+        const propagationDelay = this.editor.options.propagationDelay
+        const wireValue = this.prunePropagatingValues(ctx.now, propagationDelay)
 
         if (isNull(this.endNode)) {
             // draw to mouse position
             drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue)
 
         } else {
+            this.endNode.value = wireValue
+
             let prevX = this.startNode.posX
             let prevY = this.startNode.posY
             let prevProlong = this.startNode.wireProlongDirection
-            g.beginPath()
-            g.moveTo(prevX, prevY)
-
             const lastWaypointData = { posX: this.endNode.posX, posY: this.endNode.posY, orient: this.endNode.wireProlongDirection }
             const allWaypoints = [...this._waypoints, lastWaypointData]
+            let svgPathDesc = "M" + prevX + " " + prevY + " "
             for (let i = 0; i < allWaypoints.length; i++) {
                 const waypoint = allWaypoints[i]
                 const nextX = waypoint.posX
@@ -276,26 +312,28 @@ export class Wire extends Drawable {
                 const deltaX = nextX - prevX
                 const deltaY = nextY - prevY
                 const nextProlong = waypoint.orient
+                let x, y, x1, y1
                 if (prevX === nextX || prevY === nextY) {
                     // straight line
                     if (i === 0) {
-                        g.moveTo(...bezierAnchorForWire(prevProlong, prevX, prevY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2))
-                        g.lineTo(prevX, prevY)
+                        [x, y] = bezierAnchorForWire(prevProlong, prevX, prevY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2)
+                        svgPathDesc += "M" + x + " " + y + " "
+                        svgPathDesc += "L" + prevX + " " + prevY + " "
                     }
-                    g.lineTo(nextX, nextY)
+                    svgPathDesc += "L" + nextX + " " + nextY + " "
                     if (i === allWaypoints.length - 1) {
-                        g.lineTo(...bezierAnchorForWire(nextProlong, nextX, nextY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2))
+                        [x, y] = bezierAnchorForWire(nextProlong, nextX, nextY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2)
+                        svgPathDesc += "L" + x + " " + y + " "
                     }
                 } else {
                     // bezier curve
                     const bezierAnchorPointDistX = Math.max(25, Math.abs(deltaX) / 3)
-                    const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3)
+                    const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3);
 
-                    g.bezierCurveTo(
-                        ...bezierAnchorForWire(prevProlong, prevX, prevY, bezierAnchorPointDistX, bezierAnchorPointDistY),
-                        ...bezierAnchorForWire(nextProlong, nextX, nextY, bezierAnchorPointDistX, bezierAnchorPointDistY),
-                        nextX, nextY,
-                    )
+                    // first anchor point
+                    [x, y] = bezierAnchorForWire(prevProlong, prevX, prevY, bezierAnchorPointDistX, bezierAnchorPointDistY);
+                    [x1, y1] = bezierAnchorForWire(nextProlong, nextX, nextY, bezierAnchorPointDistX, bezierAnchorPointDistY)
+                    svgPathDesc += "C" + x + " " + y + "," + x1 + " " + y1 + "," + nextX + " " + nextY + " "
                 }
 
                 prevX = nextX
@@ -303,7 +341,21 @@ export class Wire extends Drawable {
                 prevProlong = Orientation.invert(nextProlong)
             }
 
-            strokeAsWireLine(g, wireValue, ctx.isMouseOver)
+            const totalLength = this.editor.lengthOfPath(svgPathDesc)
+            const path = new Path2D(svgPathDesc) // TODO cache this?
+
+            const old = g.getLineDash()
+            for (const [value, timeSet] of this._propagatingValues) {
+                const frac = Math.min(1.0, (ctx.now - timeSet) / propagationDelay)
+                const lengthToDraw = totalLength * frac
+                g.setLineDash([lengthToDraw, totalLength])
+                strokeAsWireLine(g, value, ctx.isMouseOver, path)
+            }
+            g.setLineDash(old)
+
+            if (isAnimating) {
+                this.setNeedsRedraw("propagating value")
+            }
         }
     }
 
@@ -379,12 +431,12 @@ export class WireManager {
         return this._isAddingWire
     }
 
-    draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selectionRect: EditorSelection | undefined) {
+    draw(g: CanvasRenderingContext2D, now: Timestamp, mouseOverComp: Drawable | null, selectionRect: EditorSelection | undefined) {
         this.removeDeadWires()
         for (const wire of this._wires) {
-            wire.draw(g, mouseOverComp, selectionRect)
+            wire.draw(g, now, mouseOverComp, selectionRect)
             for (const waypoint of wire.waypoints) {
-                waypoint.draw(g, mouseOverComp, selectionRect)
+                waypoint.draw(g, now, mouseOverComp, selectionRect)
             }
         }
     }

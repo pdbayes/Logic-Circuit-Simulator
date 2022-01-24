@@ -585,7 +585,7 @@ export abstract class GateBase<
                 break
         }
 
-        if (this.editor.displayOptions.showGateTypes && !isUnset(type)) {
+        if (this.editor.options.showGateTypes && !isUnset(type)) {
             const gateShortName = this.gateTypeEnum.propsOf(type).shortName
             if (isDefined(gateShortName)) {
                 g.fillStyle = COLOR_GATE_NAMES

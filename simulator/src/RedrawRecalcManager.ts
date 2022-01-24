@@ -1,10 +1,11 @@
 import { Component } from "./components/Component"
 import { Drawable } from "./components/Drawable"
-import { Dict, isUndefined, isEmptyObject, isDefined, isNotNull } from "./utils"
+import { Dict, isUndefined, isDefined, isNotNull } from "./utils"
 
 export class RedrawManager {
 
     private _canvasRedrawReasons: Dict<unknown[]> = {}
+    private _isEmpty = true
 
     public addReason(reason: string, comp: Drawable | null) {
         const compObj = comp
@@ -14,10 +15,11 @@ export class RedrawManager {
         } else {
             compList.push(compObj)
         }
+        this._isEmpty = false
     }
 
     public getReasonsAndClear(): string | undefined {
-        if (isEmptyObject(this._canvasRedrawReasons)) {
+        if (this._isEmpty) {
             return undefined
         }
 
@@ -45,7 +47,12 @@ export class RedrawManager {
         reasonParts.pop()
 
         this._canvasRedrawReasons = {}
+        this._isEmpty = true
         return reasonParts.join("")
+    }
+
+    public hasReasons(): boolean {
+        return !this._isEmpty
     }
 }
 
@@ -78,16 +85,16 @@ export class RecalcManager {
         let round = 1
         do {
             const currentQueue = [...this._queue]
-            console.log(`Recalc/propagate round ${round}: ` + currentQueue.map((c) => c.toString()).join(", "))
+            // console.log(`Recalc/propagate round ${round}: ` + currentQueue.map((c) => c.toString()).join(", "))
             this._queue = []
             for (const [comp, udpateType, forcePropagate] of currentQueue) {
                 switch (udpateType) {
                     case RECALC:
-                        console.log(` -> Recalc ${comp}`)
+                        // console.log(` -> Recalc ${comp}`)
                         comp.recalcValue(forcePropagate)
                         break
                     case PROPAGATE:
-                        console.log(` -> Propagate ${comp}`)
+                        // console.log(` -> Propagate ${comp}`)
                         comp.propagateCurrentValue()
                         break
                 }
@@ -97,12 +104,12 @@ export class RecalcManager {
 
             // TODO smarter circular dependency tracking
             if (round > 1000) {
-                console.log("ERROR circular dependency")
+                console.log("ERROR circular dependency; suspending updates after 1000 recalc/propagate rounds")
                 break
             }
         } while (this._queue.length !== 0)
 
-        console.log(`Recalc/propagate done in ${round - 1} rounds.`)
+        // console.log(`Recalc/propagate done in ${round - 1} rounds.`)
     }
 
 }

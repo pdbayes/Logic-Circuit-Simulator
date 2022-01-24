@@ -128,7 +128,7 @@ class _PersistenceManager {
         })
 
         // also works with undefined
-        editor.setPartialDisplayOptions(parsedContents.opts)
+        editor.setPartialOptions(parsedContents.opts)
         delete parsedContents.opts
 
         const unhandledData = keysOf(parsedContents)
@@ -142,7 +142,7 @@ class _PersistenceManager {
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
             "v": 1,
-            "opts": editor.nonDefaultDisplayOptions(),
+            "opts": editor.nonDefaultOptions(),
         }
 
         for (const comp of editor.components) {

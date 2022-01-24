@@ -50,13 +50,14 @@ const ATTRIBUTE_NAMES = {
     data: "data",
 } as const
 
-const DEFAULT_DISPLAY_OPTIONS = {
+const DEFAULT_EDITOR_OPTIONS = {
     showOnly: undefined as undefined | Array<string>,
     showGateTypes: false,
     hideTooltips: false,
+    propagationDelay: 100,
 }
 
-type DisplayOptions = typeof DEFAULT_DISPLAY_OPTIONS
+export type EditorOptions = typeof DEFAULT_EDITOR_OPTIONS
 
 
 export const MouseActions = RichStringEnum.withProps<{
@@ -92,10 +93,11 @@ export class LogicEditor extends HTMLElement {
     private _maxInstanceMode: Mode = MAX_MODE_WHEN_EMBEDDED // can be set later
     private _mode: Mode = DEFAULT_MODE
     private _initialData: string | undefined = undefined
-    private _options: DisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS }
+    private _options: EditorOptions = { ...DEFAULT_EDITOR_OPTIONS }
 
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
+    private _nextAnimationFrameHandle: number | null = null
 
     public root: ShadowRoot
     public readonly html: {
@@ -104,6 +106,7 @@ export class LogicEditor extends HTMLElement {
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
+        hiddenPath: SVGPathElement,
     }
     private _baseTransform: DOMMatrix
     private _currentScale = 1
@@ -121,13 +124,14 @@ export class LogicEditor extends HTMLElement {
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
+            hiddenPath: this.elemWithId("hiddenPath"),
         }
         this.html = html
 
         this._baseTransform = new DOMMatrix()
     }
 
-    private elemWithId<E extends HTMLElement>(id: string) {
+    private elemWithId<E extends Element>(id: string) {
         let elem = this.root.querySelector(`#${id}`)
         if (elem === null) {
             elem = document.querySelector(`#${id}`)
@@ -151,11 +155,11 @@ export class LogicEditor extends HTMLElement {
         return this._mode
     }
 
-    get displayOptions(): Readonly<DisplayOptions> {
+    get options(): Readonly<EditorOptions> {
         return this._options
     }
 
-    setPartialDisplayOptions(opts: Partial<DisplayOptions>) {
+    setPartialOptions(opts: Partial<EditorOptions>) {
         this._options = { ...this._options, ...opts }
         this.redrawMgr.addReason("options changed", null)
 
@@ -172,12 +176,12 @@ export class LogicEditor extends HTMLElement {
         // // console.log("New options are %o", options)
     }
 
-    nonDefaultDisplayOptions(): undefined | Partial<DisplayOptions> {
-        const nonDefaultOpts: Partial<DisplayOptions> = {}
+    nonDefaultOptions(): undefined | Partial<EditorOptions> {
+        const nonDefaultOpts: Partial<EditorOptions> = {}
         let set = false
         for (const [_k, v] of Object.entries(this._options)) {
-            const k = _k as keyof DisplayOptions
-            if (v !== DEFAULT_DISPLAY_OPTIONS[k]) {
+            const k = _k as keyof EditorOptions
+            if (v !== DEFAULT_EDITOR_OPTIONS[k]) {
                 nonDefaultOpts[k] = v as any
                 set = true
             }
@@ -228,6 +232,14 @@ export class LogicEditor extends HTMLElement {
         mainCanvas.style.setProperty("height", h + "px")
         // we set it and return it so that we can set it in the constructor and make the compiler happy
         return this._baseTransform = new DOMMatrix(`scale(${f})`)
+    }
+
+    lengthOfPath(svgPathDesc: string): number {
+        const p = this.html.hiddenPath
+        p.setAttribute("d", svgPathDesc)
+        const length = p.getTotalLength()
+        // console.log(`p=${svgPathDesc}, l=${length}`)
+        return length
     }
 
     connectedCallback() {
@@ -362,6 +374,11 @@ export class LogicEditor extends HTMLElement {
 
             // make load function available globally
             window.load = this.wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(this, jsonString))
+            window.adjustedTime = () => {
+                const nowAdjusted = this.timeline.adjustedTime()
+                // console.log(nowAdjusted)
+                return nowAdjusted
+            }
         }
 
         // Load parameters from attributes
@@ -392,7 +409,7 @@ export class LogicEditor extends HTMLElement {
 
         const showModeChange = this._maxInstanceMode >= Mode.FULL
         if (showModeChange) {
-            const modeChangeMenu = this.elemWithId("modeChangeMenu")!
+            const modeChangeMenu: HTMLElement = this.elemWithId("modeChangeMenu")!
             div(cls("btn-group-vertical"),
                 div(style("text-align: center; width: 100%; font-weight: bold; font-size: 80%; color: #666; padding: 2px;"),
                     "Mode",
@@ -435,7 +452,7 @@ export class LogicEditor extends HTMLElement {
             setVisible(modeChangeMenu, true)
         }
 
-        const timelineControls = this.elemWithId("timelineControls")!
+        const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
         const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
@@ -619,7 +636,7 @@ export class LogicEditor extends HTMLElement {
                     })
                 }
 
-                const leftToolbar = this.elemWithId("leftToolbar")
+                const leftToolbar: HTMLElement = this.elemWithId("leftToolbar")
                 switch (showLeftMenu) {
                     case "hide":
                         leftToolbar.style.removeProperty("visibility")
@@ -639,7 +656,7 @@ export class LogicEditor extends HTMLElement {
                 const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
                 setVisible(txGateButton, showTxGates)
 
-                const rightToolbarContainer = this.elemWithId("rightToolbarContainer")
+                const rightToolbarContainer: HTMLElement = this.elemWithId("rightToolbarContainer")
                 setVisible(rightToolbarContainer, showRightMenu)
             } else {
                 console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[this._maxInstanceMode]}`)
@@ -836,7 +853,12 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    recalcAndDrawIfNeeded() {
+    recalcPropagateAndDrawIfNeeded() {
+        if (this._nextAnimationFrameHandle !== null) {
+            // an animation frame will be played soon anyway
+            return
+        }
+
         const __recalculated = this.recalcMgr.recalcAndPropagateIfNeeded()
 
         if (this.wireMgr.isAddingWire) {
@@ -849,6 +871,19 @@ export class LogicEditor extends HTMLElement {
         }
 
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
+        // console.log("Drawing")
+        this.doRedraw()
+
+        if (this.redrawMgr.hasReasons()) {
+            // an animation is running
+            this._nextAnimationFrameHandle = requestAnimationFrame(() => {
+                this._nextAnimationFrameHandle = null
+                this.recalcPropagateAndDrawIfNeeded()
+            })
+        }
+    }
+
+    private doRedraw() {
 
         const mainCanvas = this.html.mainCanvas
         const g = mainCanvas.getContext("2d")!
@@ -891,19 +926,19 @@ export class LogicEditor extends HTMLElement {
             g.stroke()
         }
 
+        const now = this.timeline.adjustedTime()
         const currentScale = this._currentScale
         g.scale(currentScale, currentScale)
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
-        this.wireMgr.draw(g, currentMouseOverComp, undefined) // never show wires as selected
+        this.wireMgr.draw(g, now, currentMouseOverComp, undefined) // never show wires as selected
 
         const currentSelection = this.cursorMovementManager._currentSelection
         for (const comp of this.components) {
-            comp.draw(g, currentMouseOverComp, currentSelection)
+            comp.draw(g, now, currentMouseOverComp, currentSelection)
             comp.forEachNode((node) => {
-                node.draw(g, currentMouseOverComp, undefined) // never show nodes as selected
-
+                node.draw(g, now, currentMouseOverComp, undefined) // never show nodes as selected
                 return true
             })
         }
@@ -918,17 +953,12 @@ export class LogicEditor extends HTMLElement {
             g.stroke()
             g.fill()
         }
-
-        const newRedrawReasons = this.redrawMgr.getReasonsAndClear()
-        if (isDefined(newRedrawReasons)) {
-            console.log("ERROR: unexpectedly found new reasons to redraw right after a redraw:\n    " + newRedrawReasons)
-        }
     }
 
     wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
         return (...params: T) => {
             const result = f(...params)
-            this.recalcAndDrawIfNeeded()
+            this.recalcPropagateAndDrawIfNeeded()
             return result
         }
     }

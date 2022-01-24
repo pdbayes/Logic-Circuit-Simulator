@@ -458,7 +458,7 @@ class EditHandlers extends ToolHandlers {
     override mouseHoverOn(comp: Drawable) {
         const editor = this.editor
         editor.cursorMovementManager.clearPopperIfNecessary()
-        if (editor.displayOptions.hideTooltips) {
+        if (editor.options.hideTooltips) {
             return
         }
         const tooltip = comp.makeTooltip()

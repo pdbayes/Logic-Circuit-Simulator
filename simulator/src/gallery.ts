@@ -5,6 +5,7 @@ import { Wire } from "./components/Wire"
 import { PartialWhereUndefinedRecursively } from "./utils"
 import { InputDef } from "./components/Inputs"
 import { ICDef } from "./components/IC"
+import { EditorOptions } from "./LogicEditor"
 
 const Circuit = t.partial({
     in: t.array(InputDef),
@@ -13,7 +14,7 @@ const Circuit = t.partial({
     components: t.array(ICDef),
     wires: t.array(Wire.Repr),
 })
-type Circuit = { v: number } & PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
+type Circuit = { v: number, opts?: Partial<EditorOptions> } & PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
 
 function assertCircuits<T extends Record<string, Circuit>>(v: T): T {
     // remove prototype to have a nice, clean completion in the console
@@ -222,6 +223,9 @@ export const gallery = assertCircuits({
     },
     SevenSegmentDisplay: {
         "v": 1,
+        "opts": {
+            "propagationDelay": 20,
+        },
         "in": [
             { type: "clock", "pos": [90, 60], "orient": "s", "id": 21, "period": 16000, "phase": 8000 },
             { type: "clock", "pos": [130, 60], "orient": "s", "id": 22, "period": 8000, "phase": 4000 },

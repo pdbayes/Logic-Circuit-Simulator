@@ -4,8 +4,11 @@ import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { EditorSelection } from "../CursorMovementManager"
+import { Timestamp } from "../Timeline"
 
 export interface DrawContext {
+    g: CanvasRenderingContext2D
+    now: Timestamp
     isMouseOver: boolean
     inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown): void
 }
@@ -45,7 +48,8 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
 
     constructor(
         private comp: Drawable,
-        private g: CanvasRenderingContext2D,
+        public readonly g: CanvasRenderingContext2D,
+        public readonly now: Timestamp,
         public readonly isMouseOver: boolean,
     ) {
         this.entranceTransform = g.getTransform()
@@ -91,7 +95,7 @@ export abstract class Drawable {
         this.editor.redrawMgr.addReason(reason, this)
     }
 
-    public draw(g: CanvasRenderingContext2D, mouseOverComp: Drawable | null, selection: EditorSelection | undefined) {
+    public draw(g: CanvasRenderingContext2D, now: Timestamp, mouseOverComp: Drawable | null, selection: EditorSelection | undefined): void {
         let inSelectionRect = false
         if (isDefined(selection)) {
             for (const rect of selection.allRects) {
@@ -101,7 +105,7 @@ export abstract class Drawable {
                 }
             }
         }
-        const ctx = new _DrawContextImpl(this, g, this === mouseOverComp || inSelectionRect)
+        const ctx = new _DrawContextImpl(this, g, now, this === mouseOverComp || inSelectionRect)
         this.doDraw(g, ctx)
         ctx.exit()
     }

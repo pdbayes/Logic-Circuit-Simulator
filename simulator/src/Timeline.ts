@@ -1,7 +1,8 @@
 import { LogicEditor } from "./LogicEditor"
 import { isDefined, isEmpty, isUndefined, nonEmpty, TimeoutHandle } from "./utils"
 
-export type Callback = (theoreticalTime: number) => unknown
+export type Timestamp = number
+export type Callback = (theoreticalTime: Timestamp) => unknown
 export type TimelineState = { hasCallbacks: boolean, isPaused: boolean, canStep: boolean }
 
 function areStatesEqual(s1: TimelineState, s2: TimelineState): boolean {
@@ -10,21 +11,21 @@ function areStatesEqual(s1: TimelineState, s2: TimelineState): boolean {
         && s1.canStep === s2.canStep
 }
 
-type ScheduledCallbacks = { [time: number]: [Callback, string][] }
+type ScheduledCallbacks = { [time: Timestamp]: [Callback, string][] }
 
 export class Timeline {
 
     public readonly editor: LogicEditor
 
     // what in the system time is our zero time (adjusted on pause, reset on reload)
-    private _epochStart!: number
-    private _sortedNextCallbackTimes!: number[]
+    private _epochStart!: Timestamp
+    private _sortedNextCallbackTimes!: Timestamp[]
     // per callback time, a list of callbacks
     private _schedule!: ScheduledCallbacks
     // allows canceling the next tick if (a) we pause, (b) we enqueue something before
     private _nextTimeoutHandle: TimeoutHandle | undefined
     // when we are paused: the (absolute) start time of the pause
-    private _pausedSince: number | undefined
+    private _pausedSince: Timestamp | undefined
     // remember last sent state to avoid fake events
     private _lastSentState: TimelineState | undefined
 
@@ -54,11 +55,11 @@ export class Timeline {
         return { hasCallbacks, isPaused, canStep }
     }
 
-    private unadjustedTime() {
+    private unadjustedTime(): Timestamp {
         return new Date().getTime()
     }
 
-    public adjustedTime() {
+    public adjustedTime(): Timestamp {
         if (isDefined(this._pausedSince)) {
             // return constant value of "stuck" time
             return this._pausedSince - this._epochStart
@@ -68,7 +69,7 @@ export class Timeline {
         }
     }
 
-    public scheduleAt(time: number, desc: string, callback: Callback) {
+    public scheduleAt(time: Timestamp, desc: string, callback: Callback) {
         if (time < this.adjustedTime()) {
             console.log("WARNING Scheduling this in the past, may behave strangely: " + desc)
         }

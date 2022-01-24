@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isUnset, TriState, unset, Unset } from "./utils"
+import { isArray, isNumber, isUndefined, isUnset, TriState, unset, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -259,7 +259,7 @@ export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0
     strokeAsWireLine(g, value, false)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean) {
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -271,11 +271,13 @@ export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, i
         g.lineWidth = mainStrokeWidth
         g.strokeStyle = COLOR_WIRE_BORDER
     }
-    g.stroke()
+    if (path) { g.stroke(path) }
+    else { g.stroke() }
 
     g.strokeStyle = colorForBoolean(value)
     g.lineWidth = mainStrokeWidth - 2
-    g.stroke()
+    if (path) { g.stroke(path) }
+    else { g.stroke() }
 
     g.lineCap = oldLineCap
 }

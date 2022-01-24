@@ -185,10 +185,6 @@ export function nonEmpty(container: { length: number } | { size: number }): bool
     return !isEmpty(container)
 }
 
-export function isEmptyObject(obj: Record<string, unknown>): boolean {
-    return Object.keys(obj).length === 0
-}
-
 export function isNumber(arg: unknown): arg is number {
     return typeof arg === "number"
 }
