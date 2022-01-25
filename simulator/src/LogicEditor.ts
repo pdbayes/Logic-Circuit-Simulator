@@ -300,9 +300,13 @@ export class LogicEditor extends HTMLElement {
 
                     case "Backspace":
                     case "Delete": {
-                        const mouseOverComp = this.cursorMovementManager.currentMouseOverComp
-                        if (mouseOverComp !== null) {
-                            this.tryDeleteDrawable(mouseOverComp)
+                        let selComp
+                        if (isDefined(selComp = this.cursorMovementManager.currentSelection?.previouslySelectedElements)) {
+                            for (const comp of selComp) {
+                                this.tryDeleteDrawable(comp)
+                            }
+                        } else if ((selComp = this.cursorMovementManager.currentMouseOverComp) !== null) {
+                            this.tryDeleteDrawable(selComp)
                         }
                         return
                     }
@@ -336,6 +340,13 @@ export class LogicEditor extends HTMLElement {
 
             window.addEventListener("keydown", this.wrapHandler(e => {
                 switch (e.key) {
+                    case "a":
+                        if (e.metaKey) {
+                            this.cursorMovementManager.selectAll()
+                            e.preventDefault()
+                        }
+                        return
+
                     case "z":
                         if (e.metaKey) {
                             if (e.shiftKey) {
@@ -936,7 +947,7 @@ export class LogicEditor extends HTMLElement {
         const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
         this.wireMgr.draw(g, now, currentMouseOverComp, undefined) // never show wires as selected
 
-        const currentSelection = this.cursorMovementManager._currentSelection
+        const currentSelection = this.cursorMovementManager.currentSelection
         for (const comp of this.components) {
             comp.draw(g, now, currentMouseOverComp, currentSelection)
             comp.forEachNode((node) => {
@@ -945,13 +956,13 @@ export class LogicEditor extends HTMLElement {
             })
         }
 
-        if (isDefined(currentSelection) && currentSelection.visible) {
-            const rect = currentSelection.latestRect
+        let selRect
+        if (isDefined(currentSelection) && isDefined(selRect = currentSelection.currentlyDrawnRect)) {
             g.lineWidth = 1.5
             g.strokeStyle = "rgb(100,100,255)"
             g.fillStyle = "rgba(100,100,255,0.2)"
             g.beginPath()
-            g.rect(rect.x, rect.y, rect.width, rect.height)
+            g.rect(selRect.x, selRect.y, selRect.width, selRect.height)
             g.stroke()
             g.fill()
         }

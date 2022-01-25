@@ -4,8 +4,6 @@ import { LogicEditor, MouseAction } from './LogicEditor'
 import { isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
 import { Node } from "./components/Node"
 import { applyModifiersTo, button, cls, faglyph, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
-import { ComponentBase } from './components/Component'
-import { Waypoint, Wire } from './components/Wire'
 import { ComponentFactory } from './ComponentFactory'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 
@@ -16,10 +14,49 @@ type MouseDownData = {
     triggeredContextMenu: boolean
 }
 
-export type EditorSelection = {
-    allRects: DOMRect[],
-    latestRect: DOMRect,
-    visible: boolean
+export class EditorSelection {
+
+    public previouslySelectedElements = new Set<Drawable>()
+
+    constructor(
+        public currentlyDrawnRect: DOMRect | undefined,
+    ) { }
+
+    private toggle(elem: Drawable) {
+        if (this.previouslySelectedElements.has(elem)) {
+            this.previouslySelectedElements.delete(elem)
+        } else {
+            this.previouslySelectedElements.add(elem)
+        }
+    }
+
+    public finishCurrentRect(editor: LogicEditor) {
+        let rect
+        if (isDefined(rect = this.currentlyDrawnRect)) {
+            for (const comp of editor.components) {
+                if (comp.isInRect(rect)) {
+                    this.toggle(comp)
+                }
+            }
+
+            // TODO go through some other elements than components to show as selected?
+            // e.g. wires?
+
+            this.currentlyDrawnRect = undefined
+        }
+    }
+
+    public isSelected(component: Drawable): boolean {
+        const prevSelected = this.previouslySelectedElements.has(component)
+        const rect = this.currentlyDrawnRect
+        if (isUndefined(rect)) {
+            return prevSelected
+        } else {
+            const inverted = component.isInRect(rect)
+            return inverted ? !prevSelected : prevSelected
+        }
+    }
+    
 }
 
 
@@ -33,9 +70,7 @@ export class CursorMovementManager {
     private _startDragTimeoutHandle: TimeoutHandle | null = null
     private _currentHandlers: ToolHandlers
     private _lastTouchEnd: [Drawable, number] | undefined = undefined
-
-    public _currentSelection: EditorSelection | undefined = undefined
-
+    public currentSelection: EditorSelection | undefined = undefined
 
     constructor(editor: LogicEditor) {
         this.editor = editor
@@ -156,6 +191,15 @@ export class CursorMovementManager {
         }
 
         this.setCurrentMouseOverComp(findMouseOver())
+    }
+
+    selectAll() {
+        const sel = new EditorSelection(undefined)
+        this.currentSelection = sel
+        for (const comp of this.editor.components) {
+            sel.previouslySelectedElements.add(comp)
+        }
+        this.editor.redrawMgr.addReason("selected all", null)
     }
 
 
@@ -571,19 +615,20 @@ class EditHandlers extends ToolHandlers {
     override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
         const editor = this.editor
         const cursorMovementMgr = editor.cursorMovementManager
-        const currentSelection = cursorMovementMgr._currentSelection
+        const currentSelection = cursorMovementMgr.currentSelection
         if (isDefined(currentSelection)) {
             const allowSelection = editor.mode >= Mode.CONNECT
             if (e.shiftKey && allowSelection) {
+                if (isDefined(currentSelection.currentlyDrawnRect)) {
+                    console.log("unexpected defined current rect when about to begin a new one")
+                }
                 // augment selection
                 const [left, top] = editor.offsetXY(e)
                 const rect = new DOMRect(left, top, 1, 1)
-                currentSelection.allRects.push(rect)
-                currentSelection.latestRect = rect
-                currentSelection.visible = true
+                currentSelection.currentlyDrawnRect = rect
             } else {
                 // clear selection
-                cursorMovementMgr._currentSelection = undefined
+                cursorMovementMgr.currentSelection = undefined
             }
             editor.redrawMgr.addReason("selection rect changed", null)
         }
@@ -596,16 +641,20 @@ class EditHandlers extends ToolHandlers {
         const allowSelection = editor.mode >= Mode.CONNECT
         if (allowSelection) {
             const cursorMovementMgr = editor.cursorMovementManager
-            const currentSelection = cursorMovementMgr._currentSelection
+            const currentSelection = cursorMovementMgr.currentSelection
             const [x, y] = editor.offsetXY(e)
             if (isUndefined(currentSelection)) {
                 const rect = new DOMRect(x, y, 1, 1)
-                cursorMovementMgr._currentSelection = { allRects: [rect], latestRect: rect, visible: true }
+                cursorMovementMgr.currentSelection = new EditorSelection(rect)
             } else {
-                const rect = currentSelection.latestRect
-                rect.width = x - rect.x
-                rect.height = y - rect.y
-                editor.redrawMgr.addReason("selection rect changed", null)
+                const rect = currentSelection.currentlyDrawnRect
+                if (isUndefined(rect)) {
+                    console.log("trying to update a selection rect that is not defined")
+                } else {
+                    rect.width = x - rect.x
+                    rect.height = y - rect.y
+                    editor.redrawMgr.addReason("selection rect changed", null)
+                }
             }
         }
     }
@@ -615,9 +664,9 @@ class EditHandlers extends ToolHandlers {
         editor.wireMgr.tryCancelWire()
 
         const cursorMovementMgr = editor.cursorMovementManager
-        const currentSelection = cursorMovementMgr._currentSelection
+        const currentSelection = cursorMovementMgr.currentSelection
         if (isDefined(currentSelection)) {
-            currentSelection.visible = false
+            currentSelection.finishCurrentRect(this.editor)
             editor.redrawMgr.addReason("selection rect changed", null)
         }
     }

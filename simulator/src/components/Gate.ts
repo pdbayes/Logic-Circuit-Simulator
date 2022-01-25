@@ -1,7 +1,7 @@
 import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { circle, COLORCOMP_COMPONENT_BORDER, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"

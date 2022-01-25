@@ -96,15 +96,7 @@ export abstract class Drawable {
     }
 
     public draw(g: CanvasRenderingContext2D, now: Timestamp, mouseOverComp: Drawable | null, selection: EditorSelection | undefined): void {
-        let inSelectionRect = false
-        if (isDefined(selection)) {
-            for (const rect of selection.allRects) {
-                if (this.isInRect(rect)) {
-                    inSelectionRect = true
-                    break
-                }
-            }
-        }
+        const inSelectionRect = selection?.isSelected(this) ?? false
         const ctx = new _DrawContextImpl(this, g, now, this === mouseOverComp || inSelectionRect)
         this.doDraw(g, ctx)
         ctx.exit()
@@ -412,7 +404,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
-        const [x, y] =  this.editor.offsetXY(e)
+        const [x, y] = this.editor.offsetXY(e)
         const snapToGrid = !e.metaKey
         this.setPosition
         const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)

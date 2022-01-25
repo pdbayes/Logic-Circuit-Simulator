@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull, isNotNull } from "../utils"
+import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull } from "../utils"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
