@@ -54,6 +54,10 @@ class _PersistenceManager {
             migrate0To1(parsedContents)
             jsonVersion = 1
         }
+        if (jsonVersion === 1) {
+            migrate1To2(parsedContents)
+            jsonVersion = 2
+        }
         delete parsedContents["v"]
 
         for (const elem of components) {
@@ -114,14 +118,19 @@ class _PersistenceManager {
         const recalcMgr = editor.recalcMgr
         recalcMgr.recalcAndPropagateIfNeeded()
 
-        loadField("wires", Wire.Repr, ([nodeID1, nodeID2, waypointsObj]) => {
+        loadField("wires", Wire.Repr, ([nodeID1, nodeID2, wireOptions]) => {
             const node1 = nodeMgr.findNode(nodeID1)
             const node2 = nodeMgr.findNode(nodeID2)
             if (!isUndefined(node1) && !isUndefined(node2)) {
                 wireMgr.addNode(node1)
                 const completedWire = wireMgr.addNode(node2)
-                if (isDefined(completedWire) && isDefined(waypointsObj)) {
-                    completedWire.setWaypoints(waypointsObj.waypoints)
+                if (isDefined(completedWire) && isDefined(wireOptions)) {
+                    if (isDefined(wireOptions.via)) {
+                        completedWire.setWaypoints(wireOptions.via)
+                    }
+                    if (isDefined(wireOptions.propagationDelay)) {
+                        completedWire.customPropagationDelay = wireOptions.propagationDelay
+                    }
                 }
                 recalcMgr.recalcAndPropagateIfNeeded()
             }
@@ -141,7 +150,7 @@ class _PersistenceManager {
 
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
-            "v": 1,
+            "v": 2,
             "opts": editor.nonDefaultOptions(),
         }
 
@@ -231,3 +240,20 @@ function migrate0To1(workspace: any) {
     }
 }
 
+
+function migrate1To2(workspace: any) {
+    if ("wires" in workspace) {
+        const wires = workspace.wires
+        if (Array.isArray(wires)) {
+            for (const wire of wires) {
+                if (Array.isArray(wire) && wire.length === 3) {
+                    const wireOptions = wire[2]
+                    if ("waypoints" in wireOptions) {
+                        wireOptions.via = wireOptions.waypoints
+                        delete wireOptions.waypoints
+                    }
+                }
+            }
+        }
+    }
+}

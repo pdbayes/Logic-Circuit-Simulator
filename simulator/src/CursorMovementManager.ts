@@ -56,7 +56,7 @@ export class EditorSelection {
             return inverted ? !prevSelected : prevSelected
         }
     }
-    
+
 }
 
 
@@ -501,7 +501,7 @@ class EditHandlers extends ToolHandlers {
 
     override mouseHoverOn(comp: Drawable) {
         const editor = this.editor
-        editor.cursorMovementManager.clearPopperIfNecessary()
+        editor.cursorMovementMgr.clearPopperIfNecessary()
         if (editor.options.hideTooltips) {
             return
         }
@@ -513,7 +513,7 @@ class EditHandlers extends ToolHandlers {
                     ? [comp.posX, comp.posY, comp.width, comp.height]
                     : [editor.mouseX, editor.mouseY, 4, 4]
             const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
-            editor.cursorMovementManager.makePopper(tooltip, rect)
+            editor.cursorMovementMgr.makePopper(tooltip, rect)
         }
     }
     override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
@@ -542,7 +542,7 @@ class EditHandlers extends ToolHandlers {
         if (isDefined(contextMenuData)) {
 
             // console.log("setting triggered")
-            const currentMouseDownData = this.editor.cursorMovementManager.currentMouseDownData
+            const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
             if (isNotNull(currentMouseDownData)) {
                 currentMouseDownData.triggeredContextMenu = true
             }
@@ -614,7 +614,7 @@ class EditHandlers extends ToolHandlers {
 
     override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
         const editor = this.editor
-        const cursorMovementMgr = editor.cursorMovementManager
+        const cursorMovementMgr = editor.cursorMovementMgr
         const currentSelection = cursorMovementMgr.currentSelection
         if (isDefined(currentSelection)) {
             const allowSelection = editor.mode >= Mode.CONNECT
@@ -640,7 +640,7 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         const allowSelection = editor.mode >= Mode.CONNECT
         if (allowSelection) {
-            const cursorMovementMgr = editor.cursorMovementManager
+            const cursorMovementMgr = editor.cursorMovementMgr
             const currentSelection = cursorMovementMgr.currentSelection
             const [x, y] = editor.offsetXY(e)
             if (isUndefined(currentSelection)) {
@@ -663,7 +663,7 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         editor.wireMgr.tryCancelWire()
 
-        const cursorMovementMgr = editor.cursorMovementManager
+        const cursorMovementMgr = editor.cursorMovementMgr
         const currentSelection = cursorMovementMgr.currentSelection
         if (isDefined(currentSelection)) {
             currentSelection.finishCurrentRect(this.editor)

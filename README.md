@@ -26,7 +26,7 @@ See <https://jp.pellet.name/hep/logiga/>
  * Interface is drawn differently, all with canvas calls and no external images
  * Screen is only refreshed when needed and not 60 times per second no matter what
  * Clocks can be paused
- * Components have been added: bit display, segment display, nibble display, half adder, etc.
+ * Components have been added: bit display, segment display, nibble display, half adder, muxes, etc.
  * Mouseovers have been added
  * Components can be edited to be faulty, for educational exercises
  * Editor can be in several modes with different capabilities
@@ -34,6 +34,8 @@ See <https://jp.pellet.name/hep/logiga/>
  * Loading and saving using JSON is much cleaner and does not include unnecessary properties
  * Demo circuits are predefined and can be loaded from the JavaScript console
  * Circuits can be loaded from a JSON export by drag-n-drop
+ * An animated propagation delay can be set
+ * UI is in French (for now, could be translated upon request)
 
 
 ## License

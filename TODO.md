@@ -3,15 +3,13 @@
 
 ## High priority
 
- * disable input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
+ * Switch to web components
  * add label
  * add rectangle
- * Switch to web components
  * make input constant 0 or 1
  * prevent click event if right-clik
  * 16 x 4 bit memory
  * 4 bit adder with carry in and out
- * disable input of component (e.g., to make exercise to prevent alu from auto doing a subtraction)
  * show value on dip switch and register
 
 
@@ -26,11 +24,11 @@
  * demux
  * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
  * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
- * [Ivan Moura] dans la vue "static", il serait intéressant de désactiver la coloration des connexions et des entrées/sorties, ce qui permettrait de présenter le schéma "neutre".
 
 
 ## Low priority
 
+ * disable input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * handle rapid second click as a repeated click if doubleClick not handled
  * embed images with esbuild's dataurl loader; import CSS and HTML templates as well?
  * Add mouseovers to new components
@@ -42,6 +40,8 @@
 
 ### DONE
 
+ * editor-level options and UI to set options
+ * can now color all wires and nodes as neutral
  * replace fillText with drawLabel
  * edge detector -- can now be done with XOR(A, NOT(NOT(A)))) with new propagation system
  * Fix flipflop update issue, e.g. in shift register

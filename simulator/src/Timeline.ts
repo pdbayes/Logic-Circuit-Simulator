@@ -71,7 +71,7 @@ export class Timeline {
 
     public scheduleAt(time: Timestamp, desc: string, callback: Callback) {
         if (time < this.adjustedTime()) {
-            console.log("WARNING Scheduling this in the past, may behave strangely: " + desc)
+            console.log(`WARNING Scheduling this (${this.adjustedTime() - time} ms), may behave strangely: ` + desc)
         }
         // console.log(`Scheduling '${desc}' at ${time}`)
         if (time in this._schedule) {

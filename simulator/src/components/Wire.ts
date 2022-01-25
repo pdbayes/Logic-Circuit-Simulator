@@ -1,4 +1,4 @@
-import { Mode, isNull, isNotNull, isDefined, isUndefined, TriState } from "../utils"
+import { Mode, isNull, isNotNull, isDefined, isUndefined, TriState, typeOrUndefined } from "../utils"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -70,7 +70,8 @@ export class Waypoint extends DrawableWithDraggablePosition {
             return
         }
 
-        drawWaypoint(g, ctx, this.posX, this.posY, this.parent.startNode.value, ctx.isMouseOver, false, false, false)
+        const neutral = this.editor.options.hideWireColors
+        drawWaypoint(g, ctx, this.posX, this.posY, this.parent.startNode.value, ctx.isMouseOver, neutral, false, false, false)
     }
 
     override mouseDown(e: MouseEvent | TouchEvent) {
@@ -111,7 +112,8 @@ export class Wire extends Drawable {
             t.tuple([
                 NodeID, NodeID,
                 t.type({
-                    waypoints: t.array(Waypoint.Repr),
+                    via: typeOrUndefined(t.array(Waypoint.Repr)),
+                    propagationDelay: typeOrUndefined(t.number),
                 }),
             ]), // alternative with more fields first
             t.tuple([NodeID, NodeID]),
@@ -121,6 +123,7 @@ export class Wire extends Drawable {
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
     private _propagatingValues: [TriState, Timestamp][] = []
+    public customPropagationDelay: number | undefined = undefined
 
     constructor(
         private _startNode: Node
@@ -133,11 +136,17 @@ export class Wire extends Drawable {
 
     toJSON(): WireRepr {
         const endID = this._endNode?.id ?? -1
-        if (this._waypoints.length === 0) {
+        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay)) {
+            // no need for node options
             return [this._startNode.id, endID]
+            
         } else {
+            // add node options
             const waypoints = this._waypoints.map(w => w.toJSON())
-            return [this._startNode.id, endID, { waypoints }]
+            return [this._startNode.id, endID, {
+                via: (waypoints.length === 0) ? undefined : waypoints,
+                propagationDelay: this.customPropagationDelay,
+            }]
         }
     }
 
@@ -185,7 +194,7 @@ export class Wire extends Drawable {
             const tempNode = this._startNode
             this._startNode = secondNode
             this._endNode = tempNode
-            const longAgo = -1 - this.editor.options.propagationDelay
+            const longAgo = -1 - (this.customPropagationDelay ?? this.editor.options.propagationDelay)
             this._propagatingValues = [[secondNode.value, longAgo]]
         }
 
@@ -291,12 +300,14 @@ export class Wire extends Drawable {
         // the value of the end node
         const isAnimating = this._propagatingValues.length > 1
 
-        const propagationDelay = this.editor.options.propagationDelay
+        const options = this.editor.options
+        const propagationDelay = this.customPropagationDelay ?? options.propagationDelay
+        const neutral = options.hideWireColors
         const wireValue = this.prunePropagatingValues(ctx.now, propagationDelay)
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue)
+            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue, neutral)
 
         } else {
             this.endNode.value = wireValue
@@ -351,7 +362,7 @@ export class Wire extends Drawable {
                 const frac = Math.min(1.0, (ctx.now - timeSet) / propagationDelay)
                 const lengthToDraw = totalLength * frac
                 g.setLineDash([lengthToDraw, totalLength])
-                strokeAsWireLine(g, value, ctx.isMouseOver, path)
+                strokeAsWireLine(g, value, ctx.isMouseOver, neutral, path)
             }
             g.setLineDash(old)
 

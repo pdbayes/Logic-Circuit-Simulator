@@ -287,6 +287,7 @@ export abstract class Mux<
 
         // wiring
         if (this._showWiring) {
+            const neutral = this.editor.options.hideWireColors
             const sels = this.inputValues(this.INPUT.S as any)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnset(sel)) {
@@ -304,7 +305,7 @@ export abstract class Mux<
                         right - anchorDiffX, toY, // anchor right
                         right - 2, toY,
                     )
-                    strokeAsWireLine(g, this.inputs[from[i]].value, false)
+                    strokeAsWireLine(g, this.inputs[from[i]].value, false, neutral)
                 }
             }
         }

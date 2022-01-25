@@ -204,9 +204,10 @@ export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number
 }
 
 export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
+    const neutral = node.editor.options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
-    drawStraightWireLine(g, x0, y0, x1, y1, node.value)
+    drawStraightWireLine(g, x0, y0, x1, y1, node.value, neutral)
     if (withTriangle) {
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.fillStyle = COLOR_COMPONENT_BORDER
@@ -252,14 +253,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState) {
+export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState, neutral: boolean) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
-    strokeAsWireLine(g, value, false)
+    strokeAsWireLine(g, value, false, neutral)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean, path?: Path2D) {
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -274,7 +275,7 @@ export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, i
     if (path) { g.stroke(path) }
     else { g.stroke() }
 
-    g.strokeStyle = colorForBoolean(value)
+    g.strokeStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
     g.lineWidth = mainStrokeWidth - 2
     if (path) { g.stroke(path) }
     else { g.stroke() }
@@ -286,8 +287,8 @@ export function isOverWaypoint(x: number, y: number, waypointX: number, waypoint
     return dist(x, y, waypointX, waypointY) < WAYPOINT_HIT_RANGE / 2
 }
 
-export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: TriState, isMouseOver: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
-    g.fillStyle = colorForBoolean(value)
+export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: TriState, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
+    g.fillStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
 
     const [circleColor, thickness] =
         showForced

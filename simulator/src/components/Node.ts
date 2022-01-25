@@ -74,7 +74,8 @@ abstract class NodeBase extends DrawableWithPosition {
         const showForced = isDefined(this._forceValue) && mode >= Mode.FULL
         const showForcedWarning = mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value
         const parentOrientIsVertical = Orientation.isVertical(this.parent.orient)
-        drawWaypoint(g, ctx, this.posX, this.posY, this.value, ctx.isMouseOver, showForced, showForcedWarning, parentOrientIsVertical)
+        const neutral = this.editor.options.hideWireColors
+        drawWaypoint(g, ctx, this.posX, this.posY, this.value, ctx.isMouseOver, neutral, showForced, showForcedWarning, parentOrientIsVertical)
     }
 
     public get isAlive() {

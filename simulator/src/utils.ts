@@ -81,8 +81,14 @@ export type ExpandRecursively<T> = T extends Record<string, unknown>
     : T
 
 
-export type OptionalKeys<T> = { [P in keyof T]-?: undefined extends T[P] ? P : never }[keyof T]
-export type RequiredKeys<T> = Exclude<keyof T, OptionalKeys<T>>
+export type OptionalKeysOf<T> = { [P in keyof T]-?: undefined extends T[P] ? P : never }[keyof T]
+export type RequiredKeysOf<T> = Exclude<keyof T, OptionalKeysOf<T>>
+
+export type KeysOfByType<T, U> = { [P in keyof T]: T[P] extends U ? P : never }[keyof T]
+
+export type FilterProperties<T, U> = {
+    [P in KeysOfByType<T, U>]: T[P]
+}
 
 export type PartialWhereUndefinedRecursively<T> = ExpandRecursively<_PartialWhereUndefinedRecursively<T>>
 
@@ -90,9 +96,9 @@ type _PartialWhereUndefinedRecursively<T> =
     // is it an object?
     T extends Record<string, unknown>
     ? T extends infer O ? {
-        [P in RequiredKeys<O>]: _PartialWhereUndefinedRecursively<O[P]>
+        [P in RequiredKeysOf<O>]: _PartialWhereUndefinedRecursively<O[P]>
     } & {
-        [P in OptionalKeys<O>]?: _PartialWhereUndefinedRecursively<O[P]>
+        [P in OptionalKeysOf<O>]?: _PartialWhereUndefinedRecursively<O[P]>
     }
     : never // "closing the infer block"
 

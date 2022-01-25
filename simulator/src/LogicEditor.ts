@@ -7,18 +7,19 @@ import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
-import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw } from "./htmlgen"
+import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUndefined, isTruthyString, isUndefined, RichStringEnum, setVisible } from "./utils"
+import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUndefined, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible } from "./utils"
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { boolean } from "fp-ts"
 // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // // @ts-ignore
 // import LogicEditorCSS from "../css/LogicEditor.css"
@@ -53,6 +54,7 @@ const ATTRIBUTE_NAMES = {
 const DEFAULT_EDITOR_OPTIONS = {
     showOnly: undefined as undefined | Array<string>,
     showGateTypes: false,
+    hideWireColors: false,
     hideTooltips: false,
     propagationDelay: 100,
 }
@@ -85,7 +87,7 @@ export class LogicEditor extends HTMLElement {
     readonly redrawMgr = new RedrawManager()
     readonly recalcMgr = new RecalcManager()
     readonly moveMgr = new MoveManager(this)
-    readonly cursorMovementManager = new CursorMovementManager(this)
+    readonly cursorMovementMgr = new CursorMovementManager(this)
 
     readonly components: Component[] = []
 
@@ -107,7 +109,14 @@ export class LogicEditor extends HTMLElement {
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
         hiddenPath: SVGPathElement,
+        optionsZone: HTMLElement,
     }
+    public optionsHtml: {
+        showGateTypesCheckbox: HTMLInputElement,
+        hideWireColorsCheckbox: HTMLInputElement,
+        hideTooltipsCheckbox: HTMLInputElement,
+        propagationDelayField: HTMLInputElement,
+    } | undefined = undefined
     private _baseTransform: DOMMatrix
     private _currentScale = 1
     public mouseX = -1000 // offscreen at start
@@ -124,6 +133,7 @@ export class LogicEditor extends HTMLElement {
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
+            optionsZone: this.elemWithId("optionsZone"),
             hiddenPath: this.elemWithId("hiddenPath"),
         }
         this.html = html
@@ -160,7 +170,15 @@ export class LogicEditor extends HTMLElement {
     }
 
     setPartialOptions(opts: Partial<EditorOptions>) {
-        this._options = { ...this._options, ...opts }
+        const newOptions = { ...this._options, ...opts }
+        this._options = newOptions
+        let optionsHtml
+        if (isDefined(optionsHtml = this.optionsHtml)) {
+            optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
+            optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
+            optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
+            optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
+        }
         this.redrawMgr.addReason("options changed", null)
     }
 
@@ -256,8 +274,8 @@ export class LogicEditor extends HTMLElement {
         // TODO add initial reason to redraw
         // draw
 
-        this.cursorMovementManager.registerCanvasListenersOn(this.html.canvasContainer)
-        this.cursorMovementManager.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
+        this.cursorMovementMgr.registerCanvasListenersOn(this.html.canvasContainer)
+        this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
@@ -301,11 +319,11 @@ export class LogicEditor extends HTMLElement {
                     case "Backspace":
                     case "Delete": {
                         let selComp
-                        if (isDefined(selComp = this.cursorMovementManager.currentSelection?.previouslySelectedElements)) {
+                        if (isDefined(selComp = this.cursorMovementMgr.currentSelection?.previouslySelectedElements)) {
                             for (const comp of selComp) {
                                 this.tryDeleteDrawable(comp)
                             }
-                        } else if ((selComp = this.cursorMovementManager.currentMouseOverComp) !== null) {
+                        } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
                             this.tryDeleteDrawable(selComp)
                         }
                         return
@@ -342,7 +360,7 @@ export class LogicEditor extends HTMLElement {
                 switch (e.key) {
                     case "a":
                         if (e.metaKey) {
-                            this.cursorMovementManager.selectAll()
+                            this.cursorMovementMgr.selectAll()
                             e.preventDefault()
                         }
                         return
@@ -409,13 +427,25 @@ export class LogicEditor extends HTMLElement {
                     "Mode",
                 ),
                 ...[Mode.FULL, Mode.DESIGN, Mode.CONNECT, Mode.TRYOUT, Mode.STATIC].map((buttonMode) => {
-                    const [modeTitle, expl] = (() => {
+                    const [modeTitle, expl, addElem] = (() => {
                         switch (buttonMode) {
-                            case Mode.FULL: return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées"]
-                            case Mode.DESIGN: return ["Complet", "La totalité des actions de conception d’un circuit sont possible"]
-                            case Mode.CONNECT: return ["Connexion", "Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)"]
-                            case Mode.TRYOUT: return ["Test", "Il est seulement possible de changer les entrées pour tester un circuit préétabli"]
-                            case Mode.STATIC: return ["Statique", "Les éléments sont juste affichés; aucune interaction n’est possible"]
+                            case Mode.FULL: {
+                                const optionsDiv =
+                                    div(cls("sim-mode-link"),
+                                        title("Réglages"),
+                                        faglyph("cog")
+                                    ).render()
+
+                                optionsDiv.addEventListener("click", () => {
+                                    setVisible(this.html.optionsZone, true)
+                                })
+
+                                return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées", optionsDiv]
+                            }
+                            case Mode.DESIGN: return ["Complet", "La totalité des actions de conception d’un circuit sont possible", emptyMod]
+                            case Mode.CONNECT: return ["Connexion", "Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)", emptyMod]
+                            case Mode.TRYOUT: return ["Test", "Il est seulement possible de changer les entrées pour tester un circuit préétabli", emptyMod]
+                            case Mode.STATIC: return ["Statique", "Les éléments sont juste affichés; aucune interaction n’est possible", emptyMod]
                         }
                     })()
 
@@ -435,6 +465,7 @@ export class LogicEditor extends HTMLElement {
                             attrBuilder("mode")(Mode[buttonMode]),
                             title(expl),
                             modeTitle,
+                            addElem,
                             copyLinkDiv
                         ).render()
 
@@ -482,6 +513,49 @@ export class LogicEditor extends HTMLElement {
         this.timeline.reset()
         this.timeline.onStateChanged = newState => setTimelineButtonsVisible(newState)
         setTimelineButtonsVisible(this.timeline.state)
+
+        // Options
+        const optionsZone = this.html.optionsZone
+        optionsZone.querySelector("#closeOptions")?.addEventListener("click", () => {
+            setVisible(optionsZone, false)
+        })
+
+        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, title: string) => {
+            const checkbox = input(type("checkbox")).render()
+            if (this.options[optionName] === true) {
+                checkbox.checked = true
+            }
+            checkbox.addEventListener("change", this.wrapHandler(() => {
+                this._options[optionName] = checkbox.checked
+                this.redrawMgr.addReason("option changed: " + optionName, null)
+            }))
+            optionsZone.appendChild(
+                div(
+                    style("height: 20px"),
+                    label(checkbox, span(style("margin-left: 4px"), title))
+                ).render()
+            )
+            return checkbox
+        }
+
+        const hideWireColorsCheckbox = makeCheckbox("hideWireColors", "Cacher l’état des fils")
+        const showGateTypesCheckbox = makeCheckbox("showGateTypes", "Montrer type des portes")
+        const hideTooltipsCheckbox = makeCheckbox("hideTooltips", "Désactiver tooltips")
+        const propagationDelayField = input(type("number"),
+            style("margin: 0 4px; width: 4em"),
+            attr("min", "0"), attr("step", "50"),
+            attr("value", String(this.options.propagationDelay))
+        ).render()
+        propagationDelayField.addEventListener("change", () => {
+            this._options.propagationDelay = propagationDelayField.valueAsNumber
+        })
+        optionsZone.appendChild(
+            div(
+                style("height: 20px"),
+                "Propagation en", propagationDelayField, "ms"
+            ).render()
+        )
+        this.optionsHtml = { hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField }
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
@@ -581,10 +655,14 @@ export class LogicEditor extends HTMLElement {
                 const showRightEditControls = mode >= Mode.CONNECT
                 const showRightMenu = showReset || showRightEditControls
                 const showOnlyReset = showReset && !showRightEditControls
+                const hideSettings = mode < Mode.FULL
 
                 setVisible(this.elemWithId("resetToolButton"), showReset)
                 setVisible(this.elemWithId("resetToolButtonCaption"), !showOnlyReset)
                 setVisible(this.elemWithId("resetToolButtonDummyCaption"), showOnlyReset)
+                if (hideSettings) {
+                    setVisible(this.html.optionsZone, false)
+                }
 
                 const showOnly = this._options.showOnly
                 if (isDefined(showOnly)) {
@@ -707,7 +785,7 @@ export class LogicEditor extends HTMLElement {
     }
 
     trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
-        const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
+        const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition) {
             currentMouseOverComp.doSetOrient(orient)
             e.preventDefault()
@@ -729,7 +807,7 @@ export class LogicEditor extends HTMLElement {
             }
         }
 
-        this.cursorMovementManager.setHandlersFor(action)
+        this.cursorMovementMgr.setHandlersFor(action)
         this.redrawMgr.addReason("mouse action changed", null)
     }
 
@@ -738,7 +816,7 @@ export class LogicEditor extends HTMLElement {
             this.moveMgr.areDrawablesMoving()
                 ? "grabbing"
                 : this._toolCursor
-                ?? this.cursorMovementManager.currentMouseOverComp?.cursorWhenMouseover
+                ?? this.cursorMovementMgr.currentMouseOverComp?.cursorWhenMouseover
                 ?? "default"
     }
 
@@ -944,10 +1022,10 @@ export class LogicEditor extends HTMLElement {
         g.scale(currentScale, currentScale)
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
-        const currentMouseOverComp = this.cursorMovementManager.currentMouseOverComp
+        const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         this.wireMgr.draw(g, now, currentMouseOverComp, undefined) // never show wires as selected
 
-        const currentSelection = this.cursorMovementManager.currentSelection
+        const currentSelection = this.cursorMovementMgr.currentSelection
         for (const comp of this.components) {
             comp.draw(g, now, currentMouseOverComp, currentSelection)
             comp.forEachNode((node) => {
