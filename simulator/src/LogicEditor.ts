@@ -19,7 +19,8 @@ import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUnd
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
-import { boolean } from "fp-ts"
+import { makeImage } from "./images"
+import { makeComponentMenuInto } from "./menuutils"
 // // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // // @ts-ignore
 // import LogicEditorCSS from "../css/LogicEditor.css"
@@ -91,6 +92,7 @@ export class LogicEditor extends HTMLElement {
 
     readonly components: Component[] = []
 
+    private _isEmbedded = false
     private _isSingleton = false
     private _maxInstanceMode: Mode = MAX_MODE_WHEN_EMBEDDED // can be set later
     private _mode: Mode = DEFAULT_MODE
@@ -105,6 +107,7 @@ export class LogicEditor extends HTMLElement {
     public readonly html: {
         canvasContainer: HTMLElement,
         mainCanvas: HTMLCanvasElement,
+        leftToolbar: HTMLElement,
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
@@ -130,6 +133,7 @@ export class LogicEditor extends HTMLElement {
         const html: typeof this.html = {
             canvasContainer: this.elemWithId("canvas-sim"),
             mainCanvas: this.elemWithId("mainCanvas"),
+            leftToolbar: this.elemWithId("leftToolbar"),
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
@@ -242,7 +246,6 @@ export class LogicEditor extends HTMLElement {
     connectedCallback() {
         const { canvasContainer, mainCanvas } = this.html
         this._baseTransform = this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
-        this.trySetModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
 
         // TODO move this in SelectionMgr?
         mainCanvas.ondragenter = () => {
@@ -275,7 +278,6 @@ export class LogicEditor extends HTMLElement {
         // draw
 
         this.cursorMovementMgr.registerCanvasListenersOn(this.html.canvasContainer)
-        this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
@@ -288,10 +290,12 @@ export class LogicEditor extends HTMLElement {
     }
 
     private setup() {
+        this._isEmbedded = isEmbeddedInIframe()
+        this._isSingleton = !this._isEmbedded && !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.singleton))
+        this._maxInstanceMode = this._isSingleton && !this._isEmbedded ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
+
         // Transfer from URL param to attributes if we are in singleton mode
-        this._isSingleton = !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.singleton))
-        this._maxInstanceMode = this._isSingleton ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
-        if (this._isSingleton) {
+        if (this._isSingleton || this._isEmbedded) {
             const transferUrlParamToAttribute = (name: string) => {
                 const value = getURLParameter(name)
                 if (isDefined(value)) {
@@ -308,7 +312,9 @@ export class LogicEditor extends HTMLElement {
             ]) {
                 transferUrlParamToAttribute(attr)
             }
+        }
 
+        if (this._isSingleton) {
             window.addEventListener("keyup", this.wrapHandler(e => {
                 switch (e.key) {
                     case "Escape":
@@ -403,8 +409,8 @@ export class LogicEditor extends HTMLElement {
         }
 
         // Load parameters from attributes
-        const modeAttr = this.getAttribute(ATTRIBUTE_NAMES.mode)
-        if (modeAttr !== null && modeAttr in Mode) {
+        let modeAttr = this.getAttribute(ATTRIBUTE_NAMES.mode)
+        if (modeAttr !== null && (modeAttr = modeAttr.toUpperCase()) in Mode) {
             this._maxInstanceMode = (Mode as any)[modeAttr]
         }
 
@@ -426,6 +432,17 @@ export class LogicEditor extends HTMLElement {
         const dataAttr = this.getAttribute(ATTRIBUTE_NAMES.data)
         if (dataAttr !== null) {
             this._initialData = dataAttr
+        }
+
+        makeComponentMenuInto(this.html.leftToolbar)
+        this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
+
+        const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
+        for (let i = 0; i < modifButtons.length; i++) {
+            const but = modifButtons[i] as HTMLElement
+            but.addEventListener("click", () => {
+                this.setActiveTool(but)
+            })
         }
 
         const showModeChange = this._maxInstanceMode >= Mode.FULL
@@ -478,7 +495,7 @@ export class LogicEditor extends HTMLElement {
                             copyLinkDiv
                         ).render()
 
-                    switchToModeDiv.addEventListener("click", this.wrapHandler(() => this.trySetMode(buttonMode)))
+                    switchToModeDiv.addEventListener("click", this.wrapHandler(() => this.setMode(buttonMode)))
 
                     return switchToModeDiv
                 })
@@ -568,8 +585,8 @@ export class LogicEditor extends HTMLElement {
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
-        this.trySetMode(this._maxInstanceMode)
 
+        this.setModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
         LogicEditor.installGlobalListeners()
     }
 
@@ -630,127 +647,125 @@ export class LogicEditor extends HTMLElement {
         LogicEditor._globalListenersInstalled = true
     }
 
-    trySetMode(mode: Mode) {
+    setMode(mode: Mode) {
         this.wrapHandler(() => {
-            const wantedModeStr = Mode[mode]
-            if (mode <= this._maxInstanceMode) {
-                this._mode = mode
-
-                // console.log(`Display/interaction is ${wantedModeStr}`)
-
-                this.redrawMgr.addReason("mode changed", null)
-
-                // update mode active button
-                this.root.querySelectorAll(".sim-mode-tool").forEach((elem) => {
-                    if (elem.getAttribute("mode") === wantedModeStr) {
-                        elem.classList.add("active")
-                    } else {
-                        elem.classList.remove("active")
-                    }
-                })
-
-                if (mode < Mode.CONNECT) {
-                    this.setCurrentMouseAction("edit")
-                }
-
-                type LeftMenuDisplay = "show" | "hide" | "inactive"
-
-                const showLeftMenu: LeftMenuDisplay =
-                    (this._maxInstanceMode !== Mode.FULL)
-                        ? (mode >= Mode.DESIGN) ? "show" : "hide"
-                        : (mode >= Mode.DESIGN) ? "show" : "inactive"
-
-                const showReset = mode >= Mode.TRYOUT
-                const showRightEditControls = mode >= Mode.CONNECT
-                const showRightMenu = showReset || showRightEditControls
-                const showOnlyReset = showReset && !showRightEditControls
-                const hideSettings = mode < Mode.FULL
-
-                setVisible(this.elemWithId("resetToolButton"), showReset)
-                setVisible(this.elemWithId("resetToolButtonCaption"), !showOnlyReset)
-                setVisible(this.elemWithId("resetToolButtonDummyCaption"), showOnlyReset)
-                if (hideSettings) {
-                    setVisible(this.html.optionsZone, false)
-                }
-
-                const showOnly = this._options.showOnly
-                if (isDefined(showOnly)) {
-                    const leftToolbar = this.elemWithId("leftToolbar")
-                    const toolbarChildren = leftToolbar.children
-                    let numVisibleInOut = 0
-                    let numVisibleGates = 0
-                    let numVisibleIC = 0
-                    for (let i = 0; i < toolbarChildren.length; i++) {
-                        const child = toolbarChildren[i] as HTMLElement
-                        const compStr = child.getAttribute("data-component")?.toLowerCase()
-                        const compType = child.getAttribute("data-type")?.toLowerCase()
-                        const buttonID = (compType ?? compStr)
-                        const visible = isUndefined(buttonID) || showOnly.includes(buttonID)
-                        // console.log("buttonID", buttonID, "visible", visible)
-                        if (visible) {
-                            if (compStr === "gate") {
-                                numVisibleGates++
-                            } else if (compStr === "ic") {
-                                numVisibleIC++
-                            } else if (!isNullOrUndefined(compStr)) {
-                                numVisibleInOut++
-                            }
-                        }
-                        setVisible(child, visible)
-                    }
-                    const showInOutHeader = numVisibleInOut > 0
-                    const showGatesHeader = numVisibleGates > 0
-                    const showICHeader = numVisibleIC > 0
-                    setVisible(this.elemWithId("inOutHeader"), showInOutHeader)
-                    setVisible(this.elemWithId("gatesHeader"), showGatesHeader)
-                    setVisible(this.elemWithId("icHeader"), showICHeader)
-                    setVisible(this.elemWithId("inOut-gates-sep"), showInOutHeader && showGatesHeader)
-                    setVisible(this.elemWithId("gates-ic-sep"), (showInOutHeader || showGatesHeader) && showICHeader)
-                }
-
-                const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
-                for (let i = 0; i < modifButtons.length; i++) {
-                    const but = modifButtons[i] as HTMLElement
-                    setVisible(but, showRightEditControls)
-                    but.addEventListener("click", () => {
-                        this.setActiveTool(but)
-                    })
-                }
-
-                const leftToolbar: HTMLElement = this.elemWithId("leftToolbar")
-                switch (showLeftMenu) {
-                    case "hide":
-                        leftToolbar.style.removeProperty("visibility")
-                        leftToolbar.style.display = "none"
-                        break
-                    case "show":
-                        leftToolbar.style.removeProperty("visibility")
-                        leftToolbar.style.removeProperty("display")
-                        break
-                    case "inactive":
-                        leftToolbar.style.visibility = "hidden"
-                        leftToolbar.style.removeProperty("display")
-                        break
-                }
-
-                const showTxGates = mode >= Mode.FULL && (isUndefined(showOnly) || showOnly.includes("TX") || showOnly.includes("TXA"))
-                const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
-                setVisible(txGateButton, showTxGates)
-
-                const rightToolbarContainer: HTMLElement = this.elemWithId("rightToolbarContainer")
-                setVisible(rightToolbarContainer, showRightMenu)
-            } else {
+            let wantedModeStr = Mode[mode]
+            if (mode > this._maxInstanceMode) {
+                mode = this._maxInstanceMode
                 console.log(`Cannot switch to mode ${wantedModeStr} because we are capped by ${Mode[this._maxInstanceMode]}`)
+                wantedModeStr = Mode[mode]
             }
+            this._mode = mode
+
+            // console.log(`Display/interaction is ${wantedModeStr} - ${mode}`)
+
+            this.redrawMgr.addReason("mode changed", null)
+
+            // update mode active button
+            this.root.querySelectorAll(".sim-mode-tool").forEach((elem) => {
+                if (elem.getAttribute("mode") === wantedModeStr) {
+                    elem.classList.add("active")
+                } else {
+                    elem.classList.remove("active")
+                }
+            })
+
+            if (mode < Mode.CONNECT) {
+                this.setCurrentMouseAction("edit")
+            }
+
+            type LeftMenuDisplay = "show" | "hide" | "inactive"
+
+            const showLeftMenu: LeftMenuDisplay =
+                (this._maxInstanceMode !== Mode.FULL)
+                    ? (mode >= Mode.DESIGN) ? "show" : "hide"
+                    : (mode >= Mode.DESIGN) ? "show" : "inactive"
+
+            const showRightEditControls = mode >= Mode.CONNECT
+            const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
+            for (let i = 0; i < modifButtons.length; i++) {
+                const but = modifButtons[i] as HTMLElement
+                setVisible(but, showRightEditControls)
+            }
+
+            const showReset = mode >= Mode.TRYOUT
+            const showRightMenu = showReset || showRightEditControls
+            const showOnlyReset = showReset && !showRightEditControls
+            const hideSettings = mode < Mode.FULL
+
+            setVisible(this.elemWithId("resetToolButton"), showReset)
+            setVisible(this.elemWithId("resetToolButtonCaption"), !showOnlyReset)
+            setVisible(this.elemWithId("resetToolButtonDummyCaption"), showOnlyReset)
+
+            if (hideSettings) {
+                setVisible(this.html.optionsZone, false)
+            }
+
+            const leftToolbar = this.html.leftToolbar
+            const showOnly = this._options.showOnly
+            if (isDefined(showOnly)) {
+                const toolbarChildren = leftToolbar.children
+                let numVisibleInOut = 0
+                let numVisibleGates = 0
+                let numVisibleIC = 0
+                for (let i = 0; i < toolbarChildren.length; i++) {
+                    const child = toolbarChildren[i] as HTMLElement
+                    const compStr = child.getAttribute("data-component")?.toLowerCase()
+                    const compType = child.getAttribute("data-type")?.toLowerCase()
+                    const buttonID = (compType ?? compStr)
+                    const visible = isUndefined(buttonID) || showOnly.includes(buttonID)
+                    // console.log("buttonID", buttonID, "visible", visible)
+                    if (visible) {
+                        if (compStr === "gate") {
+                            numVisibleGates++
+                        } else if (compStr === "ic") {
+                            numVisibleIC++
+                        } else if (!isNullOrUndefined(compStr)) {
+                            numVisibleInOut++
+                        }
+                    }
+                    setVisible(child, visible)
+                }
+                const showInOutHeader = numVisibleInOut > 0
+                const showGatesHeader = numVisibleGates > 0
+                const showICHeader = numVisibleIC > 0
+                setVisible(this.elemWithId("inOutHeader"), showInOutHeader)
+                setVisible(this.elemWithId("gatesHeader"), showGatesHeader)
+                setVisible(this.elemWithId("icHeader"), showICHeader)
+                setVisible(this.elemWithId("inOut-gates-sep"), showInOutHeader && showGatesHeader)
+                setVisible(this.elemWithId("gates-ic-sep"), (showInOutHeader || showGatesHeader) && showICHeader)
+            }
+
+            switch (showLeftMenu) {
+                case "hide":
+                    leftToolbar.style.removeProperty("visibility")
+                    leftToolbar.style.display = "none"
+                    break
+                case "show":
+                    leftToolbar.style.removeProperty("visibility")
+                    leftToolbar.style.removeProperty("display")
+                    break
+                case "inactive":
+                    leftToolbar.style.visibility = "hidden"
+                    leftToolbar.style.removeProperty("display")
+                    break
+            }
+
+            // const showTxGates = mode >= Mode.FULL && (isUndefined(showOnly) || showOnly.includes("TX") || showOnly.includes("TXA"))
+            // const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
+            // setVisible(txGateButton, showTxGates)
+
+            const rightToolbarContainer: HTMLElement = this.elemWithId("rightToolbarContainer")
+            setVisible(rightToolbarContainer, showRightMenu)
         })()
     }
 
-    private trySetModeFromString(modeStr: string | null) {
-        let mode: Mode = DEFAULT_MODE
+    private setModeFromString(modeStr: string | null) {
+        let mode: Mode = this._maxInstanceMode
         if (modeStr !== null && (modeStr = modeStr.toUpperCase()) in Mode) {
             mode = (Mode as any)[modeStr]
         }
-        this.trySetMode(mode)
+        this.setMode(mode)
     }
 
     tryLoadFromData() {
@@ -1071,14 +1086,6 @@ template.innerHTML = LogicEditorTemplate
 
 window.customElements.define('logic-editor', LogicEditor)
 
-// window.setModeClicked = function setModeClicked(e: HTMLElement) {
-//     const buttonModeStr = e.getAttribute("mode") ?? "_unknown_"
-//     if (buttonModeStr in Mode) {
-//         const wantedMode = (Mode as any)[buttonModeStr]
-//         trySetMode(wantedMode)
-//     }
-// }
-
 function undo() {
     // TODO stubs
     console.log("undo")
@@ -1087,4 +1094,12 @@ function undo() {
 function redo() {
     // TODO stubs
     console.log("redo")
+}
+
+function isEmbeddedInIframe(): boolean {
+    try {
+        return window.self !== window.top
+    } catch (e) {
+        return true
+    }
 }
