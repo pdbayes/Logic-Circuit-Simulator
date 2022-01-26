@@ -7,7 +7,7 @@ import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
-import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr } from "./htmlgen"
+import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
@@ -35,7 +35,7 @@ enum Mode {
     FULL,    // can additionally force output nodes to 'unset' state and draw undetermined dates
 }
 
-const MAX_MODE_WHEN_STANDALONE = Mode.FULL
+const MAX_MODE_WHEN_SINGLETON = Mode.FULL
 const MAX_MODE_WHEN_EMBEDDED = Mode.DESIGN
 const DEFAULT_MODE = Mode.DESIGN
 
@@ -91,7 +91,7 @@ export class LogicEditor extends HTMLElement {
 
     readonly components: Component[] = []
 
-    private _isStandalone = false
+    private _isSingleton = false
     private _maxInstanceMode: Mode = MAX_MODE_WHEN_EMBEDDED // can be set later
     private _mode: Mode = DEFAULT_MODE
     private _initialData: string | undefined = undefined
@@ -288,10 +288,10 @@ export class LogicEditor extends HTMLElement {
     }
 
     private setup() {
-        // Transfer from URL param to attributes if we are in standalone mode
-        this._isStandalone = !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.singleton))
-        this._maxInstanceMode = this._isStandalone ? MAX_MODE_WHEN_STANDALONE : MAX_MODE_WHEN_EMBEDDED
-        if (this._isStandalone) {
+        // Transfer from URL param to attributes if we are in singleton mode
+        this._isSingleton = !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.singleton))
+        this._maxInstanceMode = this._isSingleton ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
+        if (this._isSingleton) {
             const transferUrlParamToAttribute = (name: string) => {
                 const value = getURLParameter(name)
                 if (isDefined(value)) {
@@ -391,6 +391,15 @@ export class LogicEditor extends HTMLElement {
                 // console.log(nowAdjusted)
                 return nowAdjusted
             }
+
+            this.html.canvasContainer.appendChild(
+                div(style("position: absolute; bottom: 0; right: 0; padding: 5px 3px 2px 5px; background-color: rgba(255,255,255,0.3); border-radius: 10px 0 0 0;"),
+                    a(style("color: rgba(0,0,0,0.2); font-size: 69%; font-style: italic;"),
+                        href("https://github.com/jppellet/Logic-Circuit-Simulator"), target("_blank"),
+                        "Développé par Jean-Philippe Pellet"
+                    )
+                ).render()
+            )
         }
 
         // Load parameters from attributes
@@ -939,8 +948,8 @@ export class LogicEditor extends HTMLElement {
             console.log("  -> Could not copy!")
         }
 
-        if (this._isStandalone) {
-            history.replaceState(null, "", linkForMode(MAX_MODE_WHEN_STANDALONE))
+        if (this._isSingleton) {
+            history.replaceState(null, "", linkForMode(MAX_MODE_WHEN_SINGLETON))
         }
     }
 
@@ -990,9 +999,9 @@ export class LogicEditor extends HTMLElement {
         g.strokeStyle = COLOR_BORDER
         g.lineWidth = 2
 
-        if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_STANDALONE) {
+        if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
             g.strokeRect(0, 0, width, height)
-            if (this._maxInstanceMode === MAX_MODE_WHEN_STANDALONE && this._mode < this._maxInstanceMode) {
+            if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
                 const h = this.guessCanvasHeight()
                 strokeSingleLine(g, 0, h, width, h)
 

@@ -119,6 +119,8 @@ export function attr(attrName: string, attrValue: string): Modifier {
 export const div = elemBuilder("div")
 export const span = elemBuilder("span")
 
+export const a = elemBuilder("a")
+
 export const b = elemBuilder("b")
 export const i = elemBuilder("i")
 
@@ -142,6 +144,8 @@ export const canvas = elemBuilder("canvas")
 export const style = attrBuilder("style")
 export const type = attrBuilder("type")
 export const cls = attrBuilder("class")
+export const href = attrBuilder("href")
+export const target = attrBuilder("target")
 export const title = attrBuilder("title")
 export const src = attrBuilder("src")
 export const draggable = attrBuilder("draggable")("true")
