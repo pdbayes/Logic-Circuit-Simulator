@@ -1,7 +1,6 @@
-import { make } from "fp-ts/lib/Tree"
 import { a, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
-import { isUndefined, setVisible } from "./utils"
+import { isUndefined } from "./utils"
 
 type ComponentItem = {
     type: string // TODO better types for this
@@ -321,13 +320,16 @@ export function makeComponentMenuInto(target: HTMLElement) {
         for (const item of section.items) {
             const normallyHidden = item.normallyHidden ?? false
 
-            const buttonStyle = normallyHidden ? style("display: none") : emptyMod
+            let buttonStyle = ""
+            if (normallyHidden) {
+                buttonStyle += "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
+            }
             const dataTypeOpt = isUndefined(item.subtype) ? emptyMod : dataType(item.subtype)
             const caption = isUndefined(item.caption) ? emptyMod : span(cls("gate-label"), item.caption)
             const buttonTitle = isUndefined(item.title) ? emptyMod : title(item.title)
             const extraClasses = normallyHidden ? " sim-component-button-extra" : ""
             const compButton =
-                button(type("button"), buttonStyle, cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`), // TODO can remove sim-component-button?
+                button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
                     dataComponent(item.type), dataTypeOpt,
                     makeImage(item.img, item.width),
                     caption, buttonTitle
@@ -346,11 +348,23 @@ export function makeComponentMenuInto(target: HTMLElement) {
         if (hasHidden) {
             let moreShown = false
             const names = ["Plus ↓", "Moins ↑"]
-            const linkShowMore = a(cls("leftToolbarMore"),names[0]).render()
+            const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
             linkShowMore.addEventListener("click", () => {
                 moreShown = !moreShown
                 for (const button of normallyHiddenButtons) {
-                    setVisible(button, moreShown)
+                    if (moreShown) {
+                        button.style.removeProperty("padding")
+                        button.style.removeProperty("border")
+                        button.style.removeProperty("margin-bottom")
+                        button.style.removeProperty("max-height")
+                        button.style.removeProperty("overflow")
+                    } else {
+                        button.style.padding = "0"
+                        button.style.border = "0"
+                        button.style.marginBottom = "0"
+                        button.style.maxHeight = "0"
+                        button.style.overflow = "hidden"
+                    }
                 }
                 linkShowMore.innerHTML = names[Number(moreShown)]
             })
