@@ -434,7 +434,8 @@ export class LogicEditor extends HTMLElement {
             this._initialData = dataAttr
         }
 
-        makeComponentMenuInto(this.html.leftToolbar)
+        makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
+
         this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
 
         const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
@@ -702,40 +703,6 @@ export class LogicEditor extends HTMLElement {
             }
 
             const leftToolbar = this.html.leftToolbar
-            const showOnly = this._options.showOnly
-            if (isDefined(showOnly)) {
-                const toolbarChildren = leftToolbar.children
-                let numVisibleInOut = 0
-                let numVisibleGates = 0
-                let numVisibleIC = 0
-                for (let i = 0; i < toolbarChildren.length; i++) {
-                    const child = toolbarChildren[i] as HTMLElement
-                    const compStr = child.getAttribute("data-component")?.toLowerCase()
-                    const compType = child.getAttribute("data-type")?.toLowerCase()
-                    const buttonID = (compType ?? compStr)
-                    const visible = isUndefined(buttonID) || showOnly.includes(buttonID)
-                    // console.log("buttonID", buttonID, "visible", visible)
-                    if (visible) {
-                        if (compStr === "gate") {
-                            numVisibleGates++
-                        } else if (compStr === "ic") {
-                            numVisibleIC++
-                        } else if (!isNullOrUndefined(compStr)) {
-                            numVisibleInOut++
-                        }
-                    }
-                    setVisible(child, visible)
-                }
-                const showInOutHeader = numVisibleInOut > 0
-                const showGatesHeader = numVisibleGates > 0
-                const showICHeader = numVisibleIC > 0
-                setVisible(this.elemWithId("inOutHeader"), showInOutHeader)
-                setVisible(this.elemWithId("gatesHeader"), showGatesHeader)
-                setVisible(this.elemWithId("icHeader"), showICHeader)
-                setVisible(this.elemWithId("inOut-gates-sep"), showInOutHeader && showGatesHeader)
-                setVisible(this.elemWithId("gates-ic-sep"), (showInOutHeader || showGatesHeader) && showICHeader)
-            }
-
             switch (showLeftMenu) {
                 case "hide":
                     leftToolbar.style.removeProperty("visibility")
@@ -1103,3 +1070,4 @@ function isEmbeddedInIframe(): boolean {
         return true
     }
 }
+

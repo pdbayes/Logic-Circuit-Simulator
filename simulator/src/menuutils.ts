@@ -1,6 +1,6 @@
-import { a, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
+import { a, attr, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
-import { isUndefined } from "./utils"
+import { isDefined, isUndefined } from "./utils"
 
 type ComponentItem = {
     type: string // TODO better types for this
@@ -293,41 +293,54 @@ const componentsMenu: Array<Section> = [
 ]
 
 
-export function makeComponentMenuInto(target: HTMLElement) {
+export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] | undefined) {
+
+    let showOnly: string[] | undefined = undefined
+    if (isDefined(_showOnly)) {
+        showOnly = [..._showOnly]
+    }
+
+    // console.log("makeComponentMenuInto; showOnly", showOnly)
 
     let lastSectionNonEmpty = false
 
     for (const section of componentsMenu) {
 
         // separator from previous section
+        let separator: HTMLElement | undefined = undefined
+        const lastSectionNonEmptyPrev: boolean = lastSectionNonEmpty
+
         if (lastSectionNonEmpty) {
-            target.appendChild(
-                div(style("height: 20px"), raw("&nbsp;")).render()
-            )
+            separator =
+                div(style("height: 20px"),
+                    raw("&nbsp;")
+                ).render()
+
+            target.appendChild(separator)
         }
 
         // section header
-        target.appendChild(
+        const header =
             div(cls("leftToolbarHeader"),
                 section.name
             ).render()
-        )
+        target.appendChild(header)
 
         // section content
-        let hasHidden = false
         let numAdded = 0
         const normallyHiddenButtons: HTMLButtonElement[] = []
         for (const item of section.items) {
             const normallyHidden = item.normallyHidden ?? false
+            const hiddenNow = isDefined(showOnly) ? !shouldShow(item, showOnly) : normallyHidden
 
             let buttonStyle = ""
-            if (normallyHidden) {
+            if (hiddenNow) {
                 buttonStyle += "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
             }
             const dataTypeOpt = isUndefined(item.subtype) ? emptyMod : dataType(item.subtype)
             const caption = isUndefined(item.caption) ? emptyMod : span(cls("gate-label"), item.caption)
             const buttonTitle = isUndefined(item.title) ? emptyMod : title(item.title)
-            const extraClasses = normallyHidden ? " sim-component-button-extra" : ""
+            const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
             const compButton =
                 button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
                     dataComponent(item.type), dataTypeOpt,
@@ -335,8 +348,7 @@ export function makeComponentMenuInto(target: HTMLElement) {
                     caption, buttonTitle
                 ).render()
 
-            if (normallyHidden) {
-                hasHidden = true
+            if (hiddenNow) {
                 normallyHiddenButtons.push(compButton)
             }
 
@@ -344,8 +356,11 @@ export function makeComponentMenuInto(target: HTMLElement) {
             numAdded++
         }
 
+        const numHidden = normallyHiddenButtons.length
+        const numVisible = numAdded - numHidden
+
         // link to show more if needed
-        if (hasHidden) {
+        if (numHidden !== 0 && isUndefined(showOnly)) {
             let moreShown = false
             const names = ["Plus ↓", "Moins ↑"]
             const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
@@ -371,6 +386,53 @@ export function makeComponentMenuInto(target: HTMLElement) {
             target.appendChild(linkShowMore)
         }
 
-        lastSectionNonEmpty = numAdded > 0 || hasHidden
+        if (numVisible === 0) {
+            if (isDefined(separator)) {
+                separator.remove()
+            }
+            header.remove()
+
+            // as we removed our sep, keep nonempty value for next section from previous one
+            lastSectionNonEmpty = lastSectionNonEmptyPrev
+        } else {
+            // if we're visible, we're nonempty
+            lastSectionNonEmpty = true
+        }
+
+    }
+
+    if (isDefined(showOnly) && showOnly.length > 0) {
+        console.log(`ERROR Supposed to show unknown elems: ${showOnly.join("; ")}`)
     }
 }
+
+function shouldShow(item: ComponentItem, showOnly: string[]) {
+    const compType = item.type
+    const compSubtype = item.subtype
+
+    let buttonId
+    if (isUndefined(compSubtype)) {
+        buttonId = compType
+    } else {
+        if (compType === "component" || compType === "gate") {
+            buttonId = compSubtype
+        } else if (compType === "in" && compSubtype === "clock") {
+            buttonId = "clock"
+        } else {
+            buttonId = `${compType}.${compSubtype}`
+        }
+    }
+    buttonId = buttonId.toLowerCase()
+
+    let visible = false
+    if (showOnly.includes(buttonId)) {
+        visible = true
+        const ind = showOnly.indexOf(buttonId)
+        showOnly.splice(ind, 1)
+    }
+
+    // console.log(`buttonId '${buttonId}' is visible: ${visible}`)
+
+    return visible
+}
+
