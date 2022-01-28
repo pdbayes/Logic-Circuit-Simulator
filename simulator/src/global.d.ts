@@ -4,7 +4,7 @@ import { Timestamp } from "./Timeline"
 declare global {
     interface Window {
         gallery: typeof gallery,
-        load(jsonString: string): boolean
+        load(jsonString: string): string | undefined
         adjustedTime(): Timestamp
     }
 }

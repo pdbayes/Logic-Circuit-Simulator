@@ -2,6 +2,7 @@
 // import { WireManager } from "./components/Wire"
 // import { isNotNull, Mode } from "./utils.js"
 
+import * as LZString from "lz-string"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
@@ -739,12 +740,28 @@ export class LogicEditor extends HTMLElement {
         if (isUndefined(this._initialData)) {
             return
         }
+        let error: undefined | string = undefined
         try {
-            const decodedData = atob(this._initialData.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
-            PersistenceManager.doLoadFromJson(this, decodeURIComponent(decodedData))
+            const decodedData = LZString.decompressFromEncodedURIComponent(this._initialData)
+            error = PersistenceManager.doLoadFromJson(this, decodedData)
         } catch (e) {
-            console.log(e)
+            error = String(e)
         }
+
+        if (isDefined(error)) {
+            // try the old, uncompressed way of storing the data in the URL
+            try {
+                const decodedData = atob(this._initialData.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
+                error = PersistenceManager.doLoadFromJson(this, decodeURIComponent(decodedData))
+            } catch (e) {
+                error = String(e)
+            }
+        }
+
+        if (isDefined(error)) {
+            console.log("ERROR could not not load initial data: " + error)
+        }
+
     }
 
     tryDeleteDrawable(comp: Drawable) {
@@ -882,7 +899,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    private guessCanvasHeight(): number {
+    private guessAdequateCanvasHeight(): number {
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
         for (const comp of this.components) {
             const y = comp.posY
@@ -903,18 +920,23 @@ export class LogicEditor extends HTMLElement {
         const modeStr = Mode[mode].toLowerCase()
         const json = PersistenceManager.buildWorkspaceJSON(this)
         console.log("JSON:\n" + json)
-        const encodedJson = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
+
+        // We did this in the past, but now we're compressing things a bit
+        // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
+
+        // this can compress to like 40-50% of the original size
+        const encodedJson = LZString.compressToEncodedURIComponent(json)
 
         function linkForMode(mode: Mode): string {
             const loc = window.location
             return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + encodedJson
         }
         const fullUrl = linkForMode(mode)
-        console.log("Link: " + fullUrl)
+        console.log(`Link: ` + fullUrl)
 
         const modeParam = mode === MAX_MODE_WHEN_EMBEDDED ? "" : `:mode: ${modeStr}\n`
 
-        const embedHeight = this.guessCanvasHeight()
+        const embedHeight = this.guessAdequateCanvasHeight()
 
         const block = `\`\`\`{logic}
     :height: ${embedHeight}
@@ -984,7 +1006,7 @@ export class LogicEditor extends HTMLElement {
         if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
             g.strokeRect(0, 0, width, height)
             if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
-                const h = this.guessCanvasHeight()
+                const h = this.guessAdequateCanvasHeight()
                 strokeSingleLine(g, 0, h, width, h)
 
                 g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION

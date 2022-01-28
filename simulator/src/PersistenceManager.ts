@@ -31,7 +31,7 @@ class _PersistenceManager {
         reader.readAsText(file)
     }
 
-    doLoadFromJson(editor: LogicEditor, content: string | any): boolean {
+    doLoadFromJson(editor: LogicEditor, content: string | any): undefined | string { // string is an error
         const nodeMgr = editor.nodeMgr
         const wireMgr = editor.wireMgr
         const components = editor.components
@@ -43,9 +43,7 @@ class _PersistenceManager {
             try {
                 parsedContents = JSON.parse(content)
             } catch (err) {
-                console.log("Can't load this JSON, " + err)
-                console.log(content)
-                return false
+                return "can't load this JSON - error " + err
             }
         }
 
@@ -145,7 +143,7 @@ class _PersistenceManager {
             console.log("Unloaded data fields: " + unhandledData.join(", "))
         }
 
-        return true
+        return undefined // meaning no error
     }
 
     buildWorkspaceJSON(editor: LogicEditor) {
