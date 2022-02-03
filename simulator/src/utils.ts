@@ -428,7 +428,7 @@ export function copyToClipboard(textToCopy: string): boolean {
         return navigator.userAgent.match(/ipad|iphone/i)
     }
 
-    const textArea = document.createElement('textArea') as unknown as HTMLTextAreaElement
+    const textArea = document.createElement('textarea') 
     textArea.readOnly = true
     textArea.contentEditable = "true"
     textArea.value = textToCopy

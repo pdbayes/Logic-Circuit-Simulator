@@ -1,7 +1,7 @@
-import { isNotNull, isUnset, TriState, typeOrUndefined, Unset } from "../utils"
+import { isDefined, isNotNull, isUnset, TriState, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON } from "../drawutils"
+import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -41,6 +41,7 @@ export const OutputBarDef =
         display: t.keyof(OutputBarTypes, "OutputBarType"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
         transparent: typeOrUndefined(t.boolean),
+        name: typeOrUndefined(t.string),
     }, "OutputBar"))
 
 type OutputBarRepr = typeof OutputBarDef.reprType
@@ -50,6 +51,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
     private _display = OutputBarDefaults.display
     private _color = OutputBarDefaults.color
     private _transparent = OutputBarDefaults.transparent
+    private _name: string | undefined = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
         super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
@@ -57,6 +59,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
             this.doSetDisplay(savedData.display)
             this._color = savedData.color ?? OutputBarDefaults.color
             this._transparent = savedData.transparent ?? OutputBarDefaults.transparent
+            this._name = savedData.name
         } else {
             this.updateInputOffsetX()
         }
@@ -69,6 +72,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
             display: this._display,
             color: this._color === OutputBarDefaults.color ? undefined : this._color,
             transparent: this._transparent === OutputBarDefaults.transparent ? undefined : this._transparent,
+            name: this._name,
         }
     }
 
@@ -122,6 +126,17 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
         g.stroke()
 
         drawWireLineToComponent(g, input, this.posX - w / 2 - 2, this.posY)
+
+        ctx.inNonTransformedFrame(ctx => {
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, this, true)
+            }
+        })
+    }
+
+    private doSetName(name: string | undefined) {
+        this._name = name
+        this.setNeedsRedraw("name changed")
     }
 
     getWidthAndHeight() {
@@ -216,6 +231,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
                 ContextMenuData.sep(),
                 itemTransparent,
             ])],
+            ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }
 
