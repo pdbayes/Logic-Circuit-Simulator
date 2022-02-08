@@ -99,7 +99,6 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         }
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
 
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, true)
@@ -109,6 +108,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
 
             g.font = "9px sans-serif"
+            g.fillStyle = COLOR_COMPONENT_BORDER
             if (isVertical && hasAdditionalRepresentation) {
                 // upper left corner
                 g.textAlign = "start"

@@ -1,7 +1,7 @@
-import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, Plus, TriState, typeOrUndefined, unset, Unset } from "../utils"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
@@ -48,14 +48,16 @@ export abstract class Mux<
         let y = -(numLeftSlots - 1)
         const selY = y - 2
 
+        // left inputs
         for (let i = 0; i < numFrom; i++) {
             if (i !== 0 && i % numTo === 0) {
                 y += addByGroupSep * 2
             }
-            offsets.push([x, y, "n"])
+            offsets.push([x, y, "w"])
             y += 2
         }
 
+        // top input selectors
         x = (numSel - 1)
         for (let s = 0; s < numSel; s++) {
             offsets.push([x - 2 * s, selY, "n"])
@@ -68,6 +70,7 @@ export abstract class Mux<
         const offsets: NodeOffset[] = []
         const x = 2 + numSel
 
+        // right outputs
         for (let i = 0; i < numTo; i++) {
             offsets.push([x, from + 2 * i, "e"])
         }

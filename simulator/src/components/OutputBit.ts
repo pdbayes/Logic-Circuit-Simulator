@@ -89,7 +89,6 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, TriState> {
         g.stroke()
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, true)
             }

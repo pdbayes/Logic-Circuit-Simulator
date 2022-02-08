@@ -16,18 +16,14 @@ import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
 import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUndefined, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible } from "./utils"
 
+import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { makeComponentMenuInto } from "./menuutils"
+
+import * as QRCode from "qrcode"
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
-import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
-import { makeImage } from "./images"
-import { makeComponentMenuInto } from "./menuutils"
-// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// // @ts-ignore
-// import LogicEditorCSS from "../css/LogicEditor.css"
-// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// // @ts-ignore
-// import BootstrapCSS from "../../vendor/css/bootstrap.min.css"
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -112,6 +108,7 @@ export class LogicEditor extends HTMLElement {
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
+        qrcodeImg: HTMLImageElement,
         hiddenPath: SVGPathElement,
         optionsZone: HTMLElement,
     }
@@ -138,6 +135,7 @@ export class LogicEditor extends HTMLElement {
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
+            qrcodeImg: this.elemWithId("qrcode-img"),
             optionsZone: this.elemWithId("optionsZone"),
             hiddenPath: this.elemWithId("hiddenPath"),
         }
@@ -483,8 +481,9 @@ export class LogicEditor extends HTMLElement {
                             faglyph("link")
                         ).render()
 
-                    copyLinkDiv.addEventListener("click", () => {
-                        this.copyLinkForMode(buttonMode)
+                    copyLinkDiv.addEventListener("click", e => {
+                        const asQrCode = e.altKey
+                        this.copyLinkForMode(buttonMode, asQrCode)
                     })
 
                     const switchToModeDiv =
@@ -504,6 +503,22 @@ export class LogicEditor extends HTMLElement {
             ).applyTo(modeChangeMenu)
             setVisible(modeChangeMenu, true)
         }
+
+        this.html.qrcodeImg.addEventListener("click", e => {
+            const qrcodeImg = this.html.qrcodeImg
+            if (e.altKey) {
+                // download
+                const link = document.createElement("a")
+                link.download = "qrcode.png"
+                link.href = qrcodeImg.src
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            }
+            // hide
+            qrcodeImg.style.display = "none"
+            qrcodeImg.src = ""
+        })
 
         const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
         const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
@@ -913,7 +928,7 @@ export class LogicEditor extends HTMLElement {
         return highestY + lowestY // add lower margin equal to top margin
     }
 
-    copyLinkForMode(mode: Mode) {
+    async copyLinkForMode(mode: Mode, asQrCode: boolean) {
         if (this._mode > MAX_MODE_WHEN_EMBEDDED) {
             this._mode = MAX_MODE_WHEN_EMBEDDED
         }
@@ -946,11 +961,21 @@ export class LogicEditor extends HTMLElement {
 
         console.log(block)
 
-        if (copyToClipboard(block)) {
-            console.log("  -> Copied!")
+        if (asQrCode) {
+            const dataUrl = await QRCode.toDataURL(fullUrl, { errorCorrectionLevel: 'L' })
+            console.log("datUrl: " + dataUrl)
+            const qrcodeImg = this.html.qrcodeImg
+            qrcodeImg.src = dataUrl
+            qrcodeImg.style.display = "initial"
+
         } else {
-            console.log("  -> Could not copy!")
+            if (copyToClipboard(block)) {
+                console.log("  -> Copied!")
+            } else {
+                console.log("  -> Could not copy!")
+            }
         }
+
 
         if (this._isSingleton) {
             history.replaceState(null, "", linkForMode(MAX_MODE_WHEN_SINGLETON))

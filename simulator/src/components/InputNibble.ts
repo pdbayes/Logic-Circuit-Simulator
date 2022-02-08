@@ -121,8 +121,6 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         }
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
-
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }

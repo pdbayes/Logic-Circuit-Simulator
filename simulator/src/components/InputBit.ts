@@ -83,7 +83,6 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         g.stroke()
 
         ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }

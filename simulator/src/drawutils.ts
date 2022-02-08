@@ -414,6 +414,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textAlign = hAlign
     g.textBaseline = vAlign
     g.font = "italic 18px sans-serif"
+    g.fillStyle = COLOR_COMPONENT_BORDER
     const point = ctx.rotatePoint(comp.posX + (onRight ? 1 : -1) * (comp.unrotatedWidth / 2 + deltaX), comp.posY)
     g.fillText(name, ...point)
     g.textBaseline = "middle"
