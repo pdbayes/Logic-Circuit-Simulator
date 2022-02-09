@@ -8,6 +8,7 @@ import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
 import { FlipflopT, FlipflopTDef } from "./FlipflopT"
 import { LatchSR, LatchSRDef } from "./LatchSR"
 import { Mux2To1, Mux2To1Def, Mux4To1, Mux4To1Def, Mux4To2, Mux4To2Def, Mux8To1, Mux8To1Def, Mux8To2, Mux8To2Def, Mux8To4, Mux8To4Def } from "./Mux"
+import { RAM, RAMDef } from "./RAM"
 import { Register, RegisterDef } from "./Register"
 
 export type IC = Adder
@@ -26,6 +27,7 @@ export const ICDef = t.union([
     FlipflopTDef.repr,
     FlipflopDDef.repr,
     RegisterDef.repr,
+    RAMDef.repr,
 ], "IC")
 
 type ICRepr = t.TypeOf<typeof ICDef>
@@ -73,6 +75,8 @@ export const ICFactory = {
                 return new FlipflopD(editor, blank ? null : savedData)
             case "register":
                 return new Register(editor, blank ? null : savedData)
+            case "ram":
+                return new RAM(editor, blank ? null : savedData)
         }
     },
 

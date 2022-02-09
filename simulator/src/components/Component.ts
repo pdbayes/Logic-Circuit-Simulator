@@ -1,4 +1,4 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriStateRepr, Unset } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toTriStateRepr, TriState, TriStateRepr, Unset } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -435,7 +435,7 @@ export abstract class ComponentBase<
 
     protected doSetValue(newValue: Value, forcePropagate = false) {
         const oldValue = this._value
-        if (forcePropagate || !deepEquals(newValue, oldValue)) { 
+        if (forcePropagate || !deepEquals(newValue, oldValue)) {
             this._value = newValue
             this.setNeedsRedraw("value changed")
             this.setNeedsPropagate()
@@ -454,6 +454,10 @@ export abstract class ComponentBase<
 
     protected propagateValue(__newValue: Value) {
         // by default, do nothing
+    }
+
+    protected inputValues<N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<TriState, N> {
+        return inds.map(i => this.inputs[i].value) as any as FixedArray<TriState, N>
     }
 
     public setNeedsRecalc(forcePropagate = false) {
@@ -492,7 +496,7 @@ export abstract class ComponentBase<
         }
         const wasMoving = this.tryStopMoving()
         if (wasSpawning || wasMoving) {
-            const newLinks =  this.editor.nodeMgr.tryConnectNodesOf(this)
+            const newLinks = this.editor.nodeMgr.tryConnectNodesOf(this)
             if (newLinks.length > 0) {
                 this.autoConnected(newLinks)
             }

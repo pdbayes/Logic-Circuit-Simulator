@@ -288,6 +288,11 @@ const componentsMenu: Array<Section> = [
                 title: "Registre à 4 bits", caption: "Registre",
                 img: "Register", width: 50,
             },
+            {
+                type: "component", subtype: "ram",
+                title: "RAM, 16 × 4 bits", caption: "RAM",
+                img: "Register", width: 50,
+            },
         ],
     },
 ]

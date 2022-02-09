@@ -1,4 +1,4 @@
-import { FixedArray, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
+import { FixedArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -132,10 +132,6 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         return tooltipContent("Unité arithmétique et logique (ALU)", mods(
             div(`Effectue actuellement ${opDesc}.`)
         ))
-    }
-
-    private inputValues = <N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<TriState, N> => {
-        return inds.map(i => this.inputs[i].value) as any as FixedArray<TriState, N>
     }
 
     public get op(): ALUOp | unset {
@@ -368,7 +364,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             drawLabel(ctx, this.orient, "S", "e", right, this.posY)
 
             if (this._showOp) {
-                const opName = isUnset(this.op) ? "???" : ALUOp.shortName(this.op)
+                const opName = isUnset(this.op) ? "??" : ALUOp.shortName(this.op)
                 const size = 25 - 13 * (opName.length - 1)
                 g.font = `bold ${size}px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER

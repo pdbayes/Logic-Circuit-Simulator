@@ -210,11 +210,6 @@ export abstract class Mux<
         ))
     }
 
-    private inputValues = <N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<TriState, N> => {
-        return inds.map(i => this.inputs[i].value) as any as FixedArray<TriState, N>
-    }
-
-
     protected doRecalcValue(): FixedArray<TriState, NumOutputs> {
         const sels = this.inputValues(this.INPUT.S as any)
         const sel = displayValuesFromArray(sels, false)[1]
