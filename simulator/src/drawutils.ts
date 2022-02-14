@@ -64,6 +64,7 @@ export let COLOR_UNSET: ColorString
 export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { green: ColorString, red: ColorString, yellow: ColorString }
+export let ALPHA_HIGHLIGHT_OVERLAY: number
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
 darkModeQuery.onchange = () => {
@@ -102,6 +103,7 @@ function setColors(darkMode: boolean) {
             red: ColorString([255, 20, 20]),
             yellow: ColorString([255, 255, 20]),
         }
+        ALPHA_HIGHLIGHT_OVERLAY = 0.5
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
@@ -127,6 +129,7 @@ function setColors(darkMode: boolean) {
             red: ColorString([144, 11, 11]),
             yellow: ColorString([144, 144, 11]),
         }
+        ALPHA_HIGHLIGHT_OVERLAY = 0.8
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
     setColorMouseOverIsDanger(false)

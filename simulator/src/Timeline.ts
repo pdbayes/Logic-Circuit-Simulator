@@ -55,7 +55,7 @@ export class Timeline {
         return { hasCallbacks, isPaused, canStep }
     }
 
-    private unadjustedTime(): Timestamp {
+    public unadjustedTime(): Timestamp {
         return new Date().getTime()
     }
 

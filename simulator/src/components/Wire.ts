@@ -26,6 +26,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return {
             pos: [saved[0], saved[1]],
             orient: saved[2],
+            ref: undefined,
         }
     }
 

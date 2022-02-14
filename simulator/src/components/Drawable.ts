@@ -85,6 +85,7 @@ function mult(m: DOMMatrix, x: number, y: number): [x: number, y: number] {
 export abstract class Drawable {
 
     public readonly editor: LogicEditor
+    public ref: string | undefined = undefined
 
     protected constructor(editor: LogicEditor) {
         this.editor = editor
@@ -232,6 +233,7 @@ export const Orientation = {
 export const PositionSupportRepr = t.type({
     pos: t.readonly(t.tuple([t.number, t.number])),
     orient: typeOrUndefined(t.keyof(Orientations_)),
+    ref: typeOrUndefined(t.string),
 })
 
 export type PositionSupportRepr = Expand<t.TypeOf<typeof PositionSupportRepr>>
@@ -251,6 +253,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
         if (isNotNull(savedData)) {
             // restoring from saved object
+            this.ref = savedData.ref
             this._posX = savedData.pos[0]
             this._posY = savedData.pos[1]
             this._orient = savedData.orient ?? Orientation.default
@@ -266,6 +269,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return {
             pos: [this.posX, this.posY] as const,
             orient: this.orient === Orientation.default ? undefined : this.orient,
+            ref: this.ref,
         }
     }
 

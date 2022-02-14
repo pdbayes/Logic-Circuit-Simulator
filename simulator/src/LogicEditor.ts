@@ -6,7 +6,7 @@ import * as LZString from "lz-string"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
+import { ALPHA_HIGHLIGHT_OVERLAY, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
@@ -98,6 +98,7 @@ export class LogicEditor extends HTMLElement {
 
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
+    private _highlightedComponent: { comp: Component, start: number } | undefined = undefined
     private _nextAnimationFrameHandle: number | null = null
 
     public root: ShadowRoot
@@ -1012,6 +1013,32 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
+    highlight(ref: string | undefined) {
+        if (isUndefined(ref)) {
+            this._highlightedComponent = undefined
+            return
+        }
+
+        let highlightComp: Component | undefined = undefined
+        for (const comp of this.components) {
+            if (comp.ref === ref) {
+                highlightComp = comp
+            }
+        }
+
+        if (isUndefined(highlightComp)) {
+            console.log(`Nothing to highlight for ref '${ref}'`)
+            this._highlightedComponent = undefined
+            return
+        }
+
+        const start = this.timeline.unadjustedTime()
+        this._highlightedComponent = { comp: highlightComp, start }
+        this.redrawMgr.addReason("highlighting component", null)
+        console.log("bla", ref)
+        this.recalcPropagateAndDrawIfNeeded()
+    }
+
     private doRedraw() {
 
         const mainCanvas = this.html.mainCanvas
@@ -1081,6 +1108,90 @@ export class LogicEditor extends HTMLElement {
             g.rect(selRect.x, selRect.y, selRect.width, selRect.height)
             g.stroke()
             g.fill()
+        }
+
+        const highlightRectFor = (comp: Component) => {
+            const margin = 20
+            let w = comp.unrotatedWidth + margin + margin
+            let h = comp.unrotatedHeight + margin + margin
+            if (Orientation.isVertical(comp.orient)) {
+                const t = w
+                w = h
+                h = t
+            }
+            return new DOMRect(comp.posX - w / 2, comp.posY - h / 2, w, h)
+        }
+
+        const highlightedComp = this._highlightedComponent
+        if (isDefined(highlightedComp)) {
+            const HOLD_TIME = 1000
+            const FADE_OUT_TIME = 100
+            const elapsed = this.timeline.unadjustedTime() - highlightedComp.start
+            let alpha
+            if (elapsed < HOLD_TIME) {
+                alpha = ALPHA_HIGHLIGHT_OVERLAY
+            } else {
+                alpha = ALPHA_HIGHLIGHT_OVERLAY * (1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME)
+            }
+            if (alpha <= 0) {
+                this._highlightedComponent = undefined
+            } else {
+                const highlightRect = highlightRectFor(highlightedComp.comp)
+                g.beginPath()
+                g.moveTo(0, 0)
+                g.lineTo(width, 0)
+                g.lineTo(width, height)
+                g.lineTo(0, height)
+                g.closePath()
+
+                g.moveTo(highlightRect.x, highlightRect.y)
+                g.lineTo(highlightRect.x, highlightRect.bottom)
+                g.lineTo(highlightRect.right, highlightRect.bottom)
+                g.lineTo(highlightRect.right, highlightRect.top)
+                g.closePath()
+
+                g.fillStyle = `rgba(0,0,0,${alpha})`
+                g.fill()
+
+                const strokeWidth = 6
+                g.lineWidth = strokeWidth
+                g.lineCap = "butt"
+                const maskedOut = g.fillStyle
+                const transparent = "rgba(0,0,0,0)"
+
+                const mkGrad = (x1: number, y1: number, x2: number, y2: number) => {
+                    const grad = g.createLinearGradient(x1, y1, x2, y2)
+                    grad.addColorStop(0, maskedOut)
+                    grad.addColorStop(1, transparent)
+                    return grad
+                }
+
+                g.beginPath()
+                g.moveTo(highlightRect.x, highlightRect.y + strokeWidth / 2)
+                g.lineTo(highlightRect.right, highlightRect.top + strokeWidth / 2)
+                g.strokeStyle = mkGrad(highlightRect.x, highlightRect.y, highlightRect.x, highlightRect.y + strokeWidth)
+                g.stroke()
+
+                g.beginPath()
+                g.moveTo(highlightRect.x, highlightRect.bottom - strokeWidth / 2)
+                g.lineTo(highlightRect.right, highlightRect.bottom - strokeWidth / 2)
+                g.strokeStyle = mkGrad(highlightRect.x, highlightRect.bottom, highlightRect.x, highlightRect.bottom - strokeWidth)
+                g.stroke()
+
+                g.beginPath()
+                g.moveTo(highlightRect.x + strokeWidth / 2, highlightRect.top)
+                g.lineTo(highlightRect.x + strokeWidth / 2, highlightRect.bottom)
+                g.strokeStyle = mkGrad(highlightRect.left, highlightRect.top, highlightRect.left + strokeWidth, highlightRect.top)
+                g.stroke()
+
+                g.beginPath()
+                g.moveTo(highlightRect.right - strokeWidth / 2, highlightRect.top)
+                g.lineTo(highlightRect.right - strokeWidth / 2, highlightRect.bottom)
+                g.strokeStyle = mkGrad(highlightRect.right, highlightRect.top, highlightRect.right - strokeWidth, highlightRect.top)
+                g.stroke()
+
+                this.redrawMgr.addReason("highlight animation", null)
+            }
         }
     }
 
