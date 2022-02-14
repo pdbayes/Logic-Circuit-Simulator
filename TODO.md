@@ -3,10 +3,10 @@
 
 ## High priority
 
+ * undo/redo
  * Add Raph's exercise to Modulo
  * Switch to web components
  * lock position
- * option to have disconnected as high-Z
  * add label
  * add rectangle
  * make input constant 0 or 1
@@ -18,10 +18,10 @@
 ## Medium priority
 
  * Add contextual menu to clock
- * undo/redo
  * edge detector
  * mux graphics
  * demux
+ * high-Z bus logic
  * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
  * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
 
@@ -40,6 +40,7 @@
 
 ### DONE
 
+ * option to have disconnected as high-Z
  * 16 x 4 bit memory
  * editor-level options and UI to set options
  * can now color all wires and nodes as neutral

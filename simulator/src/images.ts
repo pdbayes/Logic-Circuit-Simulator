@@ -16,6 +16,7 @@ import FlipflopT from '../img/FlipflopT.svg' // @ts-ignore
 import IMPLY from '../img/IMPLY.svg' // @ts-ignore
 import InputBit from '../img/InputBit.svg' // @ts-ignore
 import InputNibble from '../img/InputNibble.svg' // @ts-ignore
+import InputRandom from '../img/InputRandom.svg' // @ts-ignore
 import LatchSR from '../img/LatchSR.svg' // @ts-ignore
 import NAND from '../img/NAND.svg' // @ts-ignore
 import NAND3 from '../img/NAND3.svg' // @ts-ignore
@@ -59,6 +60,7 @@ const images = {
     IMPLY,
     InputBit,
     InputNibble,
+    InputRandom,
     LatchSR,
     NAND,
     NAND3,

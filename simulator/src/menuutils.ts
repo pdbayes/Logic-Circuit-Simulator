@@ -60,6 +60,12 @@ const componentsMenu: Array<Section> = [
                 img: "InputNibble", width: 32,
             },
             {
+                type: "in", subtype: "random",
+                title: "Entrée aléatoire", caption: undefined,
+                img: "InputRandom", width: 32,
+                normallyHidden: true,
+            },
+            {
                 type: "out", subtype: "shiftbuffer",
                 title: "Affichage avec buffer à décalage", caption: undefined,
                 img: "OutputShiftBuffer", width: 50,
