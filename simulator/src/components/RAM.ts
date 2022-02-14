@@ -1,5 +1,5 @@
-import { FixedArray, isNotNull, TriState, typeOrUndefined, Unset, unset, isUnset, FixedReadonlyArray } from "../utils"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { FixedArray, isNotNull, LogicState, typeOrUndefined, Unset, isUnset, FixedReadonlyArray, FixedArraySize } from "../utils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop } from "./FlipflopOrLatch"
@@ -24,33 +24,33 @@ const OUTPUT = {
     Q: [0, 1, 2, 3],
 }
 
-export const RAMDef =
+export const RAM16x4Def =
     defineComponent(11, 4, t.type({
-        type: t.literal("ram"),
+        type: t.literal("ram-16x4"),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
     }, "RAM"))
 
-export type RAMRepr = typeof RAMDef.reprType
+export type RAM16x4Repr = typeof RAM16x4Def.reprType
 
 const RAMDefaults = {
     showContent: true,
     trigger: EdgeTrigger.rising,
 }
 
-type RAMValue = {
-    mem: Array<FixedArray<TriState, 4>>
-    out: FixedReadonlyArray<TriState, 4>
+type RAMValue<BitWidth extends FixedArraySize> = {
+    mem: Array<FixedArray<LogicState, BitWidth>>
+    out: FixedReadonlyArray<LogicState, BitWidth>
 }
 
-export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
+export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     protected _showContent: boolean = RAMDefaults.showContent
     protected _trigger: EdgeTrigger = RAMDefaults.trigger
-    protected _lastClock: TriState = Unset
+    protected _lastClock: LogicState = Unset
 
-    private static valueFilledWith(v: TriState): RAMValue {
-        const mem: Array<FixedArray<TriState, 4>> = new Array(NUM_CELLS)
+    private static valueFilledWith(v: LogicState): RAMValue<4> {
+        const mem: Array<FixedArray<LogicState, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             mem[i] = [v, v, v, v]
         }
@@ -58,8 +58,8 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
         return { mem, out }
     }
 
-    public constructor(editor: LogicEditor, savedData: RAMRepr | null) {
-        super(editor, RAM.valueFilledWith(false), savedData, {
+    public constructor(editor: LogicEditor, savedData: RAM16x4Repr | null) {
+        super(editor, RAM16by4.valueFilledWith(false), savedData, {
             inOffsets: [
                 [-7, +6, "w"], // Clock
                 [-2, +8, "s"], // WriteEnable
@@ -80,7 +80,7 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
 
     toJSON() {
         return {
-            type: "ram" as const,
+            type: "ram-16x4" as const,
             ...this.toJSONBase(),
             showContent: (this._showContent !== RAMDefaults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RAMDefaults.trigger) ? this._trigger : undefined,
@@ -131,11 +131,11 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
         ))
     }
 
-    protected doRecalcValue(): RAMValue {
+    protected doRecalcValue(): RAMValue<4> {
         const clear = this.inputs[INPUT.Clear].value
         if (clear === true) {
             // clear is true, preset is false, set output to 0
-            return RAM.valueFilledWith(false)
+            return RAM16by4.valueFilledWith(false)
         }
 
         // first, determine output
@@ -155,12 +155,12 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
 
         // we write
         if (isUnset(addr)) {
-            return RAM.valueFilledWith(Unset)
+            return RAM16by4.valueFilledWith(Unset)
         }
 
         // build new state
         const newData = this.inputValues<4>(INPUT.Data)
-        const newState: Array<FixedArray<TriState, 4>> = new Array(NUM_CELLS)
+        const newState: Array<FixedArray<LogicState, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             if (i === addr) {
                 newState[i] = newData
@@ -171,17 +171,17 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
         return { mem: newState, out: newData }
     }
 
-    makeStateAfterClock(): FixedArray<TriState, 4> {
-        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<TriState, 4>
+    makeStateAfterClock(): FixedArray<LogicState, 4> {
+        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicState, 4>
     }
 
-    private currentAddress(): number | unset {
+    private currentAddress(): number | Unset {
         const addrBits = this.inputValues<4>(INPUT.Address)
         const [__, addr] = displayValuesFromArray(addrBits, false)
         return addr
     }
 
-    protected override propagateValue(newValue: RAMValue) {
+    protected override propagateValue(newValue: RAMValue<4>) {
         for (let i = 0; i < OUTPUT.Q.length; i++) {
             this.outputs[OUTPUT.Q[i]].value = newValue.out[i]
         }
@@ -246,15 +246,23 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
                 const contentLeft = this.posX - 2 * GRID_STEP
                 const contentRight = contentLeft + 4 * cellWidth
                 const contentBottom = contentTop + NUM_CELLS * cellHeight
-                g.strokeStyle = COLOR_COMPONENT_BORDER
-                g.lineWidth = 0.5
+
+                // by default, paint everything as zero
+                g.fillStyle = COLOR_EMPTY
+                g.fillRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
+
                 for (let i = 0; i < NUM_CELLS; i++) {
                     for (let j = 0; j < 4; j++) {
                         const v = mem[i][3 - j]
-                        g.fillStyle = colorForBoolean(v)
-                        g.fillRect(contentLeft + j * cellWidth, contentTop + i * cellHeight, cellWidth, cellHeight)
+                        if (v !== false) {
+                            g.fillStyle = colorForBoolean(v)
+                            g.fillRect(contentLeft + j * cellWidth, contentTop + i * cellHeight, cellWidth, cellHeight)
+                        }
                     }
                 }
+
+                g.strokeStyle = COLOR_COMPONENT_BORDER
+                g.lineWidth = 0.5
                 for (let i = 1; i < NUM_CELLS; i++) {
                     const y = contentTop + i * cellHeight
                     strokeSingleLine(g, contentLeft, y, contentRight, y)
@@ -277,6 +285,7 @@ export class RAM extends ComponentBase<11, 4, RAMRepr, RAMValue> {
                     g.lineTo(arrowRight - arrowWidth + 2, arrowY)
                     g.lineTo(arrowRight - arrowWidth, arrowY - arrowHalfHeight)
                     g.closePath()
+                    g.fillStyle = COLOR_COMPONENT_BORDER
                     g.fill()
                 }
             }

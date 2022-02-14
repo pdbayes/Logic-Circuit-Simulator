@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, unset, typeOrUndefined, Mode } from "../utils"
+import { isDefined, isNotNull, isUnset, Unset, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
@@ -20,7 +20,7 @@ export const OutputNibbleDef =
 
 type OutputNibbleRepr = typeof OutputNibbleDef.reprType
 
-export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | unset]> {
+export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | Unset]> {
 
     private _name: string | undefined = undefined
     private _radix = DEFAULT_RADIX

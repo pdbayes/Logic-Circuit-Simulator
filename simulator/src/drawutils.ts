@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isNumber, isUndefined, isUnset, TriState, unset, Unset } from "./utils"
+import { isArray, isHighImpedance, isNumber, isUndefined, isUnset, LogicState, Unset } from "./utils"
 import { Node } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -61,6 +61,7 @@ export let COLOR_DARK_RED: ColorString
 export let COLORCOMPS_EMPTY: ColorComponents
 export let COLOR_EMPTY: ColorString
 export let COLOR_UNSET: ColorString
+export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { green: ColorString, red: ColorString, yellow: ColorString }
 
@@ -94,6 +95,7 @@ function setColors(darkMode: boolean) {
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [52, 58, 64]
         COLOR_UNSET = ColorString([152, 158, 164])
+        COLOR_HIGH_IMPEDANCE = ColorString([103, 84, 23])
         COLOR_GATE_NAMES = ColorString([190, 190, 190])
         COLOR_LED_ON = {
             green: ColorString([20, 255, 20]),
@@ -118,6 +120,7 @@ function setColors(darkMode: boolean) {
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [80, 89, 99]
         COLOR_UNSET = ColorString([108, 106, 98])
+        COLOR_HIGH_IMPEDANCE = ColorString([103, 84, 23])
         COLOR_GATE_NAMES = ColorString([95, 95, 95])
         COLOR_LED_ON = {
             green: ColorString([11, 144, 11]),
@@ -155,8 +158,8 @@ export function colorComps(c: ColorString) {
     return c.split(',').map(compStr => parseInt(compStr))
 }
 
-export function colorForBoolean(value: TriState): ColorString {
-    return isUnset(value) ? COLOR_UNSET : value ? COLOR_FULL : COLOR_EMPTY
+export function colorForBoolean(value: LogicState): ColorString {
+    return isUnset(value) ? COLOR_UNSET : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
 }
 
 export function colorForFraction(fraction: number): ColorString {
@@ -253,14 +256,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: TriState, neutral: boolean) {
+export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicState, neutral: boolean) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
     strokeAsWireLine(g, value, false, neutral)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: TriState, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicState, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -287,7 +290,7 @@ export function isOverWaypoint(x: number, y: number, waypointX: number, waypoint
     return dist(x, y, waypointX, waypointY) < WAYPOINT_HIT_RANGE / 2
 }
 
-export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: TriState, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
+export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: LogicState, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
     g.fillStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
 
     const [circleColor, thickness] =
@@ -350,30 +353,35 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: TriState, comp: HasPosition) {
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicState, comp: HasPosition) {
     drawRoundValue(g, value, comp.posX, comp.posY)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: TriState, x: number, y: number) {
+export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicState, x: number, y: number) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
-    let boldSpec = ""
+    let spec = ""
     let label = ""
 
     if (isUnset(value)) {
         g.fillStyle = COLOR_LABEL_OFF
-        boldSpec = "bold "
+        spec = "bold 18"
         label = '?'
+    } else if (isHighImpedance(value)) {
+        g.fillStyle = COLOR_LABEL_OFF
+        spec = "16"
+        label = 'Z'
     } else if (value) {
         g.fillStyle = COLOR_LABEL_ON
-        boldSpec = "bold "
+        spec = "bold 18"
         label = '1'
     } else {
         g.fillStyle = COLOR_LABEL_OFF
+        spec = "18"
         label = '0'
     }
-    g.font = `${boldSpec}18px sans-serif`
+    g.font = `${spec}px sans-serif`
     g.fillText(label, x, y)
 }
 
@@ -420,7 +428,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle"
 }
 
-export function displayValuesFromArray(values: TriState[], mostSignificantFirst: boolean): [string, number | unset] {
+export function displayValuesFromArray(values: LogicState[], mostSignificantFirst: boolean): [string, number | Unset] {
     // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false
@@ -429,9 +437,9 @@ export function displayValuesFromArray(values: TriState[], mostSignificantFirst:
         : v => binaryStringRep = v + binaryStringRep
 
     for (const value of values) {
-        if (isUnset(value)) {
+        if (isUnset(value) || isHighImpedance(value)) {
             hasUnset = true
-            add(Unset)
+            add(value)
         } else {
             add(+value)
         }
@@ -440,7 +448,7 @@ export function displayValuesFromArray(values: TriState[], mostSignificantFirst:
     return [binaryStringRep, value]
 }
 
-export function formatWithRadix(value: number | unset, radix: number, width: number): string {
+export function formatWithRadix(value: number | Unset, radix: number, width: number): string {
     if (isUnset(value)) {
         return Unset
     }

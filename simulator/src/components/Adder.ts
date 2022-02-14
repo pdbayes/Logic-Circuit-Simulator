@@ -1,4 +1,4 @@
-import { isUnset, TriState, Unset } from "../utils"
+import { isHighImpedance, isUnset, LogicState, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, drawLabel } from "../drawutils"
@@ -24,7 +24,7 @@ export const AdderDef =
 
 export type AdderRepr = typeof AdderDef.reprType
 
-export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> {
+export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicState]> {
 
     public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
         super(editor, [false, false], savedData, {
@@ -75,12 +75,12 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         ))
     }
 
-    protected doRecalcValue(): [TriState, TriState] {
+    protected doRecalcValue(): [LogicState, LogicState] {
         const a = this.inputs[INPUT.A].value
         const b = this.inputs[INPUT.B].value
         const cIn = this.inputs[INPUT.Cin].value
 
-        if (isUnset(a) || isUnset(b) || isUnset(cIn)) {
+        if (isUnset(a) || isUnset(b) || isUnset(cIn) || isHighImpedance(a) || isHighImpedance(b) || isHighImpedance(cIn)) {
             return [Unset, Unset]
         }
 
@@ -96,7 +96,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [TriState, TriState]> 
         }
     }
 
-    protected override propagateValue(newValue: [TriState, TriState]) {
+    protected override propagateValue(newValue: [LogicState, LogicState]) {
         this.outputs[OUTPUT.S].value = newValue[OUTPUT.S]
         this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }

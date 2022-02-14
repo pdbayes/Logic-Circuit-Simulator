@@ -1,4 +1,4 @@
-import { isDefined, TriState } from "../utils"
+import { isDefined, LogicState } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -51,7 +51,7 @@ export class FlipflopD extends Flipflop<1, FlipflopDRepr> {
         ))
     }
 
-    protected doRecalcValueAfterClock(): TriState {
+    protected doRecalcValueAfterClock(): LogicState {
         return this.inputs[INPUT.D].value
     }
 

@@ -1,4 +1,4 @@
-import { isDefined, isUnset, TriState, Unset } from "../utils"
+import { isDefined, isHighImpedance, isUnset, LogicState, Unset } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -51,13 +51,13 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
         ))
     }
 
-    protected doRecalcValueAfterClock(): TriState {
+    protected doRecalcValueAfterClock(): LogicState {
         const t = this.inputs[INPUT.T].value
-        if (isUnset(t)) {
+        if (isUnset(t) || isHighImpedance(t)) {
             return Unset
         }
         const q = this.outputs[OUTPUT.Q].value
-        return t ? TriState.invert(q) : q
+        return t ? LogicState.invert(q) : q
     }
 
     protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number) {

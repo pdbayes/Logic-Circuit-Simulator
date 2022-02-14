@@ -1,4 +1,4 @@
-import { a, attr, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
+import { a, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
 import { isDefined, isUndefined } from "./utils"
 
@@ -289,9 +289,9 @@ const componentsMenu: Array<Section> = [
                 img: "Register", width: 50,
             },
             {
-                type: "component", subtype: "ram",
+                type: "component", subtype: "ram-16x4",
                 title: "RAM, 16 × 4 bits", caption: "RAM",
-                img: "Register", width: 50,
+                img: "RAM", width: 50,
             },
         ],
     },

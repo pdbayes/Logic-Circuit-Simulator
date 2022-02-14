@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, TriState, Unset, toTriState, isNull } from "../utils"
+import { isDefined, isUnset, Mode, LogicState, Unset, toLogicState, isNull, HighImpedance } from "../utils"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
@@ -17,8 +17,8 @@ abstract class NodeBase extends DrawableWithPosition {
 
     public readonly id: number
     private _isAlive = true
-    private _value: TriState = false
-    protected _forceValue: TriState | undefined
+    private _value: LogicState = false
+    protected _forceValue: LogicState | undefined
 
     constructor(
         editor: LogicEditor,
@@ -31,7 +31,7 @@ abstract class NodeBase extends DrawableWithPosition {
         super(editor, null)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
-            this._forceValue = toTriState(nodeSpec.force)
+            this._forceValue = toLogicState(nodeSpec.force)
         }
         this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
@@ -82,11 +82,11 @@ abstract class NodeBase extends DrawableWithPosition {
         return this._isAlive
     }
 
-    public get value(): TriState {
+    public get value(): LogicState {
         return isDefined(this._forceValue) ? this._forceValue : this._value
     }
 
-    public set value(val: TriState) {
+    public set value(val: LogicState) {
         const oldVisibleValue = this.value
         if (val !== this._value) {
             this._value = val
@@ -94,16 +94,16 @@ abstract class NodeBase extends DrawableWithPosition {
         }
     }
 
-    protected propagateNewValueIfNecessary(oldVisibleValue: TriState) {
+    protected propagateNewValueIfNecessary(oldVisibleValue: LogicState) {
         const newVisibleValue = this.value
         if (newVisibleValue !== oldVisibleValue) {
             this.propagateNewValue(newVisibleValue)
         }
     }
 
-    protected abstract propagateNewValue(newValue: TriState): void
+    protected abstract propagateNewValue(newValue: LogicState): void
 
-    public abstract get forceValue(): TriState | undefined
+    public abstract get forceValue(): LogicState | undefined
 
     public get gridOffsetX() {
         return this._gridOffsetX
@@ -221,7 +221,7 @@ export class NodeIn extends NodeBase {
         return undefined
     }
 
-    protected propagateNewValue(__newValue: TriState) {
+    protected propagateNewValue(__newValue: LogicState) {
         this.parent.setNeedsRecalc()
     }
 
@@ -253,14 +253,14 @@ export class NodeOut extends NodeBase {
         return this._forceValue
     }
 
-    set forceValue(newForceValue: TriState | undefined) {
+    set forceValue(newForceValue: LogicState | undefined) {
         const oldVisibleValue = this.value
         this._forceValue = newForceValue
         this.propagateNewValueIfNecessary(oldVisibleValue)
         this.setNeedsRedraw("changed forced output value")
     }
 
-    protected propagateNewValue(newValue: TriState) {
+    protected propagateNewValue(newValue: LogicState) {
         const now = this.editor.timeline.adjustedTime()
         for (const wire of this._outgoingWires) {
             wire.propageNewValue(newValue, now)
@@ -275,7 +275,8 @@ export class NodeOut extends NodeBase {
             this.forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unset
-                    case Unset: return false
+                    case Unset: return HighImpedance
+                    case HighImpedance: return false
                     case false: return true
                     case true: return undefined
                 }

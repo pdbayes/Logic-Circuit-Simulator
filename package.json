@@ -28,6 +28,7 @@
     "compile": "./node_modules/.bin/tsc -p tsconfig.json",
     "compile-watch": "./node_modules/.bin/tsc -p tsconfig.json --watch",
     "lint": "eslint . --ext .ts",
+    "lint-watch": "npm-watch lint",
     "server": "./tools/local_server.py 8088",
     "esbuild": "./node_modules/.bin/esbuild --bundle --sourcemap --loader:.html=text  --loader:.css=text --loader:.svg=dataurl simulator/src/LogicEditor.ts --outfile=simulator/lib/bundle.js && tools/insert_md5_into_index.sh",
     "esbuild-watch": "npm-watch esbuild",
@@ -41,6 +42,12 @@
         "simulator"
       ],
       "extensions": "ts,html,css,svg"
+    },
+    "lint": {
+      "patterns": [
+        "simulator"
+      ],
+      "extensions": "ts"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnset, Mode, RichStringEnum, TriState, Unset, unset } from "../utils"
+import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnset, Mode, RichStringEnum, LogicState, Unset, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
@@ -277,7 +277,7 @@ export abstract class GateBase<
     G extends GateType,
     NumInput extends FixedArraySizeNonZero,
     Repr extends GateRepr<NumInput, G>
-    > extends ComponentBase<NumInput, 1, Repr, TriState> {
+    > extends ComponentBase<NumInput, 1, Repr, LogicState> {
 
     private _type: G
     private _poseAs: G | undefined = undefined
@@ -349,7 +349,7 @@ export abstract class GateBase<
         return GRID_HEIGHT_1_2 * GRID_STEP
     }
 
-    protected override propagateValue(newValue: TriState) {
+    protected override propagateValue(newValue: LogicState) {
         this.outputs[0].value = newValue
     }
 
@@ -368,7 +368,7 @@ export abstract class GateBase<
         return false
     }
 
-    protected drawGate(g: CanvasRenderingContext2D, type: G | unset, isFake: boolean, ctx: DrawContext) {
+    protected drawGate(g: CanvasRenderingContext2D, type: G | Unset, isFake: boolean, ctx: DrawContext) {
         const output = this.outputs[0]
 
         const width = this.unrotatedWidth
@@ -675,9 +675,9 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         return Gate1Types
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         const in0 = this.inputs[0].value
-        if (isUnset(in0)) {
+        if (isUnset(in0) || isHighImpedance(in0)) {
             return Unset
         }
         const gateProps = Gate1Types.propsOf(this.type)
@@ -802,10 +802,10 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         const in1 = this.inputs[0].value
         const in2 = this.inputs[1].value
-        if (isUnset(in1) || isUnset(in2)) {
+        if (isUnset(in1) || isUnset(in2) || isHighImpedance(in1) || isHighImpedance(in2)) {
             return Unset
         }
         const gateProps = Gate2Types.propsOf(this.type)
@@ -917,11 +917,11 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         const in0 = this.inputs[0].value
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value
-        if (isUnset(in0) || isUnset(in1) || isUnset(in2)) {
+        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2)) {
             return Unset
         }
         const gateProps = Gate3Types.propsOf(this.type)
@@ -1006,12 +1006,12 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         )
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         const in0 = this.inputs[0].value
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value
         const in3 = this.inputs[3].value
-        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isUnset(in3)) {
+        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isUnset(in3) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2) || isHighImpedance(in3)) {
             return Unset
         }
         const gateProps = Gate4Types.propsOf(this.type)

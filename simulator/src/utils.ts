@@ -356,57 +356,65 @@ export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
 
 // Unset; TriState
 
-export const HighImpedance = "F" as const // "floating"
+export const HighImpedance = "Z" as const
 export type HighImpedance = typeof HighImpedance
+export function isHighImpedance<T>(v: T | HighImpedance): v is HighImpedance {
+    return v === HighImpedance
+}
+
 export const Unset = "?" as const
-export type unset = typeof Unset
-export function isUnset<T>(v: T | unset): v is unset {
+export type Unset = typeof Unset
+export function isUnset<T>(v: T | Unset): v is Unset {
     return v === Unset
 }
-export const TUnset = new t.Type<unset>(
+export const TUnset = new t.Type<Unset>(
     "unset",
     isUnset,
     (input, context) => isUnset(input) ? t.success(input) : t.failure(input, context),
     t.identity,
 )
 
-export type TriState = boolean | unset
-export const TriState = {
-    invert(v: TriState): TriState {
-        return isUnset(v) ? v : !v
+export type LogicState = boolean | HighImpedance | Unset
+export const LogicState = {
+    invert(v: LogicState): LogicState {
+        return isUnset(v) || isHighImpedance(v) ? v : !v
     },
 }
 
-export type TriStateRepr = 0 | 1 | unset
-export const TriStateRepr = new t.Type<TriStateRepr>(
-    "0|1|'?'",
-    (v: unknown): v is TriStateRepr => isUnset(v) || v === 1 || v === 0,
-    (input, context) => isUnset(input) ? t.success(input) :
-        input === 1 ? t.success(1) :
-            input === 0 ? t.success(0) :
-                t.failure(input, context),
+export type LogicStateRepr = 0 | 1 | HighImpedance | Unset
+export const LogicStateRepr = new t.Type<LogicStateRepr>(
+    "0|1|?|Z",
+    (v: unknown): v is LogicStateRepr => isUnset(v) || isHighImpedance(v) || v === 1 || v === 0,
+    (input, context) =>
+        isUnset(input) ? t.success(input) :
+            isHighImpedance(input) ? t.success(input) :
+                input === 1 ? t.success(1) :
+                    input === 0 ? t.success(0) :
+                        t.failure(input, context),
     t.identity,
 )
 
 // TODO put this in TriState object
-export function toTriStateRepr(v: TriState): TriStateRepr
-export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined
-export function toTriStateRepr(v: TriState | undefined): TriStateRepr | undefined {
+export function toLogicStateRepr(v: LogicState): LogicStateRepr
+export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | undefined
+export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | undefined {
     switch (v) {
         case true: return 1
         case false: return 0
         case Unset: return Unset
+        case HighImpedance: return HighImpedance
         case undefined: return undefined
     }
 }
 
-export function toTriState(v: TriStateRepr): TriState
-export function toTriState(v: TriStateRepr | undefined): TriState | undefined
-export function toTriState(v: TriStateRepr | undefined): TriState | undefined {
+export function toLogicState(v: LogicStateRepr): LogicState
+export function toLogicState(v: LogicStateRepr | undefined): LogicState | undefined
+export function toLogicState(v: LogicStateRepr | undefined): LogicState | undefined {
     switch (v) {
         case 1: return true
         case 0: return false
         case Unset: return Unset
+        case HighImpedance: return HighImpedance
         case undefined: return undefined
     }
 }
@@ -428,7 +436,7 @@ export function copyToClipboard(textToCopy: string): boolean {
         return navigator.userAgent.match(/ipad|iphone/i)
     }
 
-    const textArea = document.createElement('textarea') 
+    const textArea = document.createElement('textarea')
     textArea.readOnly = true
     textArea.contentEditable = "true"
     textArea.value = textToCopy

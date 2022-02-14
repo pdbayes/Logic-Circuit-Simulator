@@ -1,12 +1,11 @@
-import { FixedArray, isNull, isNotNull, isUndefined, toTriState, toTriStateRepr, TriState, TriStateRepr, typeOrUndefined, Unset, isNumber } from "../utils"
+import { FixedArray, isNull, isNotNull, isUndefined, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unset } from "../utils"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, DrawContextExt, Orientation } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { LogicEditor } from "../LogicEditor"
-import { Node } from "./Node"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 15
@@ -25,7 +24,7 @@ const OUTPUT = {
 export const RegisterDef =
     defineComponent(7, 4, t.type({
         type: t.literal("register"),
-        state: typeOrUndefined(t.tuple([TriStateRepr, TriStateRepr, TriStateRepr, TriStateRepr])),
+        state: typeOrUndefined(t.tuple([LogicStateRepr, LogicStateRepr, LogicStateRepr, LogicStateRepr])),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
     }, "Register"))
@@ -37,18 +36,18 @@ const RegisterDefaults = {
     trigger: EdgeTrigger.rising,
 }
 
-export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriState, 4>> {
+export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<LogicState, 4>> {
 
     protected _showContent: boolean = RegisterDefaults.showContent
     protected _trigger: EdgeTrigger = RegisterDefaults.trigger
     protected _isInInvalidState = false
-    protected _lastClock: TriState = Unset
+    protected _lastClock: LogicState = Unset
 
-    private static savedStateFrom(savedData: { state: FixedArray<TriStateRepr, 4> | undefined } | null): FixedArray<TriState, 4> {
+    private static savedStateFrom(savedData: { state: FixedArray<LogicStateRepr, 4> | undefined } | null): FixedArray<LogicState, 4> {
         if (isNull(savedData) || isUndefined(savedData.state)) {
             return [false, false, false, false]
         }
-        return savedData.state.map(toTriState) as unknown as FixedArray<TriState, 4>
+        return savedData.state.map(toLogicState) as unknown as FixedArray<LogicState, 4>
     }
 
     public constructor(editor: LogicEditor, savedData: RegisterRepr | null) {
@@ -74,7 +73,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return {
             type: "register" as const,
             ...this.toJSONBase(),
-            state: this.value.map(toTriStateRepr) as unknown as FixedArray<TriStateRepr, 4>,
+            state: this.value.map(toLogicStateRepr) as unknown as FixedArray<LogicStateRepr, 4>,
             showContent: (this._showContent !== RegisterDefaults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RegisterDefaults.trigger) ? this._trigger : undefined,
         }
@@ -121,7 +120,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         ))
     }
 
-    protected doRecalcValue(): FixedArray<TriState, 4> {
+    protected doRecalcValue(): FixedArray<LogicState, 4> {
         const prevClock = this._lastClock
         const clock = this._lastClock = this.inputs[INPUT.Clock].value
         const { isInInvalidState, newState } =
@@ -132,19 +131,19 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<TriSt
         return newState
     }
 
-    makeInvalidState(): FixedArray<TriState, 4> {
+    makeInvalidState(): FixedArray<LogicState, 4> {
         return [false, false, false, false]
     }
 
-    makeStateFromMainValue(val: TriState): FixedArray<TriState, 4> {
+    makeStateFromMainValue(val: LogicState): FixedArray<LogicState, 4> {
         return [val, val, val, val]
     }
 
-    makeStateAfterClock(): FixedArray<TriState, 4> {
-        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<TriState, 4>
+    makeStateAfterClock(): FixedArray<LogicState, 4> {
+        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicState, 4>
     }
 
-    protected override propagateValue(newValue: FixedArray<TriState, 4>) {
+    protected override propagateValue(newValue: FixedArray<LogicState, 4>) {
         for (let i = 0; i < newValue.length; i++) {
             this.outputs[OUTPUT.Q[i]].value = newValue[i]
         }

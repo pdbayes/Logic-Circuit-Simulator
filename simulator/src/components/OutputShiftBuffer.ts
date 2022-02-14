@@ -1,4 +1,4 @@
-import { isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toTriStateRepr, TriState, typeOrUndefined, Unset } from "../utils"
+import { isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toLogicStateRepr, LogicState, typeOrUndefined, Unset } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -61,8 +61,8 @@ const OutputShiftBufferDefaults = {
 }
 
 type OutputShiftBufferState = {
-    incoming: TriState[]
-    decoded: [string, TriState[]][]
+    incoming: LogicState[]
+    decoded: [string, LogicState[]][]
 }
 
 export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr, OutputShiftBufferState> {
@@ -71,13 +71,13 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     protected _groupEvery: number | undefined = undefined
     protected _maxItems: number | undefined = undefined
     protected _trigger: EdgeTrigger = OutputShiftBufferDefaults.trigger
-    protected _lastClock: TriState = Unset
+    protected _lastClock: LogicState = Unset
 
     private static savedStateFrom(savedData: { state: string | undefined } | null): OutputShiftBufferState {
         if (isNull(savedData) || isUndefined(savedData.state)) {
             return { incoming: [], decoded: [] }
         }
-        const incoming: TriState[] = []
+        const incoming: LogicState[] = []
         for (let i = 0; i < savedData.state.length; i++) {
             const c = savedData.state.charAt(i)
             if (c === '1') {
@@ -109,7 +109,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     }
 
     toJSON() {
-        const stateArray = allBitsOf(this.value).map(b => toTriStateRepr(b))
+        const stateArray = allBitsOf(this.value).map(b => toLogicStateRepr(b))
         return {
             type: "shiftbuffer" as const,
             ...this.toJSONBase(),
@@ -169,7 +169,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         return oldValue
     }
 
-    private static valueByAddingNewBit(newBit: TriState, oldValue: OutputShiftBufferState, decoder: ShiftBufferDecoderProps, maxItems: number): OutputShiftBufferState {
+    private static valueByAddingNewBit(newBit: LogicState, oldValue: OutputShiftBufferState, decoder: ShiftBufferDecoderProps, maxItems: number): OutputShiftBufferState {
         const newIncoming = [newBit, ...oldValue.incoming]
         if (newIncoming.length < decoder.decodeWidth) {
             return { incoming: newIncoming, decoded: oldValue.decoded }
@@ -369,7 +369,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     }
 }
 
-function allBitsOf({ incoming, decoded }: OutputShiftBufferState): TriState[] {
+function allBitsOf({ incoming, decoded }: OutputShiftBufferState): LogicState[] {
     const allBits = [...incoming]
     for (const [__stringRep, bits] of decoded) {
         allBits.push(...bits)

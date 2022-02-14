@@ -3,12 +3,14 @@
 
 ## High priority
 
+ * Add Raph's exercise to Modulo
  * Switch to web components
+ * lock position
+ * option to have disconnected as high-Z
  * add label
  * add rectangle
  * make input constant 0 or 1
- * prevent click event if right-clik
- * 16 x 4 bit memory
+ * prevent click event if right-click
  * 4 bit adder with carry in and out
  * show value on dip switch and register
 
@@ -16,8 +18,6 @@
 ## Medium priority
 
  * Add contextual menu to clock
- * Add free text and frames as elements
- * set clock frequency from context menu
  * undo/redo
  * edge detector
  * mux graphics
@@ -40,6 +40,7 @@
 
 ### DONE
 
+ * 16 x 4 bit memory
  * editor-level options and UI to set options
  * can now color all wires and nodes as neutral
  * replace fillText with drawLabel

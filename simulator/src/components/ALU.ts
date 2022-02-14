@@ -1,4 +1,4 @@
-import { FixedArray, isNotNull, isUndefined, isUnset, TriState, typeOrUndefined, unset, Unset } from "../utils"
+import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnset, LogicState, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -55,7 +55,7 @@ const ALUDefaults = {
     showOp: true,
 }
 
-export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>, TriState, TriState]> {
+export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4>, LogicState, LogicState]> {
 
     private _showOp = ALUDefaults.showOp
 
@@ -134,7 +134,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         ))
     }
 
-    public get op(): ALUOp | unset {
+    public get op(): ALUOp | Unset {
         const mode = this.inputs[INPUT.Mode].value
         const op = this.inputs[INPUT.Op].value
         switch (mode) {
@@ -144,7 +144,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                         return "add"
                     case true: // 01
                         return "sub"
-                    case "?":
+                    case Unset:
+                    case HighImpedance:
                         return Unset
                 }
                 break
@@ -154,16 +155,18 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                         return "or" // opcode logic: "only one 1 needed"
                     case true: // 11
                         return "and"// opcode logic: "two 1s needed"
-                    case "?":
+                    case Unset:
+                    case HighImpedance:
                         return Unset
                 }
                 break
-            case "?":
+            case Unset:
+            case HighImpedance:
                 return Unset
         }
     }
 
-    protected doRecalcValue(): [FixedArray<TriState, 4>, TriState, TriState] {
+    protected doRecalcValue(): [FixedArray<LogicState, 4>, LogicState, LogicState] {
         const op = this.op
 
         if (isUnset(op)) {
@@ -174,9 +177,9 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         const b = this.inputValues<4>(INPUT.B)
 
 
-        function allZeros(vals: TriState[]): TriState {
+        function allZeros(vals: LogicState[]): LogicState {
             for (const v of vals) {
-                if (isUnset(v)) {
+                if (isUnset(v) || isHighImpedance(v)) {
                     return Unset
                 }
                 if (v) {
@@ -186,14 +189,14 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             return true
         }
 
-        const y: TriState[] = [Unset, Unset, Unset, Unset]
-        let v: TriState = Unset
+        const y: LogicState[] = [Unset, Unset, Unset, Unset]
+        let v: LogicState = Unset
 
         switch (op) {
             case "add": {
-                const sum3bits = (a: TriState, b: TriState, c: TriState): [TriState, TriState] => {
-                    const asNumber = (v: TriState) => v === true ? 1 : 0
-                    const numUnset = (isUnset(a) ? 1 : 0) + (isUnset(b) ? 1 : 0) + (isUnset(c) ? 1 : 0)
+                const sum3bits = (a: LogicState, b: LogicState, c: LogicState): [LogicState, LogicState] => {
+                    const asNumber = (v: LogicState) => v === true ? 1 : 0
+                    const numUnset = (isUnset(a) || isHighImpedance(a) ? 1 : 0) + (isUnset(b) || isHighImpedance(a) ? 1 : 0) + (isUnset(c) || isHighImpedance(a) ? 1 : 0)
                     const sum = asNumber(a) + asNumber(b) + asNumber(c)
 
                     if (numUnset === 0) {
@@ -208,7 +211,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
                     return [Unset, Unset]
 
                 }
-                let cin: TriState = false
+                let cin: LogicState = false
                 for (let i = 0; i < a.length; i++) {
                     const [s, cout] = sum3bits(cin, a[i], b[i])
                     y[i] = s
@@ -219,7 +222,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
             }
 
             case "sub": {
-                const toInt = (vs: readonly TriState[]): number | undefined => {
+                const toInt = (vs: readonly LogicState[]): number | undefined => {
                     let s = 0
                     let col = 1
                     for (const v of vs) {
@@ -285,10 +288,10 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<TriState, 4>,
         }
 
         const z = allZeros(y)
-        return [y as any as FixedArray<TriState, 4>, v, z]
+        return [y as any as FixedArray<LogicState, 4>, v, z]
     }
 
-    protected override propagateValue(newValue: [FixedArray<TriState, 4>, TriState, TriState]) {
+    protected override propagateValue(newValue: [FixedArray<LogicState, 4>, LogicState, LogicState]) {
         for (let i = 0; i < OUTPUT.S.length; i++) {
             this.outputs[OUTPUT.S[i]].value = newValue[0][i]
         }

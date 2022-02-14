@@ -33,6 +33,7 @@ import OutputBar from '../img/OutputBar.svg' // @ts-ignore
 import OutputBit from '../img/OutputBit.svg' // @ts-ignore
 import OutputNibble from '../img/OutputNibble.svg' // @ts-ignore
 import OutputShiftBuffer from '../img/OutputShiftBuffer.svg' // @ts-ignore
+import RAM from '../img/RAM.svg' // @ts-ignore
 import Register from '../img/Register.svg' // @ts-ignore
 import TXA from '../img/TXA.svg' // @ts-ignore
 import XNOR from '../img/XNOR.svg' // @ts-ignore
@@ -75,6 +76,7 @@ const images = {
     OutputBit,
     OutputNibble,
     OutputShiftBuffer,
+    RAM,
     Register,
     TXA,
     XNOR,

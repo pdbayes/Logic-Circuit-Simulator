@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, Mode, toTriState, toTriStateRepr, TriState, TriStateRepr, Unset, typeOrUndefined, isUndefined } from "../utils"
+import { isDefined, isNotNull, isUnset, Mode, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, Unset, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
@@ -14,11 +14,11 @@ export const InputBitBaseDef =
 
 export type InputBitBaseRepr = typeof InputBitBaseDef.reprType
 
-export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, TriState> {
+export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, LogicState> {
 
     private _name: string | undefined = undefined
 
-    protected constructor(editor: LogicEditor, initialValue: TriState, savedData: Repr | null) {
+    protected constructor(editor: LogicEditor, initialValue: LogicState, savedData: Repr | null) {
         super(editor, initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
@@ -52,7 +52,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return false
     }
 
-    protected override propagateValue(newValue: TriState) {
+    protected override propagateValue(newValue: LogicState) {
         this.outputs[0].value = newValue
     }
 
@@ -144,7 +144,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
 
 export const InputBitDef =
     extendComponent(InputBitBaseDef, t.type({
-        val: TriStateRepr,
+        val: LogicStateRepr,
         isPushButton: typeOrUndefined(t.boolean),
     }, "InputBit"))
 
@@ -157,11 +157,12 @@ const InputBitDefaults = {
 
 export class InputBit extends InputBitBase<InputBitRepr> {
 
-    static nextValue(value: TriState, mode: Mode, altKey: boolean): TriState {
+    static nextValue(value: LogicState, mode: Mode, altKey: boolean): LogicState {
         switch (value) {
             case true: return (mode >= Mode.FULL && altKey) ? Unset : false
             case false: return (mode >= Mode.FULL && altKey) ? Unset : true
-            case Unset: return mode >= Mode.FULL ? false : Unset
+            case Unset: return mode >= Mode.FULL ? (altKey ? HighImpedance : false) : Unset
+            case HighImpedance: return mode >= Mode.FULL ? (altKey ? Unset : false) : HighImpedance
         }
     }
 
@@ -171,7 +172,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         super(
             editor,
             // initial value may be given by saved data
-            isNotNull(savedData) ? toTriState(savedData.val) : false,
+            isNotNull(savedData) ? toLogicState(savedData.val) : false,
             savedData,
         )
         if (isNotNull(savedData)) {
@@ -183,7 +184,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     toJSON() {
         return {
             ...super.toJSONBase(),
-            val: toTriStateRepr(this.value),
+            val: toLogicStateRepr(this.value),
             isPushButton: (this._isPushButton !== InputBitDefaults.isPushButton) ? this._isPushButton : undefined,
         }
     }
@@ -200,7 +201,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return tooltipContent(undefined, mods("Entrée", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         // this never changes on its own, just upon user interaction
         return this.value
     }
@@ -210,6 +211,8 @@ export class InputBit extends InputBitBase<InputBitRepr> {
             // do nothing for normal push button
             return false
         }
+
+        console.log("bl")
 
         this.doSetValue(InputBit.nextValue(this.value, this.editor.mode, e.altKey))
         return true

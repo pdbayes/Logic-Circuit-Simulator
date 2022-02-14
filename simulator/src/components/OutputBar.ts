@@ -1,7 +1,7 @@
-import { isDefined, isNotNull, isUnset, TriState, typeOrUndefined, Unset } from "../utils"
+import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnset, LogicState, typeOrUndefined, Unset } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName } from "../drawutils"
+import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -46,7 +46,7 @@ export const OutputBarDef =
 
 type OutputBarRepr = typeof OutputBarDef.reprType
 
-export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
+export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
 
     private _display = OutputBarDefaults.display
     private _color = OutputBarDefaults.color
@@ -92,6 +92,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
         const expl: Modifier = (() => {
             switch (this.value) {
                 case Unset: return "Son état est indéterminé car son entrée n’est pas connue."
+                case HighImpedance: return "Son état est indéterminé car son entrée est flottante (haute impédance)."
                 case true: return mods("Il est actuellement allumé car son entrée est de ", asValue(this.value), ".")
                 case false: return mods("Il est actuellement éteint car son entrée est de ", asValue(this.value), ".")
             }
@@ -103,7 +104,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
         return this._display
     }
 
-    protected doRecalcValue(): TriState {
+    protected doRecalcValue(): LogicState {
         return this.inputs[0].value
     }
 
@@ -114,7 +115,10 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, TriState> {
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const backColor = isUnset(value) ? COLOR_UNSET : (value) ? COLOR_LED_ON[this._color] : COLOR_WIRE_BORDER
+        const backColor =
+            isUnset(value) ? COLOR_UNSET :
+                isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE :
+                    value ? COLOR_LED_ON[this._color] : COLOR_WIRE_BORDER
         g.fillStyle = backColor
         const [w, h] = this.getWidthAndHeight()
         g.beginPath()

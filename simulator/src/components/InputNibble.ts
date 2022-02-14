@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, TriState, TriStateRepr, isNull, toTriState, toTriStateRepr } from "../utils"
+import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, LogicState, LogicStateRepr, isNull, toLogicState, toLogicStateRepr } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
@@ -13,20 +13,20 @@ const GRID_HEIGHT = 8
 export const InputNibbleDef =
     defineComponent(0, 4, t.type({
         type: t.literal("nibble"),
-        val: t.tuple([TriStateRepr, TriStateRepr, TriStateRepr, TriStateRepr]),
+        val: t.tuple([LogicStateRepr, LogicStateRepr, LogicStateRepr, LogicStateRepr]),
         name: typeOrUndefined(t.string),
         // radix: typeOrUndefined(t.number),
     }, "InputNibble"))
 
 type InputNibbleRepr = typeof InputNibbleDef.reprType
 
-export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray<TriState, 4>> {
+export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray<LogicState, 4>> {
 
-    private static savedStateFrom(savedData: { val: FixedArray<TriStateRepr, 4> } | null): FixedArray<TriState, 4> {
+    private static savedStateFrom(savedData: { val: FixedArray<LogicStateRepr, 4> } | null): FixedArray<LogicState, 4> {
         if (isNull(savedData)) {
             return [false, false, false, false]
         }
-        return savedData.val.map(v => toTriState(v)) as unknown as FixedArray<TriState, 4>
+        return savedData.val.map(v => toLogicState(v)) as unknown as FixedArray<LogicState, 4>
     }
 
 
@@ -46,7 +46,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         return {
             type: "nibble" as const,
             ...this.toJSONBase(),
-            val: this.value.map(v => toTriStateRepr(v)) as unknown as FixedArray<TriStateRepr, 4>,
+            val: this.value.map(v => toLogicStateRepr(v)) as unknown as FixedArray<LogicStateRepr, 4>,
             name: this._name,
         }
     }
@@ -75,12 +75,12 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         return tooltipContent("Entrée semioctet", mods("TODO"))
     }
 
-    protected doRecalcValue(): FixedArray<TriState, 4> {
+    protected doRecalcValue(): FixedArray<LogicState, 4> {
         // this never changes on its own, just upon user interaction
         return this.value
     }
 
-    protected override propagateValue(newValue: FixedArray<TriState, 4>) {
+    protected override propagateValue(newValue: FixedArray<LogicState, 4>) {
         for (let i = 0; i < 4; i++) {
             this.outputs[i].value = newValue[i]
         }
@@ -154,7 +154,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         const newValues = [...this.value]
         newValues[i] = InputBit.nextValue(newValues[i], editor.mode, e.altKey)
 
-        this.doSetValue(newValues as unknown as FixedArray<TriState, 4>)
+        this.doSetValue(newValues as unknown as FixedArray<LogicState, 4>)
         return true
     }
 

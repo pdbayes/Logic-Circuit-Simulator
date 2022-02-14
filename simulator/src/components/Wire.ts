@@ -1,4 +1,4 @@
-import { Mode, isNull, isNotNull, isDefined, isUndefined, TriState, typeOrUndefined } from "../utils"
+import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicState, typeOrUndefined } from "../utils"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -122,7 +122,7 @@ export class Wire extends Drawable {
 
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
-    private _propagatingValues: [TriState, Timestamp][] = []
+    private _propagatingValues: [LogicState, Timestamp][] = []
     public customPropagationDelay: number | undefined = undefined
 
     constructor(
@@ -203,7 +203,7 @@ export class Wire extends Drawable {
         this._endNode.value = this.startNode.value
     }
 
-    propageNewValue(newValue: TriState, now: Timestamp) {
+    propageNewValue(newValue: LogicState, now: Timestamp) {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
             this._propagatingValues.push([newValue, now])
         }
@@ -275,7 +275,7 @@ export class Wire extends Drawable {
         }
     }
 
-    private prunePropagatingValues(now: Timestamp, propagationDelay: number): TriState {
+    private prunePropagatingValues(now: Timestamp, propagationDelay: number): LogicState {
         // first, prune obsolete values if needed
         let removeBefore = 0
         for (let i = 1; i < this._propagatingValues.length; i++) {

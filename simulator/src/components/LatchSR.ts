@@ -1,4 +1,4 @@
-import { TriState } from "../utils"
+import { LogicState } from "../utils"
 import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -46,7 +46,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
         ))
     }
 
-    protected doRecalcValue(): [TriState, TriState] {
+    protected doRecalcValue(): [LogicState, LogicState] {
         const s = this.inputs[INPUT.Set].value
         const r = this.inputs[INPUT.Reset].value
 
@@ -70,7 +70,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
         // no change
         const q = this.outputs[OUTPUT.Q].value
-        return [q, TriState.invert(q)]
+        return [q, LogicState.invert(q)]
     }
 
     doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
