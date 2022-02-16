@@ -1,4 +1,4 @@
-import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unset } from "../utils"
+import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
@@ -198,7 +198,7 @@ export abstract class Flipflop<
     Repr extends FlipflopRepr<Plus3<NumInputs>>,
     > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[LogicState, LogicState]> {
 
-    protected _lastClock: LogicState = Unset
+    protected _lastClock: LogicState = Unknown
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
 
     protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0> & { clockYOffset: number }) {

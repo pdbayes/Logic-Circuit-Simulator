@@ -1,4 +1,4 @@
-import { FixedArrayFill, FixedReadonlyArray, isUnset, LogicState, Unset } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicState, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -87,8 +87,8 @@ export class DecoderSevenSegment extends ComponentBase<4, 7, DecoderSevenSegment
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
-        if (isUnset(value)) {
-            output = FixedArrayFill(Unset, 7)
+        if (isUnknown(value)) {
+            output = FixedArrayFill(Unknown, 7)
         } else {
             output = (() => {
                 switch (value) {
@@ -108,7 +108,7 @@ export class DecoderSevenSegment extends ComponentBase<4, 7, DecoderSevenSegment
                     case 13: return [false, true, true, true, true, false, true] as const
                     case 14: return [true, false, false, true, true, true, true] as const
                     case 15: return [true, false, false, false, true, true, true] as const
-                    default: return FixedArrayFill(Unset, 7)
+                    default: return FixedArrayFill(Unknown, 7)
                 }
             })()
         }

@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, Unset, typeOrUndefined, Mode } from "../utils"
+import { isDefined, isNotNull, isUnknown, Unknown, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
@@ -20,7 +20,7 @@ export const OutputNibbleDef =
 
 type OutputNibbleRepr = typeof OutputNibbleDef.reprType
 
-export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | Unset]> {
+export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | Unknown]> {
 
     private _name: string | undefined = undefined
     private _radix = DEFAULT_RADIX
@@ -73,7 +73,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
 
         return tooltipContent("Afficheur de semioctet", mods(
             div(`Affiche la valeur ${radixStr} de ses 4 entrées, actuellement `, b(binaryStringRep), "."),
-            !isUnset(value) || this._showAsUnknown
+            !isUnknown(value) || this._showAsUnknown
                 ? emptyMod
                 : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
         ))
@@ -89,7 +89,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnset(value) || this._showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
+        const backColor = isUnknown(value) || this._showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
         g.fillStyle = backColor
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4

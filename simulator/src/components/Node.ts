@@ -1,4 +1,4 @@
-import { isDefined, isUnset, Mode, LogicState, Unset, toLogicState, isNull, HighImpedance } from "../utils"
+import { isDefined, isUnknown, Mode, LogicState, Unknown, toLogicState, isNull, HighImpedance } from "../utils"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
@@ -72,7 +72,7 @@ abstract class NodeBase extends DrawableWithPosition {
         }
 
         const showForced = isDefined(this._forceValue) && mode >= Mode.FULL
-        const showForcedWarning = mode >= Mode.FULL && !isUnset(this._value) && !isUnset(this.value) && this._value !== this.value
+        const showForcedWarning = mode >= Mode.FULL && !isUnknown(this._value) && !isUnknown(this.value) && this._value !== this.value
         const parentOrientIsVertical = Orientation.isVertical(this.parent.orient)
         const neutral = this.editor.options.hideWireColors
         drawWaypoint(g, ctx, this.posX, this.posY, this.value, ctx.isMouseOver, neutral, showForced, showForcedWarning, parentOrientIsVertical)
@@ -274,8 +274,8 @@ export class NodeOut extends NodeBase {
         if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
             this.forceValue = (() => {
                 switch (this._forceValue) {
-                    case undefined: return Unset
-                    case Unset: return HighImpedance
+                    case undefined: return Unknown
+                    case Unknown: return HighImpedance
                     case HighImpedance: return false
                     case false: return true
                     case true: return undefined

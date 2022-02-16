@@ -1,4 +1,4 @@
-import { isDefined, isHighImpedance, isUnset, LogicState, Unset } from "../utils"
+import { isDefined, isHighImpedance, isUnknown, LogicState, Unknown } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -53,8 +53,8 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
 
     protected doRecalcValueAfterClock(): LogicState {
         const t = this.inputs[INPUT.T].value
-        if (isUnset(t) || isHighImpedance(t)) {
-            return Unset
+        if (isUnknown(t) || isHighImpedance(t)) {
+            return Unknown
         }
         const q = this.outputs[OUTPUT.Q].value
         return t ? LogicState.invert(q) : q

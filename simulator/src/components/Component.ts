@@ -1,4 +1,4 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicStateRepr, LogicState, LogicStateRepr, Unset } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicStateRepr, LogicState, LogicStateRepr, Unknown } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -623,13 +623,13 @@ export abstract class ComponentBase<
 
         function makeOutputItems(out: NodeOut): ContextMenuItem[] {
             const currentForceValue = out.forceValue
-            return [undefined, Unset, true, false]
+            return [undefined, Unknown, true, false]
                 .map(newForceValue => ContextMenuData.item(
                     currentForceValue === newForceValue ? "check" : "none",
                     (() => {
                         switch (newForceValue) {
                             case undefined: return "Sortie normale"
-                            case Unset: return "Forcer comme état inconnu"
+                            case Unknown: return "Forcer comme état inconnu"
                             case true: return "Forcer à 1"
                             case false: return "Forcer à 0"
                         }

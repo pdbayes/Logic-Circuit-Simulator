@@ -1,4 +1,4 @@
-import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnset, LogicState, typeOrUndefined, Unset } from "../utils"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
@@ -214,10 +214,10 @@ export abstract class Mux<
         const sels = this.inputValues(this.INPUT.S as any)
         const sel = displayValuesFromArray(sels, false)[1]
 
-        if (!isUnset(sel)) {
+        if (!isUnknown(sel)) {
             return this.inputValues<NumOutputs>(this.INPUT.I[sel])
         }
-        return FixedArrayFill(Unset, this.numTo)
+        return FixedArrayFill(Unknown, this.numTo)
 
         // const a = this.inputValues<4>(INPUT.A)
         // const b = this.inputValues<4>(INPUT.B)
@@ -288,7 +288,7 @@ export abstract class Mux<
             const neutral = this.editor.options.hideWireColors
             const sels = this.inputValues(this.INPUT.S as any)
             const sel = displayValuesFromArray(sels, false)[1]
-            if (!isUnset(sel)) {
+            if (!isUnknown(sel)) {
                 const from = this.INPUT.I[sel]
                 const to = this.OUTPUT.Z
                 const anchorDiffX = (right - left) / 3

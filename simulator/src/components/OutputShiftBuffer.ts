@@ -1,4 +1,4 @@
-import { isNotNull, isNull, isUndefined, isUnset, repeatString, RichStringEnum, toLogicStateRepr, LogicState, typeOrUndefined, Unset } from "../utils"
+import { isNotNull, isNull, isUndefined, isUnknown, repeatString, RichStringEnum, toLogicStateRepr, LogicState, typeOrUndefined, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -71,7 +71,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     protected _groupEvery: number | undefined = undefined
     protected _maxItems: number | undefined = undefined
     protected _trigger: EdgeTrigger = OutputShiftBufferDefaults.trigger
-    protected _lastClock: LogicState = Unset
+    protected _lastClock: LogicState = Unknown
 
     private static savedStateFrom(savedData: { state: string | undefined } | null): OutputShiftBufferState {
         if (isNull(savedData) || isUndefined(savedData.state)) {
@@ -85,7 +85,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
             } else if (c === '0') {
                 incoming.push(false)
             } else {
-                incoming.push(Unset)
+                incoming.push(Unknown)
             }
         }
         return { incoming, decoded: [] }
@@ -175,7 +175,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
             return { incoming: newIncoming, decoded: oldValue.decoded }
         }
         const valAsInt = displayValuesFromArray(newIncoming, true)[1]
-        const decoded = isUnset(valAsInt) ? Unset : decoder.decode(valAsInt)
+        const decoded = isUnknown(valAsInt) ? Unknown : decoder.decode(valAsInt)
         const newDecoded: OutputShiftBufferState["decoded"] = [[decoded, newIncoming], ...oldValue.decoded]
         if (newDecoded.length > maxItems) {
             newDecoded.splice(maxItems, newDecoded.length - maxItems)

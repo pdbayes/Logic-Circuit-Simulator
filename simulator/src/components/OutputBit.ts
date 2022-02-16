@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUndefined, isUnset, Mode, LogicState, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicState, typeOrUndefined } from "../utils"
 import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
@@ -53,7 +53,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicState> {
     }
 
     public override makeTooltip() {
-        return tooltipContent(undefined, mods("Sortie", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
+        return tooltipContent(undefined, mods("Sortie", isUnknown(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
     protected doRecalcValue(): LogicState {

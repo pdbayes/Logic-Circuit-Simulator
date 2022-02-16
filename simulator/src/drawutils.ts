@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isHighImpedance, isNumber, isUndefined, isUnset, LogicState, Unset } from "./utils"
+import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicState, Unknown } from "./utils"
 import { Node } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -96,7 +96,7 @@ function setColors(darkMode: boolean) {
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [52, 58, 64]
         COLOR_UNSET = ColorString([152, 158, 164])
-        COLOR_HIGH_IMPEDANCE = ColorString([103, 84, 23])
+        COLOR_HIGH_IMPEDANCE = ColorString([137, 114, 35])
         COLOR_GATE_NAMES = ColorString([190, 190, 190])
         COLOR_LED_ON = {
             green: ColorString([20, 255, 20]),
@@ -162,7 +162,7 @@ export function colorComps(c: ColorString) {
 }
 
 export function colorForBoolean(value: LogicState): ColorString {
-    return isUnset(value) ? COLOR_UNSET : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
+    return isUnknown(value) ? COLOR_UNSET : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
 }
 
 export function colorForFraction(fraction: number): ColorString {
@@ -368,7 +368,7 @@ export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicState, x
     let spec = ""
     let label = ""
 
-    if (isUnset(value)) {
+    if (isUnknown(value)) {
         g.fillStyle = COLOR_LABEL_OFF
         spec = "bold 18"
         label = '?'
@@ -432,7 +432,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle"
 }
 
-export function displayValuesFromArray(values: LogicState[], mostSignificantFirst: boolean): [string, number | Unset] {
+export function displayValuesFromArray(values: LogicState[], mostSignificantFirst: boolean): [string, number | Unknown] {
     // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false
@@ -441,20 +441,20 @@ export function displayValuesFromArray(values: LogicState[], mostSignificantFirs
         : v => binaryStringRep = v + binaryStringRep
 
     for (const value of values) {
-        if (isUnset(value) || isHighImpedance(value)) {
+        if (isUnknown(value) || isHighImpedance(value)) {
             hasUnset = true
             add(value)
         } else {
             add(+value)
         }
     }
-    const value = hasUnset ? Unset : parseInt(binaryStringRep, 2)
+    const value = hasUnset ? Unknown : parseInt(binaryStringRep, 2)
     return [binaryStringRep, value]
 }
 
-export function formatWithRadix(value: number | Unset, radix: number, width: number): string {
-    if (isUnset(value)) {
-        return Unset
+export function formatWithRadix(value: number | Unknown, radix: number, width: number): string {
+    if (isUnknown(value)) {
+        return Unknown
     }
     if (radix === -10) {
         // signed int

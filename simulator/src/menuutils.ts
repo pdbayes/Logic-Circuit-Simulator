@@ -89,6 +89,12 @@ const componentsMenu: Array<Section> = [
                 normallyHidden: true,
             },
             {
+                type: "gate", subtype: "TRI",
+                title: "Sortie à 3 états", caption: "3 états",
+                img: "BUF", width: 50,
+                normallyHidden: true,
+            },
+            {
                 type: "gate", subtype: "AND",
                 title: "Porte ET", caption: "ET",
                 img: "AND", width: 50,

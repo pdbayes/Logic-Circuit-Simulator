@@ -1,10 +1,11 @@
-import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnset, Mode, RichStringEnum, LogicState, Unset, isHighImpedance } from "../utils"
+import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicState, Unknown, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { TriStateBuffer, TriStateBufferDef } from "./TriStateBuffer"
 
 
 type GateProps = {
@@ -254,6 +255,7 @@ export const GateDef = t.union([
     Gate1Def.repr,
     Gate3Def.repr,
     Gate4Def.repr,
+    TriStateBufferDef.repr,
 ], "Gate")
 
 
@@ -355,7 +357,7 @@ export abstract class GateBase<
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const gateType = this._showAsUnknown
-            ? Unset
+            ? Unknown
             : this.poseAs ?? this.type
         this.drawGate(g, gateType, gateType !== this.type, ctx)
     }
@@ -368,7 +370,7 @@ export abstract class GateBase<
         return false
     }
 
-    protected drawGate(g: CanvasRenderingContext2D, type: G | Unset, isFake: boolean, ctx: DrawContext) {
+    protected drawGate(g: CanvasRenderingContext2D, type: G | Unknown, isFake: boolean, ctx: DrawContext) {
         const output = this.outputs[0]
 
         const width = this.unrotatedWidth
@@ -585,7 +587,7 @@ export abstract class GateBase<
                 break
         }
 
-        if (this.editor.options.showGateTypes && !isUnset(type)) {
+        if (this.editor.options.showGateTypes && !isUnknown(type)) {
             const gateShortName = this.gateTypeEnum.propsOf(type).shortName
             if (isDefined(gateShortName)) {
                 g.fillStyle = COLOR_GATE_NAMES
@@ -677,8 +679,8 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
     protected doRecalcValue(): LogicState {
         const in0 = this.inputs[0].value
-        if (isUnset(in0) || isHighImpedance(in0)) {
-            return Unset
+        if (isUnknown(in0) || isHighImpedance(in0)) {
+            return Unknown
         }
         const gateProps = Gate1Types.propsOf(this.type)
         return gateProps.out(in0)
@@ -710,7 +712,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
             ? "Actuellement, il livre"
             : "Actuellement, il devrait livrer"
 
-        const explanation = isUnset(myIn)
+        const explanation = isUnknown(myIn)
             ? mods(desc + " une sortie indéterminée comme son entrée n’est pas connue. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " car son entrée est ", asValue(myIn), ", selon la table de vérité suivante:")
 
@@ -788,7 +790,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
             ? "Actuellement, elle livre"
             : "Actuellement, elle devrait livrer"
 
-        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
@@ -805,8 +807,8 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
     protected doRecalcValue(): LogicState {
         const in1 = this.inputs[0].value
         const in2 = this.inputs[1].value
-        if (isUnset(in1) || isUnset(in2) || isHighImpedance(in1) || isHighImpedance(in2)) {
-            return Unset
+        if (isUnknown(in1) || isUnknown(in2) || isHighImpedance(in1) || isHighImpedance(in2)) {
+            return Unknown
         }
         const gateProps = Gate2Types.propsOf(this.type)
         return gateProps.out(in1, in2)
@@ -903,7 +905,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
             ? "Actuellement, elle livre"
             : "Actuellement, elle devrait livrer"
 
-        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
@@ -921,8 +923,8 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
         const in0 = this.inputs[0].value
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value
-        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2)) {
-            return Unset
+        if (isUnknown(in0) || isUnknown(in1) || isUnknown(in2) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2)) {
+            return Unknown
         }
         const gateProps = Gate3Types.propsOf(this.type)
         return gateProps.out(in0, in1, in2)
@@ -993,7 +995,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
             ? "Actuellement, elle livre"
             : "Actuellement, elle devrait livrer"
 
-        const gateIsUnspecified = isUnset(myIn0) || isUnset(myIn1)
+        const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
@@ -1011,8 +1013,8 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value
         const in3 = this.inputs[3].value
-        if (isUnset(in0) || isUnset(in1) || isUnset(in2) || isUnset(in3) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2) || isHighImpedance(in3)) {
-            return Unset
+        if (isUnknown(in0) || isUnknown(in1) || isUnknown(in2) || isUnknown(in3) || isHighImpedance(in0) || isHighImpedance(in1) || isHighImpedance(in2) || isHighImpedance(in3)) {
+            return Unknown
         }
         const gateProps = Gate4Types.propsOf(this.type)
         return gateProps.out(in0, in1, in2, in3)
@@ -1043,12 +1045,14 @@ export const GateFactory = {
 
     make: <N extends FixedArraySizeNonZero>(editor: LogicEditor, savedDataOrType: GateRepr<N, GateType> | string | undefined) => {
         let gateParams
+        let blank = true
         if (isUndefined(savedDataOrType)) {
             gateParams = { type: "NAND" }
         } else if (isString(savedDataOrType)) {
             gateParams = { type: savedDataOrType }
         } else {
             gateParams = savedDataOrType
+            blank = false
         }
         if (Gate1Types.isValue(gateParams.type)) {
             const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
@@ -1062,6 +1066,8 @@ export const GateFactory = {
         } else if (Gate4Types.isValue(gateParams.type)) {
             const sameSavedDataWithBetterTyping = { ...gateParams, type: gateParams.type }
             return new Gate4(editor, sameSavedDataWithBetterTyping)
+        } else if (gateParams.type === "TRI") {
+            return new TriStateBuffer(editor, blank ? null : savedDataOrType as any)
         }
         return undefined
     },

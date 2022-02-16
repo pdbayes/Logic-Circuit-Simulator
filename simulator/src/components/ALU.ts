@@ -1,4 +1,4 @@
-import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnset, LogicState, typeOrUndefined, Unset } from "../utils"
+import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -128,13 +128,13 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
 
     public override makeTooltip() {
         const op = this.op
-        const opDesc = isUnset(op) ? "une opération inconnue" : "l’opération " + ALUOp.fullName(op)
+        const opDesc = isUnknown(op) ? "une opération inconnue" : "l’opération " + ALUOp.fullName(op)
         return tooltipContent("Unité arithmétique et logique (ALU)", mods(
             div(`Effectue actuellement ${opDesc}.`)
         ))
     }
 
-    public get op(): ALUOp | Unset {
+    public get op(): ALUOp | Unknown {
         const mode = this.inputs[INPUT.Mode].value
         const op = this.inputs[INPUT.Op].value
         switch (mode) {
@@ -144,9 +144,9 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                         return "add"
                     case true: // 01
                         return "sub"
-                    case Unset:
+                    case Unknown:
                     case HighImpedance:
-                        return Unset
+                        return Unknown
                 }
                 break
             case true: // logic
@@ -155,22 +155,22 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                         return "or" // opcode logic: "only one 1 needed"
                     case true: // 11
                         return "and"// opcode logic: "two 1s needed"
-                    case Unset:
+                    case Unknown:
                     case HighImpedance:
-                        return Unset
+                        return Unknown
                 }
                 break
-            case Unset:
+            case Unknown:
             case HighImpedance:
-                return Unset
+                return Unknown
         }
     }
 
     protected doRecalcValue(): [FixedArray<LogicState, 4>, LogicState, LogicState] {
         const op = this.op
 
-        if (isUnset(op)) {
-            return [[Unset, Unset, Unset, Unset], Unset, Unset]
+        if (isUnknown(op)) {
+            return [[Unknown, Unknown, Unknown, Unknown], Unknown, Unknown]
         }
 
         const a = this.inputValues<4>(INPUT.A)
@@ -179,8 +179,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
 
         function allZeros(vals: LogicState[]): LogicState {
             for (const v of vals) {
-                if (isUnset(v) || isHighImpedance(v)) {
-                    return Unset
+                if (isUnknown(v) || isHighImpedance(v)) {
+                    return Unknown
                 }
                 if (v) {
                     return false
@@ -189,14 +189,14 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
             return true
         }
 
-        const y: LogicState[] = [Unset, Unset, Unset, Unset]
-        let v: LogicState = Unset
+        const y: LogicState[] = [Unknown, Unknown, Unknown, Unknown]
+        let v: LogicState = Unknown
 
         switch (op) {
             case "add": {
                 const sum3bits = (a: LogicState, b: LogicState, c: LogicState): [LogicState, LogicState] => {
                     const asNumber = (v: LogicState) => v === true ? 1 : 0
-                    const numUnset = (isUnset(a) || isHighImpedance(a) ? 1 : 0) + (isUnset(b) || isHighImpedance(a) ? 1 : 0) + (isUnset(c) || isHighImpedance(a) ? 1 : 0)
+                    const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
                     const sum = asNumber(a) + asNumber(b) + asNumber(c)
 
                     if (numUnset === 0) {
@@ -205,10 +205,10 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                     }
                     if (numUnset === 1 && sum >= 2) {
                         // carry will always be set
-                        return [Unset, true]
+                        return [Unknown, true]
                     }
                     // At this point, could be anything
-                    return [Unset, Unset]
+                    return [Unknown, Unknown]
 
                 }
                 let cin: LogicState = false
@@ -226,7 +226,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                     let s = 0
                     let col = 1
                     for (const v of vs) {
-                        if (isUnset(v)) {
+                        if (isUnknown(v)) {
                             return undefined
                         }
                         s += Number(v) * col
@@ -265,7 +265,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                     } else if (a[i] === true && b[i] === true) {
                         y[i] = true
                     } else {
-                        y[i] = Unset
+                        y[i] = Unknown
                     }
                 }
                 v = false
@@ -279,7 +279,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                     } else if (a[i] === false && b[i] === false) {
                         y[i] = false
                     } else {
-                        y[i] = Unset
+                        y[i] = Unknown
                     }
                 }
                 v = false
@@ -367,7 +367,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
             drawLabel(ctx, this.orient, "S", "e", right, this.posY)
 
             if (this._showOp) {
-                const opName = isUnset(this.op) ? "??" : ALUOp.shortName(this.op)
+                const opName = isUnknown(this.op) ? "??" : ALUOp.shortName(this.op)
                 const size = 25 - 13 * (opName.length - 1)
                 g.font = `bold ${size}px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER

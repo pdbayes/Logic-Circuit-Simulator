@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, Mode, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, Unset, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
+import { isDefined, isNotNull, isUnknown, Mode, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, Unknown, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
@@ -159,10 +159,10 @@ export class InputBit extends InputBitBase<InputBitRepr> {
 
     static nextValue(value: LogicState, mode: Mode, altKey: boolean): LogicState {
         switch (value) {
-            case true: return (mode >= Mode.FULL && altKey) ? Unset : false
-            case false: return (mode >= Mode.FULL && altKey) ? Unset : true
-            case Unset: return mode >= Mode.FULL ? (altKey ? HighImpedance : false) : Unset
-            case HighImpedance: return mode >= Mode.FULL ? (altKey ? Unset : false) : HighImpedance
+            case true: return (mode >= Mode.FULL && altKey) ? Unknown : false
+            case false: return (mode >= Mode.FULL && altKey) ? Unknown : true
+            case Unknown: return mode >= Mode.FULL ? (altKey ? HighImpedance : false) : Unknown
+            case HighImpedance: return mode >= Mode.FULL ? (altKey ? Unknown : false) : HighImpedance
         }
     }
 
@@ -198,7 +198,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     public override makeTooltip() {
-        return tooltipContent(undefined, mods("Entrée", isUnset(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
+        return tooltipContent(undefined, mods("Entrée", isUnknown(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
     protected doRecalcValue(): LogicState {
@@ -211,9 +211,6 @@ export class InputBit extends InputBitBase<InputBitRepr> {
             // do nothing for normal push button
             return false
         }
-
-        console.log("bl")
-
         this.doSetValue(InputBit.nextValue(this.value, this.editor.mode, e.altKey))
         return true
     }

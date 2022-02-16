@@ -362,31 +362,31 @@ export function isHighImpedance<T>(v: T | HighImpedance): v is HighImpedance {
     return v === HighImpedance
 }
 
-export const Unset = "?" as const
-export type Unset = typeof Unset
-export function isUnset<T>(v: T | Unset): v is Unset {
-    return v === Unset
+export const Unknown = "?" as const
+export type Unknown = typeof Unknown
+export function isUnknown<T>(v: T | Unknown): v is Unknown {
+    return v === Unknown
 }
-export const TUnset = new t.Type<Unset>(
-    "unset",
-    isUnset,
-    (input, context) => isUnset(input) ? t.success(input) : t.failure(input, context),
+export const TUnknown = new t.Type<Unknown>(
+    "Unknown",
+    isUnknown,
+    (input, context) => isUnknown(input) ? t.success(input) : t.failure(input, context),
     t.identity,
 )
 
-export type LogicState = boolean | HighImpedance | Unset
+export type LogicState = boolean | HighImpedance | Unknown
 export const LogicState = {
     invert(v: LogicState): LogicState {
-        return isUnset(v) || isHighImpedance(v) ? v : !v
+        return isUnknown(v) || isHighImpedance(v) ? v : !v
     },
 }
 
-export type LogicStateRepr = 0 | 1 | HighImpedance | Unset
+export type LogicStateRepr = 0 | 1 | HighImpedance | Unknown
 export const LogicStateRepr = new t.Type<LogicStateRepr>(
     "0|1|?|Z",
-    (v: unknown): v is LogicStateRepr => isUnset(v) || isHighImpedance(v) || v === 1 || v === 0,
+    (v: unknown): v is LogicStateRepr => isUnknown(v) || isHighImpedance(v) || v === 1 || v === 0,
     (input, context) =>
-        isUnset(input) ? t.success(input) :
+        isUnknown(input) ? t.success(input) :
             isHighImpedance(input) ? t.success(input) :
                 input === 1 ? t.success(1) :
                     input === 0 ? t.success(0) :
@@ -401,7 +401,7 @@ export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | un
     switch (v) {
         case true: return 1
         case false: return 0
-        case Unset: return Unset
+        case Unknown: return Unknown
         case HighImpedance: return HighImpedance
         case undefined: return undefined
     }
@@ -413,7 +413,7 @@ export function toLogicState(v: LogicStateRepr | undefined): LogicState | undefi
     switch (v) {
         case 1: return true
         case 0: return false
-        case Unset: return Unset
+        case Unknown: return Unknown
         case HighImpedance: return HighImpedance
         case undefined: return undefined
     }

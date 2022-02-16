@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, LogicState, Unset, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, LogicState, Unknown, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, drawComponentName, GRID_STEP, COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -35,7 +35,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicState
 
     private _prob1: number = InputRandomDefaults.prob1
     private _showProb: boolean = InputRandomDefaults.showProb
-    private _lastClock: LogicState = Unset
+    private _lastClock: LogicState = Unknown
     private _trigger: EdgeTrigger = InputRandomDefaults.trigger
     private _name: string | undefined = undefined
 

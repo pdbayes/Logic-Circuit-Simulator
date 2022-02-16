@@ -1,4 +1,4 @@
-import { isHighImpedance, isUnset, LogicState, Unset } from "../utils"
+import { isHighImpedance, isUnknown, LogicState, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, drawLabel } from "../drawutils"
@@ -80,8 +80,8 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicStat
         const b = this.inputs[INPUT.B].value
         const cIn = this.inputs[INPUT.Cin].value
 
-        if (isUnset(a) || isUnset(b) || isUnset(cIn) || isHighImpedance(a) || isHighImpedance(b) || isHighImpedance(cIn)) {
-            return [Unset, Unset]
+        if (isUnknown(a) || isUnknown(b) || isUnknown(cIn) || isHighImpedance(a) || isHighImpedance(b) || isHighImpedance(cIn)) {
+            return [Unknown, Unknown]
         }
 
         const sum = (+a) + (+b) + (+cIn)

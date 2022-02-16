@@ -1,4 +1,4 @@
-import { FixedArray, isNotNull, LogicState, typeOrUndefined, Unset, isUnset, FixedReadonlyArray, FixedArraySize } from "../utils"
+import { FixedArray, isNotNull, LogicState, typeOrUndefined, Unknown, isUnknown, FixedReadonlyArray, FixedArraySize } from "../utils"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -47,7 +47,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     protected _showContent: boolean = RAMDefaults.showContent
     protected _trigger: EdgeTrigger = RAMDefaults.trigger
-    protected _lastClock: LogicState = Unset
+    protected _lastClock: LogicState = Unknown
 
     private static valueFilledWith(v: LogicState): RAMValue<4> {
         const mem: Array<FixedArray<LogicState, 4>> = new Array(NUM_CELLS)
@@ -149,13 +149,13 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         const we = this.inputs[INPUT.WriteEnable].value
         if (we !== true || !Flipflop.isClockTrigger(this.trigger, prevClock, clock)) {
             // nothing to write, just update output
-            const out = isUnset(addr) ? [Unset, Unset, Unset, Unset] as const : oldState.mem[addr]
+            const out = isUnknown(addr) ? [Unknown, Unknown, Unknown, Unknown] as const : oldState.mem[addr]
             return { mem: oldState.mem, out }
         }
 
         // we write
-        if (isUnset(addr)) {
-            return RAM16by4.valueFilledWith(Unset)
+        if (isUnknown(addr)) {
+            return RAM16by4.valueFilledWith(Unknown)
         }
 
         // build new state
@@ -175,7 +175,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicState, 4>
     }
 
-    private currentAddress(): number | Unset {
+    private currentAddress(): number | Unknown {
         const addrBits = this.inputValues<4>(INPUT.Address)
         const [__, addr] = displayValuesFromArray(addrBits, false)
         return addr
@@ -274,7 +274,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                 g.lineWidth = 2
                 g.strokeRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
                 const addr = this.currentAddress()
-                if (!isUnset(addr)) {
+                if (!isUnknown(addr)) {
                     const arrowY = contentTop + addr * cellHeight + cellHeight / 2
                     const arrowRight = contentLeft - 3
                     const arrowWidth = 8

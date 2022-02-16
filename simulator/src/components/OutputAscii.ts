@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnset, Mode, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
@@ -66,7 +66,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
             div(`Affiche le caractère ASCII représenté par ses 7 entrées, actuellement `, b(binaryStringRep), "."),
             this._showAsUnknown
                 ? emptyMod
-                : isUnset(value)
+                : isUnknown(value)
                     ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
                     : mods("Actuellement, c’est le caractère numéro ", b("" + value),
                         (value < 32)
@@ -138,7 +138,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
             }
 
             let mainText: string
-            if (isUnset(value) || this._showAsUnknown) {
+            if (isUnknown(value) || this._showAsUnknown) {
                 g.font = "bold 18px sans-serif"
                 if (this._showAsUnknown) {
                     g.fillStyle = COLOR_UNSET

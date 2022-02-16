@@ -1,4 +1,4 @@
-import { FixedArrayFill, FixedReadonlyArray, isUnset, LogicState, Unset } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicState, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -81,8 +81,8 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
-        if (isUnset(value)) {
-            output = FixedArrayFill(Unset, 5)
+        if (isUnknown(value)) {
+            output = FixedArrayFill(Unknown, 5)
         } else {
             output = (() => {
                 switch (value) {
@@ -102,7 +102,7 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
                     case 13: return [true, false, false, true, true] as const
                     case 14: return [true, false, true, false, false] as const
                     case 15: return [true, false, true, false, true] as const
-                    default: return FixedArrayFill(Unset, 5)
+                    default: return FixedArrayFill(Unknown, 5)
                 }
             })()
         }

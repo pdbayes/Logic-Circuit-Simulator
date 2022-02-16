@@ -1,4 +1,4 @@
-import { FixedArray, isNull, isNotNull, isUndefined, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unset } from "../utils"
+import { FixedArray, isNull, isNotNull, isUndefined, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -41,7 +41,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
     protected _showContent: boolean = RegisterDefaults.showContent
     protected _trigger: EdgeTrigger = RegisterDefaults.trigger
     protected _isInInvalidState = false
-    protected _lastClock: LogicState = Unset
+    protected _lastClock: LogicState = Unknown
 
     private static savedStateFrom(savedData: { state: FixedArray<LogicStateRepr, 4> | undefined } | null): FixedArray<LogicState, 4> {
         if (isNull(savedData) || isUndefined(savedData.state)) {

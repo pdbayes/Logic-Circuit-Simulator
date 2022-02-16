@@ -1,4 +1,4 @@
-import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnset, LogicState, typeOrUndefined, Unset } from "../utils"
+import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
@@ -91,7 +91,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
     public override makeTooltip() {
         const expl: Modifier = (() => {
             switch (this.value) {
-                case Unset: return "Son état est indéterminé car son entrée n’est pas connue."
+                case Unknown: return "Son état est indéterminé car son entrée n’est pas connue."
                 case HighImpedance: return "Son état est indéterminé car son entrée est flottante (haute impédance)."
                 case true: return mods("Il est actuellement allumé car son entrée est de ", asValue(this.value), ".")
                 case false: return mods("Il est actuellement éteint car son entrée est de ", asValue(this.value), ".")
@@ -116,7 +116,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
         g.lineWidth = 4
 
         const backColor =
-            isUnset(value) ? COLOR_UNSET :
+            isUnknown(value) ? COLOR_UNSET :
                 isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE :
                     value ? COLOR_LED_ON[this._color] : COLOR_WIRE_BORDER
         g.fillStyle = backColor
