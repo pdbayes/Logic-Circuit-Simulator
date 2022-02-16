@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1792" height="1792"><path fill="none" d="M-1-1h582v402H-1z"/><g><text font-weight="bold" font-family="Georgia, Times, 'Times New Roman', serif" font-size="666.667" y="1154.467" x="817.198" stroke-width="0" stroke="#000" fill="#0000f4"><tspan style="-inkscape-font-specification:'sans-serif Bold'" font-weight="700" font-family="sans-serif">0</tspan></text><path stroke="#000" stroke-width="5.449" d="M2.724 288.195h430.369v114.551H2.724zM2.724 662.115h430.369v114.551H2.724zM2.724 1396.997h430.369v114.551H2.724zM2.724 1025.3h430.369v114.551H2.724z"/><path stroke="#000" stroke-width="11.311" d="M430.656 111.664h1214.813v174.889H430.656zM430.656 1511.549h1214.813v174.889H430.656z"/><path stroke="#000" stroke-width="12.878" d="M1470.58 1686.438V111.664h174.889v1574.774zM430.656 1686.438V111.664h174.889v1574.774z"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1792 1792" style="enable-background:new 0 0 1792 1792;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{fill:#0000F4;}
+	.st2{font-family:'Helvetica-Bold';}
+	.st3{font-size:666.667px;}
+	.st4{stroke:#000000;stroke-width:5.449;}
+	.st5{fill:none;stroke:#000000;stroke-width:180;}
+</style>
+<path class="st0" d="M-1-1h582v402H-1V-1z"/>
+<text transform="matrix(1 0 0 1 857.7659 1154.467)" class="st1 st2 st3">0</text>
+<path class="st4" d="M2.7,288.2h430.4v114.6H2.7V288.2z M2.7,662.1h430.4v114.6H2.7V662.1z M2.7,1397h430.4v114.6H2.7V1397z
+	 M2.7,1025.3h430.4v114.6H2.7V1025.3z"/>
+<rect x="504.2" y="208" class="st5" width="1054.8" height="1399"/>
+</svg>

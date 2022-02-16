@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1792" height="1792"><path fill="none" d="M-1-1h582v402H-1z"/><g><text font-weight="bold" font-family="Georgia, Times, 'Times New Roman', serif" font-size="666.667" y="1163.657" x="581.836" stroke-width="0" stroke="#000" fill="#0000f4"><tspan style="-inkscape-font-specification:'sans-serif Bold'" font-weight="700" font-family="sans-serif">&apos;X&apos;</tspan></text><path stroke="#000" stroke-width="4.966" d="M2.483 286.553h430.852v95.034H2.483zM-.58 478.208h430.852v95.034H-.58zM.483 1416.514h430.852v95.034H.483zM2.483 1034.248h430.852v95.034H2.483z"/><path stroke="#000" stroke-width="11.311" d="M430.656 111.664h1214.813v174.889H430.656zM430.656 1511.549h1214.813v174.889H430.656z"/><path stroke="#000" stroke-width="12.878" d="M1470.58 1686.438V111.664h174.889v1574.774zM430.656 1686.438V111.664h174.889v1574.774z"/><path stroke="#000" stroke-width="4.966" d="M2.483 659.146h430.852v95.034H2.483zM2.483 1221.989h430.852v95.034H2.483zM2.062 846.128h430.852v95.034H2.062z"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1792 1792" style="enable-background:new 0 0 1792 1792;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{fill:#0000F4;}
+	.st2{font-family:'Helvetica-Bold';}
+	.st3{font-size:666.667px;}
+	.st4{stroke:#000000;stroke-width:4.966;}
+	.st5{fill:none;stroke:#000000;stroke-width:180;}
+</style>
+<path class="st0" d="M-1-1h582v402H-1V-1z"/>
+<text transform="matrix(1 0 0 1 637.7435 1129.2817)" class="st1 st2 st3">&apos;X&apos;</text>
+<path class="st4" d="M2.5,286.6h430.9v95H2.5V286.6z M-0.6,478.2h430.9v95H-0.6V478.2z M0.5,1416.5h430.9v95H0.5V1416.5z
+	 M2.5,1034.2h430.9v95H2.5V1034.2z"/>
+<path class="st4" d="M2.5,659.1h430.9v95H2.5V659.1z M2.5,1222h430.9v95H2.5V1222z M2.1,846.1h430.9v95H2.1V846.1z"/>
+<rect x="462.2" y="139.4" class="st5" width="1106.1" height="1516.3"/>
+</svg>

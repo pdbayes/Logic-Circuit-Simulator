@@ -55,7 +55,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
     override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.In: return "In"
-            case INPUT.Enable: return "En (enable)"
+            case INPUT.Enable: return "E (enable)"
         }
         return undefined
     }

@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><path fill="none" d="M-1-1h102v52H-1z"/><g stroke="#000"><path stroke-linecap="undefined" stroke-linejoin="undefined" stroke-width="3.695" fill="none" d="M-.992 42.257l43.313-.207"/><path stroke-linecap="undefined" stroke-linejoin="undefined" stroke-opacity="null" stroke-width="4.379" fill="none" d="M40.195 44V5m-.307 2h60.282"/><text font-family="Helvetica, Arial, sans-serif" font-size="24" y="-38.256" x="-153.731" fill-opacity="null" stroke-opacity="null" stroke-width="0">CLK</text><text font-weight="bold" font-family="Helvetica, Arial, sans-serif" font-size="24" y="34.872" x="46.615" fill-opacity="null" stroke-opacity="null" stroke-width="0">CLK</text></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 100 50" style="enable-background:new 0 0 100 50;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{font-family:'Helvetica-Bold';}
+	.st2{font-size:24px;}
+	.st3{fill:none;stroke:#000000;stroke-width:4;stroke-miterlimit:10;}
+</style>
+<path class="st0" d="M-1-1h102v52H-1V-1z"/>
+<text transform="matrix(1 0 0 1 46.615 34.8719)" class="st1 st2">CLK</text>
+<polyline class="st3" points="-0.1,42.6 40.1,42.6 40.1,7.4 100.1,7.4 "/>
+</svg>

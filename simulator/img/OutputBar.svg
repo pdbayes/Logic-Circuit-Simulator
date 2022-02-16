@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1792" height="1792"><path fill="none" d="M-1-1h582v402H-1z"/><g><path stroke="#000" stroke-width="6.692" d="M3.346 848.256h429.125v173.308H3.346z"/><path stroke="#000" stroke-width="9.571" d="M429.786 110.794h861.222v176.629H429.786z"/><path stroke="#000" stroke-width="9.555" d="M429.777 1510.67h858.175v176.646H429.777z"/><path stroke="#000" stroke-width="12.864" d="M1114.185 1686.103V114.727h174.889v1571.376z"/><path stroke="#000" stroke-width="12.878" d="M430.656 1686.438V111.664h174.889v1574.774z"/><path fill="#14ff14" stroke="#000" stroke-width="23.221" d="M541.691 1592.259V218.095h651.582v1374.164z"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1792 1792" style="enable-background:new 0 0 1792 1792;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{stroke:#000000;stroke-width:6.692;}
+	.st2{fill:#14FF14;stroke:#000000;stroke-width:130;}
+</style>
+<path class="st0" d="M-1-1h582v402H-1V-1z"/>
+<path class="st1" d="M3.3,848.3h429.1v173.3H3.3V848.3z"/>
+<path class="st2" d="M498.1,1721.2V89.2h738.8v1632L498.1,1721.2z"/>
+</svg>
