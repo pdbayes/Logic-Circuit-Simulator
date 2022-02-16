@@ -154,7 +154,6 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicStat
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
         return [
             ["mid", this.makeForceOutputsContextMenuItem()!],
         ]

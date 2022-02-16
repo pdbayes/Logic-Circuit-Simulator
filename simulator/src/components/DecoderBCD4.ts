@@ -1,6 +1,6 @@
 import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicState, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { DrawContext } from "./Drawable"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
@@ -152,6 +152,12 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
             })
 
         })
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        return [
+            ["mid", this.makeForceOutputsContextMenuItem()!],
+        ]
     }
 
 
