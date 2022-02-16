@@ -27,7 +27,9 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
     private _showAsUnknown = false
 
     public constructor(editor: LogicEditor, savedData: OutputNibbleRepr | null) {
-        super(editor, ["0000", 0], savedData, { inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]] })
+        super(editor, ["0000", 0], savedData, {
+            inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]],
+        })
         if (isNotNull(savedData)) {
             this._name = savedData.name
             this._radix = savedData.radix ?? DEFAULT_RADIX

@@ -10,6 +10,8 @@ import AND3 from '../img/AND3.svg' // @ts-ignore
 import AND4 from '../img/AND4.svg' // @ts-ignore
 import BUF from '../img/BUF.svg' // @ts-ignore
 import Clock from '../img/Clock.svg' // @ts-ignore
+import Decoder7Segment from '../img/Decoder7Segment.svg' // @ts-ignore
+import DecoderBCD4 from '../img/DecoderBCD4.svg' // @ts-ignore
 import FlipflopD from '../img/FlipflopD.svg' // @ts-ignore
 import FlipflopJK from '../img/FlipflopJK.svg' // @ts-ignore
 import FlipflopT from '../img/FlipflopT.svg' // @ts-ignore
@@ -54,6 +56,8 @@ const images = {
     AND4,
     BUF,
     Clock,
+    Decoder7Segment,
+    DecoderBCD4,
     FlipflopD,
     FlipflopJK,
     FlipflopT,

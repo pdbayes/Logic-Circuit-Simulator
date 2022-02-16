@@ -299,6 +299,19 @@ const componentsMenu: Array<Section> = [
                 title: "RAM, 16 × 4 bits", caption: "RAM",
                 img: "RAM", width: 50,
             },
+            {
+                type: "component", subtype: "decoder-7seg",
+                title: "Décodeur 7 segments", caption: "Déc. 7 seg.",
+                img: "Decoder7Segment", width: 50,
+            },
+            {
+                type: "component", subtype: "decoder-bcd4",
+                title: "Décodeur 4 bits vers BCD sur 5 bits", caption: "Déc. BCD",
+                img: "DecoderBCD4", width: 50,
+                normallyHidden: true,
+            },
+
+            
         ],
     },
 ]

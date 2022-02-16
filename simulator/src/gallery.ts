@@ -344,6 +344,33 @@ export const gallery = assertCircuits({
             [54, 77],
         ],
     },
+    SevenSegmentBCDDisplay: {
+        "v": 2,
+        "in": [
+            { "type": "nibble", "pos": [50, 80], "id": [0, 1, 2, 3], "val": [0, 1, 0, 1] },
+        ],
+        "out": [
+            { "type": "bar", "pos": [560, 100], "id": 4, "display": "h" },
+            { "type": "bar", "pos": [620, 280], "id": 5, "display": "v" },
+            { "type": "bar", "pos": [500, 160], "id": 6, "display": "v" },
+            { "type": "bar", "pos": [560, 220], "id": 7, "display": "h" },
+            { "type": "bar", "pos": [560, 340], "id": 8, "display": "h" },
+            { "type": "bar", "pos": [500, 280], "id": 9, "display": "v" },
+            { "type": "bar", "pos": [620, 160], "id": 10, "display": "v" },
+            { "type": "bar", "pos": [420, 160], "id": 50, "display": "v" },
+            { "type": "bar", "pos": [420, 280], "id": 51, "display": "v" },
+            { "type": "nibble", "pos": [170, 250], "id": [11, 23, 24, 25] },
+        ],
+        "components": [
+            { "type": "decoder-7seg", "pos": [280, 60], "in": [12, 13, 14, 15], "out": [16, 17, 18, 19, 20, 21, 22] },
+            { "type": "decoder-bcd4", "pos": [180, 80], "in": [26, 27, 28, 29], "out": [30, 31, 32, 33, 34] },
+        ],
+        "wires": [
+            [16, 4], [17, 10], [18, 5], [19, 8], [20, 9], [21, 6], [22, 7], [0, 11],
+            [1, 23], [2, 24], [3, 25], [0, 26], [1, 27], [2, 28], [3, 29], [30, 12],
+            [31, 13], [32, 14], [33, 15], [34, 50], [34, 51],
+        ],
+    },
     NibbleAdder: {
         "v": 2,
         "in": [

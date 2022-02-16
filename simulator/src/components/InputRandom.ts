@@ -1,11 +1,11 @@
-import { isDefined, isNotNull, LogicState, Unset, typeOrUndefined, isUnset } from "../utils"
+import { isDefined, isNotNull, LogicState, Unset, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, drawComponentName, GRID_STEP, COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
-import { tooltipContent, mods, emptyMod } from "../htmlgen"
+import { tooltipContent } from "../htmlgen"
 
 export const InputRandomDef =
     defineComponent(1, 1, t.type({
