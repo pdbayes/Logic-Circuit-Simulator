@@ -1,4 +1,4 @@
-import { isDefined, LogicState } from "../utils"
+import { isDefined, LogicValue } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -52,14 +52,14 @@ export class FlipflopJK extends Flipflop<2, FlipflopJKRepr> {
         ))
     }
 
-    protected doRecalcValueAfterClock(): LogicState {
+    protected doRecalcValueAfterClock(): LogicValue {
         const j = this.inputs[INPUT.J].value
         const k = this.inputs[INPUT.K].value
         const q = this.outputs[OUTPUT.Q].value
 
         if (j === true) {
             if (k === true) {
-                return LogicState.invert(q)
+                return LogicValue.invert(q)
             } else {
                 return true
             }

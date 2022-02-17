@@ -1,4 +1,4 @@
-import { FixedArray, isNull, isNotNull, isUndefined, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, isNull, isNotNull, isUndefined, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -24,7 +24,7 @@ const OUTPUT = {
 export const RegisterDef =
     defineComponent(7, 4, t.type({
         type: t.literal("register"),
-        state: typeOrUndefined(t.tuple([LogicStateRepr, LogicStateRepr, LogicStateRepr, LogicStateRepr])),
+        state: typeOrUndefined(t.tuple([LogicValueRepr, LogicValueRepr, LogicValueRepr, LogicValueRepr])),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
     }, "Register"))
@@ -36,18 +36,18 @@ const RegisterDefaults = {
     trigger: EdgeTrigger.rising,
 }
 
-export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<LogicState, 4>> {
+export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<LogicValue, 4>> {
 
     protected _showContent: boolean = RegisterDefaults.showContent
     protected _trigger: EdgeTrigger = RegisterDefaults.trigger
     protected _isInInvalidState = false
-    protected _lastClock: LogicState = Unknown
+    protected _lastClock: LogicValue = Unknown
 
-    private static savedStateFrom(savedData: { state: FixedArray<LogicStateRepr, 4> | undefined } | null): FixedArray<LogicState, 4> {
+    private static savedStateFrom(savedData: { state: FixedArray<LogicValueRepr, 4> | undefined } | null): FixedArray<LogicValue, 4> {
         if (isNull(savedData) || isUndefined(savedData.state)) {
             return [false, false, false, false]
         }
-        return savedData.state.map(toLogicState) as unknown as FixedArray<LogicState, 4>
+        return savedData.state.map(toLogicValue) as unknown as FixedArray<LogicValue, 4>
     }
 
     public constructor(editor: LogicEditor, savedData: RegisterRepr | null) {
@@ -73,7 +73,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         return {
             type: "register" as const,
             ...this.toJSONBase(),
-            state: this.value.map(toLogicStateRepr) as unknown as FixedArray<LogicStateRepr, 4>,
+            state: this.value.map(toLogicValueRepr) as unknown as FixedArray<LogicValueRepr, 4>,
             showContent: (this._showContent !== RegisterDefaults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RegisterDefaults.trigger) ? this._trigger : undefined,
         }
@@ -120,7 +120,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         ))
     }
 
-    protected doRecalcValue(): FixedArray<LogicState, 4> {
+    protected doRecalcValue(): FixedArray<LogicValue, 4> {
         const prevClock = this._lastClock
         const clock = this._lastClock = this.inputs[INPUT.Clock].value
         const { isInInvalidState, newState } =
@@ -131,19 +131,19 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         return newState
     }
 
-    makeInvalidState(): FixedArray<LogicState, 4> {
+    makeInvalidState(): FixedArray<LogicValue, 4> {
         return [false, false, false, false]
     }
 
-    makeStateFromMainValue(val: LogicState): FixedArray<LogicState, 4> {
+    makeStateFromMainValue(val: LogicValue): FixedArray<LogicValue, 4> {
         return [val, val, val, val]
     }
 
-    makeStateAfterClock(): FixedArray<LogicState, 4> {
-        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicState, 4>
+    makeStateAfterClock(): FixedArray<LogicValue, 4> {
+        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicValue, 4>
     }
 
-    protected override propagateValue(newValue: FixedArray<LogicState, 4>) {
+    protected override propagateValue(newValue: FixedArray<LogicValue, 4>) {
         for (let i = 0; i < newValue.length; i++) {
             this.outputs[OUTPUT.Q[i]].value = newValue[i]
         }

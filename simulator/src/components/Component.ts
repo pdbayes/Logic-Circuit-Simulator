@@ -1,4 +1,4 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicStateRepr, LogicState, LogicStateRepr, Unknown, HighImpedance } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -13,7 +13,7 @@ export type NodeID = t.TypeOf<typeof NodeID>
 // to a given value to bypass their naturally computed value
 export const InputNodeRepr = t.type({ id: NodeID }, "InputNode")
 export type InputNodeRepr = t.TypeOf<typeof InputNodeRepr>
-export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({ force: LogicStateRepr })], "OutputNode")
+export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({ force: LogicValueRepr })], "OutputNode")
 export type OutputNodeRepr = t.TypeOf<typeof OutputNodeRepr>
 
 // Allows collapsing an array of 1 element into the element itself,
@@ -333,7 +333,7 @@ export abstract class ComponentBase<
                 if (isUndefined(node.forceValue)) {
                     return node.id
                 } else {
-                    return { id: node.id, force: toLogicStateRepr(node.forceValue) }
+                    return { id: node.id, force: toLogicValueRepr(node.forceValue) }
                 }
             }
             if (nodes.length === 1) {
@@ -456,8 +456,8 @@ export abstract class ComponentBase<
         // by default, do nothing
     }
 
-    protected inputValues<N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<LogicState, N> {
-        return inds.map(i => this.inputs[i].value) as any as FixedArray<LogicState, N>
+    protected inputValues<N extends FixedArraySize>(inds: FixedReadonlyArray<number, N>): FixedArray<LogicValue, N> {
+        return inds.map(i => this.inputs[i].value) as any as FixedArray<LogicValue, N>
     }
 
     public setNeedsRecalc(forcePropagate = false) {

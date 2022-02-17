@@ -3,7 +3,7 @@
 // Helper export function s to build HTML more smartly in JavaScript
 //
 
-import { isHighImpedance, isUndefined, isUnknown, LogicState, Unknown } from "./utils"
+import { isHighImpedance, isUndefined, isUnknown, LogicValue, Unknown } from "./utils"
 
 export interface ModifierObject {
     applyTo(parent: Element): void
@@ -158,7 +158,7 @@ export const dataType = attrBuilder("data-type")
 
 // Common Modifier-generating helpers
 
-export const asValue = (bool: LogicState) => b(isUnknown(bool) || isHighImpedance(bool) ? Unknown : String(Number(bool)))
+export const asValue = (bool: LogicValue) => b(isUnknown(bool) || isHighImpedance(bool) ? Unknown : String(Number(bool)))
 
 export function tooltipContent(title: Modifier | undefined, body: Modifier): ModifierObject {
     return div(style("max-width: 200px"),

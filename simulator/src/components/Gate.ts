@@ -1,4 +1,4 @@
-import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicState, Unknown, isHighImpedance } from "../utils"
+import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
@@ -279,7 +279,7 @@ export abstract class GateBase<
     G extends GateType,
     NumInput extends FixedArraySizeNonZero,
     Repr extends GateRepr<NumInput, G>
-    > extends ComponentBase<NumInput, 1, Repr, LogicState> {
+    > extends ComponentBase<NumInput, 1, Repr, LogicValue> {
 
     private _type: G
     private _poseAs: G | undefined = undefined
@@ -351,7 +351,7 @@ export abstract class GateBase<
         return GRID_HEIGHT_1_2 * GRID_STEP
     }
 
-    protected override propagateValue(newValue: LogicState) {
+    protected override propagateValue(newValue: LogicValue) {
         this.outputs[0].value = newValue
     }
 
@@ -677,7 +677,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         return Gate1Types
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const in0 = this.inputs[0].value
         if (isUnknown(in0) || isHighImpedance(in0)) {
             return Unknown
@@ -804,7 +804,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const in1 = this.inputs[0].value
         const in2 = this.inputs[1].value
         if (isUnknown(in1) || isUnknown(in2) || isHighImpedance(in1) || isHighImpedance(in2)) {
@@ -919,7 +919,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const in0 = this.inputs[0].value
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value
@@ -1008,7 +1008,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         )
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const in0 = this.inputs[0].value
         const in1 = this.inputs[1].value
         const in2 = this.inputs[2].value

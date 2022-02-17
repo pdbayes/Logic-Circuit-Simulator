@@ -1,4 +1,4 @@
-import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, typeOrUndefined, Unknown } from "../utils"
+import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
@@ -12,7 +12,7 @@ const GRID_HEIGHT = 7
 export function defineFlipflopOrLatch<NumInputs extends FixedArraySize, N extends string, P extends t.Props>(numInputs: NumInputs, jsonName: N, className: string, props: P) {
     return defineComponent(numInputs, 2, t.type({
         type: t.literal(jsonName),
-        state: typeOrUndefined(LogicStateRepr),
+        state: typeOrUndefined(LogicValueRepr),
         showContent: typeOrUndefined(t.boolean),
         ...props,
     }, className))
@@ -20,7 +20,7 @@ export function defineFlipflopOrLatch<NumInputs extends FixedArraySize, N extend
 
 export type FlipflopOrLatchRepr<NumInputs extends FixedArraySize> =
     ComponentRepr<NumInputs, 2> & {
-        state: LogicStateRepr | undefined
+        state: LogicValueRepr | undefined
         showContent: boolean | undefined
     }
 
@@ -35,14 +35,14 @@ export const enum OUTPUT {
 export abstract class FlipflopOrLatch<
     NumInputs extends FixedArraySize,
     Repr extends FlipflopOrLatchRepr<NumInputs>,
-    > extends ComponentBase<NumInputs, 2, Repr, [LogicState, LogicState]> {
+    > extends ComponentBase<NumInputs, 2, Repr, [LogicValue, LogicValue]> {
 
-    private static savedStateFrom(savedData: { state: LogicStateRepr | undefined } | null): [LogicState, LogicState] {
+    private static savedStateFrom(savedData: { state: LogicValueRepr | undefined } | null): [LogicValue, LogicValue] {
         if (isNull(savedData)) {
             return [false, true]
         }
-        const state = toLogicState(savedData.state ?? 0)
-        return [state, LogicState.invert(state)]
+        const state = toLogicValue(savedData.state ?? 0)
+        return [state, LogicValue.invert(state)]
     }
 
     protected _showContent: boolean = FlipflorOrLatchDefaults.showContent
@@ -61,7 +61,7 @@ export abstract class FlipflopOrLatch<
     override toJSONBase() {
         return {
             ...super.toJSONBase(),
-            state: toLogicStateRepr(this.value[0]),
+            state: toLogicValueRepr(this.value[0]),
             showContent: (this._showContent !== FlipflorOrLatchDefaults.showContent) ? this._showContent : undefined,
         }
     }
@@ -86,7 +86,7 @@ export abstract class FlipflopOrLatch<
         return GRID_HEIGHT * GRID_STEP
     }
 
-    protected override propagateValue(newValue: [LogicState, LogicState]) {
+    protected override propagateValue(newValue: [LogicValue, LogicValue]) {
         this.outputs[OUTPUT.Q].value = newValue[OUTPUT.Q]
         this.outputs[OUTPUT.Qb].value = newValue[OUTPUT.Qb]
     }
@@ -140,7 +140,7 @@ export abstract class FlipflopOrLatch<
 
     protected abstract doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number): void
 
-    public static drawStoredValue(g: CanvasRenderingContext2D, value: LogicState, x: number, y: number, cellHeight: number) {
+    public static drawStoredValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, cellHeight: number) {
         const centerLabelWidth = 20
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.fillStyle = colorForBoolean(value)
@@ -189,16 +189,16 @@ interface SyncComponent<State> {
     trigger: EdgeTrigger
     value: State
     makeInvalidState(): State
-    makeStateFromMainValue(val: LogicState): State
+    makeStateFromMainValue(val: LogicValue): State
     makeStateAfterClock(): State
 }
 
 export abstract class Flipflop<
     NumInputs extends FixedArraySizeNonZero,
     Repr extends FlipflopRepr<Plus3<NumInputs>>,
-    > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[LogicState, LogicState]> {
+    > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[LogicValue, LogicValue]> {
 
-    protected _lastClock: LogicState = Unknown
+    protected _lastClock: LogicValue = Unknown
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
 
     protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0> & { clockYOffset: number }) {
@@ -237,7 +237,7 @@ export abstract class Flipflop<
     }
 
 
-    public static doRecalcValueForSyncComponent<State>(comp: SyncComponent<State>, prevClock: LogicState, clock: LogicState, preset: LogicState, clear: LogicState): { isInInvalidState: boolean, newState: State } {
+    public static doRecalcValueForSyncComponent<State>(comp: SyncComponent<State>, prevClock: LogicValue, clock: LogicValue, preset: LogicValue, clear: LogicValue): { isInInvalidState: boolean, newState: State } {
         // handle set and reset signals
         if (preset === true) {
             if (clear === true) {
@@ -260,12 +260,12 @@ export abstract class Flipflop<
         }
     }
 
-    public static isClockTrigger(trigger: EdgeTrigger, prevClock: LogicState, clock: LogicState): boolean {
+    public static isClockTrigger(trigger: EdgeTrigger, prevClock: LogicValue, clock: LogicValue): boolean {
         return (trigger === EdgeTrigger.rising && prevClock === false && clock === true)
             || (trigger === EdgeTrigger.falling && prevClock === true && clock === false)
     }
 
-    protected doRecalcValue(): [LogicState, LogicState] {
+    protected doRecalcValue(): [LogicValue, LogicValue] {
         const prevClock = this._lastClock
         const clock = this._lastClock = this.inputs[INPUT.Clock].value
         const { isInInvalidState, newState } =
@@ -276,19 +276,19 @@ export abstract class Flipflop<
         return newState
     }
 
-    makeInvalidState(): [LogicState, LogicState] {
+    makeInvalidState(): [LogicValue, LogicValue] {
         return [false, false]
     }
 
-    makeStateFromMainValue(val: LogicState): [LogicState, LogicState] {
-        return [val, LogicState.invert(val)]
+    makeStateFromMainValue(val: LogicValue): [LogicValue, LogicValue] {
+        return [val, LogicValue.invert(val)]
     }
 
-    makeStateAfterClock(): [LogicState, LogicState] {
+    makeStateAfterClock(): [LogicValue, LogicValue] {
         return this.makeStateFromMainValue(this.doRecalcValueAfterClock())
     }
 
-    protected abstract doRecalcValueAfterClock(): LogicState
+    protected abstract doRecalcValueAfterClock(): LogicValue
 
     protected doSetTrigger(trigger: EdgeTrigger) {
         this._trigger = trigger

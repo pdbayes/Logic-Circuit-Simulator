@@ -1,4 +1,4 @@
-import { isDefined, isHighImpedance, isUnknown, LogicState, Unknown } from "../utils"
+import { isDefined, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -51,13 +51,13 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
         ))
     }
 
-    protected doRecalcValueAfterClock(): LogicState {
+    protected doRecalcValueAfterClock(): LogicValue {
         const t = this.inputs[INPUT.T].value
         if (isUnknown(t) || isHighImpedance(t)) {
             return Unknown
         }
         const q = this.outputs[OUTPUT.Q].value
-        return t ? LogicState.invert(q) : q
+        return t ? LogicValue.invert(q) : q
     }
 
     protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number) {

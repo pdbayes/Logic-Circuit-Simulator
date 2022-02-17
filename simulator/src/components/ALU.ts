@@ -1,4 +1,4 @@
-import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -55,7 +55,7 @@ const ALUDefaults = {
     showOp: true,
 }
 
-export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4>, LogicState, LogicState]> {
+export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4>, LogicValue, LogicValue]> {
 
     private _showOp = ALUDefaults.showOp
 
@@ -166,7 +166,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
         }
     }
 
-    protected doRecalcValue(): [FixedArray<LogicState, 4>, LogicState, LogicState] {
+    protected doRecalcValue(): [FixedArray<LogicValue, 4>, LogicValue, LogicValue] {
         const op = this.op
 
         if (isUnknown(op)) {
@@ -177,25 +177,25 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
         const b = this.inputValues<4>(INPUT.B)
 
 
-        function allZeros(vals: LogicState[]): LogicState {
+        function allZeros(vals: LogicValue[]): LogicValue {
             for (const v of vals) {
                 if (isUnknown(v) || isHighImpedance(v)) {
                     return Unknown
                 }
-                if (v) {
+                if (v === true) {
                     return false
                 }
             }
             return true
         }
 
-        const y: LogicState[] = [Unknown, Unknown, Unknown, Unknown]
-        let v: LogicState = Unknown
+        const y: LogicValue[] = [Unknown, Unknown, Unknown, Unknown]
+        let v: LogicValue = Unknown
 
         switch (op) {
             case "add": {
-                const sum3bits = (a: LogicState, b: LogicState, c: LogicState): [LogicState, LogicState] => {
-                    const asNumber = (v: LogicState) => v === true ? 1 : 0
+                const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
+                    const asNumber = (v: LogicValue) => v === true ? 1 : 0
                     const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
                     const sum = asNumber(a) + asNumber(b) + asNumber(c)
 
@@ -211,7 +211,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
                     return [Unknown, Unknown]
 
                 }
-                let cin: LogicState = false
+                let cin: LogicValue = false
                 for (let i = 0; i < a.length; i++) {
                     const [s, cout] = sum3bits(cin, a[i], b[i])
                     y[i] = s
@@ -222,7 +222,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
             }
 
             case "sub": {
-                const toInt = (vs: readonly LogicState[]): number | undefined => {
+                const toInt = (vs: readonly LogicValue[]): number | undefined => {
                     let s = 0
                     let col = 1
                     for (const v of vs) {
@@ -288,10 +288,10 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicState, 4
         }
 
         const z = allZeros(y)
-        return [y as any as FixedArray<LogicState, 4>, v, z]
+        return [y as any as FixedArray<LogicValue, 4>, v, z]
     }
 
-    protected override propagateValue(newValue: [FixedArray<LogicState, 4>, LogicState, LogicState]) {
+    protected override propagateValue(newValue: [FixedArray<LogicValue, 4>, LogicValue, LogicValue]) {
         for (let i = 0; i < OUTPUT.S.length; i++) {
             this.outputs[OUTPUT.S[i]].value = newValue[0][i]
         }

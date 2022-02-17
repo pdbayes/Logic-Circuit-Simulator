@@ -1,4 +1,4 @@
-import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicState, typeOrUndefined } from "../utils"
+import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicValue, typeOrUndefined } from "../utils"
 import { Node, NodeIn } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
@@ -113,6 +113,7 @@ export class Wire extends Drawable {
             t.tuple([
                 NodeID, NodeID,
                 t.type({
+                    ref: typeOrUndefined(t.string),
                     via: typeOrUndefined(t.array(Waypoint.Repr)),
                     propagationDelay: typeOrUndefined(t.number),
                 }),
@@ -123,7 +124,7 @@ export class Wire extends Drawable {
 
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
-    private _propagatingValues: [LogicState, Timestamp][] = []
+    private _propagatingValues: [LogicValue, Timestamp][] = []
     public customPropagationDelay: number | undefined = undefined
 
     constructor(
@@ -145,6 +146,7 @@ export class Wire extends Drawable {
             // add node options
             const waypoints = this._waypoints.map(w => w.toJSON())
             return [this._startNode.id, endID, {
+                ref: this.ref,
                 via: (waypoints.length === 0) ? undefined : waypoints,
                 propagationDelay: this.customPropagationDelay,
             }]
@@ -204,7 +206,7 @@ export class Wire extends Drawable {
         this._endNode.value = this.startNode.value
     }
 
-    propageNewValue(newValue: LogicState, now: Timestamp) {
+    propageNewValue(newValue: LogicValue, now: Timestamp) {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
             this._propagatingValues.push([newValue, now])
         }
@@ -276,7 +278,7 @@ export class Wire extends Drawable {
         }
     }
 
-    private prunePropagatingValues(now: Timestamp, propagationDelay: number): LogicState {
+    private prunePropagatingValues(now: Timestamp, propagationDelay: number): LogicValue {
         // first, prune obsolete values if needed
         let removeBefore = 0
         for (let i = 1; i < this._propagatingValues.length; i++) {

@@ -1,4 +1,4 @@
-import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicState, Unknown } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -24,7 +24,7 @@ const GRID_HEIGHT = 12
 
 export type DecoderBCD4Repr = typeof DecoderBCD4Def.reprType
 
-export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReadonlyArray<LogicState, 5>> {
+export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReadonlyArray<LogicValue, 5>> {
 
     public constructor(editor: LogicEditor, savedData: DecoderBCD4Repr | null) {
         super(editor, FixedArrayFill(false, 5), savedData, {
@@ -76,7 +76,7 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
         ))
     }
 
-    protected doRecalcValue(): FixedReadonlyArray<LogicState, 5> {
+    protected doRecalcValue(): FixedReadonlyArray<LogicValue, 5> {
         const input = this.inputValues<4>(INPUT.I)
         const [__, value] = displayValuesFromArray(input, false)
 
@@ -110,7 +110,7 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
         return output
     }
 
-    protected override propagateValue(newValue: FixedReadonlyArray<LogicState, 5>) {
+    protected override propagateValue(newValue: FixedReadonlyArray<LogicValue, 5>) {
         this.outputs.forEach((output, i) => {
             output.value = newValue[5 - i - 1]
         })

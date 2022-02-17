@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { isString, isUndefined } from "../utils"
 import { Adder, AdderDef } from "./Adder"
 import { ALU, ALUDef } from "./ALU"
-import { DecoderSevenSegment, DecoderSevenSegmentDef } from "./DecoderSevenSegment"
+import { Decoder7Seg, Decoder7SegDef } from "./Decoder7Seg"
 import { DecoderBCD4, DecoderBCD4Def } from "./DecoderBCD4"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
 import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
@@ -30,7 +30,7 @@ export const ICDef = t.union([
     FlipflopDDef.repr,
     RegisterDef.repr,
     RAM16x4Def.repr,
-    DecoderSevenSegmentDef.repr,
+    Decoder7SegDef.repr,
     DecoderBCD4Def.repr,
 ], "IC")
 
@@ -82,7 +82,7 @@ export const ICFactory = {
             case "ram-16x4":
                 return new RAM16by4(editor, blank ? null : savedData)
             case "decoder-7seg":
-                return new DecoderSevenSegment(editor, blank ? null : savedData)
+                return new Decoder7Seg(editor, blank ? null : savedData)
             case "decoder-bcd4":
                 return new DecoderBCD4(editor, blank ? null : savedData)
         }

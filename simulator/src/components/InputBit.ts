@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUnknown, Mode, toLogicState, toLogicStateRepr, LogicState, LogicStateRepr, Unknown, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
+import { isDefined, isNotNull, isUnknown, Mode, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
 import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
@@ -14,11 +14,11 @@ export const InputBitBaseDef =
 
 export type InputBitBaseRepr = typeof InputBitBaseDef.reprType
 
-export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, LogicState> {
+export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, LogicValue> {
 
     private _name: string | undefined = undefined
 
-    protected constructor(editor: LogicEditor, initialValue: LogicState, savedData: Repr | null) {
+    protected constructor(editor: LogicEditor, initialValue: LogicValue, savedData: Repr | null) {
         super(editor, initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
@@ -52,7 +52,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return false
     }
 
-    protected override propagateValue(newValue: LogicState) {
+    protected override propagateValue(newValue: LogicValue) {
         this.outputs[0].value = newValue
     }
 
@@ -144,7 +144,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
 
 export const InputBitDef =
     extendComponent(InputBitBaseDef, t.type({
-        val: LogicStateRepr,
+        val: LogicValueRepr,
         isPushButton: typeOrUndefined(t.boolean),
     }, "InputBit"))
 
@@ -157,7 +157,7 @@ const InputBitDefaults = {
 
 export class InputBit extends InputBitBase<InputBitRepr> {
 
-    static nextValue(value: LogicState, mode: Mode, altKey: boolean): LogicState {
+    static nextValue(value: LogicValue, mode: Mode, altKey: boolean): LogicValue {
         switch (value) {
             case true: return (mode >= Mode.FULL && altKey) ? Unknown : false
             case false: return (mode >= Mode.FULL && altKey) ? Unknown : true
@@ -172,7 +172,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         super(
             editor,
             // initial value may be given by saved data
-            isNotNull(savedData) ? toLogicState(savedData.val) : false,
+            isNotNull(savedData) ? toLogicValue(savedData.val) : false,
             savedData,
         )
         if (isNotNull(savedData)) {
@@ -184,7 +184,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     toJSON() {
         return {
             ...super.toJSONBase(),
-            val: toLogicStateRepr(this.value),
+            val: toLogicValueRepr(this.value),
             isPushButton: (this._isPushButton !== InputBitDefaults.isPushButton) ? this._isPushButton : undefined,
         }
     }
@@ -201,7 +201,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return tooltipContent(undefined, mods("Entrée", isUnknown(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         // this never changes on its own, just upon user interaction
         return this.value
     }

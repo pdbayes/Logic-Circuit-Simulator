@@ -1,4 +1,4 @@
-import { HighImpedance, isHighImpedance, isUnknown, LogicState, Unknown } from "../utils"
+import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -24,7 +24,7 @@ const GRID_HEIGHT = 4
 
 export type TriStateBufferRepr = typeof TriStateBufferDef.reprType
 
-export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, LogicState> {
+export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, LogicValue> {
 
     public constructor(editor: LogicEditor, savedData: TriStateBufferRepr | null) {
         super(editor, HighImpedance, savedData, {
@@ -74,7 +74,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         ))
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const en = this.inputs[INPUT.Enable].value
         if (isUnknown(en) || isHighImpedance(en)) {
             return Unknown
@@ -89,7 +89,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         return i
     }
 
-    protected override propagateValue(newValue: LogicState) {
+    protected override propagateValue(newValue: LogicValue) {
         this.outputs[OUTPUT.Out].value = newValue
     }
 

@@ -1,4 +1,4 @@
-import { isHighImpedance, isUnknown, LogicState, Unknown } from "../utils"
+import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, drawLabel } from "../drawutils"
@@ -24,7 +24,7 @@ export const AdderDef =
 
 export type AdderRepr = typeof AdderDef.reprType
 
-export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicState]> {
+export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValue]> {
 
     public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
         super(editor, [false, false], savedData, {
@@ -75,7 +75,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicStat
         ))
     }
 
-    protected doRecalcValue(): [LogicState, LogicState] {
+    protected doRecalcValue(): [LogicValue, LogicValue] {
         const a = this.inputs[INPUT.A].value
         const b = this.inputs[INPUT.B].value
         const cIn = this.inputs[INPUT.Cin].value
@@ -96,7 +96,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicState, LogicStat
         }
     }
 
-    protected override propagateValue(newValue: [LogicState, LogicState]) {
+    protected override propagateValue(newValue: [LogicValue, LogicValue]) {
         this.outputs[OUTPUT.S].value = newValue[OUTPUT.S]
         this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }

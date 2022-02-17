@@ -1,4 +1,4 @@
-import { FixedArray, isNotNull, LogicState, typeOrUndefined, Unknown, isUnknown, FixedReadonlyArray, FixedArraySize } from "../utils"
+import { FixedArray, isNotNull, LogicValue, typeOrUndefined, Unknown, isUnknown, FixedReadonlyArray, FixedArraySize } from "../utils"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -39,18 +39,18 @@ const RAMDefaults = {
 }
 
 type RAMValue<BitWidth extends FixedArraySize> = {
-    mem: Array<FixedArray<LogicState, BitWidth>>
-    out: FixedReadonlyArray<LogicState, BitWidth>
+    mem: Array<FixedArray<LogicValue, BitWidth>>
+    out: FixedReadonlyArray<LogicValue, BitWidth>
 }
 
 export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     protected _showContent: boolean = RAMDefaults.showContent
     protected _trigger: EdgeTrigger = RAMDefaults.trigger
-    protected _lastClock: LogicState = Unknown
+    protected _lastClock: LogicValue = Unknown
 
-    private static valueFilledWith(v: LogicState): RAMValue<4> {
-        const mem: Array<FixedArray<LogicState, 4>> = new Array(NUM_CELLS)
+    private static valueFilledWith(v: LogicValue): RAMValue<4> {
+        const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             mem[i] = [v, v, v, v]
         }
@@ -160,7 +160,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
         // build new state
         const newData = this.inputValues<4>(INPUT.Data)
-        const newState: Array<FixedArray<LogicState, 4>> = new Array(NUM_CELLS)
+        const newState: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             if (i === addr) {
                 newState[i] = newData
@@ -171,8 +171,8 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         return { mem: newState, out: newData }
     }
 
-    makeStateAfterClock(): FixedArray<LogicState, 4> {
-        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicState, 4>
+    makeStateAfterClock(): FixedArray<LogicValue, 4> {
+        return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicValue, 4>
     }
 
     private currentAddress(): number | Unknown {

@@ -1,4 +1,4 @@
-import { isDefined, isUnknown, Mode, LogicState, Unknown, toLogicState, isNull, HighImpedance } from "../utils"
+import { isDefined, isUnknown, Mode, LogicValue, Unknown, toLogicValue, isNull, HighImpedance } from "../utils"
 import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
@@ -17,8 +17,8 @@ abstract class NodeBase extends DrawableWithPosition {
 
     public readonly id: number
     private _isAlive = true
-    private _value: LogicState = false
-    protected _forceValue: LogicState | undefined
+    private _value: LogicValue = false
+    protected _forceValue: LogicValue | undefined
 
     constructor(
         editor: LogicEditor,
@@ -31,7 +31,7 @@ abstract class NodeBase extends DrawableWithPosition {
         super(editor, null)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
-            this._forceValue = toLogicState(nodeSpec.force)
+            this._forceValue = toLogicValue(nodeSpec.force)
         }
         this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
@@ -82,11 +82,11 @@ abstract class NodeBase extends DrawableWithPosition {
         return this._isAlive
     }
 
-    public get value(): LogicState {
+    public get value(): LogicValue {
         return isDefined(this._forceValue) ? this._forceValue : this._value
     }
 
-    public set value(val: LogicState) {
+    public set value(val: LogicValue) {
         const oldVisibleValue = this.value
         if (val !== this._value) {
             this._value = val
@@ -94,16 +94,16 @@ abstract class NodeBase extends DrawableWithPosition {
         }
     }
 
-    protected propagateNewValueIfNecessary(oldVisibleValue: LogicState) {
+    protected propagateNewValueIfNecessary(oldVisibleValue: LogicValue) {
         const newVisibleValue = this.value
         if (newVisibleValue !== oldVisibleValue) {
             this.propagateNewValue(newVisibleValue)
         }
     }
 
-    protected abstract propagateNewValue(newValue: LogicState): void
+    protected abstract propagateNewValue(newValue: LogicValue): void
 
-    public abstract get forceValue(): LogicState | undefined
+    public abstract get forceValue(): LogicValue | undefined
 
     public get gridOffsetX() {
         return this._gridOffsetX
@@ -221,7 +221,7 @@ export class NodeIn extends NodeBase {
         return undefined
     }
 
-    protected propagateNewValue(__newValue: LogicState) {
+    protected propagateNewValue(__newValue: LogicValue) {
         this.parent.setNeedsRecalc()
     }
 
@@ -253,14 +253,14 @@ export class NodeOut extends NodeBase {
         return this._forceValue
     }
 
-    set forceValue(newForceValue: LogicState | undefined) {
+    set forceValue(newForceValue: LogicValue | undefined) {
         const oldVisibleValue = this.value
         this._forceValue = newForceValue
         this.propagateNewValueIfNecessary(oldVisibleValue)
         this.setNeedsRedraw("changed forced output value")
     }
 
-    protected propagateNewValue(newValue: LogicState) {
+    protected propagateNewValue(newValue: LogicValue) {
         const now = this.editor.timeline.adjustedTime()
         for (const wire of this._outgoingWires) {
             wire.propageNewValue(newValue, now)

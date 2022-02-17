@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, LogicState, Unknown, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, LogicValue, Unknown, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, drawComponentName, GRID_STEP, COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -31,11 +31,11 @@ const GRID_HEIGHT = 6
 const enum INPUT { Clock }
 const enum OUTPUT { Out }
 
-export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicState> {
+export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue> {
 
     private _prob1: number = InputRandomDefaults.prob1
     private _showProb: boolean = InputRandomDefaults.showProb
-    private _lastClock: LogicState = Unknown
+    private _lastClock: LogicValue = Unknown
     private _trigger: EdgeTrigger = InputRandomDefaults.trigger
     private _name: string | undefined = undefined
 
@@ -86,7 +86,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicState
         return tooltipContent("Valeur aléatoire", `À chaque coup d’horloge, la valeur de sortie sera 1 avec une probabilité de ${this._prob1}.`)
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         const prevClock = this._lastClock
         const clock = this._lastClock = this.inputs[INPUT.Clock].value
         if (!Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
@@ -97,7 +97,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicState
         return r < this._prob1
     }
 
-    protected override propagateValue(newValue: LogicState) {
+    protected override propagateValue(newValue: LogicValue) {
         this.outputs[OUTPUT.Out].value = newValue
     }
 

@@ -1,4 +1,4 @@
-import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
+import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
@@ -23,17 +23,13 @@ export const LedColors = {
     yellow: null,
 } as const
 
-type LedColor = keyof typeof LedColors
+export type LedColor = keyof typeof LedColors
 
-
-const OutputBarDefaults = {
-    display: "h" as OutputBarType,
-    color: "green" as LedColor,
-    transparent: false,
+export function ledColorForLogicValue(v: LogicValue, onColor: LedColor) {
+    return isUnknown(v) ? COLOR_UNSET :
+        isHighImpedance(v) ? COLOR_HIGH_IMPEDANCE :
+            v ? COLOR_LED_ON[onColor] : COLOR_WIRE_BORDER
 }
-const GRID_WIDTH = 10
-const GRID_HEIGHT = 2
-
 
 export const OutputBarDef =
     defineComponent(1, 0, t.type({
@@ -46,7 +42,16 @@ export const OutputBarDef =
 
 type OutputBarRepr = typeof OutputBarDef.reprType
 
-export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
+const OutputBarDefaults = {
+    display: "h" as OutputBarType,
+    color: "green" as LedColor,
+    transparent: false,
+}
+const GRID_WIDTH = 10
+const GRID_HEIGHT = 2
+
+
+export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
 
     private _display = OutputBarDefaults.display
     private _color = OutputBarDefaults.color
@@ -104,7 +109,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
         return this._display
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         return this.inputs[0].value
     }
 
@@ -115,10 +120,8 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicState> {
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const backColor =
-            isUnknown(value) ? COLOR_UNSET :
-                isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE :
-                    value ? COLOR_LED_ON[this._color] : COLOR_WIRE_BORDER
+        const backColor = ledColorForLogicValue(value, this._color)
+
         g.fillStyle = backColor
         const [w, h] = this.getWidthAndHeight()
         g.beginPath()

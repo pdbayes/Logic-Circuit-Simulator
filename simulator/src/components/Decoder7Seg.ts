@@ -1,4 +1,4 @@
-import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicState, Unknown } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -6,7 +6,7 @@ import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 
-export const DecoderSevenSegmentDef =
+export const Decoder7SegDef =
     defineComponent(4, 7, t.type({
         type: t.literal("decoder-7seg"),
     }, "DecoderSevenSegment"))
@@ -22,11 +22,11 @@ const enum OUTPUT {
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-export type DecoderSevenSegmentRepr = typeof DecoderSevenSegmentDef.reprType
+export type Decoder7SegRepr = typeof Decoder7SegDef.reprType
 
-export class DecoderSevenSegment extends ComponentBase<4, 7, DecoderSevenSegmentRepr, FixedReadonlyArray<LogicState, 7>> {
+export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReadonlyArray<LogicValue, 7>> {
 
-    public constructor(editor: LogicEditor, savedData: DecoderSevenSegmentRepr | null) {
+    public constructor(editor: LogicEditor, savedData: Decoder7SegRepr | null) {
         super(editor, FixedArrayFill(false, 7), savedData, {
             inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]],
             outOffsets: [[+3, -3, "e"], [+3, -2, "e"], [+3, -1, "e"], [+3, 0, "e"], [+3, +1, "e"], [+3, +2, "e"], [+3, +3, "e"]],
@@ -82,7 +82,7 @@ export class DecoderSevenSegment extends ComponentBase<4, 7, DecoderSevenSegment
         ))
     }
 
-    protected doRecalcValue(): FixedReadonlyArray<LogicState, 7> {
+    protected doRecalcValue(): FixedReadonlyArray<LogicValue, 7> {
         const input = this.inputValues<4>(INPUT.I)
         const [__, value] = displayValuesFromArray(input, false)
 
@@ -116,7 +116,7 @@ export class DecoderSevenSegment extends ComponentBase<4, 7, DecoderSevenSegment
         return output
     }
 
-    protected override propagateValue(newValue: FixedReadonlyArray<LogicState, 7>) {
+    protected override propagateValue(newValue: FixedReadonlyArray<LogicValue, 7>) {
         this.outputs[OUTPUT.a].value = newValue[0]
         this.outputs[OUTPUT.b].value = newValue[1]
         this.outputs[OUTPUT.c].value = newValue[2]

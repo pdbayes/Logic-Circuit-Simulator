@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicState, Unknown } from "./utils"
+import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicValue, Unknown } from "./utils"
 import { Node } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -42,6 +42,7 @@ export type ColorComponents = [number, number, number]
 export type ColorString = string
 
 export let COLOR_BACKGROUND: ColorString
+export let COLOR_OFF_BACKGROUND: ColorString
 export let COLOR_BACKGROUND_UNUSED_REGION: ColorString
 export let COLOR_BACKGROUND_INVALID: ColorString
 export let COLOR_BORDER: ColorString
@@ -81,6 +82,7 @@ function setColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
         COLOR_BACKGROUND = ColorString(0xFF)
+        COLOR_OFF_BACKGROUND = ColorString(0xDF)
         COLOR_BACKGROUND_INVALID = ColorString([0xFF, 0xBB, 0xBB])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(0xEE)
         COLOR_BORDER = ColorString(200)
@@ -99,14 +101,15 @@ function setColors(darkMode: boolean) {
         COLOR_HIGH_IMPEDANCE = ColorString([137, 114, 35])
         COLOR_GATE_NAMES = ColorString([190, 190, 190])
         COLOR_LED_ON = {
-            green: ColorString([20, 255, 20]),
-            red: ColorString([255, 20, 20]),
-            yellow: ColorString([255, 255, 20]),
+            green: ColorString([20, 232, 20]),
+            red: ColorString([232, 20, 20]),
+            yellow: ColorString([232, 232, 20]),
         }
         ALPHA_HIGHLIGHT_OVERLAY = 0.5
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
+        COLOR_OFF_BACKGROUND = ColorString(65)
         COLOR_BACKGROUND_INVALID = ColorString([0xA8, 0x14, 0x14])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
         COLOR_BORDER = ColorString(0x55)
@@ -161,7 +164,7 @@ export function colorComps(c: ColorString) {
     return c.split(',').map(compStr => parseInt(compStr))
 }
 
-export function colorForBoolean(value: LogicState): ColorString {
+export function colorForBoolean(value: LogicValue): ColorString {
     return isUnknown(value) ? COLOR_UNSET : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
 }
 
@@ -259,14 +262,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicState, neutral: boolean) {
+export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicValue, neutral: boolean) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
     strokeAsWireLine(g, value, false, neutral)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicState, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -293,7 +296,7 @@ export function isOverWaypoint(x: number, y: number, waypointX: number, waypoint
     return dist(x, y, waypointX, waypointY) < WAYPOINT_HIT_RANGE / 2
 }
 
-export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: LogicState, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
+export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: LogicValue, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
     g.fillStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
 
     const [circleColor, thickness] =
@@ -357,11 +360,11 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicState, comp: HasPosition) {
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition) {
     drawRoundValue(g, value, comp.posX, comp.posY)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicState, x: number, y: number) {
+export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
@@ -432,7 +435,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle"
 }
 
-export function displayValuesFromArray(values: LogicState[], mostSignificantFirst: boolean): [string, number | Unknown] {
+export function displayValuesFromArray(values: LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {
     // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false

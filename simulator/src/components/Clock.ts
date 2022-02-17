@@ -1,7 +1,7 @@
 import { InputBitBase, InputBitBaseDef } from "./InputBit"
 import * as t from "io-ts"
 import { ComponentState, extendComponent } from "./Component"
-import { isDefined, isNotNull, LogicState, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, LogicValue, typeOrUndefined } from "../utils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
@@ -96,7 +96,7 @@ export class Clock extends InputBitBase<ClockRepr> {
         return [value, nextTick]
     }
 
-    protected doRecalcValue(): LogicState {
+    protected doRecalcValue(): LogicValue {
         // nothing special to recalc, will change automatically on next tick,
         // so until further notice, we keep this same value
         return this.value

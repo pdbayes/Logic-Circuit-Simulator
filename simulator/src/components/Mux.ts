@@ -1,4 +1,4 @@
-import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnknown, LogicState, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
@@ -36,7 +36,7 @@ export abstract class Mux<
     NumInputs extends FixedArraySize,
     NumOutputs extends FixedArraySize,
     Repr extends MuxRepr<NumInputs, NumOutputs>>
-    extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicState, NumOutputs>>{
+    extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>>{
 
     private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeOffset[] {
         const numGroups = numFrom / numTo
@@ -127,7 +127,7 @@ export abstract class Mux<
         public readonly numSel: number,
         public readonly numTo: NumOutputs,
     ) {
-        super(editor, FixedArrayFill(false as LogicState, numTo), savedData, {
+        super(editor, FixedArrayFill(false as LogicValue, numTo), savedData, {
             inOffsets: Mux.generateInOffsets(numFrom, numSel, numTo),
             outOffsets: Mux.generateOutOffsets(numSel, numTo),
         } as unknown as NodeOffsets<NumInputs, NumOutputs>)
@@ -210,7 +210,7 @@ export abstract class Mux<
         ))
     }
 
-    protected doRecalcValue(): FixedArray<LogicState, NumOutputs> {
+    protected doRecalcValue(): FixedArray<LogicValue, NumOutputs> {
         const sels = this.inputValues(this.INPUT.S as any)
         const sel = displayValuesFromArray(sels, false)[1]
 
@@ -229,7 +229,7 @@ export abstract class Mux<
         // return vals as FixedArray<TriState, 4>
     }
 
-    protected override propagateValue(newValues: FixedArray<LogicState, NumOutputs>) {
+    protected override propagateValue(newValues: FixedArray<LogicValue, NumOutputs>) {
         const Z = this.OUTPUT.Z
         for (let i = 0; i < Z.length; i++) {
             this.outputs[Z[i]].value = newValues[i]
