@@ -9,7 +9,7 @@ import { ComponentBase, defineComponent } from "./Component"
 export const Decoder7SegDef =
     defineComponent(4, 7, t.type({
         type: t.literal("decoder-7seg"),
-    }, "DecoderSevenSegment"))
+    }, "Decoder7Seg"))
 
 const INPUT = {
     I: [0, 1, 2, 3] as const,

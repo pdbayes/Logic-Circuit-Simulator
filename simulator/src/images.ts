@@ -11,6 +11,7 @@ import AND4 from '../img/AND4.svg' // @ts-ignore
 import BUF from '../img/BUF.svg' // @ts-ignore
 import Clock from '../img/Clock.svg' // @ts-ignore
 import Decoder7Seg from '../img/Decoder7Seg.svg' // @ts-ignore
+import Decoder16Seg from '../img/Decoder16Seg.svg' // @ts-ignore
 import DecoderBCD4 from '../img/DecoderBCD4.svg' // @ts-ignore
 import FlipflopD from '../img/FlipflopD.svg' // @ts-ignore
 import FlipflopJK from '../img/FlipflopJK.svg' // @ts-ignore
@@ -32,6 +33,7 @@ import OR from '../img/OR.svg' // @ts-ignore
 import OR3 from '../img/OR3.svg' // @ts-ignore
 import OR4 from '../img/OR4.svg' // @ts-ignore
 import Output7Seg from '../img/Output7Seg.svg' // @ts-ignore
+import Output16Seg from '../img/Output16Seg.svg' // @ts-ignore
 import OutputAscii from '../img/OutputAscii.svg' // @ts-ignore
 import OutputBar from '../img/OutputBar.svg' // @ts-ignore
 import OutputBit from '../img/OutputBit.svg' // @ts-ignore
@@ -58,6 +60,7 @@ const images = {
     BUF,
     Clock,
     Decoder7Seg,
+    Decoder16Seg,
     DecoderBCD4,
     FlipflopD,
     FlipflopJK,
@@ -79,6 +82,7 @@ const images = {
     OR3,
     OR4,
     Output7Seg,
+    Output16Seg,
     OutputAscii,
     OutputBar,
     OutputBit,

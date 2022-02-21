@@ -38,6 +38,18 @@ const componentsMenu: Array<Section> = [
                 img: "OutputNibble", width: 32,
             },
             {
+                type: "out", subtype: "7seg",
+                title: "Afficheur à 7 segments", caption: undefined,
+                img: "Output7Seg", width: 32,
+                normallyHidden: true,
+            },
+            {
+                type: "out", subtype: "16seg",
+                title: "Afficheur à 16 segments", caption: undefined,
+                img: "Output16Seg", width: 32,
+                normallyHidden: true,
+            },
+            {
                 type: "out", subtype: "ascii",
                 title: "Affichage d’un caractère ASCII", caption: undefined,
                 img: "OutputAscii", width: 32,
@@ -308,7 +320,13 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "decoder-7seg",
                 title: "Décodeur 7 segments", caption: "Déc. 7 seg.",
-                img: "Decoder7Segment", width: 50,
+                img: "Decoder7Seg", width: 50,
+            },
+            {
+                type: "component", subtype: "decoder-16seg",
+                title: "Décodeur ASCII vers 16 segments", caption: "Déc. 16 seg.",
+                img: "Decoder16Seg", width: 50,
+                normallyHidden: true,
             },
             {
                 type: "component", subtype: "decoder-bcd4",
@@ -317,7 +335,7 @@ const componentsMenu: Array<Section> = [
                 normallyHidden: true,
             },
 
-            
+
         ],
     },
 ]

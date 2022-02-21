@@ -8,19 +8,19 @@ import { ComponentBase, defineComponent } from "./Component"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
-export const Output7SegDef =
-    defineComponent(8, 0, t.type({
-        type: t.literal("7seg"),
+export const Output16SegDef =
+    defineComponent(17, 0, t.type({
+        type: t.literal("16seg"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
         transparent: typeOrUndefined(t.boolean),
         name: typeOrUndefined(t.string),
-    }, "Ouput7Seg"))
+    }, "Ouput16Seg"))
 
 const enum INPUT {
-    a, b, c, d, e, f, g, p
+    a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p
 }
 
-const Output7SegDefaults = {
+const Output16SegDefaults = {
     color: "green" as LedColor,
     transparent: true,
 }
@@ -28,34 +28,49 @@ const Output7SegDefaults = {
 const GRID_WIDTH = 8
 const GRID_HEIGHT = 10
 
-export type Output7SegRepr = typeof Output7SegDef.reprType
+export type Output16SegRepr = typeof Output16SegDef.reprType
 
-export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonlyArray<LogicValue, 8>> {
+export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedReadonlyArray<LogicValue, 17>> {
 
-    private _color = Output7SegDefaults.color
-    private _transparent = Output7SegDefaults.transparent
+    private _color = Output16SegDefaults.color
+    private _transparent = Output16SegDefaults.transparent
     private _name: string | undefined = undefined
 
-    public constructor(editor: LogicEditor, savedData: Output7SegRepr | null) {
-        super(editor, FixedArrayFill(false, 8), savedData, {
+    public constructor(editor: LogicEditor, savedData: Output16SegRepr | null) {
+        super(editor, FixedArrayFill(false, 17), savedData, {
             inOffsets: [
-                [-5, -4, "w"], [-5, -3, "w"], [-5, -2, "w"], [-5, -1, "w"],
-                [-5, 0, "w"], [-5, +1, "w"], [-5, +2, "w"], [-5, +4, "w"],
+                [-5, -4, "w"],
+                [-6, -3.5, "w"],
+                [-5, -3, "w"],
+                [-6, -2.5, "w"],
+                [-5, -2, "w"],
+                [-6, -1.5, "w"],
+                [-5, -1, "w"],
+                [-6, -0.5, "w"],
+                [-5, 0, "w"],
+                [-6, 0.5, "w"],
+                [-5, +1, "w"],
+                [-6, +1.5, "w"],
+                [-5, +2, "w"],
+                [-6, +2.5, "w"],
+                [-5, +3, "w"],
+                [-6, +3.5, "w"],
+                [-5, +4, "w"],
             ],
         })
         if (isNotNull(savedData)) {
-            this._color = savedData.color ?? Output7SegDefaults.color
-            this._transparent = savedData.transparent ?? Output7SegDefaults.transparent
+            this._color = savedData.color ?? Output16SegDefaults.color
+            this._transparent = savedData.transparent ?? Output16SegDefaults.transparent
             this._name = savedData.name
         }
     }
 
     toJSON() {
         return {
-            type: "7seg" as const,
+            type: "16seg" as const,
             ...this.toJSONBase(),
-            color: this._color === Output7SegDefaults.color ? undefined : this._color,
-            transparent: this._transparent === Output7SegDefaults.transparent ? undefined : this._transparent,
+            color: this._color === Output16SegDefaults.color ? undefined : this._color,
+            transparent: this._transparent === Output16SegDefaults.transparent ? undefined : this._transparent,
             name: this._name,
         }
     }
@@ -74,13 +89,22 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
     override getInputName(i: number): string | undefined {
         switch (i) {
-            case INPUT.a: return "a"
+            case INPUT.a1: return "a1"
+            case INPUT.a2: return "a2"
             case INPUT.b: return "b"
             case INPUT.c: return "c"
-            case INPUT.d: return "d"
+            case INPUT.d2: return "d2"
+            case INPUT.d1: return "d1"
             case INPUT.e: return "e"
             case INPUT.f: return "f"
-            case INPUT.g: return "g"
+            case INPUT.g1: return "g1"
+            case INPUT.g2: return "g2"
+            case INPUT.h: return "h"
+            case INPUT.i: return "i"
+            case INPUT.j: return "j"
+            case INPUT.k: return "k"
+            case INPUT.l: return "l"
+            case INPUT.m: return "m"
             case INPUT.p: return "p"
         }
         return undefined
@@ -88,12 +112,12 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div("Afficheur 7 segments")
+            div("Afficheur 16 segments")
         ))
     }
 
-    protected doRecalcValue(): FixedReadonlyArray<LogicValue, 8> {
-        return this.inputValues<8>([INPUT.a, INPUT.b, INPUT.c, INPUT.d, INPUT.e, INPUT.f, INPUT.g, INPUT.p])
+    protected doRecalcValue(): FixedReadonlyArray<LogicValue, 17> {
+        return this.inputValues<17>([INPUT.a1, INPUT.a2, INPUT.b, INPUT.c, INPUT.d2, INPUT.d1, INPUT.e, INPUT.f, INPUT.g1, INPUT.g2, INPUT.h, INPUT.i, INPUT.j, INPUT.k, INPUT.l, INPUT.m, INPUT.p])
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -118,13 +142,13 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
             drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
-        const [a, b, c, d, e, f, gg, p] = this.value
+        const [a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p] = this.value
 
-        const hMargin = 20
         const vMargin = 10
-        const strokeHalfWidth = 4
-        const drawLeft = left + hMargin
-        const drawRight = right - hMargin
+        const strokeHalfWidth = 3
+        const drawLeft = left + 18
+        const drawRight = right - 10
+        const drawCenterX = (drawLeft + drawRight) / 2
         const drawTop = top + vMargin
         const drawBottom = bottom - vMargin
 
@@ -135,14 +159,14 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
             }
         }
 
-        const drawH = (v: LogicValue, y: number) => {
+        const drawH = (v: LogicValue, xLeft: number, xRight: number, y: number) => {
             g.beginPath()
-            g.moveTo(drawLeft + strokeHalfWidth, y)
-            g.lineTo(drawLeft + strokeHalfWidth + strokeHalfWidth, y - strokeHalfWidth)
-            g.lineTo(drawRight - strokeHalfWidth - strokeHalfWidth, y - strokeHalfWidth)
-            g.lineTo(drawRight - strokeHalfWidth, y)
-            g.lineTo(drawRight - strokeHalfWidth - strokeHalfWidth, y + strokeHalfWidth)
-            g.lineTo(drawLeft + strokeHalfWidth + strokeHalfWidth, y + strokeHalfWidth)
+            g.moveTo(xLeft, y)
+            g.lineTo(xLeft + strokeHalfWidth, y - strokeHalfWidth)
+            g.lineTo(xRight - strokeHalfWidth, y - strokeHalfWidth)
+            g.lineTo(xRight, y)
+            g.lineTo(xRight - strokeHalfWidth, y + strokeHalfWidth)
+            g.lineTo(xLeft + strokeHalfWidth, y + strokeHalfWidth)
             g.closePath()
             g.stroke()
             doFill(v)
@@ -161,25 +185,65 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
             doFill(v)
         }
 
+        const dx = strokeHalfWidth * 1.41
+        const dy = strokeHalfWidth * 1.41
+
+        const drawBackslash = (v: LogicValue, xLeft: number, yTop: number, xRight: number, yBottom: number) => {
+            g.beginPath()
+            g.moveTo(xLeft, yTop)
+            g.lineTo(xLeft + dx, yTop)
+            g.lineTo(xRight, yBottom - dy)
+            g.lineTo(xRight, yBottom)
+            g.lineTo(xRight - dx, yBottom)
+            g.lineTo(xLeft, yTop + dy)
+            g.closePath()
+            g.stroke()
+            doFill(v)
+        }
+
+        const drawSlash = (v: LogicValue, xLeft: number, yBottom: number, xRight: number, yTop: number) => {
+            g.beginPath()
+            g.moveTo(xLeft, yBottom)
+            g.lineTo(xLeft, yBottom - dy)
+            g.lineTo(xRight - dx, yTop)
+            g.lineTo(xRight, yTop)
+            g.lineTo(xRight, yTop + dy)
+            g.lineTo(xLeft + dx, yBottom)
+            g.closePath()
+            g.stroke()
+            doFill(v)
+        }
+
         g.strokeStyle = COLOR_OFF_BACKGROUND
         g.lineWidth = 1
-        drawH(a, drawTop + strokeHalfWidth)
+        drawH(a1, drawLeft + strokeHalfWidth, drawCenterX, drawTop + strokeHalfWidth)
+        drawH(a2, drawCenterX, drawRight - strokeHalfWidth, drawTop + strokeHalfWidth)
         drawV(b, drawRight - strokeHalfWidth, drawTop + strokeHalfWidth, this.posY)
         drawV(c, drawRight - strokeHalfWidth, this.posY, drawBottom - strokeHalfWidth)
-        drawH(d, drawBottom - strokeHalfWidth)
+        drawH(d1, drawLeft + strokeHalfWidth, drawCenterX, drawBottom - strokeHalfWidth)
+        drawH(d2, drawCenterX, drawRight - strokeHalfWidth, drawBottom - strokeHalfWidth)
         drawV(e, drawLeft + strokeHalfWidth, this.posY, drawBottom - strokeHalfWidth)
         drawV(f, drawLeft + strokeHalfWidth, drawTop + strokeHalfWidth, this.posY)
-        drawH(gg, this.posY)
+        drawH(g1, drawLeft + strokeHalfWidth, drawCenterX, this.posY)
+        drawH(g2, drawCenterX, drawRight - strokeHalfWidth, this.posY)
+        drawV(i, drawCenterX, drawTop + strokeHalfWidth, this.posY)
+        drawV(l, drawCenterX, this.posY, drawBottom - strokeHalfWidth)
+        const slashTop = drawTop + strokeHalfWidth + strokeHalfWidth
+        const slashBottom = drawBottom - strokeHalfWidth - strokeHalfWidth
+        drawBackslash(h, drawLeft + strokeHalfWidth + strokeHalfWidth, slashTop, drawCenterX - strokeHalfWidth, this.posY - strokeHalfWidth)
+        drawSlash(j, drawCenterX + strokeHalfWidth, this.posY - strokeHalfWidth, drawRight - strokeHalfWidth - strokeHalfWidth, slashTop)
+        drawSlash(k, drawLeft + strokeHalfWidth + strokeHalfWidth, slashBottom, drawCenterX - strokeHalfWidth, this.posY + strokeHalfWidth)
+        drawBackslash(m, drawCenterX + strokeHalfWidth, this.posY + strokeHalfWidth, drawRight - strokeHalfWidth - strokeHalfWidth, slashBottom)
 
         g.beginPath()
         const radius = 1.3 * strokeHalfWidth
-        g.arc(right - hMargin / 2, bottom - vMargin - radius / 2, radius, 0, 2 * Math.PI)
+        g.arc(right - 8, bottom - 7 - radius / 2, radius, 0, 2 * Math.PI)
         g.stroke()
         doFill(p)
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
+            g.font = "7px sans-serif"
 
             this.inputs.forEach((input, i) => {
                 drawLabel(ctx, this.orient, this.getInputName(i)!, "w", left, input)

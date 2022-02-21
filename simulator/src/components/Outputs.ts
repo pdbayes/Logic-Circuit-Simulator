@@ -7,6 +7,7 @@ import { OutputBit, OutputBitDef } from "./OutputBit"
 import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
 import { isUndefined, isString } from "../utils"
 import { Output7Seg, Output7SegDef } from "./Output7Seg"
+import { Output16Seg, Output16SegDef } from "./Output16Seg"
 
 export type Output = OutputBit | OutputNibble | OutputAscii | OutputBar | OutputShiftBuffer
 
@@ -14,6 +15,7 @@ export const OutputDef = t.union([
     OutputBitDef.repr,
     OutputNibbleDef.repr,
     Output7SegDef.repr,
+    Output16SegDef.repr,
     OutputAsciiDef.repr,
     OutputBarDef.repr,
     OutputShiftBufferDef.repr,
@@ -49,6 +51,8 @@ export const OutputFactory = {
                 return new OutputNibble(editor, blank ? null : savedData)
             case "7seg":
                 return new Output7Seg(editor, blank ? null : savedData)
+            case "16seg":
+                return new Output16Seg(editor, blank ? null : savedData)
             case "ascii":
                 return new OutputAscii(editor, blank ? null : savedData)
             case "bar":

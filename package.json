@@ -29,15 +29,13 @@
     "compile-watch": "./node_modules/.bin/tsc -p tsconfig.json --watch",
     "lint": "eslint . --ext .ts",
     "lint-watch": "npm-watch lint",
+    "bundle": "./node_modules/.bin/esbuild --bundle --sourcemap --loader:.html=text  --loader:.css=text --loader:.svg=dataurl simulator/src/LogicEditor.ts --outfile=simulator/lib/bundle.js && tools/insert_md5_into_index.sh",
+    "bundle-watch": "npm-watch bundle",
     "server": "./tools/local_server.py 8088",
-    "esbuild": "./node_modules/.bin/esbuild --bundle --sourcemap --loader:.html=text  --loader:.css=text --loader:.svg=dataurl simulator/src/LogicEditor.ts --outfile=simulator/lib/bundle.js && tools/insert_md5_into_index.sh",
-    "esbuild-watch": "npm-watch esbuild",
-    "babel-disabled": "babel --extensions '.ts' simulator/src -d lib",
-    "electron": "electron .",
-    "coverage": "typescript-coverage-report"
+    "electron": "electron ."
   },
   "watch": {
-    "esbuild": {
+    "bundle": {
       "patterns": [
         "simulator"
       ],
