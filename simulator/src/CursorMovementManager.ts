@@ -8,7 +8,8 @@ import { ComponentFactory } from './ComponentFactory'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 
 type MouseDownData = {
-    comp: Drawable | Element
+    mainComp: Drawable | Element
+    selectionComps: Drawable[]
     fireMouseClickedOnFinish: boolean
     initialXY: [number, number]
     triggeredContextMenu: boolean
@@ -96,18 +97,24 @@ export class CursorMovementManager {
         setColorMouseOverIsDanger(action === "delete")
     }
 
-    setStartDragTimeout(comp: Drawable, e: MouseEvent | TouchEvent) {
+    setStartDragTimeout(startMouseDownData: MouseDownData, e: MouseEvent | TouchEvent) {
         this._startDragTimeoutHandle = setTimeout(
             this.editor.wrapHandler(() => {
                 let fireDrag = true
-                if (isNotNull(this._currentMouseDownData)) {
-                    this._currentMouseDownData.fireMouseClickedOnFinish = false
-                    if (this._currentMouseDownData.triggeredContextMenu) {
+                const endMouseDownData = this._currentMouseDownData
+                if (isNotNull(endMouseDownData)) {
+                    endMouseDownData.fireMouseClickedOnFinish = false
+                    if (endMouseDownData.triggeredContextMenu) {
                         fireDrag = false
                     }
                 }
                 if (fireDrag) {
-                    this._currentHandlers.mouseDraggedOn(comp, e)
+                    if (startMouseDownData.mainComp instanceof Drawable) {
+                        this._currentHandlers.mouseDraggedOn(startMouseDownData.mainComp, e)
+                    }
+                    for (const comp of startMouseDownData.selectionComps) {
+                        this._currentHandlers.mouseDraggedOn(comp, e)
+                    }
                 }
             }),
             300
@@ -298,19 +305,28 @@ export class CursorMovementManager {
                 // mouse down on component
                 const { lockMouseOver } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
                 if (lockMouseOver) {
-                    this._currentMouseDownData = {
-                        comp: this._currentMouseOverComp,
+                    const selectedComps = isUndefined(this.currentSelection) ? [] : [...this.currentSelection.previouslySelectedElements]
+                    for (const comp of selectedComps) {
+                        if (comp !== this._currentMouseOverComp) {
+                            this._currentHandlers.mouseDownOn(comp, e)
+                        }
+                    }
+                    const mouseDownData: MouseDownData = {
+                        mainComp: this._currentMouseOverComp,
+                        selectionComps: selectedComps,
                         fireMouseClickedOnFinish: true,
                         initialXY: xy,
                         triggeredContextMenu: false,
                     }
-                    this.setStartDragTimeout(this._currentMouseOverComp, e)
+                    this._currentMouseDownData = mouseDownData
+                    this.setStartDragTimeout(mouseDownData, e)
                 }
                 this.editor.redrawMgr.addReason("mousedown", null)
             } else {
                 // mouse down on background
                 this._currentMouseDownData = {
-                    comp: this.editor.html.canvasContainer,
+                    mainComp: this.editor.html.canvasContainer,
+                    selectionComps: [], // ignore selection
                     fireMouseClickedOnFinish: true,
                     initialXY: xy,
                     triggeredContextMenu: false,
@@ -330,7 +346,7 @@ export class CursorMovementManager {
                 // cancel it all
                 this._currentMouseDownData = null
             } else {
-                if (this._currentMouseDownData.comp instanceof Drawable) {
+                if (this._currentMouseDownData.mainComp instanceof Drawable) {
                     // check if the drag is too small to be taken into account now
                     // (e.g., touchmove is fired very quickly)
                     const d = dist(...this.editor.offsetXY(e), ...this._currentMouseDownData.initialXY)
@@ -339,8 +355,14 @@ export class CursorMovementManager {
                     if (isNaN(d) || d >= 5) {
                         // dragging component
                         this.clearStartDragTimeout()
+                        console.log("this._currentMouseDownData", this._currentMouseDownData)
                         this._currentMouseDownData.fireMouseClickedOnFinish = false
-                        this._currentHandlers.mouseDraggedOn(this._currentMouseDownData.comp, e)
+                        this._currentHandlers.mouseDraggedOn(this._currentMouseDownData.mainComp, e)
+                        for (const comp of this._currentMouseDownData.selectionComps) {
+                            if (comp !== this._currentMouseDownData.mainComp) {
+                                this._currentHandlers.mouseDraggedOn(comp, e)
+                            }
+                        }
                     }
                 } else {
                     // dragging background
@@ -356,7 +378,7 @@ export class CursorMovementManager {
     private _mouseUpTouchEnd(e: MouseEvent | TouchEvent) {
         // our target is either the locked component that
         // was clicked or the latest mouse over component
-        const mouseUpTarget = this._currentMouseDownData?.comp ?? this._currentMouseOverComp
+        const mouseUpTarget = this._currentMouseDownData?.mainComp ?? this._currentMouseOverComp
         if (mouseUpTarget instanceof Drawable) {
             // mouseup on component
             if (isNotNull(this._startDragTimeoutHandle)) {
@@ -364,6 +386,12 @@ export class CursorMovementManager {
                 this._startDragTimeoutHandle = null
             }
             this._currentHandlers.mouseUpOn(mouseUpTarget, e)
+            for (const comp of this._currentMouseDownData?.selectionComps ?? []) {
+                if (comp !== mouseUpTarget) {
+                    this._currentHandlers.mouseUpOn(comp, e)
+                }
+            }
+
             if (this._currentMouseDownData?.fireMouseClickedOnFinish ?? false) {
                 if (this.isDoubleClick(mouseUpTarget, e)) {
                     const handled = this._currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
@@ -418,7 +446,8 @@ export class CursorMovementManager {
                 const { lockMouseOver } = this._currentHandlers.mouseDownOn(newComponent, e)
                 if (lockMouseOver) {
                     this._currentMouseDownData = {
-                        comp: this._currentMouseOverComp,
+                        mainComp: this._currentMouseOverComp,
+                        selectionComps: [], // ignore selection when dragging new component
                         fireMouseClickedOnFinish: false,
                         initialXY: [NaN, NaN],
                         triggeredContextMenu: false,

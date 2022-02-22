@@ -410,7 +410,6 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
         const [x, y] = this.editor.offsetXY(e)
         const snapToGrid = !e.metaKey
-        this.setPosition
         const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
         if (isDefined(newPos)) { // position changed
             this.positionChanged()

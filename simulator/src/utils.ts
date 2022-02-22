@@ -203,7 +203,7 @@ import * as t from "io-ts"
 
 // Fixed-size arrays up to 8 to model inputs statically
 
-export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
+export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18
 export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
 export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
 
@@ -220,7 +220,14 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 9 ? [T, T, T, T, T, T, T, T, T]
     : N extends 10 ? [T, T, T, T, T, T, T, T, T, T]
     : N extends 11 ? [T, T, T, T, T, T, T, T, T, T, T]
-    :/*N extends 12*/[T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 12 ? [T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 13 ? [T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 14 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 15 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 16 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 17 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 18 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    :/*N >= 19 12*/ Array<T>
 
 export type FixedReadonlyArray<T, N extends FixedArraySize> =
     N extends 0 ? readonly []
@@ -235,7 +242,14 @@ export type FixedReadonlyArray<T, N extends FixedArraySize> =
     : N extends 9 ? readonly [T, T, T, T, T, T, T, T, T]
     : N extends 10 ? readonly [T, T, T, T, T, T, T, T, T, T]
     : N extends 11 ? readonly [T, T, T, T, T, T, T, T, T, T, T]
-    :/*N extends 12*/readonly [T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 12 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 13 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 14 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 15 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 16 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 17 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    : N extends 18 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    :/*N >= 19 12*/ ReadonlyArray<T>
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
@@ -374,17 +388,17 @@ export const TUnknown = new t.Type<Unknown>(
     t.identity,
 )
 
-export type LogicState = boolean | HighImpedance | Unknown
-export const LogicState = {
-    invert(v: LogicState): LogicState {
+export type LogicValue = boolean | HighImpedance | Unknown
+export const LogicValue = {
+    invert(v: LogicValue): LogicValue {
         return isUnknown(v) || isHighImpedance(v) ? v : !v
     },
 }
 
-export type LogicStateRepr = 0 | 1 | HighImpedance | Unknown
-export const LogicStateRepr = new t.Type<LogicStateRepr>(
+export type LogicValueRepr = 0 | 1 | HighImpedance | Unknown
+export const LogicValueRepr = new t.Type<LogicValueRepr>(
     "0|1|?|Z",
-    (v: unknown): v is LogicStateRepr => isUnknown(v) || isHighImpedance(v) || v === 1 || v === 0,
+    (v: unknown): v is LogicValueRepr => isUnknown(v) || isHighImpedance(v) || v === 1 || v === 0,
     (input, context) =>
         isUnknown(input) ? t.success(input) :
             isHighImpedance(input) ? t.success(input) :
@@ -395,9 +409,9 @@ export const LogicStateRepr = new t.Type<LogicStateRepr>(
 )
 
 // TODO put this in TriState object
-export function toLogicStateRepr(v: LogicState): LogicStateRepr
-export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | undefined
-export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | undefined {
+export function toLogicValueRepr(v: LogicValue): LogicValueRepr
+export function toLogicValueRepr(v: LogicValue | undefined): LogicValueRepr | undefined
+export function toLogicValueRepr(v: LogicValue | undefined): LogicValueRepr | undefined {
     switch (v) {
         case true: return 1
         case false: return 0
@@ -407,9 +421,9 @@ export function toLogicStateRepr(v: LogicState | undefined): LogicStateRepr | un
     }
 }
 
-export function toLogicState(v: LogicStateRepr): LogicState
-export function toLogicState(v: LogicStateRepr | undefined): LogicState | undefined
-export function toLogicState(v: LogicStateRepr | undefined): LogicState | undefined {
+export function toLogicValue(v: LogicValueRepr): LogicValue
+export function toLogicValue(v: LogicValueRepr | undefined): LogicValue | undefined
+export function toLogicValue(v: LogicValueRepr | undefined): LogicValue | undefined {
     switch (v) {
         case 1: return true
         case 0: return false
