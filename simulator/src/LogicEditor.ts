@@ -269,6 +269,19 @@ export class LogicEditor extends HTMLElement {
                     }
                 }
                 reader.readAsText(file, "utf-8")
+            } else {
+                const dataItems = e.dataTransfer?.items
+                if (isDefined(dataItems)) {
+                    for (let i = 0; i < dataItems.length; i++) {
+                        const dataItem = dataItems[i]
+                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
+                            dataItem.getAsString(content => {
+                                window.load(content)
+                            })
+                            break
+                        }
+                    }
+                }
             }
             return false
         }

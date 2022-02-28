@@ -355,7 +355,7 @@ export class CursorMovementManager {
                     if (isNaN(d) || d >= 5) {
                         // dragging component
                         this.clearStartDragTimeout()
-                        console.log("this._currentMouseDownData", this._currentMouseDownData)
+                        // console.log("this._currentMouseDownData", this._currentMouseDownData)
                         this._currentMouseDownData.fireMouseClickedOnFinish = false
                         this._currentHandlers.mouseDraggedOn(this._currentMouseDownData.mainComp, e)
                         for (const comp of this._currentMouseDownData.selectionComps) {
