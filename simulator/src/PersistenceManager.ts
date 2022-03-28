@@ -123,6 +123,7 @@ class _PersistenceManager {
                 wireMgr.addNode(node1)
                 const completedWire = wireMgr.addNode(node2)
                 if (isDefined(completedWire) && isDefined(wireOptions)) {
+                    completedWire.ref = wireOptions.ref
                     if (isDefined(wireOptions.via)) {
                         completedWire.setWaypoints(wireOptions.via)
                     }
@@ -172,7 +173,7 @@ class _PersistenceManager {
     saveToFile(editor: LogicEditor) {
         const workspaceJsonStr = this.buildWorkspaceJSON(editor)
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
-        const filename = "circuit.json"
+        const filename = (editor.options.name ?? "circuit") + ".json"
 
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')

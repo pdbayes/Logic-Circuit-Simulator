@@ -473,3 +473,34 @@ export function copyToClipboard(textToCopy: string): boolean {
     document.body.removeChild(textArea)
     return ok
 }
+
+export function downloadBlob(dataUrl: string, filename: string) {
+    const link = document.createElement('a')
+    link.download = filename
+    link.href = dataUrl
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+}
+
+export const fetchJSONP = ((unique: number) => (url: string) =>
+    new Promise<string>(resolve => {
+        const script = document.createElement('script')
+        const name = `_jsonp_${unique++}`
+
+        if (url.match(/\?/)) {
+            url += `&callback=${name}`
+        } else {
+            url += `?callback=${name}`
+        }
+
+        script.src = url;
+        (window as any)[name] = (json: any) => {
+            script.remove()
+            delete (window as any)[name]
+            resolve(JSON.stringify(json))
+        }
+
+        document.body.appendChild(script)
+    })
+)(0)

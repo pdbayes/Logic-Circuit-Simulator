@@ -14,7 +14,7 @@ import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, getURLParameter, isDefined, isFalsyString, isNullOrUndefined, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible } from "./utils"
+import { copyToClipboard, downloadBlob as downloadDataUrl, getURLParameter, isDefined, isFalsyString, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible } from "./utils"
 
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
@@ -42,14 +42,17 @@ const ATTRIBUTE_NAMES = {
     mode: "mode",
 
     // these are mirrored in the display options
+    name: "name",
     showonly: "showonly",
     showgatetypes: "showgatetypes",
     showtooltips: "tooltips",
 
+    src: "src",
     data: "data",
 } as const
 
 const DEFAULT_EDITOR_OPTIONS = {
+    name: undefined as string | undefined,
     showOnly: undefined as undefined | Array<string>,
     showGateTypes: false,
     hideWireColors: false,
@@ -69,7 +72,7 @@ export const MouseActions = RichStringEnum.withProps<{
 })
 export type MouseAction = typeof MouseActions.type
 
-
+type InitialData = { _type: "url", url: string } | { _type: "json", json: string } | { _type: "compressed", str: string }
 export class LogicEditor extends HTMLElement {
 
     static _globalListenersInstalled = false
@@ -93,7 +96,7 @@ export class LogicEditor extends HTMLElement {
     private _isSingleton = false
     private _maxInstanceMode: Mode = MAX_MODE_WHEN_EMBEDDED // can be set later
     private _mode: Mode = DEFAULT_MODE
-    private _initialData: string | undefined = undefined
+    private _initialData: InitialData | undefined = undefined
     private _options: EditorOptions = { ...DEFAULT_EDITOR_OPTIONS }
 
     private _currentMouseAction: MouseAction = "edit"
@@ -109,11 +112,16 @@ export class LogicEditor extends HTMLElement {
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
-        qrcodeImg: HTMLImageElement,
         hiddenPath: SVGPathElement,
         optionsZone: HTMLElement,
+        embedDialog: HTMLDialogElement,
+        embedUrl: HTMLTextAreaElement,
+        embedUrlQRCode: HTMLImageElement,
+        embedIframe: HTMLTextAreaElement,
+        embedMarkdown: HTMLTextAreaElement,
     }
     public optionsHtml: {
+        nameField: HTMLInputElement,
         showGateTypesCheckbox: HTMLInputElement,
         hideWireColorsCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
@@ -136,9 +144,13 @@ export class LogicEditor extends HTMLElement {
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
-            qrcodeImg: this.elemWithId("qrcode-img"),
             optionsZone: this.elemWithId("optionsZone"),
             hiddenPath: this.elemWithId("hiddenPath"),
+            embedDialog: this.elemWithId("embedDialog"),
+            embedUrl: this.elemWithId("embedUrl"),
+            embedUrlQRCode: this.elemWithId("embedUrlQRCode"),
+            embedIframe: this.elemWithId("embedIframe"),
+            embedMarkdown: this.elemWithId("embedMarkdown"),
         }
         this.html = html
 
@@ -178,6 +190,7 @@ export class LogicEditor extends HTMLElement {
         this._options = newOptions
         let optionsHtml
         if (isDefined(optionsHtml = this.optionsHtml)) {
+            optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
@@ -216,6 +229,11 @@ export class LogicEditor extends HTMLElement {
 
         if (tool === "save") {
             PersistenceManager.saveToFile(this)
+            return
+        }
+
+        if (tool === "screenshot") {
+            this.downloadSnapshotImage()
             return
         }
 
@@ -258,8 +276,12 @@ export class LogicEditor extends HTMLElement {
             return false
         }
         mainCanvas.ondrop = e => {
+            if (isNull(e.dataTransfer)) {
+                return false
+            }
+
             e.preventDefault()
-            const file = e.dataTransfer?.files?.[0]
+            const file = e.dataTransfer.files?.[0]
             if (isDefined(file)) {
                 const reader = new FileReader()
                 reader.onload = e => {
@@ -270,12 +292,13 @@ export class LogicEditor extends HTMLElement {
                 }
                 reader.readAsText(file, "utf-8")
             } else {
-                const dataItems = e.dataTransfer?.items
+                const dataItems = e.dataTransfer.items
                 if (isDefined(dataItems)) {
                     for (let i = 0; i < dataItems.length; i++) {
                         const dataItem = dataItems[i]
-                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
+                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type !== "text/plain")) {
                             dataItem.getAsString(content => {
+                                e.dataTransfer!.dropEffect = "copy"
                                 window.load(content)
                             })
                             break
@@ -322,6 +345,7 @@ export class LogicEditor extends HTMLElement {
                 ATTRIBUTE_NAMES.showgatetypes,
                 ATTRIBUTE_NAMES.showtooltips,
                 ATTRIBUTE_NAMES.data,
+                ATTRIBUTE_NAMES.src,
             ]) {
                 transferUrlParamToAttribute(attr)
             }
@@ -444,7 +468,12 @@ export class LogicEditor extends HTMLElement {
 
         const dataAttr = this.getAttribute(ATTRIBUTE_NAMES.data)
         if (dataAttr !== null) {
-            this._initialData = dataAttr
+            this._initialData = { _type: "compressed", str: dataAttr }
+        } else {
+            const srcAttr = this.getAttribute(ATTRIBUTE_NAMES.src)
+            if (srcAttr !== null) {
+                this._initialData = { _type: "url", url: srcAttr }
+            }
         }
 
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
@@ -495,9 +524,8 @@ export class LogicEditor extends HTMLElement {
                             faglyph("link")
                         ).render()
 
-                    copyLinkDiv.addEventListener("click", e => {
-                        const asQrCode = e.altKey
-                        this.copyLinkForMode(buttonMode, asQrCode)
+                    copyLinkDiv.addEventListener("click", __ => {
+                        this.shareSheetForMode(buttonMode)
                     })
 
                     const switchToModeDiv =
@@ -518,21 +546,24 @@ export class LogicEditor extends HTMLElement {
             setVisible(modeChangeMenu, true)
         }
 
-        this.html.qrcodeImg.addEventListener("click", e => {
-            const qrcodeImg = this.html.qrcodeImg
-            if (e.altKey) {
-                // download
-                const link = document.createElement("a")
-                link.download = "qrcode.png"
-                link.href = qrcodeImg.src
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-            }
-            // hide
-            qrcodeImg.style.display = "none"
-            qrcodeImg.src = ""
+        this.html.embedUrlQRCode.addEventListener("click", __ => {
+            // download
+            const dataUrl = this.html.embedUrlQRCode.src
+            const filename = (this.options.name ?? "circuit") + "_qrcode.png"
+            downloadDataUrl(dataUrl, filename)
         })
+
+        const selectAllListener = (e: Event) => {
+            const textArea = e.target as HTMLTextAreaElement
+            textArea.focus()
+            textArea.select()
+            e.preventDefault()
+        }
+        for (const textArea of [this.html.embedUrl, this.html.embedIframe, this.html.embedMarkdown]) {
+            textArea.addEventListener("pointerdown", selectAllListener)
+            textArea.addEventListener("focus", selectAllListener)
+        }
+
 
         const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
         const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
@@ -595,9 +626,26 @@ export class LogicEditor extends HTMLElement {
             return checkbox
         }
 
+        const nameField = input(type("text"),
+            style("margin-left: 4px"),
+            attr("value", this.options.name ?? ""),
+            attr("placeholder", "circuit"),
+        ).render()
+        nameField.addEventListener("change", () => {
+            const newName = nameField.value
+            this._options.name = newName.length === 0 ? undefined : newName
+        })
+        optionsZone.appendChild(
+            div(
+                style("height: 20px; margin-bottom: 4px"),
+                "Nom:", nameField
+            ).render()
+        )
+
         const hideWireColorsCheckbox = makeCheckbox("hideWireColors", "Cacher l’état des fils")
         const showGateTypesCheckbox = makeCheckbox("showGateTypes", "Montrer type des portes")
         const hideTooltipsCheckbox = makeCheckbox("hideTooltips", "Désactiver tooltips")
+
         const propagationDelayField = input(type("number"),
             style("margin: 0 4px; width: 4em"),
             attr("min", "0"), attr("step", "50"),
@@ -612,7 +660,8 @@ export class LogicEditor extends HTMLElement {
                 "Propagation en", propagationDelayField, "ms"
             ).render()
         )
-        this.optionsHtml = { hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField }
+
+        this.optionsHtml = { nameField, hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField }
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
@@ -769,28 +818,61 @@ export class LogicEditor extends HTMLElement {
         if (isUndefined(this._initialData)) {
             return
         }
-        let error: undefined | string = undefined
-        try {
-            const decodedData = LZString.decompressFromEncodedURIComponent(this._initialData)
-            error = PersistenceManager.doLoadFromJson(this, decodedData)
-        } catch (e) {
-            error = String(e)
+
+        if (this._initialData._type === "url") {
+            // load from URL
+            const url = this._initialData.url
+            // will only work within the same domain for now
+            fetch(url, { mode: "cors" }).then(response => response.text()).then(json => {
+                console.log(`Loaded initial data from URL '${url}'`)
+                this._initialData = { _type: "json", json }
+                this.tryLoadFromData()
+            })
+
+            // TODO try fetchJSONP if this fails?
+
+            return
         }
 
-        if (isDefined(error)) {
-            // try the old, uncompressed way of storing the data in the URL
+        let error: undefined | string = undefined
+
+        if (this._initialData._type === "json") {
+            // already decompressed
             try {
-                const decodedData = atob(this._initialData.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
-                error = PersistenceManager.doLoadFromJson(this, decodeURIComponent(decodedData))
+                error = PersistenceManager.doLoadFromJson(this, this._initialData.json)
             } catch (e) {
                 error = String(e)
             }
+
+        } else {
+            let decodedData
+            try {
+                decodedData = LZString.decompressFromEncodedURIComponent(this._initialData.str)
+                error = PersistenceManager.doLoadFromJson(this, decodedData)
+            } catch (e) {
+                error = String(e)
+            }
+
+            if (isDefined(error)) {
+                // try the old, uncompressed way of storing the data in the URL
+                try {
+                    decodedData = atob(this._initialData.str.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
+                    error = PersistenceManager.doLoadFromJson(this, decodeURIComponent(decodedData))
+                } catch (e) {
+                    error = String(e)
+                }
+            }
+
+            if (isUndefined(error) && isString(decodedData)) {
+                // remember the decompressed/decoded value
+                this._initialData = { _type: "json", json: decodedData }
+            }
         }
+
 
         if (isDefined(error)) {
             console.log("ERROR could not not load initial data: " + error)
         }
-
     }
 
     tryDeleteDrawable(comp: Drawable) {
@@ -928,9 +1010,17 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    private guessAdequateCanvasHeight(): number {
+    private guessAdequateCanvasSize(): [number, number] {
+        let rightmostX = Number.NEGATIVE_INFINITY, leftmostX = Number.POSITIVE_INFINITY
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
         for (const comp of this.components) {
+            const x = comp.posX
+            if (x > rightmostX) {
+                rightmostX = x
+            }
+            if (x < leftmostX) {
+                leftmostX = x
+            }
             const y = comp.posY
             if (y > lowestY) {
                 lowestY = y
@@ -939,10 +1029,18 @@ export class LogicEditor extends HTMLElement {
                 highestY = y
             }
         }
-        return highestY + lowestY // add lower margin equal to top margin
+        let w = rightmostX + leftmostX // add right margin equal to left margin
+        if (isNaN(w)) {
+            w = 300
+        }
+        let h = highestY + lowestY // add lower margin equal to top margin
+        if (isNaN(h)) {
+            h = 150
+        }
+        return [w, h]
     }
 
-    async copyLinkForMode(mode: Mode, asQrCode: boolean) {
+    async shareSheetForMode(mode: Mode) {
         if (this._mode > MAX_MODE_WHEN_EMBEDDED) {
             this._mode = MAX_MODE_WHEN_EMBEDDED
         }
@@ -961,39 +1059,62 @@ export class LogicEditor extends HTMLElement {
             return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + encodedJson
         }
         const fullUrl = linkForMode(mode)
-        console.log(`Link: ` + fullUrl)
+        this.html.embedUrl.value = fullUrl
 
         const modeParam = mode === MAX_MODE_WHEN_EMBEDDED ? "" : `:mode: ${modeStr}\n`
+        const embedHeight = this.guessAdequateCanvasSize()[1]
 
-        const embedHeight = this.guessAdequateCanvasHeight()
+        const markdownBlock = `\`\`\`{logic}\n:height: ${embedHeight}\n${modeParam}\n${json}\n\`\`\``
+        this.html.embedMarkdown.value = markdownBlock
 
-        const block = `\`\`\`{logic}
-    :height: ${embedHeight}
-    ${modeParam}
-    ${json}
-    \`\`\``
+        const iframeEmbed = `<iframe style="width: 100%; height: ${embedHeight}px; border: 0" src="${fullUrl}"></iframe>`
+        this.html.embedIframe.value = iframeEmbed
 
-        console.log(block)
 
-        if (asQrCode) {
-            const dataUrl = await QRCode.toDataURL(fullUrl, { errorCorrectionLevel: 'L' })
-            console.log("datUrl: " + dataUrl)
-            const qrcodeImg = this.html.qrcodeImg
-            qrcodeImg.src = dataUrl
-            qrcodeImg.style.display = "initial"
+        const dataUrl = await QRCode.toDataURL(fullUrl, { margin: 0, errorCorrectionLevel: 'L' })
+        console.log("datUrl: " + dataUrl)
+        const qrcodeImg = this.html.embedUrlQRCode
+        qrcodeImg.src = dataUrl
 
-        } else {
-            if (copyToClipboard(block)) {
-                console.log("  -> Copied!")
-            } else {
-                console.log("  -> Could not copy!")
-            }
-        }
+        // if (copyToClipboard(block)) {
+        //     console.log("  -> Copied!")
+        // } else {
+        //     console.log("  -> Could not copy!")
+        // }
 
 
         if (this._isSingleton) {
             history.replaceState(null, "", linkForMode(MAX_MODE_WHEN_SINGLETON))
         }
+
+        const dlog = this.html.embedDialog
+        if (typeof (dlog as any).showModal === "function") {
+            (dlog as any).showModal()
+            this.html.embedUrl.focus()
+        } else {
+            alert("The <dialog> API is not supported by this browser")
+        }
+
+    }
+
+    downloadSnapshotImage() {
+        const f = window.devicePixelRatio ?? 1
+        let [width, height] = this.guessAdequateCanvasSize()
+        width *= f
+        height *= f
+
+        const tmpCanvas = document.createElement('canvas')
+        tmpCanvas.width = width
+        tmpCanvas.height = height
+
+        const g = tmpCanvas.getContext('2d')!
+        g.drawImage(this.html.mainCanvas, 0, 0, width, height,
+            0, 0, tmpCanvas.width, tmpCanvas.height)
+        const dataUrl = tmpCanvas.toDataURL()
+        tmpCanvas.remove()
+
+        const filename = (this.options.name ?? "circuit") + ".png"
+        downloadDataUrl(dataUrl, filename)
     }
 
     recalcPropagateAndDrawIfNeeded() {
@@ -1071,7 +1192,7 @@ export class LogicEditor extends HTMLElement {
         if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
             g.strokeRect(0, 0, width, height)
             if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
-                const h = this.guessAdequateCanvasHeight()
+                const h = this.guessAdequateCanvasSize()[1]
                 strokeSingleLine(g, 0, h, width, h)
 
                 g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION

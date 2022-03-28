@@ -10,14 +10,12 @@
 
     <div class="list-group" id="leftToolbar" style="flex:none; min-width: 50px; max-width: 60px;overflow-y: scroll;display: none;">
     </div>
-    
+
     <div class="" style="flex: auto; position: relative; display: flex; align-items: stretch; min-width: 0;">
         <!-- Simulator Canvas -->
         <div id="canvas-sim" style="flex:auto;">
             <canvas id="mainCanvas"></canvas>
         </div>
-
-        <img id="qrcode-img" style="position: absolute; top: 0; left: 0;">
 
         <!-- In-Canvas Toolbar -->
         <div style="padding: 5px;
@@ -44,6 +42,10 @@
                         <i class="fa fa-download"></i>
                         Télécharger
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool" tool="screenshot" title="Télécharge le circuit actuel sous forme d’image" style="display:none">
+                        <i class="fa fa-file-image-o"></i>
+                        Screenshot
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool" tool="reset" id="resetToolButton" title="Réinitialise l’état de ce schéma logique">
                         <i class="fa fa-undo"></i>
                         <span id="resetToolButtonCaption">Réinitialiser</span>
@@ -69,6 +71,36 @@
 
         </div>
     </div>
+
+    <dialog id="embedDialog" style="border: 1px solid gray; border-radius: 10px; box-shadow: 0px 0px 16px 5px rgba(0,0,0,0.2); padding: 5px 10px; width: 100%; max-width: 600px;">
+        <div style="display: flex; flex-direction: column; font-size: 80%">
+            <div style="flex:none; font-weight: bold; text-align: center; width: 100%;padding: 10px 0; border-bottom: 1px solid lightgrey; margin-bottom: 10px; font-size: 120%">Partager ce schéma</div>
+            <div style="flex: auto; display: flex; flex-direction: row;">
+                <div style="flex:auto; flex-direction: column;">
+                    <div>
+                        <span style="font-weight: bolder">URL:</span><br>
+                        <textarea id="embedUrl" readonly rows="1" style="width:100%; resize: none"></textarea>
+                    </div>
+                    <div style="margin-top: 10px; flex:auto">
+                        <span style="font-weight: bolder">Inclusion via &lt;iframe&gt;:</span><br>
+                        <textarea id="embedIframe" readonly rows="3" style="width:100%; font-family: monospace;"></textarea>
+                    </div>
+                    <div style="margin-top: 10px; flex:auto">
+                        <span style="font-weight: bolder;">Inclusion en Markdown/Myst:</span><br>
+                        <textarea id="embedMarkdown" readonly rows="6" style="width:100%; font-family: monospace"></textarea>
+                    </div>
+                </div>
+                <div style="flex:none; margin-top: 10px">
+                    <img id="embedUrlQRCode" style="margin-left: 10px">
+                </div>
+            </div>
+            <div style="flex: none; margin-top: 15px; text-align: center;">
+                <form method="dialog">
+                    <button value="close">Fermer</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
 
     <div id="tooltip" role="tooltip" style="display:none">
         <div id="tooltipContents"></div>
