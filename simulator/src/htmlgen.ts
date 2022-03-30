@@ -160,8 +160,8 @@ export const dataType = attrBuilder("data-type")
 
 export const asValue = (bool: LogicValue) => b(isUnknown(bool) || isHighImpedance(bool) ? Unknown : String(Number(bool)))
 
-export function tooltipContent(title: Modifier | undefined, body: Modifier): ModifierObject {
-    return div(style("max-width: 200px"),
+export function tooltipContent(title: Modifier | undefined, body: Modifier, maxWidth = 200): ModifierObject {
+    return div(style(`max-width: ${maxWidth}px`),
         isUndefined(title) ? emptyMod : div(style("padding-bottom: 3px; border-bottom: 1px solid grey;"), title),
         div(body)
     )

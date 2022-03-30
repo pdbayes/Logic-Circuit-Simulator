@@ -135,7 +135,22 @@ class _PersistenceManager {
             }
         })
 
+        // load userdata, keeping already existing data
+        if (isDefined(parsedContents.userdata)) {
+            if (typeof editor.userdata === "object" && typeof parsedContents.userdata === "object") {
+                // merge
+                editor.userdata = {
+                    ...parsedContents.userdata,
+                    ...editor.userdata,
+                }
+            } else {
+                // cannot merge, keep existing data
+            }
+            delete parsedContents.userdata
+        }
+
         // also works with undefined
+        // must be done AFTER setting user data to ensure the UI is updated accordingly
         editor.setPartialOptions(parsedContents.opts)
         delete parsedContents.opts
 
@@ -151,6 +166,10 @@ class _PersistenceManager {
         const workspace: any = {
             "v": 2,
             "opts": editor.nonDefaultOptions(),
+        }
+
+        if (isDefined(editor.userdata)) {
+            workspace["userdata"] = editor.userdata
         }
 
         for (const comp of editor.components) {

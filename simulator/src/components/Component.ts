@@ -500,6 +500,7 @@ export abstract class ComponentBase<
             if (newLinks.length > 0) {
                 this.autoConnected(newLinks)
             }
+            this.editor.setDirty("moved component")
         }
     }
 

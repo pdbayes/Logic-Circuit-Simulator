@@ -723,7 +723,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
             }
         })()
 
-        return makeGateTooltip(
+        return makeGateTooltip(1,
             header,
             Gate1Types.propsOf(this.type).localDesc,
             explanation,
@@ -795,7 +795,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
 
-        return makeGateTooltip(
+        return makeGateTooltip(2,
             mods("Porte ", b(gateProps.localName)),
             gateProps.localDesc,
             explanation,
@@ -910,7 +910,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
 
-        return makeGateTooltip(
+        return makeGateTooltip(3,
             mods("Porte ", b(gateProps.localName)),
             gateProps.localDesc,
             explanation,
@@ -1000,7 +1000,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
             ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
             : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
 
-        return makeGateTooltip(
+        return makeGateTooltip(4,
             mods("Porte ", b(gateProps.localName)),
             gateProps.localDesc,
             explanation,
@@ -1037,8 +1037,9 @@ const makeTruthTable = ([header, rows]: readonly [string[], TruthTableRowData[]]
         tbody(...htmlRows)
     )
 }
-const makeGateTooltip = (title: Modifier, description: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject => {
-    return tooltipContent(title, mods(div(description), div(explanation), div(truthTable)))
+const makeGateTooltip = (nInput: number, title: Modifier, description: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject => {
+    const maxWidth = 200 + (Math.max(0, nInput - 2)) * 50
+    return tooltipContent(title, mods(div(description), div(explanation), div(truthTable)), maxWidth)
 }
 
 export const GateFactory = {

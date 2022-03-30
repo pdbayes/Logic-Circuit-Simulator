@@ -505,6 +505,7 @@ export class WireManager {
                 this._wires.length--
             } else {
                 completedWire = currentWire
+                this.editor.setDirty("added wire")
             }
 
             this._isAddingWire = false

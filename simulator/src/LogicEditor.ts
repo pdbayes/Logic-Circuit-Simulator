@@ -95,6 +95,7 @@ export class LogicEditor extends HTMLElement {
     private _isEmbedded = false
     private _isSingleton = false
     private _maxInstanceMode: Mode = MAX_MODE_WHEN_EMBEDDED // can be set later
+    private _isDirty = false
     private _mode: Mode = DEFAULT_MODE
     private _initialData: InitialData | undefined = undefined
     private _options: EditorOptions = { ...DEFAULT_EDITOR_OPTIONS }
@@ -118,6 +119,7 @@ export class LogicEditor extends HTMLElement {
         embedUrl: HTMLTextAreaElement,
         embedUrlQRCode: HTMLImageElement,
         embedIframe: HTMLTextAreaElement,
+        embedWebcomp: HTMLTextAreaElement,
         embedMarkdown: HTMLTextAreaElement,
     }
     public optionsHtml: {
@@ -126,7 +128,10 @@ export class LogicEditor extends HTMLElement {
         hideWireColorsCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
+        showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
+    public userdata: any = undefined
+
     private _baseTransform: DOMMatrix
     private _currentScale = 1
     public mouseX = -1000 // offscreen at start
@@ -150,6 +155,7 @@ export class LogicEditor extends HTMLElement {
             embedUrl: this.elemWithId("embedUrl"),
             embedUrlQRCode: this.elemWithId("embedUrlQRCode"),
             embedIframe: this.elemWithId("embedIframe"),
+            embedWebcomp: this.elemWithId("embedWebcomp"),
             embedMarkdown: this.elemWithId("embedMarkdown"),
         }
         this.html = html
@@ -189,13 +195,17 @@ export class LogicEditor extends HTMLElement {
         const newOptions = { ...this._options, ...opts }
         this._options = newOptions
         let optionsHtml
+
         if (isDefined(optionsHtml = this.optionsHtml)) {
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
+
+            optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
         }
+
         this.redrawMgr.addReason("options changed", null)
     }
 
@@ -349,6 +359,38 @@ export class LogicEditor extends HTMLElement {
             ]) {
                 transferUrlParamToAttribute(attr)
             }
+
+            const userParamPrefix = "user"
+            const url = new URL(window.location.href)
+            url.searchParams.forEach((value: string, key: string) => {
+                if (key.startsWith(userParamPrefix)) {
+                    key = key.substring(userParamPrefix.length)
+                    if (key.startsWith(".")) {
+                        key = key.substring(1)
+                    }
+                    if (key.length === 0) {
+                        this.userdata = value
+                    } else {
+                        key = key[0].toLowerCase() + key.substring(1)
+                        if (typeof this.userdata !== "object") {
+                            this.userdata = {}
+                        }
+                        if (key in this.userdata) {
+                            const oldValue = this.userdata[key]
+                            if (Array.isArray(oldValue)) {
+                                oldValue.push(value)
+                            } else {
+                                this.userdata[key] = [oldValue, value]
+                            }
+                        } else {
+                            this.userdata[key] = value
+                        }
+                    }
+                }
+            })
+            if (isDefined(this.userdata)) {
+                console.log("Custom user data: ", this.userdata)
+            }
         }
 
         if (this._isSingleton) {
@@ -402,8 +444,15 @@ export class LogicEditor extends HTMLElement {
             window.addEventListener("keydown", this.wrapHandler(e => {
                 switch (e.key) {
                     case "a":
-                        if (e.metaKey) {
+                        if (e.metaKey && this.mode >= Mode.CONNECT) {
                             this.cursorMovementMgr.selectAll()
+                            e.preventDefault()
+                        }
+                        return
+
+                    case "s":
+                        if (e.metaKey && this._isSingleton) {
+                            this.saveCurrentStateToUrl()
                             e.preventDefault()
                         }
                         return
@@ -443,6 +492,12 @@ export class LogicEditor extends HTMLElement {
                     )
                 ).render()
             )
+
+            window.onbeforeunload = e => {
+                if (this._isSingleton && this._isDirty) {
+                    e.preventDefault() // ask to save changes
+                }
+            }
         }
 
         // Load parameters from attributes
@@ -559,7 +614,7 @@ export class LogicEditor extends HTMLElement {
             textArea.select()
             e.preventDefault()
         }
-        for (const textArea of [this.html.embedUrl, this.html.embedIframe, this.html.embedMarkdown]) {
+        for (const textArea of [this.html.embedUrl, this.html.embedIframe, this.html.embedWebcomp, this.html.embedMarkdown]) {
             textArea.addEventListener("pointerdown", selectAllListener)
             textArea.addEventListener("focus", selectAllListener)
         }
@@ -661,7 +716,17 @@ export class LogicEditor extends HTMLElement {
             ).render()
         )
 
-        this.optionsHtml = { nameField, hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField }
+        const showUserdataLink = a("données liées", style("text-decoration: underline; cursor: pointer")).render()
+        showUserdataLink.addEventListener("click", () => {
+            alert("Les données suivantes sont exportées avec le circuit:\n\n" + JSON.stringify(this.userdata, undefined, 4))
+        })
+        const showUserDataLinkContainer = div(
+            style("margin-top: 5px; display: none"),
+            "Voir les ", showUserdataLink,
+        ).render()
+        optionsZone.appendChild(showUserDataLinkContainer)
+
+        this.optionsHtml = { nameField, hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField, showUserDataLinkContainer }
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
@@ -875,6 +940,10 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
+    setDirty(__reason: string) {
+        this._isDirty = true
+    }
+
     tryDeleteDrawable(comp: Drawable) {
         if (comp instanceof ComponentBase) {
             this.tryDeleteComponentsWhere(c => c === comp)
@@ -1045,20 +1114,11 @@ export class LogicEditor extends HTMLElement {
             this._mode = MAX_MODE_WHEN_EMBEDDED
         }
         const modeStr = Mode[mode].toLowerCase()
-        const json = PersistenceManager.buildWorkspaceJSON(this)
+        const [json, compressedUriSafeJson] = this.jsonStateAndCompressed()
+
         console.log("JSON:\n" + json)
 
-        // We did this in the past, but now we're compressing things a bit
-        // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
-
-        // this can compress to like 40-50% of the original size
-        const encodedJson = LZString.compressToEncodedURIComponent(json)
-
-        function linkForMode(mode: Mode): string {
-            const loc = window.location
-            return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + encodedJson
-        }
-        const fullUrl = linkForMode(mode)
+        const fullUrl = this.fullUrlForMode(mode, compressedUriSafeJson)
         this.html.embedUrl.value = fullUrl
 
         const modeParam = mode === MAX_MODE_WHEN_EMBEDDED ? "" : `:mode: ${modeStr}\n`
@@ -1070,36 +1130,67 @@ export class LogicEditor extends HTMLElement {
         const iframeEmbed = `<iframe style="width: 100%; height: ${embedHeight}px; border: 0" src="${fullUrl}"></iframe>`
         this.html.embedIframe.value = iframeEmbed
 
+        const webcompEmbed = `<logic-editor mode="${Mode[mode].toLowerCase()}">\n  <script type="application/json">\n    ${json}\n  </script>\n</logic-editor>`
+        this.html.embedWebcomp.value = webcompEmbed
+
 
         const dataUrl = await QRCode.toDataURL(fullUrl, { margin: 0, errorCorrectionLevel: 'L' })
-        console.log("datUrl: " + dataUrl)
         const qrcodeImg = this.html.embedUrlQRCode
         qrcodeImg.src = dataUrl
 
-        // if (copyToClipboard(block)) {
-        //     console.log("  -> Copied!")
-        // } else {
-        //     console.log("  -> Could not copy!")
-        // }
-
-
-        if (this._isSingleton) {
-            history.replaceState(null, "", linkForMode(MAX_MODE_WHEN_SINGLETON))
-        }
+        this.saveToUrl(compressedUriSafeJson)
 
         const dlog = this.html.embedDialog
         if (typeof (dlog as any).showModal === "function") {
             (dlog as any).showModal()
             this.html.embedUrl.focus()
         } else {
-            alert("The <dialog> API is not supported by this browser")
-        }
+            // alert("The <dialog> API is not supported by this browser")
 
+            // TODO show the info some other way
+
+            if (copyToClipboard(fullUrl)) {
+                console.log("  -> Copied!")
+            } else {
+                console.log("  -> Could not copy!")
+            }
+        }
+    }
+
+    saveCurrentStateToUrl() {
+        const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+        this.saveToUrl(compressedUriSafeJson)
+    }
+
+    saveToUrl(compressedUriSafeJson: string) {
+        if (this._isSingleton) {
+            history.pushState(null, "", this.fullUrlForMode(MAX_MODE_WHEN_SINGLETON, compressedUriSafeJson))
+            this._isDirty = false
+        }
+    }
+
+    private jsonStateAndCompressed(): [string, string] {
+        const json = PersistenceManager.buildWorkspaceJSON(this)
+
+        // We did this in the past, but now we're compressing things a bit
+        // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
+
+        // this can compress to like 40-50% of the original size
+        const compressedUriSafeJson = LZString.compressToEncodedURIComponent(json)
+        return [json, compressedUriSafeJson]
+    }
+
+    private fullUrlForMode(mode: Mode, compressedUriSafeJson: string): string {
+        const loc = window.location
+        return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + compressedUriSafeJson
     }
 
     downloadSnapshotImage() {
         const f = window.devicePixelRatio ?? 1
+        const borderWidth = 2
         let [width, height] = this.guessAdequateCanvasSize()
+        width -= borderWidth
+        height -= borderWidth
         width *= f
         height *= f
 
@@ -1108,7 +1199,7 @@ export class LogicEditor extends HTMLElement {
         tmpCanvas.height = height
 
         const g = tmpCanvas.getContext('2d')!
-        g.drawImage(this.html.mainCanvas, 0, 0, width, height,
+        g.drawImage(this.html.mainCanvas, borderWidth, borderWidth, width, height,
             0, 0, tmpCanvas.width, tmpCanvas.height)
         const dataUrl = tmpCanvas.toDataURL()
         tmpCanvas.remove()

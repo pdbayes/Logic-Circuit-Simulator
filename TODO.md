@@ -13,6 +13,7 @@
  * prevent click event if right-click
  * 4 bit adder with carry in and out
  * show value on dip switch and register
+ * more consistently set things dirty
 
 
 ## Medium priority
