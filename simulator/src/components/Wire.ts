@@ -403,9 +403,28 @@ export class Wire extends Drawable {
     }
 
     public override makeContextMenu(): ContextMenuData {
+        const customPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
+
         return [
             ContextMenuData.item("plus-circle", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
                 this.addWaypoint(contextEvent)
+            }),
+            ContextMenuData.sep(),
+            ContextMenuData.item("clock-o", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
+                const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
+                const defaultDelay = String(this.editor.options.propagationDelay)
+                const message = `Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${defaultDelay} ms):`
+                const newValueStr = prompt(message, currentStr)
+                if (newValueStr !== null) {
+                    if (newValueStr === "") {
+                        this.customPropagationDelay = undefined
+                    } else {
+                        const asInt = parseInt(newValueStr)
+                        if (!isNaN(asInt)) {
+                            this.customPropagationDelay = asInt
+                        }
+                    }
+                }
             }),
             ContextMenuData.sep(),
             ContextMenuData.item("trash-o", "Supprimer", () => {
