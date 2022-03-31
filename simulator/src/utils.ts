@@ -319,6 +319,20 @@ export function setVisible(elem: HTMLElement, visible: boolean) {
     }
 }
 
+export function showModal(dlog: HTMLDialogElement): boolean {
+    if (typeof (dlog as any).showModal === "function") {
+        dlog.style.display = "initial";
+        (dlog as any).showModal()
+        const listener = () => {
+            dlog.style.display = "none"
+            dlog.removeEventListener("close", listener)
+        }
+        dlog.addEventListener("close", listener)
+        return true
+    }
+    return false
+}
+
 
 // More general-purpose utility functions
 

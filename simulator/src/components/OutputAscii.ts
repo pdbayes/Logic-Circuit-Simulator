@@ -59,12 +59,16 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return GRID_HEIGHT * GRID_STEP
     }
 
+    private get showAsUnknown() {
+        return this._showAsUnknown || this.editor.options.hideOutputColors
+    }
+
     public override makeTooltip() {
         const [binaryStringRep, value] = this.value
 
         return tooltipContent("Afficheur de caractère", mods(
             div(`Affiche le caractère ASCII représenté par ses 7 entrées, actuellement `, b(binaryStringRep), "."),
-            this._showAsUnknown
+            this.showAsUnknown
                 ? emptyMod
                 : isUnknown(value)
                     ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
@@ -106,41 +110,43 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
 
             const isVertical = Orientation.isVertical(this.orient)
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
+            let mainTextPosY = this.posY + (isVertical ? 4 : 0)
 
             g.font = "9px sans-serif"
             g.fillStyle = COLOR_COMPONENT_BORDER
-            if (isVertical && hasAdditionalRepresentation) {
-                // upper left corner
-                g.textAlign = "start"
-                g.fillText(binaryStringRep, this.posX - height / 2 + 3, this.posY - width / 2 + 8)
-                g.textAlign = "center"
-            } else {
-                // upper center
-                g.textAlign = "center"
-                g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 8 : -height / 2 + 10))
-            }
 
-            let mainTextPosY = this.posY + (isVertical ? 4 : 0)
-
-            if (hasAdditionalRepresentation) {
-                const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10, 7)
-                g.font = "bold 11px sans-serif"
-                if (isVertical) {
-                    // upper right
-                    g.textAlign = "end"
-                    g.fillText(additionalRepr, this.posX + height / 2 - 3, this.posY - width / 2 + 9)
+            if (!this.showAsUnknown) {
+                if (isVertical && hasAdditionalRepresentation) {
+                    // upper left corner
+                    g.textAlign = "start"
+                    g.fillText(binaryStringRep, this.posX - height / 2 + 3, this.posY - width / 2 + 8)
                     g.textAlign = "center"
                 } else {
-                    // center, below bin repr
-                    g.fillText(additionalRepr, this.posX, this.posY - height / 2 + 22)
-                    mainTextPosY += 8 // shift main repr a bit
+                    // upper center
+                    g.textAlign = "center"
+                    g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 8 : -height / 2 + 10))
+                }
+
+                if (hasAdditionalRepresentation) {
+                    const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10, 7)
+                    g.font = "bold 11px sans-serif"
+                    if (isVertical) {
+                        // upper right
+                        g.textAlign = "end"
+                        g.fillText(additionalRepr, this.posX + height / 2 - 3, this.posY - width / 2 + 9)
+                        g.textAlign = "center"
+                    } else {
+                        // center, below bin repr
+                        g.fillText(additionalRepr, this.posX, this.posY - height / 2 + 22)
+                        mainTextPosY += 8 // shift main repr a bit
+                    }
                 }
             }
 
             let mainText: string
-            if (isUnknown(value) || this._showAsUnknown) {
+            if (isUnknown(value) || this.showAsUnknown) {
                 g.font = "bold 18px sans-serif"
-                if (this._showAsUnknown) {
+                if (this.showAsUnknown) {
                     g.fillStyle = COLOR_UNSET
                 }
                 mainText = "?"

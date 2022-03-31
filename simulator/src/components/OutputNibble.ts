@@ -59,6 +59,10 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         return GRID_HEIGHT * GRID_STEP
     }
 
+    private get showAsUnknown() {
+        return this._showAsUnknown || this.editor.options.hideOutputColors
+    }
+
     public override makeTooltip() {
         const radixStr = (() => {
             switch (this._radix) {
@@ -73,7 +77,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
 
         return tooltipContent("Afficheur de semioctet", mods(
             div(`Affiche la valeur ${radixStr} de ses 4 entrées, actuellement `, b(binaryStringRep), "."),
-            !isUnknown(value) || this._showAsUnknown
+            !isUnknown(value) || this.showAsUnknown
                 ? emptyMod
                 : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
         ))
@@ -89,7 +93,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnknown(value) || this._showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
+        const backColor = isUnknown(value) || this.showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
         g.fillStyle = backColor
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
@@ -117,13 +121,16 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
             g.fillStyle = textColor
 
             g.textAlign = "center"
-            g.font = "10px sans-serif"
-            g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+
+            if (!this.showAsUnknown) {
+                g.font = "10px sans-serif"
+                g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+            }
 
             g.font = "bold 18px sans-serif"
 
             let stringRep: string
-            if (this._showAsUnknown) {
+            if (this.showAsUnknown) {
                 stringRep = "?"
                 // if (!isUnset(value)) {
                 //     // otherwise we get the same color for background and text

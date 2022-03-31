@@ -14,7 +14,7 @@ import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, downloadBlob as downloadDataUrl, getURLParameter, isDefined, isFalsyString, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible } from "./utils"
+import { copyToClipboard, downloadBlob as downloadDataUrl, getURLParameter, isDefined, isFalsyString, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal } from "./utils"
 
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
@@ -45,6 +45,7 @@ const ATTRIBUTE_NAMES = {
     name: "name",
     showonly: "showonly",
     showgatetypes: "showgatetypes",
+    showdisconnectedpins: "showdisconnectedpins",
     showtooltips: "tooltips",
 
     src: "src",
@@ -55,7 +56,9 @@ const DEFAULT_EDITOR_OPTIONS = {
     name: undefined as string | undefined,
     showOnly: undefined as undefined | Array<string>,
     showGateTypes: false,
+    showDisconnectedPins: false,
     hideWireColors: false,
+    hideOutputColors: false,
     hideTooltips: false,
     propagationDelay: 100,
 }
@@ -125,7 +128,9 @@ export class LogicEditor extends HTMLElement {
     public optionsHtml: {
         nameField: HTMLInputElement,
         showGateTypesCheckbox: HTMLInputElement,
+        showDisconnectedPinsCheckbox: HTMLInputElement,
         hideWireColorsCheckbox: HTMLInputElement,
+        hideOutputColorsCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
@@ -199,7 +204,9 @@ export class LogicEditor extends HTMLElement {
         if (isDefined(optionsHtml = this.optionsHtml)) {
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
+            optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
+            optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
 
@@ -353,6 +360,7 @@ export class LogicEditor extends HTMLElement {
                 ATTRIBUTE_NAMES.mode,
                 ATTRIBUTE_NAMES.showonly,
                 ATTRIBUTE_NAMES.showgatetypes,
+                ATTRIBUTE_NAMES.showdisconnectedpins,
                 ATTRIBUTE_NAMES.showtooltips,
                 ATTRIBUTE_NAMES.data,
                 ATTRIBUTE_NAMES.src,
@@ -496,6 +504,7 @@ export class LogicEditor extends HTMLElement {
             window.onbeforeunload = e => {
                 if (this._isSingleton && this._isDirty) {
                     e.preventDefault() // ask to save changes
+                    e.returnValue = "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?"
                 }
             }
         }
@@ -514,6 +523,11 @@ export class LogicEditor extends HTMLElement {
         const showgatetypesAttr = this.getAttribute(ATTRIBUTE_NAMES.showgatetypes)
         if (showgatetypesAttr !== null) {
             this._options.showGateTypes = isTruthyString(showgatetypesAttr)
+        }
+
+        const showdisconnectedpinsAttr = this.getAttribute(ATTRIBUTE_NAMES.showdisconnectedpins)
+        if (showdisconnectedpinsAttr !== null) {
+            this._options.showDisconnectedPins = isTruthyString(showdisconnectedpinsAttr)
         }
 
         const showtooltipsAttr = this.getAttribute(ATTRIBUTE_NAMES.showtooltips)
@@ -663,7 +677,7 @@ export class LogicEditor extends HTMLElement {
             setVisible(optionsZone, false)
         })
 
-        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, title: string) => {
+        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, title: string, mouseover: string) => {
             const checkbox = input(type("checkbox")).render()
             if (this.options[optionName] === true) {
                 checkbox.checked = true
@@ -675,7 +689,7 @@ export class LogicEditor extends HTMLElement {
             optionsZone.appendChild(
                 div(
                     style("height: 20px"),
-                    label(checkbox, span(style("margin-left: 4px"), title))
+                    label(checkbox, span(style("margin-left: 4px"), attr("title", mouseover), title))
                 ).render()
             )
             return checkbox
@@ -685,6 +699,7 @@ export class LogicEditor extends HTMLElement {
             style("margin-left: 4px"),
             attr("value", this.options.name ?? ""),
             attr("placeholder", "circuit"),
+            attr("title", "Ceci sera le nom du fichier téléchargé."),
         ).render()
         nameField.addEventListener("change", () => {
             const newName = nameField.value
@@ -697,14 +712,32 @@ export class LogicEditor extends HTMLElement {
             ).render()
         )
 
-        const hideWireColorsCheckbox = makeCheckbox("hideWireColors", "Cacher l’état des fils")
-        const showGateTypesCheckbox = makeCheckbox("showGateTypes", "Montrer type des portes")
-        const hideTooltipsCheckbox = makeCheckbox("hideTooltips", "Désactiver tooltips")
+        const hideWireColorsCheckbox = makeCheckbox("hideWireColors",
+            "Cacher l’état des fils",
+            "Si coché, les fils sont affichés avec une couleur neutre plutôt que de montrer s’ils véhiculent un 1 ou un 0."
+        )
+        const hideOutputColorsCheckbox = makeCheckbox("hideOutputColors",
+            "Cacher l’état des sorties",
+            "Si coché, les sorties sont affichées avec une couleur neutre. S’utilise volontiers avec l’option ci-dessus."
+        )
+        const showGateTypesCheckbox = makeCheckbox("showGateTypes",
+            "Montrer type des portes",
+            "Si coché, affiche sur les portes logique le nom de la fonction réalisée."
+        )
+        const showDisconnectedPinsCheckbox = makeCheckbox("showDisconnectedPins",
+            "Toujours montrer les pattes",
+            "Si non coché, les pattes non connectées des composants sont masquées dans les modes où les connexions du circuit ne peuvent pas être modifiées (et restent visibles sinon)."
+        )
+        const hideTooltipsCheckbox = makeCheckbox("hideTooltips",
+            "Désactiver tooltips",
+            "Si coché, les informations supplémentaires des tooltips (comme les tables de vérité) ne seront pas affichées."
+        )
 
         const propagationDelayField = input(type("number"),
             style("margin: 0 4px; width: 4em"),
             attr("min", "0"), attr("step", "50"),
-            attr("value", String(this.options.propagationDelay))
+            attr("value", String(this.options.propagationDelay)),
+            attr("title", "Un 1 ou un 0 imposé sur une connexion sera répercuté à l’autre bout de la connexion après ce délai de propagation."),
         ).render()
         propagationDelayField.addEventListener("change", () => {
             this._options.propagationDelay = propagationDelayField.valueAsNumber
@@ -726,7 +759,16 @@ export class LogicEditor extends HTMLElement {
         ).render()
         optionsZone.appendChild(showUserDataLinkContainer)
 
-        this.optionsHtml = { nameField, hideWireColorsCheckbox, showGateTypesCheckbox, hideTooltipsCheckbox, propagationDelayField, showUserDataLinkContainer }
+        this.optionsHtml = {
+            nameField,
+            hideWireColorsCheckbox,
+            hideOutputColorsCheckbox,
+            showGateTypesCheckbox,
+            showDisconnectedPinsCheckbox,
+            hideTooltipsCheckbox,
+            propagationDelayField,
+            showUserDataLinkContainer,
+        }
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
@@ -941,7 +983,10 @@ export class LogicEditor extends HTMLElement {
     }
 
     setDirty(__reason: string) {
-        this._isDirty = true
+        if (this.mode >= Mode.CONNECT) {
+            // other modes can't be dirty
+            this._isDirty = true
+        }
     }
 
     tryDeleteDrawable(comp: Drawable) {
@@ -1140,11 +1185,7 @@ export class LogicEditor extends HTMLElement {
 
         this.saveToUrl(compressedUriSafeJson)
 
-        const dlog = this.html.embedDialog
-        if (typeof (dlog as any).showModal === "function") {
-            (dlog as any).showModal()
-            this.html.embedUrl.focus()
-        } else {
+        if (!showModal(this.html.embedDialog)) {
             // alert("The <dialog> API is not supported by this browser")
 
             // TODO show the info some other way

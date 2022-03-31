@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicValue as LogicValue, typeOrUndefined } from "../utils"
+import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicValue as LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { Component, ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
@@ -81,7 +81,8 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         g.fill()
         g.stroke()
 
-        g.fillStyle = colorForBoolean(this.value)
+        const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
+        g.fillStyle = colorForBoolean(valueToShow)
         g.lineWidth = 4
         g.beginPath()
         circle(g, this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
@@ -92,7 +93,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, true)
             }
-            drawRoundValueCentered(g, this.value, this)
+            drawRoundValueCentered(g, valueToShow, this)
         })
     }
 

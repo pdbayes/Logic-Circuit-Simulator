@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicValue, Unknown } from "./utils"
+import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 import { Node } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -213,7 +213,13 @@ export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number
 }
 
 export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
-    const neutral = node.editor.options.hideWireColors
+    const editor = node.editor
+    const mode = editor.mode
+    const options = editor.options
+    if (mode <= Mode.TRYOUT && !options.showDisconnectedPins && node.isDisconnected) {
+        return
+    }
+    const neutral = options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
     drawStraightWireLine(g, x0, y0, x1, y1, node.value, neutral)

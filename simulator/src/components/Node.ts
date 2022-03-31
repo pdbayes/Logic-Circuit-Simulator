@@ -125,6 +125,8 @@ abstract class NodeBase extends DrawableWithPosition {
 
     public abstract get acceptsMoreConnections(): boolean
 
+    public abstract get isDisconnected(): boolean
+
     public get posXInParentTransform() {
         return this.parent.posX + this._gridOffsetX * GRID_STEP
     }
@@ -217,6 +219,10 @@ export class NodeIn extends NodeBase {
         return isNull(this._incomingWire)
     }
 
+    get isDisconnected() {
+        return isNull(this._incomingWire)
+    }
+
     get forceValue() {
         return undefined
     }
@@ -247,6 +253,10 @@ export class NodeOut extends NodeBase {
 
     get acceptsMoreConnections() {
         return true
+    }
+
+    get isDisconnected() {
+        return this._outgoingWires.length === 0
     }
 
     get forceValue() {

@@ -115,19 +115,19 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const input = this.inputs[0]
-        const value = this.value
+        const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
 
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const backColor = ledColorForLogicValue(value, this._color)
+        const backColor = ledColorForLogicValue(valueToShow, this._color)
 
         g.fillStyle = backColor
         const [w, h] = this.getWidthAndHeight()
         g.beginPath()
         g.rect(this.posX - w / 2, this.posY - h / 2, w, h)
         g.closePath()
-        if (!this._transparent || value !== false) {
+        if (!this._transparent || valueToShow !== false) {
             g.fill()
         }
         g.stroke()
