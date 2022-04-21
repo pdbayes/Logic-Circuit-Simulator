@@ -140,15 +140,19 @@ export abstract class FlipflopOrLatch<
 
     protected abstract doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number): void
 
-    public static drawStoredValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, cellHeight: number) {
-        const centerLabelWidth = 20
+
+    public static drawStoredValueFrame(g: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
         g.strokeStyle = COLOR_COMPONENT_BORDER
-        g.fillStyle = colorForBoolean(value)
         g.lineWidth = 2
         g.beginPath()
-        g.rect(x - centerLabelWidth / 2, y - cellHeight / 2, centerLabelWidth, cellHeight)
+        g.rect(x - width / 2, y - height / 2, width, height)
         g.fill()
         g.stroke()
+    }
+
+    public static drawStoredValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, cellHeight: number) {
+        g.fillStyle = colorForBoolean(value)
+        FlipflopOrLatch.drawStoredValueFrame(g, x, y, 20, cellHeight)
         drawRoundValue(g, value, x, y)
     }
 

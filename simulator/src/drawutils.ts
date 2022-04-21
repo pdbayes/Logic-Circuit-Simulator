@@ -461,7 +461,7 @@ export function displayValuesFromArray(values: LogicValue[], mostSignificantFirs
     return [binaryStringRep, value]
 }
 
-export function formatWithRadix(value: number | Unknown, radix: number, width: number): string {
+export function formatWithRadix(value: number | Unknown, radix: number, width: number, withPrefix = true): string {
     if (isUnknown(value)) {
         return Unknown
     }
@@ -478,7 +478,7 @@ export function formatWithRadix(value: number | Unknown, radix: number, width: n
         }
     } else {
         const caption = value.toString(radix).toUpperCase()
-        const prefix = (() => {
+        const prefix = !withPrefix ? "" : (() => {
             switch (radix) {
                 case 16: return "0x"
                 case 8: return "0o"

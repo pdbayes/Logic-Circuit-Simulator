@@ -1199,7 +1199,8 @@ export class LogicEditor extends HTMLElement {
     }
 
     saveCurrentStateToUrl() {
-        const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+        const [json, compressedUriSafeJson] = this.jsonStateAndCompressed()
+        console.log(json)
         this.saveToUrl(compressedUriSafeJson)
     }
 

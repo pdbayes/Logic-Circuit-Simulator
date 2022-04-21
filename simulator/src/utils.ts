@@ -381,6 +381,10 @@ export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {
     return t.union([tpe, t.undefined], tpe.name + " | undefined")
 }
 
+export const typeOrNull = <T extends t.Mixed>(tpe: T) => {
+    return t.union([tpe, t.null], tpe.name + " | null")
+}
+
 
 // Unset; TriState
 

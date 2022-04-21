@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;stroke:#000000;stroke-width:3;stroke-linecap:square;}
+	.st1{fill:none;stroke:#000000;stroke-width:1.5;stroke-linecap:square;}
+	.st2{fill:none;stroke:#000000;stroke-width:2;}
+	.st3{font-family:'ArialMT';}
+	.st4{font-size:29px;}
+</style>
+<defs>
+	<clipPath id="cc">
+		<path d="M35.4,24.6h32.5v48.5H35.4V24.6z"/>
+	</clipPath>
+</defs>
+<path class="st0" d="M22,6.1h57v88H22V6.1z"/>
+<path class="st1" d="M35.4,24.6h32.5v48.5H35.4V24.6z"/>
+<line class="st2" x1="21.5" y1="86" x2="5.5" y2="86"/>
+<line class="st2" x1="79.5" y1="74.5" x2="95.5" y2="74.5"/>
+<line class="st2" x1="79.5" y1="58.2" x2="95.5" y2="58.2"/>
+<line class="st2" x1="79.5" y1="41.2" x2="95.5" y2="41.2"/>
+<line class="st2" x1="79.5" y1="25.6" x2="95.5" y2="25.6"/>
+<path class="st2" d="M21.6,81.1l11.5,5l-11.5,5"/>
+<g clip-path="url(#cc)">
+<text transform="matrix(1 0 0 1 43.7579 32.8559)" class="st3 st4">0</text>
+<text transform="matrix(1 0 0 1 43.7579 56.8559)" class="st3 st4">1</text>
+<text transform="matrix(1 0 0 1 43.7579 80.8559)" class="st3 st4">2</text>
+</g>
+</svg>

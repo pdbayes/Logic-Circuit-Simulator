@@ -10,6 +10,7 @@ import AND3 from '../img/AND3.svg' // @ts-ignore
 import AND4 from '../img/AND4.svg' // @ts-ignore
 import BUF from '../img/BUF.svg' // @ts-ignore
 import Clock from '../img/Clock.svg' // @ts-ignore
+import Counter from '../img/Counter.svg' // @ts-ignore
 import Decoder7Seg from '../img/Decoder7Seg.svg' // @ts-ignore
 import Decoder16Seg from '../img/Decoder16Seg.svg' // @ts-ignore
 import DecoderBCD4 from '../img/DecoderBCD4.svg' // @ts-ignore
@@ -59,6 +60,7 @@ const images = {
     AND4,
     BUF,
     Clock,
+    Counter,
     Decoder7Seg,
     Decoder16Seg,
     DecoderBCD4,

@@ -318,6 +318,11 @@ const componentsMenu: Array<Section> = [
                 img: "RAM", width: 50,
             },
             {
+                type: "component", subtype: "counter",
+                title: "Compteur 4 bits", caption: "Compteur",
+                img: "Counter", width: 50,
+            },
+            {
                 type: "component", subtype: "decoder-7seg",
                 title: "Décodeur 7 segments", caption: "Déc. 7 seg.",
                 img: "Decoder7Seg", width: 50,
