@@ -41,6 +41,7 @@
 
 ### DONE
 
+ * chainable 4-bit counter
  * option to have disconnected as high-Z
  * 16 x 4 bit memory
  * editor-level options and UI to set options

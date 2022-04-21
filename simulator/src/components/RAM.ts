@@ -18,11 +18,12 @@ const INPUT = {
     Address: [7, 8, 9, 10],
 } as const
 
-const NUM_CELLS = Math.pow(2, INPUT.Address.length)
-
 const OUTPUT = {
     Q: [0, 1, 2, 3],
 }
+
+const WORD_WIDTH = INPUT.Data.length
+const NUM_CELLS = Math.pow(2, INPUT.Address.length)
 
 export const RAM16x4Def =
     defineComponent(11, 4, t.type({
@@ -53,9 +54,9 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     private static valueFilledWith(v: LogicValue): RAMValue<4> {
         const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
-            mem[i] = [v, v, v, v]
+            mem[i] = FixedArrayFill(v, WORD_WIDTH)
         }
-        const out = [v, v, v, v] as const
+        const out = FixedArrayFill(v, WORD_WIDTH)
         return { mem, out }
     }
 
@@ -65,11 +66,11 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         }
         const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
-            const row = FixedArrayFill<LogicValue, 4>(false, 4)
+            const row = FixedArrayFill<LogicValue, 4>(false, WORD_WIDTH)
             if (i < savedData.content.length) {
                 const savedBits = savedData.content[i].split("")
                 const len = savedBits.length
-                for (let j = 0; j < 4; j++) {
+                for (let j = 0; j < WORD_WIDTH; j++) {
                     const jj = len - j - 1
                     if (jj >= 0) {
                         row[j] = toLogicValueFromChar(savedBits[jj])
@@ -288,7 +289,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                 const cellHeight = 6
                 const contentTop = this.posY - 8 * cellHeight
                 const contentLeft = this.posX - 2 * GRID_STEP
-                const contentRight = contentLeft + 4 * cellWidth
+                const contentRight = contentLeft + WORD_WIDTH * cellWidth
                 const contentBottom = contentTop + NUM_CELLS * cellHeight
 
                 // by default, paint everything as zero
@@ -296,8 +297,8 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                 g.fillRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
 
                 for (let i = 0; i < NUM_CELLS; i++) {
-                    for (let j = 0; j < 4; j++) {
-                        const v = mem[i][3 - j]
+                    for (let j = 0; j < WORD_WIDTH; j++) {
+                        const v = mem[i][WORD_WIDTH - j - 1]
                         if (v !== false) {
                             g.fillStyle = colorForBoolean(v)
                             g.fillRect(contentLeft + j * cellWidth, contentTop + i * cellHeight, cellWidth, cellHeight)
@@ -311,7 +312,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                     const y = contentTop + i * cellHeight
                     strokeSingleLine(g, contentLeft, y, contentRight, y)
                 }
-                for (let j = 1; j < 4; j++) {
+                for (let j = 1; j < WORD_WIDTH; j++) {
                     const x = contentLeft + j * cellWidth
                     strokeSingleLine(g, x, contentTop, x, contentBottom)
                 }

@@ -13,9 +13,12 @@ const GRID_HEIGHT = 11
 const enum INPUT { Clock, Clear }
 
 const OUTPUT = {
-    Q: [0, 1, 2, 3],
+    Q: [0, 1, 2, 3] as const,
     V: 4,
 }
+
+const COUNTER_WIDTH = OUTPUT.Q.length
+const COUNTER_RESET_VALUE = Math.pow(2, COUNTER_WIDTH)
 
 export const CounterDef =
     defineComponent(2, 5, t.type({
@@ -32,8 +35,6 @@ const CounterDefaults = {
     displayRadix: 10,
 }
 
-const CounterResetValue = 16
-
 export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicValue, 4>, LogicValue]> {
 
     private _trigger: EdgeTrigger = CounterDefaults.trigger
@@ -48,11 +49,11 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
     }
 
     private static decimalToFourBits(value: number): FixedArray<LogicValue, 4> {
-        value = value % CounterResetValue
-        const binStr = value.toString(2).padStart(4, "0")
-        const fourBits = FixedArrayFill(false, 4)
-        for (let i = 0; i < 4; i++) {
-            fourBits[i] = binStr[4 - i - 1] === "1"
+        value = value % COUNTER_RESET_VALUE
+        const binStr = value.toString(2).padStart(COUNTER_WIDTH, "0")
+        const fourBits = FixedArrayFill(false, COUNTER_WIDTH)
+        for (let i = 0; i < COUNTER_WIDTH; i++) {
+            fourBits[i] = binStr[COUNTER_WIDTH - i - 1] === "1"
         }
         return fourBits
     }
@@ -132,7 +133,7 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
     protected doRecalcValue(): [FixedArray<LogicValue, 4>, LogicValue] {
         const clear = this.inputs[INPUT.Clear].value
         if (clear === true) {
-            return [[false, false, false, false], false]
+            return [FixedArrayFill(false, COUNTER_WIDTH), false]
         }
 
         const prevClock = this._lastClock
@@ -145,8 +146,8 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
                 return [[Unknown, Unknown, Unknown, Unknown], Unknown]
             }
             const newValue = value + 1
-            if (newValue >= CounterResetValue) {
-                return [[false, false, false, false], activeOverflowValue]
+            if (newValue >= COUNTER_RESET_VALUE) {
+                return [FixedArrayFill(false, COUNTER_WIDTH), activeOverflowValue]
             }
 
             return [Counter.decimalToFourBits(newValue), !activeOverflowValue]

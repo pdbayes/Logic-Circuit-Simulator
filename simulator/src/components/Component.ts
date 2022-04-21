@@ -1,4 +1,4 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined } from "../utils"
 import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -657,7 +657,8 @@ export abstract class ComponentBase<
             const makeName = (i: number) => this.getOutputName(i) ?? "Sortie " + (i + 1)
             return ContextMenuData.submenu("exclamation", "Forcer une sortie", [
                 ...asArray(this.outputs).map((out, i) => {
-                    return ContextMenuData.submenu(undefined, makeName(i),
+                    const icon = isDefined(out.forceValue) ? "exclamation" : "none"
+                    return ContextMenuData.submenu(icon, makeName(i),
                         makeOutputItems(out)
                     )
                 }),
