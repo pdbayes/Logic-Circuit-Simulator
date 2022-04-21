@@ -451,6 +451,15 @@ export function toLogicValue(v: LogicValueRepr | undefined): LogicValue | undefi
     }
 }
 
+export function toLogicValueFromChar(char: string): LogicValue {
+    switch (char) {
+        case "1": return true
+        case "0": return false
+        case Unknown: return Unknown
+        case HighImpedance: return HighImpedance
+        default: return Unknown
+    }
+}
 
 // Enums or RichEnums used in several files
 

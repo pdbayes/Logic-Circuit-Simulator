@@ -1,4 +1,4 @@
-import { FixedArray, isNotNull, LogicValue, typeOrUndefined, Unknown, isUnknown, FixedReadonlyArray, FixedArraySize } from "../utils"
+import { FixedArray, isNotNull, LogicValue, typeOrUndefined, Unknown, isNull, isUnknown, FixedReadonlyArray, FixedArraySize, toLogicValueRepr, isUndefined, FixedArrayFill, toLogicValueFromChar } from "../utils"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -29,6 +29,7 @@ export const RAM16x4Def =
         type: t.literal("ram-16x4"),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
+        content: typeOrUndefined(t.array(t.string)),
     }, "RAM"))
 
 export type RAM16x4Repr = typeof RAM16x4Def.reprType
@@ -58,8 +59,34 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         return { mem, out }
     }
 
+    private static savedStateFrom(savedData: RAM16x4Repr | null): RAMValue<4> {
+        if (isNull(savedData) || isUndefined(savedData.content)) {
+            return RAM16by4.valueFilledWith(false)
+        }
+        const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
+        for (let i = 0; i < NUM_CELLS; i++) {
+            const row = FixedArrayFill<LogicValue, 4>(false, 4)
+            if (i < savedData.content.length) {
+                const savedBits = savedData.content[i].split("")
+                const len = savedBits.length
+                for (let j = 0; j < 4; j++) {
+                    const jj = len - j - 1
+                    if (jj >= 0) {
+                        row[j] = toLogicValueFromChar(savedBits[jj])
+                    } else {
+                        break
+                    }
+                }
+            }
+            mem[i] = row
+        }
+        const out = [...mem[0]] as const
+        return { mem, out }
+    }
+
+
     public constructor(editor: LogicEditor, savedData: RAM16x4Repr | null) {
-        super(editor, RAM16by4.valueFilledWith(false), savedData, {
+        super(editor, RAM16by4.savedStateFrom(savedData), savedData, {
             inOffsets: [
                 [-7, +6, "w"], // Clock
                 [-2, +8, "s"], // WriteEnable
@@ -84,6 +111,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
             ...this.toJSONBase(),
             showContent: (this._showContent !== RAMDefaults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RAMDefaults.trigger) ? this._trigger : undefined,
+            content: this.contentRepr(),
         }
     }
 
@@ -101,6 +129,22 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     get trigger() {
         return this._trigger
+    }
+
+    private contentRepr(): string[] | undefined {
+        const cells: string[] = []
+        for (let addr = 0; addr < NUM_CELLS; addr++) {
+            const cell = this.value.mem[addr].map(toLogicValueRepr).reverse().join("")
+            cells.push(cell)
+        }
+        for (let addr = NUM_CELLS - 1; addr >= 0; addr--) {
+            if (cells[addr] === "0000") {
+                cells.splice(addr, 1)
+            } else {
+                break
+            }
+        }
+        return cells.length === 0 ? undefined : cells
     }
 
     override getInputName(i: number): string | undefined {
