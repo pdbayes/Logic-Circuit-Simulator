@@ -14,20 +14,23 @@ See <https://jp.pellet.name/hep/logiga/>
 
  * Checkout with git
  * `npm install`
- * Open VS Code and start TypeScript compilation in watch mode
- * `npm run esbuild-watch` to build the bundle
- * `npm run server` to serve locally for testing
+ * Open VS Code and open folder
+ * `npm run compile-watch` to run the TypeScript compiler (without output) to check for errors
+ * `npm run lint-watch` to run `eslint` to check for linting errors
+ * `npm run bundle-watch` to build the bundle with `esbuild` (can be done on every save because `esbuild` is so fast)
+ * `npm run server` to serve locally for testing on port 8080
 
 
 ## Differences with Original Version
 
- * This fork is written in TypeScript
+ * This fork is completely written in TypeScript
+ * Based on web components so that it can easily be embedded by pulling in a single JS file
  * Dependency on p5 was removed
  * Interface is drawn differently, all with canvas calls and no external images
  * Screen is only refreshed when needed and not 60 times per second no matter what
  * Clocks can be paused
- * Components have been added: bit display, segment display, nibble display, half adder, muxes, etc.
- * Mouseovers have been added
+ * Components have been added: bit display, segment display, nibble display, half adder, muxes, register, RAM, counter, various decoders, etc.
+ * Mouseover tooltips have been added
  * Components can be edited to be faulty, for educational exercises
  * Editor can be in several modes with different capabilities
  * Component buttons can be hidden or shown for educational purposes with URL parameters
