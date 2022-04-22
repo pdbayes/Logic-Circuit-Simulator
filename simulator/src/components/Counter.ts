@@ -204,29 +204,23 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
 
             drawLabel(ctx, this.orient, "V", "e", right, this.outputs[OUTPUT.V])
             g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Q", "e", right,
-                (this.outputs[OUTPUT.Q[1]].posYInParentTransform + this.outputs[OUTPUT.Q[2]].posYInParentTransform) / 2
-            )
+
+            const offsetY = (this.outputs[OUTPUT.Q[1]].posYInParentTransform + this.outputs[OUTPUT.Q[2]].posYInParentTransform) / 2
+            drawLabel(ctx, this.orient, "Q", "e", right, offsetY)
 
             if (isDefined(this._displayRadix)) {
                 g.font = "bold 20px sans-serif"
                 const [__, currentCount] = displayValuesFromArray(this.value[0], false)
                 const stringRep = formatWithRadix(currentCount, this._displayRadix, 1, false)
-                let y = this.posY - 22
-
-                if (this.orient === "s") {
-                    y += 15
-                } else if (this.orient === "n") {
-                    y += 28
-                }
+                const valueCenter = ctx.rotatePoint(this.posX - 5, offsetY)
 
                 g.fillStyle = COLOR_EMPTY
-                FlipflopOrLatch.drawStoredValueFrame(g, this.posX, y, 24, 26)
+                FlipflopOrLatch.drawStoredValueFrame(g, ...valueCenter, 28, 28)
 
                 g.textAlign = "center"
                 g.textBaseline = "middle"
                 g.fillStyle = COLOR_LABEL_OFF
-                g.fillText(stringRep, this.posX, y)
+                g.fillText(stringRep, ...valueCenter)
             }
 
         })

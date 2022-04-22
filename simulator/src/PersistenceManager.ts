@@ -31,12 +31,12 @@ class _PersistenceManager {
         reader.readAsText(file)
     }
 
-    doLoadFromJson(editor: LogicEditor, content: string | any): undefined | string { // string is an error
+    doLoadFromJson(editor: LogicEditor, content: string | Record<string, unknown>): undefined | string { // string is an error
         const nodeMgr = editor.nodeMgr
         const wireMgr = editor.wireMgr
         const components = editor.components
 
-        let parsedContents: any
+        let parsedContents: Record<string, unknown>
         if (!isString(content)) {
             parsedContents = content
         } else {
@@ -151,7 +151,7 @@ class _PersistenceManager {
 
         // also works with undefined
         // must be done AFTER setting user data to ensure the UI is updated accordingly
-        editor.setPartialOptions(parsedContents.opts)
+        editor.setPartialOptions(parsedContents.opts as any)
         delete parsedContents.opts
 
         const unhandledData = keysOf(parsedContents)
@@ -160,6 +160,10 @@ class _PersistenceManager {
         }
 
         return undefined // meaning no error
+    }
+
+    buildWorkspaceAsObject(editor: LogicEditor): Record<string, unknown> {
+        return JSON.parse(this.buildWorkspaceJSON(editor))
     }
 
     buildWorkspaceJSON(editor: LogicEditor) {

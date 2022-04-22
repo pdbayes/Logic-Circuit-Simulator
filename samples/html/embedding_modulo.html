@@ -1,0 +1,59 @@
+<html lang="fr">
+
+<head>
+	<!-- For header, check: https://www.matuzo.at/blog/html-boilerplate/ -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+
+	<title>Simulateur de systèmes logiques</title>
+
+
+	<script src="https://logic.modulo-info.ch/simulator/lib/bundle.js"></script>
+
+</head>
+
+<body>
+
+	
+	<p>Voici un test d'embed.</p>
+	
+	<div style="width: 100%; height: 400px">
+		<logic-editor></logic-editor>
+	</div>
+
+	<hr style="margin: 20px 0">
+
+
+	<div style="width: 100%; height: 400px">
+		<logic-editor mode="design" showonly="and or not xor">
+			<script type="application/json">
+			  {
+				"v": 2,
+				"in": [{"pos": [150, 210], "id": 7, "name": "Clock (horloge)", "val": 0, "isPushButton": true}],
+				"components": [{"type": "counter", "pos": [230, 80], "in": [0, 1], "out": [2, 3, 4, 5, 6], "count": 4}],
+				"wires": [[7, 0]]
+			  }
+			</script>
+		</logic-editor>
+	</div>
+
+	<hr style="margin: 20px 0">
+
+
+	<div style="width: 100%; height: 400px">
+		<logic-editor mode="design">
+			<script type="application/json">
+			  {
+				"v": 2,
+				"components": [
+				  {"type": "adder", "pos": [140, 170], "in": [0, 1, 2], "out": [3, 4]},
+				  {"type": "adder", "pos": [280, 170], "in": [5, 6, 7], "out": [8, 9]}
+				],
+				"wires": [[9, 2]]
+			  }
+			</script>
+		  </logic-editor>
+	</div>
+
+
+</html>

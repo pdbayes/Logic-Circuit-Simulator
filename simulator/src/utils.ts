@@ -297,6 +297,14 @@ export function getURLParameter(sParam: string, defaultValue: any) {
     return defaultValue
 }
 
+export function isEmbeddedInIframe(): boolean {
+    try {
+        return window.self !== window.top
+    } catch (e) {
+        return true
+    }
+}
+
 export function setVisible(elem: HTMLElement, visible: boolean) {
     if (visible) {
         const prevDisplay = elem.getAttribute("data-prev-display")
@@ -348,6 +356,21 @@ export function any(bools: boolean[]): boolean {
 export function repeatString(c: string, n: number) {
     return Array(n + 1).join(c)
 }
+
+export function formatString(str: string, ...varargs: any[]) {
+    if (varargs.length) {
+        const t = typeof varargs[0]
+        const args = ("string" === t || "number" === t) ?
+            Array.prototype.slice.call(varargs)
+            : varargs[0]
+
+        for (const key in args) {
+            str = str.replace(new RegExp("\\{" + key + "\\}", "gi"), args[key])
+        }
+    }
+    return str
+}
+
 
 export function deepEquals(v1: any, v2: any) {
     if (Array.isArray(v1) && Array.isArray(v2)) {

@@ -5,7 +5,6 @@
 
  * undo/redo
  * Add Raph's exercise to Modulo
- * Switch to web components
  * lock position
  * add label
  * add rectangle
@@ -14,6 +13,7 @@
  * 4 bit adder with carry in and out
  * show value on dip switch and register
  * more consistently set things dirty
+ * custom display for 4-bit input
 
 
 ## Medium priority
@@ -41,6 +41,7 @@
 
 ### DONE
 
+ * Switch to embeddable web components with single JS file
  * chainable 4-bit counter
  * option to have disconnected as high-Z
  * 16 x 4 bit memory

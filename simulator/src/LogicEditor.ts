@@ -14,16 +14,21 @@ import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, downloadBlob as downloadDataUrl, getURLParameter, isDefined, isFalsyString, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal } from "./utils"
+import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal } from "./utils"
 
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
 
 import * as QRCode from "qrcode"
+// import * as C2S from "canvas2svg"
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import LogicEditorCSS from "../css/LogicEditor.css"
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -110,6 +115,7 @@ export class LogicEditor extends HTMLElement {
 
     public root: ShadowRoot
     public readonly html: {
+        rootDiv: HTMLDivElement,
         canvasContainer: HTMLElement,
         mainCanvas: HTMLCanvasElement,
         leftToolbar: HTMLElement,
@@ -138,16 +144,18 @@ export class LogicEditor extends HTMLElement {
     public userdata: any = undefined
 
     private _baseTransform: DOMMatrix
-    private _currentScale = 1
+    private _baseDrawingScale = 1
     public mouseX = -1000 // offscreen at start
     public mouseY = -1000
 
     constructor() {
         super()
+
         this.root = this.attachShadow({ mode: 'open' })
         this.root.appendChild(template.content.cloneNode(true) as HTMLElement)
 
         const html: typeof this.html = {
+            rootDiv: this.elemWithId("logicEditorRoot"),
             canvasContainer: this.elemWithId("canvas-sim"),
             mainCanvas: this.elemWithId("mainCanvas"),
             leftToolbar: this.elemWithId("leftToolbar"),
@@ -274,13 +282,17 @@ export class LogicEditor extends HTMLElement {
         mainCanvas.setAttribute("height", String(h * f))
         mainCanvas.style.setProperty("width", w + "px")
         mainCanvas.style.setProperty("height", h + "px")
-        // we set it and return it so that we can set it in the constructor and make the compiler happy
-        return this._baseTransform = new DOMMatrix(`scale(${f})`)
+        this._baseDrawingScale = f
+        this._baseTransform = new DOMMatrix(`scale(${f})`)
     }
 
     connectedCallback() {
-        const { canvasContainer, mainCanvas } = this.html
-        this._baseTransform = this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+        const { rootDiv, mainCanvas } = this.html
+
+        const parentStyles = this.getAttribute("style")
+        if (isNotNull(parentStyles)) {
+            rootDiv.setAttribute("style", rootDiv.getAttribute("style") + parentStyles)
+        }
 
         // TODO move this in SelectionMgr?
         mainCanvas.ondragenter = () => {
@@ -304,7 +316,7 @@ export class LogicEditor extends HTMLElement {
                 reader.onload = e => {
                     const content = e.target?.result?.toString()
                     if (isDefined(content)) {
-                        window.load(content)
+                        this.load(content)
                     }
                 }
                 reader.readAsText(file, "utf-8")
@@ -316,7 +328,7 @@ export class LogicEditor extends HTMLElement {
                         if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type !== "text/plain")) {
                             dataItem.getAsString(content => {
                                 e.dataTransfer!.dropEffect = "copy"
-                                window.load(content)
+                                this.load(content)
                             })
                             break
                         }
@@ -344,7 +356,8 @@ export class LogicEditor extends HTMLElement {
 
     private setup() {
         this._isEmbedded = isEmbeddedInIframe()
-        this._isSingleton = !this._isEmbedded && !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.singleton))
+        const singletonAttr = this.getAttribute(ATTRIBUTE_NAMES.singleton)
+        this._isSingleton = !this._isEmbedded && singletonAttr !== null && !isFalsyString(singletonAttr)
         this._maxInstanceMode = this._isSingleton && !this._isEmbedded ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
 
         // Transfer from URL param to attributes if we are in singleton mode
@@ -402,6 +415,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (this._isSingleton) {
+            console.log("LogicEditor is in singleton mode")
             window.addEventListener("keyup", this.wrapHandler(e => {
                 switch (e.key) {
                     case "Escape":
@@ -485,7 +499,9 @@ export class LogicEditor extends HTMLElement {
             }))
 
             // make load function available globally
-            window.load = this.wrapHandler((jsonString: any) => PersistenceManager.doLoadFromJson(this, jsonString))
+            window.load = this.load.bind(this)
+            window.save = this.save.bind(this)
+
             window.adjustedTime = () => {
                 const nowAdjusted = this.timeline.adjustedTime()
                 // console.log(nowAdjusted)
@@ -493,11 +509,17 @@ export class LogicEditor extends HTMLElement {
             }
 
             this.html.canvasContainer.appendChild(
-                div(style("position: absolute; bottom: 0; right: 0; padding: 5px 3px 2px 5px; background-color: rgba(255,255,255,0.3); border-radius: 10px 0 0 0;"),
-                    a(style("color: rgba(0,0,0,0.2); font-size: 69%; font-style: italic;"),
+                div(style("position: absolute; bottom: 0; right: 0; padding: 5px 3px 2px 5px; background-color: rgba(255,255,255,0.3); color: rgba(0,0,0,0.2); border-radius: 10px 0 0 0; font-size: 69%; font-style: italic;"),
+                    "Développé par ",
+                    a(style("color: inherit"),
                         href("https://github.com/jppellet/Logic-Circuit-Simulator"), target("_blank"),
-                        "Développé par Jean-Philippe Pellet"
-                    )
+                        "Jean-Philippe Pellet"
+                    ),
+                    ", ",
+                    a(style("color: inherit"),
+                        href("https://www.hepl.ch"), target("_blank"),
+                        "HEP Vaud"
+                    ),
                 ).render()
             )
 
@@ -535,14 +557,23 @@ export class LogicEditor extends HTMLElement {
             this._options.hideTooltips = !isFalsyString(showtooltipsAttr)
         }
 
-        const dataAttr = this.getAttribute(ATTRIBUTE_NAMES.data)
-        if (dataAttr !== null) {
-            this._initialData = { _type: "compressed", str: dataAttr }
+        let dataOrSrcRef
+        if ((dataOrSrcRef = this.getAttribute(ATTRIBUTE_NAMES.data)) !== null) {
+            this._initialData = { _type: "compressed", str: dataOrSrcRef }
+        } else if ((dataOrSrcRef = this.getAttribute(ATTRIBUTE_NAMES.src)) !== null) {
+            this._initialData = { _type: "url", url: dataOrSrcRef }
         } else {
-            const srcAttr = this.getAttribute(ATTRIBUTE_NAMES.src)
-            if (srcAttr !== null) {
-                this._initialData = { _type: "url", url: srcAttr }
-            }
+            // try to load from the children of the light DOM,
+            // but this has to be done later as it hasn't been parsed yet
+            setTimeout(() => {
+                const innerScriptElem = this.findLightDOMChild("script")
+                if (innerScriptElem !== null) {
+                    this._initialData = { _type: "json", json: innerScriptElem.innerHTML }
+                    // do this manually
+                    this.tryLoadFromData()
+                    this.doRedraw()
+                }
+            })
         }
 
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
@@ -770,17 +801,38 @@ export class LogicEditor extends HTMLElement {
             showUserDataLinkContainer,
         }
 
+        const { canvasContainer } = this.html
+        // this is called once here to set the initial transform and size before the first draw, and again later
+        this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
 
         this.setModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
+
+        // this is called a second time here because the canvas width may have changed following the mode change
+        this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
         LogicEditor.installGlobalListeners()
+
+        this.doRedraw()
+    }
+
+    private findLightDOMChild<K extends keyof HTMLElementTagNameMap>(tagName: K): HTMLElementTagNameMap[K] | null {
+        tagName = tagName.toUpperCase() as any
+        for (const child of Array.from(this.children)) {
+            if (child.tagName === tagName) {
+                return child as HTMLElementTagNameMap[K]
+            }
+        }
+        return null
     }
 
     static installGlobalListeners() {
         if (LogicEditor._globalListenersInstalled) {
             return
         }
+
+        window.formatString = formatString
 
         // make gallery available globally
         window.gallery = gallery
@@ -955,7 +1007,7 @@ export class LogicEditor extends HTMLElement {
             let decodedData
             try {
                 decodedData = LZString.decompressFromEncodedURIComponent(this._initialData.str)
-                error = PersistenceManager.doLoadFromJson(this, decodedData)
+                error = PersistenceManager.doLoadFromJson(this, decodedData!)
             } catch (e) {
                 error = String(e)
             }
@@ -980,6 +1032,13 @@ export class LogicEditor extends HTMLElement {
         if (isDefined(error)) {
             console.log("ERROR could not not load initial data: " + error)
         }
+    }
+
+    load(jsonStringOrObject: string | Record<string, unknown>) {
+        this.wrapHandler(
+            (jsonStringOrObject: string | Record<string, unknown>) =>
+                PersistenceManager.doLoadFromJson(this, jsonStringOrObject)
+        )(jsonStringOrObject)
     }
 
     setDirty(__reason: string) {
@@ -1104,7 +1163,7 @@ export class LogicEditor extends HTMLElement {
                 }
             }
         })()
-        const currentScale = this._currentScale
+        const currentScale = 1 //this._currentScale
         return [unscaledX / currentScale, unscaledY / currentScale]
     }
 
@@ -1175,7 +1234,7 @@ export class LogicEditor extends HTMLElement {
         const iframeEmbed = `<iframe style="width: 100%; height: ${embedHeight}px; border: 0" src="${fullUrl}"></iframe>`
         this.html.embedIframe.value = iframeEmbed
 
-        const webcompEmbed = `<logic-editor mode="${Mode[mode].toLowerCase()}">\n  <script type="application/json">\n    ${json}\n  </script>\n</logic-editor>`
+        const webcompEmbed = `<logic-editor mode="${Mode[mode].toLowerCase()}">\n  <script type="application/json">\n    ${json.replace(/\n/g, "\n    ")}\n  </script>\n</logic-editor>`
         this.html.embedWebcomp.value = webcompEmbed
 
 
@@ -1202,6 +1261,10 @@ export class LogicEditor extends HTMLElement {
         const [json, compressedUriSafeJson] = this.jsonStateAndCompressed()
         console.log(json)
         this.saveToUrl(compressedUriSafeJson)
+    }
+
+    save(): Record<string, unknown> {
+        return PersistenceManager.buildWorkspaceAsObject(this)
     }
 
     saveToUrl(compressedUriSafeJson: string) {
@@ -1248,6 +1311,11 @@ export class LogicEditor extends HTMLElement {
 
         const filename = (this.options.name ?? "circuit") + ".png"
         downloadDataUrl(dataUrl, filename)
+
+        // const svgCtx = new C2S(width, height)
+        // this.doDrawWithContext(svgCtx)
+        // const serializedSVG = svgCtx.getSerializedSvg()
+        // console.log(serializedSVG)
     }
 
     recalcPropagateAndDrawIfNeeded() {
@@ -1307,11 +1375,17 @@ export class LogicEditor extends HTMLElement {
     }
 
     private doRedraw() {
+        const g = this.html.mainCanvas.getContext("2d")!
+        this.doDrawWithContext(g)
+    }
 
+    private doDrawWithContext(g: CanvasRenderingContext2D) {
         const mainCanvas = this.html.mainCanvas
-        const g = mainCanvas.getContext("2d")!
-        const width = mainCanvas.width
-        const height = mainCanvas.height
+        const baseDrawingScale = this._baseDrawingScale
+
+        const width = mainCanvas.width / baseDrawingScale
+        const height = mainCanvas.height / baseDrawingScale
+
         g.setTransform(this._baseTransform)
         g.lineCap = "square"
         g.textBaseline = "middle"
@@ -1319,20 +1393,7 @@ export class LogicEditor extends HTMLElement {
         g.fillStyle = COLOR_BACKGROUND
         g.fillRect(0, 0, width, height)
 
-        g.strokeStyle = COLOR_BORDER
-        g.lineWidth = 2
-
-        if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
-            g.strokeRect(0, 0, width, height)
-            if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
-                const h = this.guessAdequateCanvasSize()[1]
-                strokeSingleLine(g, 0, h, width, h)
-
-                g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION
-                g.fillRect(0, h, width, height - h)
-            }
-        }
-
+        // draw grid if moving comps
         const isMovingComponent = this.moveMgr.areDrawablesMoving()
         if (isMovingComponent) {
             g.strokeStyle = COLOR_GRID_LINES
@@ -1349,9 +1410,23 @@ export class LogicEditor extends HTMLElement {
             g.stroke()
         }
 
+        // draw border according to mode
+        if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
+            g.strokeStyle = COLOR_BORDER
+            g.lineWidth = 2
+            g.strokeRect(0, 0, width, height)
+            if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
+                const h = this.guessAdequateCanvasSize()[1]
+                strokeSingleLine(g, 0, h, width, h)
+
+                g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION
+                g.fillRect(0, h, width, height - h)
+            }
+        }
+
         const now = this.timeline.adjustedTime()
-        const currentScale = this._currentScale
-        g.scale(currentScale, currentScale)
+        // const currentScale = this._currentScale
+        // g.scale(currentScale, currentScale)
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
@@ -1471,12 +1546,16 @@ export class LogicEditor extends HTMLElement {
     }
 }
 
-
-const template = document.createElement('template')
-// template.innerHTML = "<style>\n" + LogicEditorCSS + "\n\n"+BootstrapCSS+"\n</style>\n\n" + LogicEditorTemplate
-template.innerHTML = LogicEditorTemplate
-
+const template = (() => {
+    const template = document.createElement('template')
+    template.innerHTML = LogicEditorTemplate
+    template.content.querySelector("#inlineStyle")!.innerHTML = LogicEditorCSS
+    return template
+})()
+// cannot be in setup function because 'template' var is not assigned until that func returns
+// and promotion of elems occurs during this 'customElements.define' call
 window.customElements.define('logic-editor', LogicEditor)
+
 
 function undo() {
     // TODO stubs
@@ -1487,12 +1566,3 @@ function redo() {
     // TODO stubs
     console.log("redo")
 }
-
-function isEmbeddedInIframe(): boolean {
-    try {
-        return window.self !== window.top
-    } catch (e) {
-        return true
-    }
-}
-

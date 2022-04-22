@@ -1,0 +1,39 @@
+<html lang="fr">
+
+<head>
+	<!-- For header, check: https://www.matuzo.at/blog/html-boilerplate/ -->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+
+	<title>Simulateur de systèmes logiques</title>
+
+
+	<script src="http://localhost:8088/simulator/lib/bundle.js"></script>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<p>Voici un test d'embed.</p>
+
+	<div style="width: 600px; height: 300px; margin: 5px; padding: 5px; border: 1px solid lightgray; border-radius: 5px;">
+		<logic-editor mode="connect">
+			<script type="application/json">
+			  {
+				"v": 2,
+				"in": [{"pos": [150, 210], "id": 7, "name": "Clock (horloge)", "val": 0, "isPushButton": true}],
+				"components": [{"type": "counter", "pos": [230, 80], "in": [0, 1], "out": [2, 3, 4, 5, 6], "count": 4}],
+				"wires": [[7, 0]]
+			  }
+			</script>
+		</logic-editor>
+	</div>
+
+</body>
+
+</html>
