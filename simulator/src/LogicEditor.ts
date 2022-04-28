@@ -6,7 +6,7 @@ import * as LZString from "lz-string"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager } from "./CursorMovementManager"
-import { ALPHA_HIGHLIGHT_OVERLAY, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
@@ -275,7 +275,10 @@ export class LogicEditor extends HTMLElement {
         this._toolCursor = cursor
     }
 
-    private setCanvasWidth(w: number, h: number) {
+    private setCanvasSize() {
+        const { canvasContainer } = this.html
+        const w = canvasContainer.clientWidth
+        const h = canvasContainer.clientHeight
         const f = window.devicePixelRatio ?? 1
         const mainCanvas = this.html.mainCanvas
         mainCanvas.setAttribute("width", String(w * f))
@@ -501,6 +504,7 @@ export class LogicEditor extends HTMLElement {
             // make load function available globally
             window.load = this.load.bind(this)
             window.save = this.save.bind(this)
+            window.highlight = this.highlight.bind(this)
 
             window.adjustedTime = () => {
                 const nowAdjusted = this.timeline.adjustedTime()
@@ -569,6 +573,7 @@ export class LogicEditor extends HTMLElement {
                 const innerScriptElem = this.findLightDOMChild("script")
                 if (innerScriptElem !== null) {
                     this._initialData = { _type: "json", json: innerScriptElem.innerHTML }
+                    innerScriptElem.remove() // remove the data element to hide the raw data
                     // do this manually
                     this.tryLoadFromData()
                     this.doRedraw()
@@ -801,9 +806,8 @@ export class LogicEditor extends HTMLElement {
             showUserDataLinkContainer,
         }
 
-        const { canvasContainer } = this.html
         // this is called once here to set the initial transform and size before the first draw, and again later
-        this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+        this.setCanvasSize()
 
         this.tryLoadFromData()
         // also triggers redraw, should be last thing called here
@@ -811,7 +815,7 @@ export class LogicEditor extends HTMLElement {
         this.setModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
 
         // this is called a second time here because the canvas width may have changed following the mode change
-        this.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+        this.setCanvasSize()
         LogicEditor.installGlobalListeners()
 
         this.doRedraw()
@@ -856,7 +860,7 @@ export class LogicEditor extends HTMLElement {
                 const canvasContainer = editor.html.canvasContainer
                 if (isDefined(canvasContainer)) {
                     editor.wrapHandler(() => {
-                        editor.setCanvasWidth(canvasContainer.clientWidth, canvasContainer.clientHeight)
+                        editor.setCanvasSize()
                         editor.redrawMgr.addReason("window resized", null)
                     })()
                 }
@@ -1370,7 +1374,12 @@ export class LogicEditor extends HTMLElement {
         const start = this.timeline.unadjustedTime()
         this._highlightedComponent = { comp: highlightComp, start }
         this.redrawMgr.addReason("highlighting component", null)
-        console.log("bla", ref)
+        this.recalcPropagateAndDrawIfNeeded()
+    }
+
+    redraw() {
+        this.setCanvasSize()
+        this.redrawMgr.addReason("explicit redraw call", null)
         this.recalcPropagateAndDrawIfNeeded()
     }
 
@@ -1390,8 +1399,55 @@ export class LogicEditor extends HTMLElement {
         g.lineCap = "square"
         g.textBaseline = "middle"
 
+        // clear background
         g.fillStyle = COLOR_BACKGROUND
         g.fillRect(0, 0, width, height)
+
+
+        // draw highlight
+        const highlightRectFor = (comp: Component) => {
+            const margin = 20
+            let w = comp.unrotatedWidth + margin + margin
+            let h = comp.unrotatedHeight + margin + margin
+            if (Orientation.isVertical(comp.orient)) {
+                const t = w
+                w = h
+                h = t
+            }
+            return new DOMRect(comp.posX - w / 2, comp.posY - h / 2, w, h)
+        }
+
+        const highlightedComp = this._highlightedComponent
+        if (isDefined(highlightedComp)) {
+            const HOLD_TIME = 2000
+            const FADE_OUT_TIME = 200
+            const elapsed = this.timeline.unadjustedTime() - highlightedComp.start
+            const alpha = (elapsed < HOLD_TIME) ? 1 : 1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME
+            if (alpha <= 0) {
+                this._highlightedComponent = undefined
+            } else {
+                const highlightRect = highlightRectFor(highlightedComp.comp)
+
+                g.beginPath()
+                g.moveTo(highlightRect.x, highlightRect.y)
+                g.lineTo(highlightRect.right, highlightRect.y)
+                g.lineTo(highlightRect.right, highlightRect.bottom)
+                g.lineTo(highlightRect.x, highlightRect.bottom)
+                g.closePath()
+
+                g.shadowColor = `rgba(255,255,120,${alpha})`
+                g.shadowBlur = 20
+                g.shadowOffsetX = 0
+                g.shadowOffsetY = 0
+                g.fillStyle = g.shadowColor
+                g.fill()
+
+                g.shadowBlur = 0 // reset
+
+                // will make it run until alpha is 0
+                this.redrawMgr.addReason("highlight animation", null)
+            }
+        }
 
         // draw grid if moving comps
         const isMovingComponent = this.moveMgr.areDrawablesMoving()
@@ -1428,10 +1484,12 @@ export class LogicEditor extends HTMLElement {
         // const currentScale = this._currentScale
         // g.scale(currentScale, currentScale)
 
+        // draw wires
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         this.wireMgr.draw(g, now, currentMouseOverComp, undefined) // never show wires as selected
 
+        // draw components
         const currentSelection = this.cursorMovementMgr.currentSelection
         for (const comp of this.components) {
             comp.draw(g, now, currentMouseOverComp, currentSelection)
@@ -1441,6 +1499,7 @@ export class LogicEditor extends HTMLElement {
             })
         }
 
+        // draw selection
         let selRect
         if (isDefined(currentSelection) && isDefined(selRect = currentSelection.currentlyDrawnRect)) {
             g.lineWidth = 1.5
@@ -1452,89 +1511,6 @@ export class LogicEditor extends HTMLElement {
             g.fill()
         }
 
-        const highlightRectFor = (comp: Component) => {
-            const margin = 20
-            let w = comp.unrotatedWidth + margin + margin
-            let h = comp.unrotatedHeight + margin + margin
-            if (Orientation.isVertical(comp.orient)) {
-                const t = w
-                w = h
-                h = t
-            }
-            return new DOMRect(comp.posX - w / 2, comp.posY - h / 2, w, h)
-        }
-
-        const highlightedComp = this._highlightedComponent
-        if (isDefined(highlightedComp)) {
-            const HOLD_TIME = 1000
-            const FADE_OUT_TIME = 100
-            const elapsed = this.timeline.unadjustedTime() - highlightedComp.start
-            let alpha
-            if (elapsed < HOLD_TIME) {
-                alpha = ALPHA_HIGHLIGHT_OVERLAY
-            } else {
-                alpha = ALPHA_HIGHLIGHT_OVERLAY * (1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME)
-            }
-            if (alpha <= 0) {
-                this._highlightedComponent = undefined
-            } else {
-                const highlightRect = highlightRectFor(highlightedComp.comp)
-                g.beginPath()
-                g.moveTo(0, 0)
-                g.lineTo(width, 0)
-                g.lineTo(width, height)
-                g.lineTo(0, height)
-                g.closePath()
-
-                g.moveTo(highlightRect.x, highlightRect.y)
-                g.lineTo(highlightRect.x, highlightRect.bottom)
-                g.lineTo(highlightRect.right, highlightRect.bottom)
-                g.lineTo(highlightRect.right, highlightRect.top)
-                g.closePath()
-
-                g.fillStyle = `rgba(0,0,0,${alpha})`
-                g.fill()
-
-                const strokeWidth = 6
-                g.lineWidth = strokeWidth
-                g.lineCap = "butt"
-                const maskedOut = g.fillStyle
-                const transparent = "rgba(0,0,0,0)"
-
-                const mkGrad = (x1: number, y1: number, x2: number, y2: number) => {
-                    const grad = g.createLinearGradient(x1, y1, x2, y2)
-                    grad.addColorStop(0, maskedOut)
-                    grad.addColorStop(1, transparent)
-                    return grad
-                }
-
-                g.beginPath()
-                g.moveTo(highlightRect.x, highlightRect.y + strokeWidth / 2)
-                g.lineTo(highlightRect.right, highlightRect.top + strokeWidth / 2)
-                g.strokeStyle = mkGrad(highlightRect.x, highlightRect.y, highlightRect.x, highlightRect.y + strokeWidth)
-                g.stroke()
-
-                g.beginPath()
-                g.moveTo(highlightRect.x, highlightRect.bottom - strokeWidth / 2)
-                g.lineTo(highlightRect.right, highlightRect.bottom - strokeWidth / 2)
-                g.strokeStyle = mkGrad(highlightRect.x, highlightRect.bottom, highlightRect.x, highlightRect.bottom - strokeWidth)
-                g.stroke()
-
-                g.beginPath()
-                g.moveTo(highlightRect.x + strokeWidth / 2, highlightRect.top)
-                g.lineTo(highlightRect.x + strokeWidth / 2, highlightRect.bottom)
-                g.strokeStyle = mkGrad(highlightRect.left, highlightRect.top, highlightRect.left + strokeWidth, highlightRect.top)
-                g.stroke()
-
-                g.beginPath()
-                g.moveTo(highlightRect.right - strokeWidth / 2, highlightRect.top)
-                g.lineTo(highlightRect.right - strokeWidth / 2, highlightRect.bottom)
-                g.strokeStyle = mkGrad(highlightRect.right, highlightRect.top, highlightRect.right - strokeWidth, highlightRect.top)
-                g.stroke()
-
-                this.redrawMgr.addReason("highlight animation", null)
-            }
-        }
     }
 
     wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
@@ -1546,6 +1522,23 @@ export class LogicEditor extends HTMLElement {
     }
 }
 
+export class LogicStatic {
+
+    highlight(diagramRef: string, componentRef: string) {
+        const diagram = document.getElementById("logic_" + diagramRef)
+        if (diagram === null) {
+            console.log(`Cannot find logic diagram with reference '${diagramRef}'`)
+            return
+        }
+        if (!(diagram instanceof LogicEditor)) {
+            console.log(`Element with id '${diagramRef}' is not a logic editor`)
+            return
+        }
+        diagram.highlight(componentRef)
+    }
+
+}
+
 const template = (() => {
     const template = document.createElement('template')
     template.innerHTML = LogicEditorTemplate
@@ -1555,7 +1548,20 @@ const template = (() => {
 // cannot be in setup function because 'template' var is not assigned until that func returns
 // and promotion of elems occurs during this 'customElements.define' call
 window.customElements.define('logic-editor', LogicEditor)
-
+window.Logic = new LogicStatic()
+document.addEventListener("toggle", e => {
+    if (!(e.target instanceof HTMLDetailsElement)) {
+        return
+    }
+    if (e.target.open) {
+        e.target.querySelectorAll("logic-editor").forEach(el => {
+            if (el instanceof LogicEditor) {
+                // console.log("Redrawing logic editor: ", el)
+                el.redraw()
+            }
+        })
+    }
+}, true)
 
 function undo() {
     // TODO stubs
