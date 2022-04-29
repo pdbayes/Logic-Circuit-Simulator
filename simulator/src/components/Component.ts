@@ -3,7 +3,6 @@ import { Node, NodeIn, NodeOut } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
-import { Modifier, span, style } from "../htmlgen"
 
 
 // Node IDs are just represented by a non-negative number
@@ -685,21 +684,6 @@ export abstract class ComponentBase<
                 // OK button pressed
                 const handlerArg = newName.length === 0 ? undefined : newName
                 handler(handlerArg)
-            }
-        })
-    }
-
-    protected makeSetRefContextMenuItem(): ContextMenuItem {
-        const currentRef = this.ref
-        const caption: Modifier = isUndefined(currentRef) ? "Attribuer un identifiant…" : span("Changer l’identifiant (", span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), ")")
-        return ContextMenuData.item("hand-o-right", caption, () => {
-            const newRef = window.prompt("Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)", currentRef)
-            if (newRef !== null) {
-                // OK button pressed
-                this.ref = newRef.length === 0 ? undefined : newRef
-                if (currentRef !== this.ref) {
-                    this.setNeedsRedraw("ref changed")
-                }
             }
         })
     }

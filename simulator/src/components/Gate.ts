@@ -402,6 +402,7 @@ export abstract class GateBase<
         const gateBorderColor: ColorString = (isFake && this.editor.mode >= Mode.FULL) ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
         g.lineWidth = 3
         g.strokeStyle = gateBorderColor
+        g.fillStyle = COLOR_BACKGROUND
 
         const drawRightCircle = () => {
             gateRight += 5
@@ -437,6 +438,7 @@ export abstract class GateBase<
                 g.lineTo(gateRight, this.posY)
                 g.lineTo(gateLeft, bottom)
                 g.closePath()
+                g.fill()
                 g.stroke()
                 if (type === "NOT") {
                     drawRightCircle()
@@ -461,6 +463,7 @@ export abstract class GateBase<
                 g.lineTo(this.posX, top)
                 g.arc(this.posX, this.posY, height / 2, -pi2, pi2)
                 g.closePath()
+                g.fill()
                 g.stroke()
                 if (type.startsWith("NAND")) {
                     drawRightCircle()
@@ -504,6 +507,7 @@ export abstract class GateBase<
                 g.lineTo(gateLeft, bottom)
                 g.quadraticCurveTo(this.posX - 8, this.posY, gateLeft, top)
                 g.closePath()
+                g.fill()
                 g.stroke()
                 const savedGateLeft = gateLeft
                 gateLeft += 4
@@ -539,6 +543,7 @@ export abstract class GateBase<
                 g.lineTo(gateLeft, top)
                 g.lineTo(gateRight, this.posY)
                 g.lineTo(gateLeft + 2, this.posY)
+                g.fill()
                 g.stroke()
                 let shortLeft = false
                 if (type === "TXNA") {
@@ -556,6 +561,7 @@ export abstract class GateBase<
                 g.lineTo(gateLeft, bottom)
                 g.lineTo(gateRight, this.posY)
                 g.lineTo(gateLeft + 2, this.posY)
+                g.fill()
                 g.stroke()
                 let shortLeft = false
                 if (type === "TXNB") {
@@ -574,6 +580,7 @@ export abstract class GateBase<
                 g.lineTo(gateRight, bottom)
                 g.lineTo(gateLeft, bottom)
                 g.closePath()
+                g.fill()
                 g.stroke()
                 g.lineWidth = 0
                 drawWireEnds()

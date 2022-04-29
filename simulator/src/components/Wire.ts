@@ -4,8 +4,7 @@ import * as t from "io-ts"
 import { NodeID } from "./Component"
 import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
-import { LogicEditor } from "../LogicEditor"
-import { EditorSelection } from "../CursorMovementManager"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
@@ -138,10 +137,10 @@ export class Wire extends Drawable {
 
     toJSON(): WireRepr {
         const endID = this._endNode?.id ?? -1
-        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay)) {
+        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay) && isUndefined(this.ref)) {
             // no need for node options
             return [this._startNode.id, endID]
-            
+
         } else {
             // add node options
             const waypoints = this._waypoints.map(w => w.toJSON())
@@ -306,7 +305,8 @@ export class Wire extends Drawable {
         const options = this.editor.options
         const propagationDelay = this.customPropagationDelay ?? options.propagationDelay
         const neutral = options.hideWireColors
-        const wireValue = this.prunePropagatingValues(ctx.now, propagationDelay)
+        const drawTime = ctx.drawParams.drawTime
+        const wireValue = this.prunePropagatingValues(drawTime, propagationDelay)
 
         if (isNull(this.endNode)) {
             // draw to mouse position
@@ -360,9 +360,21 @@ export class Wire extends Drawable {
             const totalLength = this.editor.lengthOfPath(svgPathDesc)
             const path = new Path2D(svgPathDesc) // TODO cache this?
 
+            const drawParams = ctx.drawParams
+            if (isDefined(drawParams.highlightColor) && (drawParams.highlightedItems?.wires.includes(this) ?? false)) {
+                g.lineWidth = 15
+                g.shadowColor = drawParams.highlightColor
+                g.shadowBlur = 20
+                g.shadowOffsetX = 0
+                g.shadowOffsetY = 0
+                g.strokeStyle = g.shadowColor
+                g.stroke(path)
+                g.shadowBlur = 0 // reset
+            }
+
             const old = g.getLineDash()
             for (const [value, timeSet] of this._propagatingValues) {
-                const frac = Math.min(1.0, (ctx.now - timeSet) / propagationDelay)
+                const frac = Math.min(1.0, (drawTime - timeSet) / propagationDelay)
                 const lengthToDraw = totalLength * frac
                 g.setLineDash([lengthToDraw, totalLength])
                 strokeAsWireLine(g, value, ctx.isMouseOver, neutral, path)
@@ -395,6 +407,7 @@ export class Wire extends Drawable {
             const endY = waypoints[i + 1].posY
             const sumDist = dist(startX, startY, x, y) + dist(endX, endY, x, y)
             const wireLength = dist(startX, startY, endX, endY)
+            // TODO use isPointInStroke instead to account for bezier paths
             if (sumDist >= wireLength - tol && sumDist <= wireLength + tol) {
                 return [i, [startX, startY], [endX, endY]]
             }
@@ -404,6 +417,12 @@ export class Wire extends Drawable {
 
     public override makeContextMenu(): ContextMenuData {
         const customPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
+
+        const setRefItems =
+            this.editor.mode < Mode.FULL ? [] : [
+                ContextMenuData.sep(),
+                this.makeSetRefContextMenuItem(),
+            ]
 
         return [
             ContextMenuData.item("plus-circle", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
@@ -426,6 +445,7 @@ export class Wire extends Drawable {
                     }
                 }
             }),
+            ...setRefItems,
             ContextMenuData.sep(),
             ContextMenuData.item("trash-o", "Supprimer", () => {
                 this.editor.wireMgr.deleteWire(this)
@@ -466,12 +486,12 @@ export class WireManager {
         return this._isAddingWire
     }
 
-    draw(g: CanvasRenderingContext2D, now: Timestamp, mouseOverComp: Drawable | null, selectionRect: EditorSelection | undefined) {
+    draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
         this.removeDeadWires()
         for (const wire of this._wires) {
-            wire.draw(g, now, mouseOverComp, selectionRect)
+            wire.draw(g, drawParams)
             for (const waypoint of wire.waypoints) {
-                waypoint.draw(g, now, mouseOverComp, selectionRect)
+                waypoint.draw(g, drawParams)
             }
         }
     }

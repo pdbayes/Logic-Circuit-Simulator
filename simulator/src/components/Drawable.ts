@@ -1,14 +1,12 @@
 import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
-import { Modifier, ModifierObject } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
-import { EditorSelection } from "../CursorMovementManager"
-import { Timestamp } from "../Timeline"
+import { Modifier, ModifierObject, span, style } from "../htmlgen"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
-    now: Timestamp
+    drawParams: DrawParams
     isMouseOver: boolean
     inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown): void
 }
@@ -50,7 +48,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
     constructor(
         private comp: Drawable,
         public readonly g: CanvasRenderingContext2D,
-        public readonly now: Timestamp,
+        public readonly drawParams: DrawParams,
         public readonly isMouseOver: boolean,
     ) {
         this.entranceTransform = g.getTransform()
@@ -96,9 +94,9 @@ export abstract class Drawable {
         this.editor.redrawMgr.addReason(reason, this)
     }
 
-    public draw(g: CanvasRenderingContext2D, now: Timestamp, mouseOverComp: Drawable | null, selection: EditorSelection | undefined): void {
-        const inSelectionRect = selection?.isSelected(this) ?? false
-        const ctx = new _DrawContextImpl(this, g, now, this === mouseOverComp || inSelectionRect)
+    public draw(g: CanvasRenderingContext2D, drawParams: DrawParams): void {
+        const inSelectionRect = drawParams.currentSelection?.isSelected(this) ?? false
+        const ctx = new _DrawContextImpl(this, g, drawParams, this === drawParams.currentMouseOverComp || inSelectionRect)
         this.doDraw(g, ctx)
         ctx.exit()
     }
@@ -131,6 +129,21 @@ export abstract class Drawable {
 
     public makeContextMenu(): ContextMenuData | undefined {
         return undefined
+    }
+
+    protected makeSetRefContextMenuItem(): ContextMenuItem {
+        const currentRef = this.ref
+        const caption: Modifier = isUndefined(currentRef) ? "Attribuer un identifiant…" : span("Changer l’identifiant (", span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), ")")
+        return ContextMenuData.item("hand-o-right", caption, () => {
+            const newRef = window.prompt("Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)", currentRef)
+            if (newRef !== null) {
+                // OK button pressed
+                this.ref = newRef.length === 0 ? undefined : newRef
+                if (currentRef !== this.ref) {
+                    this.setNeedsRedraw("ref changed")
+                }
+            }
+        })
     }
 
     // Return { lockMouseOver: true } (default) to signal the component

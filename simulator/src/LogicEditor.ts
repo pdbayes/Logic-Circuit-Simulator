@@ -5,7 +5,7 @@
 import * as LZString from "lz-string"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager } from "./components/Wire"
-import { CursorMovementManager } from "./CursorMovementManager"
+import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
@@ -81,6 +81,16 @@ export const MouseActions = RichStringEnum.withProps<{
 export type MouseAction = typeof MouseActions.type
 
 type InitialData = { _type: "url", url: string } | { _type: "json", json: string } | { _type: "compressed", str: string }
+
+type HighlightedItems = { comps: Component[], wires: Wire[], start: number }
+
+export type DrawParams = {
+    drawTime: number,
+    currentMouseOverComp: Drawable | null,
+    currentSelection: EditorSelection | undefined,
+    highlightedItems: HighlightedItems | undefined,
+    highlightColor: string | undefined,
+}
 export class LogicEditor extends HTMLElement {
 
     static _globalListenersInstalled = false
@@ -110,7 +120,7 @@ export class LogicEditor extends HTMLElement {
 
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
-    private _highlightedComponent: { comp: Component, start: number } | undefined = undefined
+    private _highlightedItems: HighlightedItems | undefined = undefined
     private _nextAnimationFrameHandle: number | null = null
 
     public root: ShadowRoot
@@ -1352,27 +1362,38 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    highlight(ref: string | undefined) {
-        if (isUndefined(ref)) {
-            this._highlightedComponent = undefined
+    highlight(refs: string | string[] | undefined) {
+        if (isUndefined(refs)) {
+            this._highlightedItems = undefined
             return
         }
 
-        let highlightComp: Component | undefined = undefined
+        if (isString(refs)) {
+            refs = [refs]
+        }
+
+        const highlightComps: Component[] = []
         for (const comp of this.components) {
-            if (comp.ref === ref) {
-                highlightComp = comp
+            if (isDefined(comp.ref) && refs.includes(comp.ref)) {
+                highlightComps.push(comp)
             }
         }
 
-        if (isUndefined(highlightComp)) {
-            console.log(`Nothing to highlight for ref '${ref}'`)
-            this._highlightedComponent = undefined
+        const highlightWires: Wire[] = []
+        for (const wire of this.wireMgr.wires) {
+            if (isDefined(wire.ref) && refs.includes(wire.ref)) {
+                highlightWires.push(wire)
+            }
+        }
+
+        if (highlightComps.length === 0 && highlightWires.length === 0) {
+            console.log(`Nothing to highlight for ref '${refs}'`)
+            this._highlightedItems = undefined
             return
         }
 
         const start = this.timeline.unadjustedTime()
-        this._highlightedComponent = { comp: highlightComp, start }
+        this._highlightedItems = { comps: highlightComps, wires: highlightWires, start }
         this.redrawMgr.addReason("highlighting component", null)
         this.recalcPropagateAndDrawIfNeeded()
     }
@@ -1406,7 +1427,7 @@ export class LogicEditor extends HTMLElement {
 
         // draw highlight
         const highlightRectFor = (comp: Component) => {
-            const margin = 20
+            const margin = 15
             let w = comp.unrotatedWidth + margin + margin
             let h = comp.unrotatedHeight + margin + margin
             if (Orientation.isVertical(comp.orient)) {
@@ -1417,29 +1438,33 @@ export class LogicEditor extends HTMLElement {
             return new DOMRect(comp.posX - w / 2, comp.posY - h / 2, w, h)
         }
 
-        const highlightedComp = this._highlightedComponent
-        if (isDefined(highlightedComp)) {
+        const highlightedItems = this._highlightedItems
+        let highlightColor: string | undefined = undefined
+        if (isDefined(highlightedItems)) {
             const HOLD_TIME = 2000
             const FADE_OUT_TIME = 200
-            const elapsed = this.timeline.unadjustedTime() - highlightedComp.start
-            const alpha = (elapsed < HOLD_TIME) ? 1 : 1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME
-            if (alpha <= 0) {
-                this._highlightedComponent = undefined
+            const elapsed = this.timeline.unadjustedTime() - highlightedItems.start
+            const highlightAlpha = (elapsed < HOLD_TIME) ? 1 : 1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME
+            if (highlightAlpha <= 0) {
+                this._highlightedItems = undefined
             } else {
-                const highlightRect = highlightRectFor(highlightedComp.comp)
 
                 g.beginPath()
-                g.moveTo(highlightRect.x, highlightRect.y)
-                g.lineTo(highlightRect.right, highlightRect.y)
-                g.lineTo(highlightRect.right, highlightRect.bottom)
-                g.lineTo(highlightRect.x, highlightRect.bottom)
-                g.closePath()
+                for (const comp of highlightedItems.comps) {
+                    const highlightRect = highlightRectFor(comp)
+                    g.moveTo(highlightRect.x, highlightRect.y)
+                    g.lineTo(highlightRect.right, highlightRect.y)
+                    g.lineTo(highlightRect.right, highlightRect.bottom)
+                    g.lineTo(highlightRect.x, highlightRect.bottom)
+                    g.closePath()
+                }
 
-                g.shadowColor = `rgba(255,255,120,${alpha})`
+                highlightColor = `rgba(255,255,120,${highlightAlpha})`
+                g.shadowColor = highlightColor
                 g.shadowBlur = 20
                 g.shadowOffsetX = 0
                 g.shadowOffsetY = 0
-                g.fillStyle = g.shadowColor
+                g.fillStyle = highlightColor
                 g.fill()
 
                 g.shadowBlur = 0 // reset
@@ -1480,21 +1505,29 @@ export class LogicEditor extends HTMLElement {
             }
         }
 
-        const now = this.timeline.adjustedTime()
+        const drawTime = this.timeline.adjustedTime()
         // const currentScale = this._currentScale
         // g.scale(currentScale, currentScale)
 
         // draw wires
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
-        this.wireMgr.draw(g, now, currentMouseOverComp, undefined) // never show wires as selected
+        const drawParams: DrawParams = {
+            drawTime,
+            currentMouseOverComp,
+            highlightedItems,
+            highlightColor,
+            currentSelection: undefined,
+        }
+        this.wireMgr.draw(g, drawParams) // never show wires as selected
 
         // draw components
         const currentSelection = this.cursorMovementMgr.currentSelection
+        drawParams.currentSelection = currentSelection
         for (const comp of this.components) {
-            comp.draw(g, now, currentMouseOverComp, currentSelection)
+            comp.draw(g, drawParams)
             comp.forEachNode((node) => {
-                node.draw(g, now, currentMouseOverComp, undefined) // never show nodes as selected
+                node.draw(g, drawParams) // never show nodes as selected
                 return true
             })
         }
@@ -1524,17 +1557,22 @@ export class LogicEditor extends HTMLElement {
 
 export class LogicStatic {
 
-    highlight(diagramRef: string, componentRef: string) {
-        const diagram = document.getElementById("logic_" + diagramRef)
-        if (diagram === null) {
-            console.log(`Cannot find logic diagram with reference '${diagramRef}'`)
-            return
+    highlight(diagramRefs: string | string[], componentRefs: string | string[]) {
+        if (isString(diagramRefs)) {
+            diagramRefs = [diagramRefs]
         }
-        if (!(diagram instanceof LogicEditor)) {
-            console.log(`Element with id '${diagramRef}' is not a logic editor`)
-            return
+        for (const diagramRef of diagramRefs) {
+            const diagram = document.getElementById("logic_" + diagramRef)
+            if (diagram === null) {
+                console.log(`Cannot find logic diagram with reference '${diagramRef}'`)
+                return
+            }
+            if (!(diagram instanceof LogicEditor)) {
+                console.log(`Element with id '${diagramRef}' is not a logic editor`)
+                return
+            }
+            diagram.highlight(componentRefs)
         }
-        diagram.highlight(componentRef)
     }
 
 }
@@ -1556,7 +1594,6 @@ document.addEventListener("toggle", e => {
     if (e.target.open) {
         e.target.querySelectorAll("logic-editor").forEach(el => {
             if (el instanceof LogicEditor) {
-                // console.log("Redrawing logic editor: ", el)
                 el.redraw()
             }
         })
