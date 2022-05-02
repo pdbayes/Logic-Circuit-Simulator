@@ -20,6 +20,9 @@ import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawab
 import { makeComponentMenuInto } from "./menuutils"
 import dialogPolyfill from 'dialog-polyfill'
 
+import * as pngMeta from 'png-metadata-writer'
+
+
 import * as QRCode from "qrcode"
 // import * as C2S from "canvas2svg"
 
@@ -35,7 +38,6 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
 
-import { readMetadata, writeMetadata } from "./pngtools"
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -333,14 +335,33 @@ export class LogicEditor extends HTMLElement {
             e.preventDefault()
             const file = e.dataTransfer.files?.[0]
             if (isDefined(file)) {
-                const reader = new FileReader()
-                reader.onload = e => {
-                    const content = e.target?.result?.toString()
-                    if (isDefined(content)) {
-                        this.load(content)
+                if (file.type === "application/json" || file.type === "text/plain") {
+                    const reader = new FileReader()
+                    reader.onload = e => {
+                        const content = e.target?.result?.toString()
+                        if (isDefined(content)) {
+                            this.load(content)
+                        }
                     }
+                    reader.readAsText(file, "utf-8")
+                } else if (file.type === "image/png") {
+                    const reader = new FileReader()
+                    reader.onload = e => {
+                        const content = e.target?.result
+                        if (content instanceof ArrayBuffer) {
+                            const uintArray2 = new Uint8Array(content)
+                            const pngMetadata = pngMeta.readMetadata(uintArray2)
+                            const compressedJSON = pngMetadata.tEXt?.Description
+                            if (isString(compressedJSON)) {
+                                this._initialData = { _type: "compressed", str: compressedJSON }
+                                this.tryLoadFromData()
+                            }
+                        }
+                    }
+                    reader.readAsArrayBuffer(file)
+                } else {
+                    console.log("Unsupported file type", file.type)
                 }
-                reader.readAsText(file, "utf-8")
             } else {
                 const dataItems = e.dataTransfer.items
                 if (isDefined(dataItems)) {
@@ -1328,37 +1349,25 @@ export class LogicEditor extends HTMLElement {
         const g = tmpCanvas.getContext('2d')!
         g.drawImage(this.html.mainCanvas, borderWidth, borderWidth, width, height,
             0, 0, tmpCanvas.width, tmpCanvas.height)
-        const dataUrl = tmpCanvas.toDataURL()
+
+        tmpCanvas.toBlob(async pngBareBlob => {
+            if (pngBareBlob === null) {
+                return
+            }
+            const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+
+            const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
+            const pngChunks = pngMeta.extractChunks(pngBareData)
+            pngMeta.insertMetadata(pngChunks, { "tEXt": { "Description": compressedUriSafeJson } })
+            const pngCompletedBlob = new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
+
+            const filename = (this.options.name ?? "circuit") + ".png"
+            const url = URL.createObjectURL(pngCompletedBlob)
+            downloadDataUrl(url, filename)
+
+        }, "image/png")
+
         tmpCanvas.remove()
-
-        const filename = (this.options.name ?? "circuit") + ".png"
-        downloadDataUrl(dataUrl, filename)
-
-            // TODO this was an attempt at embedding the circuit's JSON in the PGN metadata
-            // but it was failing to write the new metadata for some reason
-        // tmpCanvas.toBlob(async blob => {
-        //     if (blob === null) {
-        //         return
-        //     }
-        //     const buffer = await blob.arrayBuffer()
-        //     const uintArray = new Uint8Array(buffer)
-        //     const meta = readMetadata(uintArray)
-        //     console.log(meta)
-
-        //     const newBuf = await writeMetadata(uintArray, { tEXt: { "author": "blabl" } })
-        //     const newBlob = new Blob([newBuf], { type: "image/png" })
-
-        //     // const buffer2 = await newBlob.arrayBuffer()
-        //     // const uintArray2 = new Uint8Array(buffer2)
-        //     // const meta2 = readMetadata(uintArray2)
-        //     // console.log(meta2)
-
-
-        //     const filename = (this.options.name ?? "circuit") + ".png"
-        //     const url = URL.createObjectURL(newBlob)
-        //     downloadDataUrl(url, filename)
-
-        // }, "image/png")
 
 
         // TODO this was an attempt at generating SVG rather than PNG
