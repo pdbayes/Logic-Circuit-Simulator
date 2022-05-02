@@ -142,6 +142,7 @@ export class LogicEditor extends HTMLElement {
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
         hiddenPath: SVGPathElement,
+        fileChooser: HTMLInputElement,
         optionsZone: HTMLElement,
         embedDialog: HTMLDialogElement,
         embedUrl: HTMLTextAreaElement,
@@ -183,6 +184,7 @@ export class LogicEditor extends HTMLElement {
             mainContextMenu: this.elemWithId("mainContextMenu"),
             optionsZone: this.elemWithId("optionsZone"),
             hiddenPath: this.elemWithId("hiddenPath"),
+            fileChooser: this.elemWithId("fileChooser"),
             embedDialog: this.elemWithId("embedDialog"),
             embedUrl: this.elemWithId("embedUrl"),
             embedUrlQRCode: this.elemWithId("embedUrlQRCode"),
@@ -282,6 +284,11 @@ export class LogicEditor extends HTMLElement {
             return
         }
 
+        if (tool === "open") {
+            this.html.fileChooser.click()
+            return
+        }
+
         this.setCurrentMouseAction("edit")
         if (tool === "reset") {
             this.wrapHandler(() => {
@@ -335,33 +342,7 @@ export class LogicEditor extends HTMLElement {
             e.preventDefault()
             const file = e.dataTransfer.files?.[0]
             if (isDefined(file)) {
-                if (file.type === "application/json" || file.type === "text/plain") {
-                    const reader = new FileReader()
-                    reader.onload = e => {
-                        const content = e.target?.result?.toString()
-                        if (isDefined(content)) {
-                            this.load(content)
-                        }
-                    }
-                    reader.readAsText(file, "utf-8")
-                } else if (file.type === "image/png") {
-                    const reader = new FileReader()
-                    reader.onload = e => {
-                        const content = e.target?.result
-                        if (content instanceof ArrayBuffer) {
-                            const uintArray2 = new Uint8Array(content)
-                            const pngMetadata = pngMeta.readMetadata(uintArray2)
-                            const compressedJSON = pngMetadata.tEXt?.Description
-                            if (isString(compressedJSON)) {
-                                this._initialData = { _type: "compressed", str: compressedJSON }
-                                this.tryLoadFromData()
-                            }
-                        }
-                    }
-                    reader.readAsArrayBuffer(file)
-                } else {
-                    console.log("Unsupported file type", file.type)
-                }
+                this.tryLoadFromFile(file)
             } else {
                 const dataItems = e.dataTransfer.items
                 if (isDefined(dataItems)) {
@@ -567,7 +548,7 @@ export class LogicEditor extends HTMLElement {
             )
 
             window.onbeforeunload = e => {
-                if (this._isSingleton && this._isDirty) {
+                if (this._isSingleton && this._isDirty && this.mode >= Mode.CONNECT) {
                     e.preventDefault() // ask to save changes
                     e.returnValue = "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?"
                 }
@@ -695,6 +676,13 @@ export class LogicEditor extends HTMLElement {
             const dataUrl = this.html.embedUrlQRCode.src
             const filename = (this.options.name ?? "circuit") + "_qrcode.png"
             downloadDataUrl(dataUrl, filename)
+        })
+
+        this.html.fileChooser.addEventListener("change", e => {
+            let files
+            if ((files = this.html.fileChooser.files) !== null && files.length > 0) {
+                this.tryLoadFromFile(files[0])
+            }
         })
 
         const selectAllListener = (e: Event) => {
@@ -1016,6 +1004,36 @@ export class LogicEditor extends HTMLElement {
         this.setMode(mode)
     }
 
+    tryLoadFromFile(file: File) {
+        if (file.type === "application/json" || file.type === "text/plain") {
+            const reader = new FileReader()
+            reader.onload = e => {
+                const content = e.target?.result?.toString()
+                if (isDefined(content)) {
+                    this.load(content)
+                }
+            }
+            reader.readAsText(file, "utf-8")
+        } else if (file.type === "image/png") {
+            const reader = new FileReader()
+            reader.onload = e => {
+                const content = e.target?.result
+                if (content instanceof ArrayBuffer) {
+                    const uintArray2 = new Uint8Array(content)
+                    const pngMetadata = pngMeta.readMetadata(uintArray2)
+                    const compressedJSON = pngMetadata.tEXt?.Description
+                    if (isString(compressedJSON)) {
+                        this._initialData = { _type: "compressed", str: compressedJSON }
+                        this.tryLoadFromData()
+                    }
+                }
+            }
+            reader.readAsArrayBuffer(file)
+        } else {
+            console.log("Unsupported file type", file.type)
+        }
+    }
+
     tryLoadFromData() {
         if (isUndefined(this._initialData)) {
             return
@@ -1277,7 +1295,7 @@ export class LogicEditor extends HTMLElement {
         const iframeEmbed = `<iframe style="width: 100%; height: ${embedHeight}px; border: 0" src="${fullUrl}"></iframe>`
         this.html.embedIframe.value = iframeEmbed
 
-        const webcompEmbed = `<logic-editor mode="${Mode[mode].toLowerCase()}">\n  <script type="application/json">\n    ${json.replace(/\n/g, "\n    ")}\n  </script>\n</logic-editor>`
+        const webcompEmbed = `<div style="width: 100%; height: ${embedHeight}px">\n  <logic-editor mode="${Mode[mode].toLowerCase()}">\n    <script type="application/json">\n      ${json.replace(/\n/g, "\n      ")}\n    </script>\n  </logic-editor>\n</div>`
         this.html.embedWebcomp.value = webcompEmbed
 
 

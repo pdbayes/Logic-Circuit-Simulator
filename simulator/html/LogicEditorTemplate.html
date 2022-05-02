@@ -46,6 +46,10 @@
                         <i class="fa fa-file-image-o"></i>
                         Screenshot
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool" tool="open" title="Ouvre un circuit précédemment téléchargé" style="display:none">
+                        <i class="fa fa-folder-open"></i>
+                        Ouvrir
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-light sim-toolbar-button-right sim-modification-tool" tool="reset" id="resetToolButton" title="Réinitialise l’état de ce schéma logique">
                         <i class="fa fa-undo"></i>
                         <span id="resetToolButtonCaption">Réinitialiser</span>
@@ -105,6 +109,8 @@
             </div>
         </div>
     </dialog>
+
+    <input id="fileChooser" type="file" accept="text/plain|image/png|application/json" style="display:none"></input>
 
     <div id="tooltip" role="tooltip" style="display:none">
         <div id="tooltipContents"></div>
