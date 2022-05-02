@@ -18,6 +18,7 @@ import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLP
 
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
+import dialogPolyfill from 'dialog-polyfill'
 
 import * as QRCode from "qrcode"
 // import * as C2S from "canvas2svg"
@@ -29,6 +30,12 @@ import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import LogicEditorCSS from "../css/LogicEditor.css"
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
+
+import { readMetadata, writeMetadata } from "./pngtools"
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -182,6 +189,7 @@ export class LogicEditor extends HTMLElement {
             embedMarkdown: this.elemWithId("embedMarkdown"),
         }
         this.html = html
+        dialogPolyfill.registerDialog(html.embedDialog)
 
         this._baseTransform = new DOMMatrix()
     }
@@ -1580,7 +1588,8 @@ export class LogicStatic {
 const template = (() => {
     const template = document.createElement('template')
     template.innerHTML = LogicEditorTemplate
-    template.content.querySelector("#inlineStyle")!.innerHTML = LogicEditorCSS
+    const styles = [LogicEditorCSS, DialogPolyfillCSS]
+    template.content.querySelector("#inlineStyle")!.innerHTML = styles.join("\n\n\n")
     return template
 })()
 // cannot be in setup function because 'template' var is not assigned until that func returns
