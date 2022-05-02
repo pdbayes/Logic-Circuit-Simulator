@@ -646,7 +646,7 @@ export abstract class GateBase<
                     this.doSetShowAsUnknown(false)
                 }),
             ContextMenuData.item(currentShowAsUnknown ? "check" : "none",
-                "Porte cachée avec «?»", () => {
+                "Porte inconnue (avec «?»)", () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(true)
                 }),
@@ -695,7 +695,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
     public override makeTooltip() {
         if (this.showAsUnknown) {
-            return div("Porte cachée")
+            return div("Porte inconnue")
         }
 
         const myIn = this.inputs[0].value
@@ -771,7 +771,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
     public override makeTooltip() {
         if (this.showAsUnknown) {
-            return div("Porte cachée")
+            return div("Porte inconnue")
         }
 
         const gateProps = Gate2Types.propsOf(this.type)
@@ -883,7 +883,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
     public override makeTooltip() {
         if (this.showAsUnknown) {
-            return div("Porte cachée")
+            return div("Porte inconnue")
         }
 
         const gateProps = Gate3Types.propsOf(this.type)
@@ -970,7 +970,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
     public override makeTooltip() {
         // TODO extract this in superclass?
         if (this.showAsUnknown) {
-            return div("Porte cachée")
+            return div("Porte inconnue")
         }
 
         const gateProps = Gate4Types.propsOf(this.type)
