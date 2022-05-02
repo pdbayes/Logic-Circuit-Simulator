@@ -1334,6 +1334,34 @@ export class LogicEditor extends HTMLElement {
         const filename = (this.options.name ?? "circuit") + ".png"
         downloadDataUrl(dataUrl, filename)
 
+            // TODO this was an attempt at embedding the circuit's JSON in the PGN metadata
+            // but it was failing to write the new metadata for some reason
+        // tmpCanvas.toBlob(async blob => {
+        //     if (blob === null) {
+        //         return
+        //     }
+        //     const buffer = await blob.arrayBuffer()
+        //     const uintArray = new Uint8Array(buffer)
+        //     const meta = readMetadata(uintArray)
+        //     console.log(meta)
+
+        //     const newBuf = await writeMetadata(uintArray, { tEXt: { "author": "blabl" } })
+        //     const newBlob = new Blob([newBuf], { type: "image/png" })
+
+        //     // const buffer2 = await newBlob.arrayBuffer()
+        //     // const uintArray2 = new Uint8Array(buffer2)
+        //     // const meta2 = readMetadata(uintArray2)
+        //     // console.log(meta2)
+
+
+        //     const filename = (this.options.name ?? "circuit") + ".png"
+        //     const url = URL.createObjectURL(newBlob)
+        //     downloadDataUrl(url, filename)
+
+        // }, "image/png")
+
+
+        // TODO this was an attempt at generating SVG rather than PNG
         // const svgCtx = new C2S(width, height)
         // this.doDrawWithContext(svgCtx)
         // const serializedSVG = svgCtx.getSerializedSvg()
