@@ -678,7 +678,7 @@ export class LogicEditor extends HTMLElement {
             downloadDataUrl(dataUrl, filename)
         })
 
-        this.html.fileChooser.addEventListener("change", e => {
+        this.html.fileChooser.addEventListener("change", __ => {
             let files
             if ((files = this.html.fileChooser.files) !== null && files.length > 0) {
                 this.tryLoadFromFile(files[0])

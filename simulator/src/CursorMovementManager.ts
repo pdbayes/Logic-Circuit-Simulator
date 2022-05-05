@@ -148,50 +148,47 @@ export class CursorMovementManager {
                 }, 1200)
             }
             this.editor.redrawMgr.addReason("mouseover changed", null)
-            // console.log("Over component: ", newMouseOverComp)
+            // console.log("Over component: ", comp)
         }
     }
 
     updateMouseOver([x, y]: [number, number]) {
         const findMouseOver: () => Drawable | null = () => {
-            if (this.editor.mode > Mode.STATIC) {
+            // easy optimization: maybe we're still over the
+            // same component as before, so quickly check this
+            if (isNotNull(this._currentMouseOverComp)) {
+                if (this._currentMouseOverComp.isOver(x, y)) {
+                    return this._currentMouseOverComp
+                }
+            }
 
-                // easy optimization: maybe we're still over the
-                // same component as before, so quickly check this
-                if (isNotNull(this._currentMouseOverComp)) {
-                    if (this._currentMouseOverComp.isOver(x, y)) {
-                        return this._currentMouseOverComp
+            // check if we're over components or their nodes
+            for (const comp of this.editor.components) {
+                let nodeOver: Node | null = null
+                comp.forEachNode((node) => {
+                    if (node.isOver(x, y)) {
+                        nodeOver = node
+                        return false
+                    }
+                    return true
+                })
+                if (isNotNull(nodeOver)) {
+                    return nodeOver
+                }
+                if (comp.isOver(x, y)) {
+                    return comp
+                }
+            }
+
+            // check if we're over a wire
+            for (const wire of this.editor.wireMgr.wires) {
+                for (const waypoint of wire.waypoints) {
+                    if (waypoint.isOver(x, y)) {
+                        return waypoint
                     }
                 }
-
-                // check if we're over components or their nodes
-                for (const comp of this.editor.components) {
-                    let nodeOver: Node | null = null
-                    comp.forEachNode((node) => {
-                        if (node.isOver(x, y)) {
-                            nodeOver = node
-                            return false
-                        }
-                        return true
-                    })
-                    if (isNotNull(nodeOver)) {
-                        return nodeOver
-                    }
-                    if (comp.isOver(x, y)) {
-                        return comp
-                    }
-                }
-
-                // check if we're over a wire
-                for (const wire of this.editor.wireMgr.wires) {
-                    for (const waypoint of wire.waypoints) {
-                        if (waypoint.isOver(x, y)) {
-                            return waypoint
-                        }
-                    }
-                    if (wire.isOver(x, y)) {
-                        return wire
-                    }
+                if (wire.isOver(x, y)) {
+                    return wire
                 }
             }
             return null

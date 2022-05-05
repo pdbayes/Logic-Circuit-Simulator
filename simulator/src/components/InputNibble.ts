@@ -56,7 +56,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     override get cursorWhenMouseover() {
-        return "pointer"
+        return this.editor.mode === Mode.STATIC ? "not-allowed" : "pointer"
     }
 
     get unrotatedWidth() {
@@ -68,7 +68,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     override isOver(x: number, y: number) {
-        return this.editor.mode >= Mode.TRYOUT && inRect(this.posX, this.posY, this.width, this.height, x, y)
+        return inRect(this.posX, this.posY, this.width, this.height, x, y)
     }
 
     public override makeTooltip() {
@@ -89,7 +89,8 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
@@ -147,6 +148,9 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     override mouseClicked(e: MouseEvent | TouchEvent) {
         // TODO rotate coordinates here
         const editor = this.editor
+        if (editor.mode === Mode.STATIC) {
+            return false
+        }
         const h = this.unrotatedHeight
         const y = editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
         const i = Math.floor(y * 4 / h)

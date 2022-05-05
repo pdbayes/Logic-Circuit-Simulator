@@ -45,7 +45,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
     }
 
     override isOver(x: number, y: number) {
-        return this.editor.mode >= Mode.TRYOUT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+        return dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
     override get allowsForcedOutputs() {
@@ -59,7 +59,9 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         drawWireLineToComponent(g, this.outputs[0], this.posX, this.posY)
 
-        if (ctx.isMouseOver) {
+        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+
+        if (drawMouseOver) {
             g.strokeStyle = COLOR_MOUSE_OVER
             g.fillStyle = COLOR_MOUSE_OVER
         } else {
@@ -194,7 +196,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override get cursorWhenMouseover() {
-        return "pointer"
+        return this.editor.mode === Mode.STATIC ? "not-allowed" : "pointer"
     }
 
     public override makeTooltip() {
@@ -207,7 +209,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
-        if (this._isPushButton) {
+        if (this.editor.mode === Mode.STATIC || this._isPushButton) {
             // do nothing for normal push button
             return false
         }
@@ -216,7 +218,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
-        if (this._isPushButton) {
+        if (this.editor.mode !== Mode.STATIC && this._isPushButton) {
             this.doSetValue(true)
         }
         return super.mouseDown(e)
@@ -224,7 +226,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
 
     override mouseUp(e: MouseEvent | TouchEvent) {
         const result = super.mouseUp(e)
-        if (this._isPushButton) {
+        if (this.editor.mode !== Mode.STATIC && this._isPushButton) {
             this.doSetValue(false)
         }
         return result
