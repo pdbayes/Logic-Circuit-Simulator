@@ -34,7 +34,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
     override getInputName(i: number): string | undefined {
         switch (i) {
             case INPUT.Set: return "S (Set, mise à 1)"
-            case INPUT.Reset: return "S (Reset, mise à 0)"
+            case INPUT.Reset: return "R (Reset, mise à 0)"
         }
         return undefined
     }
