@@ -1,4 +1,4 @@
-import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { isHighImpedance, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, drawLabel } from "../drawutils"
@@ -141,7 +141,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
             drawLabel(ctx, this.orient, "A", "n", this.inputs[INPUT.A], top)
             drawLabel(ctx, this.orient, "B", "n", this.inputs[INPUT.B], top)
             drawLabel(ctx, this.orient, "Cin", "e", right, this.inputs[INPUT.Cin])
-            
+
             drawLabel(ctx, this.orient, "S", "s", this.outputs[OUTPUT.S], bottom)
             drawLabel(ctx, this.orient, "Cout", "w", left, this.outputs[OUTPUT.Cout])
 
@@ -154,8 +154,12 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isUndefined(forceOutputItem)) {
+            return []
+        }
         return [
-            ["mid", this.makeForceOutputsContextMenuItem()!],
+            ["mid", forceOutputItem],
         ]
     }
 

@@ -250,16 +250,24 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
             return ContextMenuData.item(icon, caption, action)
         }
 
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
             ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
             ["mid", ContextMenuData.sep()],
             ["mid", makeItemShowRadix(undefined, "absent")],
             ["mid", makeItemShowRadix(10, "décimal")],
             ["mid", makeItemShowRadix(16, "hexadécimal")],
-            ["mid", ContextMenuData.sep()],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", ContextMenuData.sep()],
+                ["mid", forceOutputItem],
+            )
+        }
+
+        return items
     }
 
 }

@@ -1,4 +1,4 @@
-import { FixedArray, HighImpedance, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, HighImpedance, isDefined, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -391,10 +391,18 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
             this.doSetShowOp(!this._showOp)
         })
 
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", toggleShowOpItem],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
     }
 
 

@@ -1,4 +1,4 @@
-import { FixedArray, isNull, isNotNull, isUndefined, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, isNull, isNotNull, isUndefined, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown, isDefined } from "../utils"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -227,13 +227,21 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
             () => this.doSetShowContent(!this._showContent))
 
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
             ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
     }
 
 }

@@ -1,4 +1,4 @@
-import { FixedArrayFill, FixedReadonlyArray, isUnknown, LogicValue, Unknown } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -175,8 +175,12 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isUndefined(forceOutputItem)) {
+            return []
+        }
         return [
-            ["mid", this.makeForceOutputsContextMenuItem()!],
+            ["mid", forceOutputItem],
         ]
     }
 

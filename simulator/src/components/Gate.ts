@@ -610,11 +610,21 @@ export abstract class GateBase<
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["start", this.makeReplaceByMenuItem()],
-            ["mid", this.makePoseAsMenuItem()],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+        if (this.editor.mode >= Mode.FULL) {
+            items.push(
+                ["mid", this.makePoseAsMenuItem()],
+            )
+            const forceOutputItem = this.makeForceOutputsContextMenuItem()
+            if (isDefined(forceOutputItem)) {
+                items.push(
+                    ["mid", forceOutputItem]
+                )
+            }
+        }
+        return items
     }
 
     protected abstract get gateTypeEnum(): RichStringEnum<G, GateProps>

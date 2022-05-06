@@ -1,4 +1,4 @@
-import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
@@ -321,10 +321,19 @@ export abstract class Mux<
         const toggleShowWiringItem = ContextMenuData.item(icon, "Afficher les connexions", () => {
             this.doSetShowWiring(!this._showWiring)
         })
-        return [
+
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", toggleShowWiringItem],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
     }
 
 }

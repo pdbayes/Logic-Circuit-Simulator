@@ -1,4 +1,4 @@
-import { LogicValue } from "../utils"
+import { isDefined, LogicValue } from "../utils"
 import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -93,10 +93,19 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
             this.doSetShowContent(!this._showContent)
         })
 
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", toggleShowOpItem],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
+
     }
 
 }

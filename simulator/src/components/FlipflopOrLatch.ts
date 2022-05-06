@@ -1,4 +1,4 @@
-import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown, isDefined } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
@@ -361,13 +361,21 @@ export abstract class Flipflop<
         const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
             () => this.doSetShowContent(!this._showContent))
 
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
             ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem],
-            ["mid", this.makeForceOutputsContextMenuItem()!],
         ]
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
     }
 
 }

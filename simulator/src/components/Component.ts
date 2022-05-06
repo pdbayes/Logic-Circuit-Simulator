@@ -625,7 +625,7 @@ export abstract class ComponentBase<
     protected makeForceOutputsContextMenuItem(): undefined | ContextMenuItem {
         const numOutputs = this.outputs.length
 
-        if (numOutputs === 0) {
+        if (numOutputs === 0 || this.editor.mode < Mode.FULL) {
             return undefined
         }
 
