@@ -1,6 +1,6 @@
-import { gallery } from "./gallery"
-import { LogicStatic } from "./LogicEditor"
-import { Timestamp } from "./Timeline"
+import { gallery } from "../gallery"
+import { LogicStatic } from "../LogicEditor"
+import { Timestamp } from "../Timeline"
 
 declare global {
     interface Window {

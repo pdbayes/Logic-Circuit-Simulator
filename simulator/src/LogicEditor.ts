@@ -1,8 +1,3 @@
-// import { Component } from "./components/Component"
-// import { WireManager } from "./components/Wire"
-// import { isNotNull, Mode } from "./utils.js"
-
-import * as LZString from "lz-string"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
@@ -15,14 +10,12 @@ import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
 import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal } from "./utils"
-
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
 import dialogPolyfill from 'dialog-polyfill'
 
 import * as pngMeta from 'png-metadata-writer'
-
-
+import * as LZString from "lz-string"
 import * as QRCode from "qrcode"
 // import * as C2S from "canvas2svg"
 
