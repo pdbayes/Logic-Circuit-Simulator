@@ -144,4 +144,11 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         ]
     }
 
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
 }

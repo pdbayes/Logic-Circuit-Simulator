@@ -235,4 +235,11 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         ]
     }
 
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
 }

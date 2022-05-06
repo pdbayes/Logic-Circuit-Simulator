@@ -201,4 +201,11 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         ]
     }
 
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
 }

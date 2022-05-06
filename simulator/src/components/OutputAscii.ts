@@ -239,4 +239,11 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
     }
 
 
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
+
 }

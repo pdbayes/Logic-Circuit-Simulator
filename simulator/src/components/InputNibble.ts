@@ -145,6 +145,13 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         ]
     }
 
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
     override mouseClicked(e: MouseEvent | TouchEvent) {
         // TODO rotate coordinates here
         const editor = this.editor

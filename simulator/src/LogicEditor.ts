@@ -479,38 +479,70 @@ export class LogicEditor extends HTMLElement {
                 }
             }))
 
+            // TODO this should also work then not in singleton mode,
+            // but it still requires listening for keydown on the window,
+            // so we must know which was the lastest editor on screen to target
+            // this to
             window.addEventListener("keydown", this.wrapHandler(e => {
-                switch (e.key) {
+                // console.log("hh", e.target)
+                const ctrlOrCommand = e.ctrlKey || e.metaKey
+                const keyLower = e.key.toLowerCase()
+                const shift = e.shiftKey || (keyLower !== e.key)
+                switch (keyLower) {
                     case "a":
-                        if (e.metaKey && this.mode >= Mode.CONNECT) {
+                        if (ctrlOrCommand && this.mode >= Mode.CONNECT) {
                             this.cursorMovementMgr.selectAll()
                             e.preventDefault()
                         }
                         return
 
                     case "s":
-                        if (e.metaKey && this._isSingleton) {
+                        if (ctrlOrCommand && this._isSingleton) {
                             this.saveCurrentStateToUrl()
                             e.preventDefault()
                         }
                         return
 
                     case "z":
-                        if (e.metaKey) {
-                            if (e.shiftKey) {
-                                redo()
+                        if (ctrlOrCommand) {
+                            if (shift) {
+                                this.redo()
                             } else {
-                                undo()
+                                this.undo()
                             }
                             e.preventDefault()
                         }
                         return
                     case "y":
-                        if (e.metaKey) {
-                            redo()
+                        if (ctrlOrCommand) {
+                            this.redo()
                             e.preventDefault()
                         }
                         return
+                    case "x":
+                        if (ctrlOrCommand) {
+                            this.cut()
+                            e.preventDefault()
+                        }
+                        return
+                    // case "c":
+                        // NO: this prevents the sharing code from being copied
+                        // if (ctrlOrCommand) {
+                        //     this.copy()
+                        //     e.preventDefault()
+                        // }
+                        // return
+                    case "v":
+                        if (ctrlOrCommand) {
+                            this.paste()
+                            e.preventDefault()
+                        }
+                        return
+                }
+
+                const mouseOverComp = this.cursorMovementMgr.currentMouseOverComp
+                if (mouseOverComp !== null) {
+                    mouseOverComp.keyDown(e)
                 }
             }))
 
@@ -1602,6 +1634,38 @@ export class LogicEditor extends HTMLElement {
 
     }
 
+
+    undo() {
+        // TODO stubs
+        console.log("undo")
+    }
+
+    redo() {
+        // TODO stubs
+        console.log("redo")
+    }
+
+    cut() {
+        // TODO stubs
+        console.log("cut")
+    }
+
+    copy() {
+        if (isUndefined(this.cursorMovementMgr.currentSelection)) {
+            // copy URL
+            copyToClipboard(window.location.href)
+            return
+        }
+        // TODO stubs
+        console.log("copy")
+    }
+
+    paste() {
+        // TODO stubs
+        console.log("paste")
+    }
+
+
     wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
         return (...params: T) => {
             const result = f(...params)
@@ -1656,13 +1720,3 @@ document.addEventListener("toggle", e => {
         })
     }
 }, true)
-
-function undo() {
-    // TODO stubs
-    console.log("undo")
-}
-
-function redo() {
-    // TODO stubs
-    console.log("redo")
-}

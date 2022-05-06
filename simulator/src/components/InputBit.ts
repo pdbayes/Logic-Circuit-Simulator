@@ -141,6 +141,13 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         ]
     }
 
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        }
+    }
+
 }
 
 

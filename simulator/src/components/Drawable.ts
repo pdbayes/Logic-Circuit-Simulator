@@ -176,6 +176,10 @@ export abstract class Drawable {
         return false
     }
 
+    public keyDown(__: KeyboardEvent): void {
+        // empty default implementation
+    }
+
 }
 
 

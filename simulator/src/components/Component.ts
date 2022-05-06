@@ -678,14 +678,16 @@ export abstract class ComponentBase<
 
     protected makeSetNameContextMenuItem(currentName: string | undefined, handler: (newName: string | undefined) => void): ContextMenuItem {
         const caption = isUndefined(currentName) ? "Ajouter un nom…" : "Changer le nom…"
-        return ContextMenuData.item("pencil", caption, () => {
-            const newName = window.prompt("Choisissez le nom à afficher ou laissez vide pour le supprimer:", currentName)
-            if (newName !== null) {
-                // OK button pressed
-                const handlerArg = newName.length === 0 ? undefined : newName
-                handler(handlerArg)
-            }
-        })
+        return ContextMenuData.item("pencil", caption, () => this.runSetNameDialog(currentName, handler))
+    }
+
+    protected runSetNameDialog(currentName: string | undefined, handler: (newName: string | undefined) => void): void {
+        const newName = window.prompt("Choisissez le nom à afficher ou laissez vide pour le supprimer:", currentName)
+        if (newName !== null) {
+            // OK button pressed
+            const handlerArg = newName.length === 0 ? undefined : newName
+            handler(handlerArg)
+        }
     }
 
 }
