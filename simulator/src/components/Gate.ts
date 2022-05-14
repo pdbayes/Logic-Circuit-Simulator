@@ -632,7 +632,7 @@ export abstract class GateBase<
     private makeReplaceByMenuItem(): ContextMenuItem {
         const enumDef = this.gateTypeEnum
         const otherTypes = enumDef.values.filter(t => t !== this._type && enumDef.propsOf(t).includeInContextMenu)
-        return ContextMenuData.submenu("exchange", "Remplacer par", [
+        return ContextMenuData.submenu("replace", "Remplacer par", [
             ...otherTypes.map(newType => {
                 const gateProps = enumDef.propsOf(newType)
                 return ContextMenuData.item(undefined, "Porte " + gateProps.localName, () => {
@@ -649,7 +649,7 @@ export abstract class GateBase<
         const otherTypes = enumDef.values.filter(t => t !== this._type && enumDef.propsOf(t).includeInPoseAs)
         const currentShowAsUnknown = this._showAsUnknown
         const currentPoseAs = this.poseAs
-        return ContextMenuData.submenu("question-circle", "Afficher comme", [
+        return ContextMenuData.submenu("questioncircled", "Afficher comme", [
             ContextMenuData.item(!currentShowAsUnknown && isUndefined(currentPoseAs) ? "check" : "none",
                 `Porte ${enumDef.propsOf(this._type).localName} normale`, () => {
                     this.poseAs = undefined

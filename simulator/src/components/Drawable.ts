@@ -3,6 +3,7 @@ import * as t from "io-ts"
 import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { DrawParams, LogicEditor } from "../LogicEditor"
+import { IconName } from "../images"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -18,8 +19,8 @@ export interface DrawContextExt extends DrawContext {
 export type ContextMenuItem =
     | { _tag: "sep" }
     | { _tag: "text", caption: Modifier }
-    | { _tag: "item", icon: string | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown }
-    | { _tag: "submenu", icon: string | undefined, caption: Modifier, items: ContextMenuData }
+    | { _tag: "item", icon: IconName | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown }
+    | { _tag: "submenu", icon: IconName | undefined, caption: Modifier, items: ContextMenuData }
 
 export type ContextMenuData = ContextMenuItem[]
 export const ContextMenuData = {
@@ -29,10 +30,10 @@ export const ContextMenuData = {
     text(caption: Modifier): ContextMenuItem {
         return { _tag: "text", caption }
     },
-    item(icon: string | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): ContextMenuItem {
+    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): ContextMenuItem {
         return { _tag: "item", icon, caption, action, danger }
     },
-    submenu(icon: string | undefined, caption: Modifier, items: ContextMenuData): ContextMenuItem {
+    submenu(icon: IconName | undefined, caption: Modifier, items: ContextMenuData): ContextMenuItem {
         return { _tag: "submenu", icon, caption, items }
     },
 }
@@ -134,7 +135,7 @@ export abstract class Drawable {
     protected makeSetRefContextMenuItem(): ContextMenuItem {
         const currentRef = this.ref
         const caption: Modifier = isUndefined(currentRef) ? "Attribuer un identifiant…" : span("Changer l’identifiant (", span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), ")")
-        return ContextMenuData.item("hand-o-right", caption, () => {
+        return ContextMenuData.item("ref", caption, () => {
             const newRef = window.prompt("Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)", currentRef)
             if (newRef !== null) {
                 // OK button pressed
@@ -359,7 +360,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     protected makeChangeOrientationContextMenuItem(): ContextMenuItem {
-        return ContextMenuData.submenu("arrow-circle-right", "Orientation", [
+        return ContextMenuData.submenu("direction", "Orientation", [
             ...Orientations.values.map(orient => {
                 const isCurrent = this._orient === orient
                 const icon = isCurrent ? "check" : "none"

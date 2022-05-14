@@ -20,7 +20,7 @@ type Section = {
 
 const componentsMenu: Array<Section> = [
     {
-        name: "Entrées/sorties",
+        name: "Entrées/ sorties",
         items: [
             {
                 type: "in", subtype: undefined,

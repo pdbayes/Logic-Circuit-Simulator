@@ -3,13 +3,13 @@ import { Waypoint, Wire, WireManager } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
-import { div, cls, style, title, faglyph, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
+import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal } from "./utils"
+import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsField } from "./utils"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
 import dialogPolyfill from 'dialog-polyfill'
@@ -30,6 +30,7 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
+import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 
 
 enum Mode {
@@ -225,6 +226,7 @@ export class LogicEditor extends HTMLElement {
         let optionsHtml
 
         if (isDefined(optionsHtml = this.optionsHtml)) {
+            this.setDocumentName(newOptions.name)
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
@@ -237,6 +239,18 @@ export class LogicEditor extends HTMLElement {
         }
 
         this.redrawMgr.addReason("options changed", null)
+    }
+
+    private setDocumentName(name: string | undefined) {
+        if (!this._isSingleton) {
+            return
+        }
+        const defaultTitle = "Simulateur de systèmes logiques"
+        if (isUndefined(name)) {
+            document.title = defaultTitle
+        } else {
+            document.title = `${name} – ${defaultTitle}`
+        }
     }
 
     nonDefaultOptions(): undefined | Partial<EditorOptions> {
@@ -433,6 +447,9 @@ export class LogicEditor extends HTMLElement {
         if (this._isSingleton) {
             console.log("LogicEditor is in singleton mode")
             window.addEventListener("keyup", this.wrapHandler(e => {
+                if (targetIsField(e)) {
+                    return
+                }
                 switch (e.key) {
                     case "Escape":
                         this.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
@@ -484,13 +501,12 @@ export class LogicEditor extends HTMLElement {
             // so we must know which was the lastest editor on screen to target
             // this to
             window.addEventListener("keydown", this.wrapHandler(e => {
-                // console.log("hh", e.target)
                 const ctrlOrCommand = e.ctrlKey || e.metaKey
                 const keyLower = e.key.toLowerCase()
                 const shift = e.shiftKey || (keyLower !== e.key)
                 switch (keyLower) {
                     case "a":
-                        if (ctrlOrCommand && this.mode >= Mode.CONNECT) {
+                        if (ctrlOrCommand && this.mode >= Mode.CONNECT && !targetIsField(e)) {
                             this.cursorMovementMgr.selectAll()
                             e.preventDefault()
                         }
@@ -504,7 +520,7 @@ export class LogicEditor extends HTMLElement {
                         return
 
                     case "z":
-                        if (ctrlOrCommand) {
+                        if (ctrlOrCommand && !targetIsField(e)) {
                             if (shift) {
                                 this.redo()
                             } else {
@@ -514,26 +530,26 @@ export class LogicEditor extends HTMLElement {
                         }
                         return
                     case "y":
-                        if (ctrlOrCommand) {
+                        if (ctrlOrCommand && !targetIsField(e)) {
                             this.redo()
                             e.preventDefault()
                         }
                         return
                     case "x":
-                        if (ctrlOrCommand) {
+                        if (ctrlOrCommand && !targetIsField(e)) {
                             this.cut()
                             e.preventDefault()
                         }
                         return
                     // case "c":
-                        // NO: this prevents the sharing code from being copied
-                        // if (ctrlOrCommand) {
-                        //     this.copy()
-                        //     e.preventDefault()
-                        // }
-                        // return
+                    // NO: this prevents the sharing code from being copied
+                    // if (ctrlOrCommand && !targetIsField()) {
+                    //     this.copy()
+                    //     e.preventDefault()
+                    // }
+                    // return
                     case "v":
-                        if (ctrlOrCommand) {
+                        if (ctrlOrCommand && !targetIsField(e)) {
                             this.paste()
                             e.preventDefault()
                         }
@@ -652,7 +668,7 @@ export class LogicEditor extends HTMLElement {
                                 const optionsDiv =
                                     div(cls("sim-mode-link"),
                                         title("Réglages"),
-                                        faglyph("cog")
+                                        makeIcon("settings")
                                     ).render()
 
                                 optionsDiv.addEventListener("click", () => {
@@ -671,7 +687,7 @@ export class LogicEditor extends HTMLElement {
                     const copyLinkDiv =
                         div(cls("sim-mode-link"),
                             title("Copie un lien vers ce contenu dans ce mode"),
-                            faglyph("link")
+                            makeIcon("link"),
                         ).render()
 
                     copyLinkDiv.addEventListener("click", __ => {
@@ -723,19 +739,20 @@ export class LogicEditor extends HTMLElement {
 
 
         const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
-        const makeTimelineButton = (icon: string, text: string | undefined, expl: string, action: () => unknown) => {
+        const makeTimelineButton = (icon: IconName, text: string | undefined, expl: string, action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
                     isUndefined(text) ? style("text-align: center") : emptyMod,
                     title(expl),
-                    faglyph(icon, style("width: 20px")), isUndefined(text) ? raw("&nbsp;") : text,
+                    makeIcon(icon, 20, 20),
+                    isUndefined(text) ? raw("&nbsp;") : text,
                 ).render()
             but.addEventListener("click", action)
             return but
         }
         const playButton = makeTimelineButton("play", "Play", "Démarre l’écoulement du temps", () => this.timeline.play())
         const pauseButton = makeTimelineButton("pause", "Pause", "Arrête l’écoulement du temps", () => this.timeline.pause())
-        const stepButton = makeTimelineButton("step-forward", undefined, "Avance au prochain événement", () => this.timeline.step())
+        const stepButton = makeTimelineButton("step", undefined, "Avance au prochain événement", () => this.timeline.step())
         applyModifierTo(timelineControls, mods(playButton, pauseButton, stepButton))
 
         const showTimelineButtons = true
@@ -792,6 +809,7 @@ export class LogicEditor extends HTMLElement {
         nameField.addEventListener("change", () => {
             const newName = nameField.value
             this._options.name = newName.length === 0 ? undefined : newName
+            this.setDocumentName(this._options.name)
         })
         optionsZone.appendChild(
             div(
@@ -1702,6 +1720,16 @@ const template = (() => {
     template.innerHTML = LogicEditorTemplate
     const styles = [LogicEditorCSS, DialogPolyfillCSS]
     template.content.querySelector("#inlineStyle")!.innerHTML = styles.join("\n\n\n")
+
+    template.content.querySelectorAll("i.svgicon").forEach((_iconElem) => {
+        const iconElem = _iconElem as HTMLElement
+        const iconName = iconElem.dataset["icon"] ?? "question"
+        if (isIconName(iconName)) {
+            iconElem.innerHTML = inlineSvgFor(iconName)
+        } else {
+            console.log(`Unknown icon name '${iconName}'`)
+        }
+    })
     return template
 })()
 // cannot be in setup function because 'template' var is not assigned until that func returns

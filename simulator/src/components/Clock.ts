@@ -180,7 +180,7 @@ export class Clock extends InputBitBase<ClockRepr> {
 
         const myItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("history", "Période", periodPresets.map(makeItemSetPeriod))],
+            ["mid", ContextMenuData.submenu("timer", "Période", periodPresets.map(makeItemSetPeriod))],
         ]
 
         newItems.push(...myItems)

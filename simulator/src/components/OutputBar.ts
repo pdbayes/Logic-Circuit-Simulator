@@ -231,7 +231,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
                 ContextMenuData.sep(),
                 ContextMenuData.text("Changez l’affichage avec un double-clic sur le composant"),
             ])],
-            ["mid", ContextMenuData.submenu("tint", "Couleur", [
+            ["mid", ContextMenuData.submenu("palette", "Couleur", [
                 makeItemUseColor("Vert", "green"),
                 makeItemUseColor("Rouge", "red"),
                 makeItemUseColor("Jaune", "yellow"),

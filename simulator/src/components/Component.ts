@@ -605,13 +605,13 @@ export abstract class ComponentBase<
     }
 
     protected makeDeleteContextMenuItem(): ContextMenuItem {
-        return ContextMenuData.item("trash-o", "Supprimer", () => {
+        return ContextMenuData.item("trash", "Supprimer", () => {
             this.editor.tryDeleteComponentsWhere(c => c === this)
         }, true)
     }
 
     protected makeShowAsUnknownContextMenuItem(isUnknown: boolean, set: (newUnknown: boolean) => void): ContextMenuItem {
-        return ContextMenuData.submenu("question-circle", "Cacher la fonction", [
+        return ContextMenuData.submenu("questioncircled", "Cacher la fonction", [
             ...[false, true].map(newUnkown => ContextMenuData.item(newUnkown === isUnknown ? "check" : "none",
                 newUnkown ? "Cacher avec «?»" : "Afficher normalement", () => {
                     set(newUnkown)
@@ -655,16 +655,16 @@ export abstract class ComponentBase<
         ]
 
         if (numOutputs === 1) {
-            return ContextMenuData.submenu("exclamation", "Forcer la sortie", [
+            return ContextMenuData.submenu("force", "Forcer la sortie", [
                 ...makeOutputItems(this.outputs[0]!),
                 ...footerItems,
             ])
 
         } else {
             const makeName = (i: number) => this.getOutputName(i) ?? "Sortie " + (i + 1)
-            return ContextMenuData.submenu("exclamation", "Forcer une sortie", [
+            return ContextMenuData.submenu("force", "Forcer une sortie", [
                 ...asArray(this.outputs).map((out, i) => {
-                    const icon = isDefined(out.forceValue) ? "exclamation" : "none"
+                    const icon = isDefined(out.forceValue) ? "force" : "none"
                     return ContextMenuData.submenu(icon, makeName(i),
                         makeOutputItems(out)
                     )
@@ -678,7 +678,7 @@ export abstract class ComponentBase<
 
     protected makeSetNameContextMenuItem(currentName: string | undefined, handler: (newName: string | undefined) => void): ContextMenuItem {
         const caption = isUndefined(currentName) ? "Ajouter un nom…" : "Changer le nom…"
-        return ContextMenuData.item("pencil", caption, () => this.runSetNameDialog(currentName, handler))
+        return ContextMenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
     }
 
     protected runSetNameDialog(currentName: string | undefined, handler: (newName: string | undefined) => void): void {

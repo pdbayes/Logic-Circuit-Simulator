@@ -108,10 +108,6 @@ export const emptyMod: Modifier = {
     applyTo: __ => undefined, // do nothing
 }
 
-export function faglyph(glyphName: string, ...modifiers: Modifier[]) {
-    return i(cls(`fa fa-${glyphName}`), ...modifiers)
-}
-
 export function attr(attrName: string, attrValue: string): Modifier {
     return attrBuilder(attrName)(attrValue)
 }

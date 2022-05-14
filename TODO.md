@@ -14,6 +14,7 @@
  * show value on dip switch and register
  * more consistently set things dirty
  * custom display for 4-bit input
+ * replace input with clock and conversely
 
 
 ## Medium priority

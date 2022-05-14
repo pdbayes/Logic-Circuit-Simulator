@@ -34,7 +34,7 @@ logic-editor:not(:defined) {
   font-weight: bold;
   background-color: lightgray;
   padding: 1px;
-  word-break: break-all;
+  /* word-break: break-all; */
   text-align: center;
 }
 
@@ -229,7 +229,8 @@ logic-editor:not(:defined) {
 }
 
 .menu-text {
-  margin-left: 22px;
+  margin-left: 10px;
+  margin-right: 12px;
 }
 
 .menu-item-static {
@@ -320,4 +321,17 @@ logic-editor:not(:defined) {
 .menu-item:hover>.menu {
   -webkit-transition-delay: 100ms;
   transition-delay: 300ms;
+}
+
+i.svgicon {
+  display: inline-block;
+  width: 16px;
+}
+
+i.svgicon svg {
+  width: 100%;
+}
+
+i.svgicon path {
+  fill: currentColor;
 }

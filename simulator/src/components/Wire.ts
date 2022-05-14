@@ -95,7 +95,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return [
             this.makeChangeOrientationContextMenuItem(),
             ContextMenuData.sep(),
-            ContextMenuData.item("trash-o", "Supprimer", () => {
+            ContextMenuData.item("trash", "Supprimer", () => {
                 this.removeFromParent()
             }, true),
         ]
@@ -425,11 +425,11 @@ export class Wire extends Drawable {
             ]
 
         return [
-            ContextMenuData.item("plus-circle", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
+            ContextMenuData.item("add", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
                 this.addWaypoint(contextEvent)
             }),
             ContextMenuData.sep(),
-            ContextMenuData.item("clock-o", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
+            ContextMenuData.item("timer", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
                 const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
                 const defaultDelay = String(this.editor.options.propagationDelay)
                 const message = `Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${defaultDelay} ms):`
@@ -447,7 +447,7 @@ export class Wire extends Drawable {
             }),
             ...setRefItems,
             ContextMenuData.sep(),
-            ContextMenuData.item("trash-o", "Supprimer", () => {
+            ContextMenuData.item("trash", "Supprimer", () => {
                 this.editor.wireMgr.deleteWire(this)
             }, true),
         ]

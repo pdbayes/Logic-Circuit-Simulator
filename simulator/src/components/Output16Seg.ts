@@ -288,7 +288,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
         )
 
         return [
-            ["mid", ContextMenuData.submenu("tint", "Couleur", [
+            ["mid", ContextMenuData.submenu("palette", "Couleur", [
                 makeItemUseColor("Vert", "green"),
                 makeItemUseColor("Rouge", "red"),
                 makeItemUseColor("Jaune", "yellow"), ContextMenuData.sep(),

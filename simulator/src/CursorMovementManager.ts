@@ -3,9 +3,10 @@ import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Dr
 import { LogicEditor, MouseAction } from './LogicEditor'
 import { isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
 import { Node } from "./components/Node"
-import { applyModifiersTo, button, cls, faglyph, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
+import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { ComponentFactory } from './ComponentFactory'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
+import { IconName, makeIcon } from './images'
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -576,11 +577,11 @@ class EditHandlers extends ToolHandlers {
             // console.log("building menu for %o", contextMenuData)
 
             const defToElem = (item: ContextMenuItem): HTMLElement => {
-                function mkButton(spec: { icon?: string | undefined, caption: Modifier }, danger: boolean) {
+                function mkButton(spec: { icon?: IconName | undefined, caption: Modifier }, danger: boolean) {
                     return button(type("button"), cls(`menu-btn${(danger ? " danger" : "")}`),
                         isUndefined(spec.icon)
                             ? spec.caption
-                            : mods(faglyph(spec.icon), span(cls("menu-text"), spec.caption))
+                            : mods(makeIcon(spec.icon), span(cls("menu-text"), spec.caption))
                     )
                 }
 

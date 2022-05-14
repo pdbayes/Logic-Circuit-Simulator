@@ -533,6 +533,12 @@ export function downloadBlob(dataUrl: string, filename: string) {
     document.body.removeChild(link)
 }
 
+export function targetIsField(e: Event) {
+    const targets = e.composedPath()
+    let elem
+    return targets.length !== 0 && (elem = targets[0]) instanceof HTMLElement && elem.tagName === "INPUT"
+}
+
 export const fetchJSONP = ((unique: number) => (url: string) =>
     new Promise<string>(resolve => {
         const script = document.createElement('script')

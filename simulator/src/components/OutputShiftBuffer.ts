@@ -355,7 +355,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
                 ContextMenuData.sep(),
                 ContextMenuData.text("Attention, changer le décodage peut tronquer la valeur stockée"),
             ])],
-            ["mid", ContextMenuData.submenu("object-group", "Regrouper les données", [
+            ["mid", ContextMenuData.submenu("regroup", "Regrouper les données", [
                 makeItemGroupEvery(undefined, "Pas de regroupement"),
                 ContextMenuData.sep(),
                 makeItemGroupEvery(2, "Par 2"),

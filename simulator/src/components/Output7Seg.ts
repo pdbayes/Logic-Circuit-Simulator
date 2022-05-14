@@ -224,7 +224,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         )
 
         return [
-            ["mid", ContextMenuData.submenu("tint", "Couleur", [
+            ["mid", ContextMenuData.submenu("palette", "Couleur", [
                 makeItemUseColor("Vert", "green"),
                 makeItemUseColor("Rouge", "red"),
                 makeItemUseColor("Jaune", "yellow"), ContextMenuData.sep(),

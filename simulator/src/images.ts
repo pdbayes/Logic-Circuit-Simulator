@@ -3,6 +3,39 @@
 // 'ts-ignore' works on the next line, so we need the next line
 // @ts-ignore
 
+
+
+// icons
+import add from '../img/icons/add.icon.svg' // @ts-ignore
+import check from '../img/icons/check.icon.svg' // @ts-ignore
+import close from '../img/icons/close.icon.svg' // @ts-ignore
+import direction from '../img/icons/direction.icon.svg' // @ts-ignore
+import download from '../img/icons/download.icon.svg' // @ts-ignore
+import edit from '../img/icons/edit.icon.svg' // @ts-ignore
+import eye from '../img/icons/eye.icon.svg' // @ts-ignore
+import force from '../img/icons/force.icon.svg' // @ts-ignore
+import link from '../img/icons/link.icon.svg' // @ts-ignore
+import move from '../img/icons/move.icon.svg' // @ts-ignore
+import none from '../img/icons/none.icon.svg' // @ts-ignore
+import open from '../img/icons/open.icon.svg' // @ts-ignore
+import palette from '../img/icons/palette.icon.svg' // @ts-ignore
+import pause from '../img/icons/pause.icon.svg' // @ts-ignore
+import pen from '../img/icons/pen.icon.svg' // @ts-ignore
+import play from '../img/icons/play.icon.svg' // @ts-ignore
+import question from '../img/icons/question.icon.svg' // @ts-ignore
+import questioncircled from '../img/icons/questioncircled.icon.svg' // @ts-ignore
+import ref from '../img/icons/ref.icon.svg' // @ts-ignore
+import regroup from '../img/icons/ref.icon.svg' // @ts-ignore
+import replace from '../img/icons/replace.icon.svg' // @ts-ignore
+import reset from '../img/icons/reset.icon.svg' // @ts-ignore
+import screenshot from '../img/icons/screenshot.icon.svg' // @ts-ignore
+import settings from '../img/icons/settings.icon.svg' // @ts-ignore
+import step from '../img/icons/step.icon.svg' // @ts-ignore
+import timer from '../img/icons/timer.icon.svg' // @ts-ignore
+import trash from '../img/icons/trash.icon.svg' // @ts-ignore
+
+
+// images
 import Adder from '../img/Adder.svg' // @ts-ignore
 import ALU from '../img/ALU.svg' // @ts-ignore
 import AND from '../img/AND.svg' // @ts-ignore
@@ -49,8 +82,41 @@ import XNOR4 from '../img/XNOR4.svg' // @ts-ignore
 import XOR from '../img/XOR.svg' // @ts-ignore
 import XOR3 from '../img/XOR3.svg' // @ts-ignore
 import XOR4 from '../img/XOR4.svg' // @ts-ignore
+import { isDefined } from './utils'
+
 
 void 0 // dummy line to consume the last 'ts-ignore'
+
+
+const icons = {
+    add,
+    check,
+    close,
+    direction,
+    download,
+    edit,
+    eye,
+    force,
+    link,
+    move,
+    none,
+    open,
+    palette,
+    pause,
+    pen,
+    play,
+    question,
+    questioncircled,
+    ref,
+    regroup,
+    replace,
+    reset,
+    screenshot,
+    settings,
+    step,
+    timer,
+    trash,
+}
 
 const images = {
     Adder,
@@ -101,10 +167,35 @@ const images = {
     XOR4,
 }
 
+export type IconName = keyof typeof icons
+export function isIconName(name: string): name is IconName {
+    return name in icons
+}
+
 export type ImageName = keyof typeof images
+export function isImageName(name: string): name is ImageName {
+    return name in images
+}
 
 export function makeImage(name: ImageName, width?: number, height?: number): HTMLImageElement {
     const htmlImg = new Image(width, height)
     htmlImg.src = images[name]
     return htmlImg
+}
+
+export function makeIcon(name: IconName, width?: number, height?: number): HTMLElement {
+    const elem = document.createElement('i')
+    elem.classList.add("svgicon")
+    if (isDefined(width)) {
+        elem.style.width = `${width}px`
+    }
+    if (isDefined(height)) {
+        elem.style.height = `${height}px`
+    }
+    elem.innerHTML = inlineSvgFor(name)
+    return elem
+}
+
+export function inlineSvgFor(name: IconName): string {
+    return icons[name]
 }
