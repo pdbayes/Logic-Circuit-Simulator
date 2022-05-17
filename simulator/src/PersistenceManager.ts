@@ -48,6 +48,7 @@ class _PersistenceManager {
         }
 
         let jsonVersion = parsedContents["v"] ?? 0
+        const savedVersion = jsonVersion
         if (jsonVersion === 0) {
             migrate0To1(parsedContents)
             jsonVersion = 1
@@ -55,6 +56,13 @@ class _PersistenceManager {
         if (jsonVersion === 1) {
             migrate1To2(parsedContents)
             jsonVersion = 2
+        }
+        if (jsonVersion === 2) {
+            migrate2To3(parsedContents)
+            jsonVersion = 3
+        }
+        if (jsonVersion !== savedVersion) {
+            console.log(`Migrated data format from v${savedVersion} to v${jsonVersion}, consider upgrading the source`)
         }
         delete parsedContents["v"]
 
@@ -168,7 +176,7 @@ class _PersistenceManager {
 
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
-            "v": 2,
+            "v": 3,
             "opts": editor.nonDefaultOptions(),
         }
 
@@ -220,8 +228,6 @@ export const PersistenceManager = new _PersistenceManager()
 
 
 function migrate0To1(workspace: any) {
-    console.log("Migrating JSON from version 0 to 1")
-
     // all displays are now out
     if ("displays" in workspace) {
         const displays = workspace.displays
@@ -273,6 +279,22 @@ function migrate1To2(workspace: any) {
                     if ("waypoints" in wireOptions) {
                         wireOptions.via = wireOptions.waypoints
                         delete wireOptions.waypoints
+                    }
+                }
+            }
+        }
+    }
+}
+
+function migrate2To3(parsedContents: any) {
+    let nextNewId = 1000 // TODO be smarter about this
+    if ("components" in parsedContents) {
+        const components = parsedContents.components
+        if (Array.isArray(components)) {
+            for (const comp of components) {
+                if ("type" in comp && comp.type === "alu") {
+                    if (Array.isArray(comp.in)) {
+                        comp.in.push(nextNewId++)
                     }
                 }
             }

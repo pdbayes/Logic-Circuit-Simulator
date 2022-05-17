@@ -12,8 +12,8 @@ const GRID_HEIGHT = 19
 const INPUT = {
     A: [0, 1, 2, 3] as const,
     B: [4, 5, 6, 7] as const,
-    Op: 8,
-    Mode: 9,
+    Op: [8, 9] as const,
+    Cin: 10,
 }
 
 const OUTPUT = {
@@ -24,7 +24,7 @@ const OUTPUT = {
 
 
 export const ALUDef =
-    defineComponent(10, 6, t.type({
+    defineComponent(11, 6, t.type({
         type: t.literal("alu"),
         showOp: typeOrUndefined(t.boolean),
     }, "ALU"))
@@ -55,7 +55,7 @@ const ALUDefaults = {
     showOp: true,
 }
 
-export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4>, LogicValue, LogicValue]> {
+export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4>, LogicValue, LogicValue]> {
 
     private _showOp = ALUDefaults.showOp
 
@@ -64,7 +64,8 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
             inOffsets: [
                 [-4, -8, "w"], [-4, -6, "w"], [-4, -4, "w"], [-4, -2, "w"], // A
                 [-4, 2, "w"], [-4, 4, "w"], [-4, 6, "w"], [-4, 8, "w"], // B
-                [1, -10, "n"], [-1, -10, "n"], // left: mode; right: op
+                [0, -10, "n"], [-2, -10, "n"], // Op
+                [2, -10, "n"], // Cin
             ],
             outOffsets: [
                 [4, -3, "e"], [4, -1, "e"], [4, 1, "e"], [4, 3, "e"], // Y
@@ -96,11 +97,11 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
         if (i <= INPUT.B[INPUT.B.length - 1]) {
             return "B" + (i - INPUT.B[0])
         }
-        if (i === INPUT.Op) {
-            return "Op"
+        if (i <= INPUT.Op[INPUT.Op.length - 1]) {
+            return "Op" + (i - INPUT.Op[0])
         }
-        if (i === INPUT.Mode) {
-            return "Mode"
+        if (i === INPUT.Cin) {
+            return "Cin (retenue d’entrée)"
         }
         return undefined
     }
@@ -135,11 +136,11 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
     }
 
     public get op(): ALUOp | Unknown {
-        const mode = this.inputs[INPUT.Mode].value
-        const op = this.inputs[INPUT.Op].value
-        switch (mode) {
+        const op1 = this.inputs[INPUT.Op[1]].value
+        const op0 = this.inputs[INPUT.Op[0]].value
+        switch (op1) {
             case false: // arithmetic
-                switch (op) {
+                switch (op0) {
                     case false: // 00
                         return "add"
                     case true: // 01
@@ -150,7 +151,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
                 }
                 break
             case true: // logic
-                switch (op) {
+                switch (op0) {
                     case false: // 10
                         return "or" // opcode logic: "only one 1 needed"
                     case true: // 11
@@ -175,6 +176,7 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
 
         const a = this.inputValues<4>(INPUT.A)
         const b = this.inputValues<4>(INPUT.B)
+        const cin = this.inputs[INPUT.Cin].value
 
 
         function allZeros(vals: LogicValue[]): LogicValue {
@@ -211,17 +213,18 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
                     return [Unknown, Unknown]
 
                 }
-                let cin: LogicValue = false
+                let prevCin: LogicValue = cin
                 for (let i = 0; i < a.length; i++) {
-                    const [s, cout] = sum3bits(cin, a[i], b[i])
+                    const [s, cout] = sum3bits(prevCin, a[i], b[i])
                     y[i] = s
-                    cin = cout
+                    prevCin = cout
                 }
-                v = cin
+                v = prevCin
                 break
             }
 
             case "sub": {
+                // TODO check how to handle carry, negative numbers, borrow, etc.
                 const toInt = (vs: readonly LogicValue[]): number | undefined => {
                     let s = 0
                     let col = 1
@@ -317,8 +320,9 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
             const inputi = this.inputs[INPUT.B[i]]
             drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.inputs[INPUT.Mode], this.inputs[INPUT.Mode].posXInParentTransform, top + 6)
-        drawWireLineToComponent(g, this.inputs[INPUT.Op], this.inputs[INPUT.Op].posXInParentTransform, top + 13)
+        drawWireLineToComponent(g, this.inputs[INPUT.Op[1]], this.inputs[INPUT.Op[1]].posXInParentTransform, top + 3)
+        drawWireLineToComponent(g, this.inputs[INPUT.Op[0]], this.inputs[INPUT.Op[0]].posXInParentTransform, top + 9)
+        drawWireLineToComponent(g, this.inputs[INPUT.Cin], this.inputs[INPUT.Cin].posXInParentTransform, top + 17)
 
         // outputs
         for (let i = 0; i < OUTPUT.S.length; i++) {
@@ -352,14 +356,15 @@ export class ALU extends ComponentBase<10, 6, ALURepr, [FixedArray<LogicValue, 4
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "bold 12px sans-serif"
             g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "M", "n", this.inputs[INPUT.Mode], top + 7)
-            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op], top + 14)
 
             drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V], bottom - 7)
             drawLabel(ctx, this.orient, "Z", "s", this.outputs[OUTPUT.Z], bottom - 14)
+
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs[INPUT.Cin], top + 17)
+
+            g.font = "bold 12px sans-serif"
+            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op[0]].posXInParentTransform - GRID_STEP, top + 8)
 
             g.font = "bold 14px sans-serif"
             drawLabel(ctx, this.orient, "A", "w", left, top + 4 * GRID_STEP + 6)
