@@ -119,7 +119,7 @@ export abstract class FlipflopOrLatch<
         this.doDrawLatchOrFlipflop(g, ctx, width, height, left, right)
 
         ctx.inNonTransformedFrame(ctx => {
-            if (this._showContent) {
+            if (this._showContent && !this.editor.options.hideMemoryContent) {
                 FlipflopOrLatch.drawStoredValue(g, this.value[OUTPUT.Q], this.posX, this.posY, 26)
             }
 

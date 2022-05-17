@@ -277,7 +277,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
 
         ctx.inNonTransformedFrame(ctx => {
-            if (!this._showContent) {
+            if (!this._showContent || this.editor.options.hideMemoryContent) {
                 g.font = `bold 16px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"

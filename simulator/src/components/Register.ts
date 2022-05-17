@@ -191,10 +191,16 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
 
 
         ctx.inNonTransformedFrame(ctx => {
-            if (this._showContent) {
+            if (this._showContent && !this.editor.options.hideMemoryContent) {
                 for (const output of this.outputs) {
                     FlipflopOrLatch.drawStoredValue(g, output.value, this.posX, output.posYInParentTransform, 20)
                 }
+            } else {
+                g.font = `bold 14px sans-serif`
+                g.fillStyle = COLOR_COMPONENT_BORDER
+                g.textAlign = "center"
+                g.textBaseline = "middle"
+                g.fillText("Reg.", this.posX, this.posY)
             }
 
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS

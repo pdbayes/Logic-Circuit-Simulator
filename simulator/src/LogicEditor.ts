@@ -67,6 +67,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     showDisconnectedPins: false,
     hideWireColors: false,
     hideOutputColors: false,
+    hideMemoryContent: false,
     hideTooltips: false,
     propagationDelay: 100,
 }
@@ -151,6 +152,7 @@ export class LogicEditor extends HTMLElement {
         showDisconnectedPinsCheckbox: HTMLInputElement,
         hideWireColorsCheckbox: HTMLInputElement,
         hideOutputColorsCheckbox: HTMLInputElement,
+        hideMemoryContentCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
@@ -230,6 +232,7 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
+            optionsHtml.hideMemoryContentCheckbox.checked = newOptions.hideMemoryContent
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
             optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
@@ -826,6 +829,10 @@ export class LogicEditor extends HTMLElement {
             "Cacher l’état des sorties",
             "Si coché, les sorties sont affichées avec une couleur neutre. S’utilise volontiers avec l’option ci-dessus."
         )
+        const hideMemoryContentCheckbox = makeCheckbox("hideMemoryContent",
+            "Cacher le contenu stocké",
+            "Si coché, les verrous, bascules, registres et autres mémoires ne montrent pas leur contenu."
+        )
         const showGateTypesCheckbox = makeCheckbox("showGateTypes",
             "Montrer type des portes",
             "Si coché, affiche sur les portes logique le nom de la fonction réalisée."
@@ -869,6 +876,7 @@ export class LogicEditor extends HTMLElement {
             nameField,
             hideWireColorsCheckbox,
             hideOutputColorsCheckbox,
+            hideMemoryContentCheckbox,
             showGateTypesCheckbox,
             showDisconnectedPinsCheckbox,
             hideTooltipsCheckbox,
