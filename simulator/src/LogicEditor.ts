@@ -16,7 +16,7 @@ import dialogPolyfill from 'dialog-polyfill'
 
 import * as pngMeta from 'png-metadata-writer'
 import * as LZString from "lz-string"
-import * as QRCode from "qrcode"
+// import * as QRCode from "qrcode"
 // import * as C2S from "canvas2svg"
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -140,7 +140,7 @@ export class LogicEditor extends HTMLElement {
         optionsZone: HTMLElement,
         embedDialog: HTMLDialogElement,
         embedUrl: HTMLTextAreaElement,
-        embedUrlQRCode: HTMLImageElement,
+        // embedUrlQRCode: HTMLImageElement,
         embedIframe: HTMLTextAreaElement,
         embedWebcomp: HTMLTextAreaElement,
         embedMarkdown: HTMLTextAreaElement,
@@ -181,7 +181,7 @@ export class LogicEditor extends HTMLElement {
             fileChooser: this.elemWithId("fileChooser"),
             embedDialog: this.elemWithId("embedDialog"),
             embedUrl: this.elemWithId("embedUrl"),
-            embedUrlQRCode: this.elemWithId("embedUrlQRCode"),
+            // embedUrlQRCode: this.elemWithId("embedUrlQRCode"),
             embedIframe: this.elemWithId("embedIframe"),
             embedWebcomp: this.elemWithId("embedWebcomp"),
             embedMarkdown: this.elemWithId("embedMarkdown"),
@@ -712,12 +712,12 @@ export class LogicEditor extends HTMLElement {
             setVisible(modeChangeMenu, true)
         }
 
-        this.html.embedUrlQRCode.addEventListener("click", __ => {
-            // download
-            const dataUrl = this.html.embedUrlQRCode.src
-            const filename = (this.options.name ?? "circuit") + "_qrcode.png"
-            downloadDataUrl(dataUrl, filename)
-        })
+        // this.html.embedUrlQRCode.addEventListener("click", __ => {
+        //     // download
+        //     const dataUrl = this.html.embedUrlQRCode.src
+        //     const filename = (this.options.name ?? "circuit") + "_qrcode.png"
+        //     downloadDataUrl(dataUrl, filename)
+        // })
 
         this.html.fileChooser.addEventListener("change", __ => {
             let files
@@ -1342,9 +1342,9 @@ export class LogicEditor extends HTMLElement {
         this.html.embedWebcomp.value = webcompEmbed
 
 
-        const dataUrl = await QRCode.toDataURL(fullUrl, { margin: 0, errorCorrectionLevel: 'L' })
-        const qrcodeImg = this.html.embedUrlQRCode
-        qrcodeImg.src = dataUrl
+        // const dataUrl = await QRCode.toDataURL(fullUrl, { margin: 0, errorCorrectionLevel: 'L' })
+        // const qrcodeImg = this.html.embedUrlQRCode
+        // qrcodeImg.src = dataUrl
 
         this.saveToUrl(compressedUriSafeJson)
 

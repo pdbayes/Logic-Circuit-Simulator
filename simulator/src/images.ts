@@ -192,6 +192,7 @@ export function makeIcon(name: IconName, width?: number, height?: number): HTMLE
     if (isDefined(height)) {
         elem.style.height = `${height}px`
     }
+    elem.dataset["icon"] = name
     elem.innerHTML = inlineSvgFor(name)
     return elem
 }
