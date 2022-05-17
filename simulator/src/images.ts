@@ -50,6 +50,7 @@ import DecoderBCD4 from '../img/DecoderBCD4.svg' // @ts-ignore
 import FlipflopD from '../img/FlipflopD.svg' // @ts-ignore
 import FlipflopJK from '../img/FlipflopJK.svg' // @ts-ignore
 import FlipflopT from '../img/FlipflopT.svg' // @ts-ignore
+import HalfAdder from '../img/HalfAdder.svg' // @ts-ignore
 import IMPLY from '../img/IMPLY.svg' // @ts-ignore
 import InputBit from '../img/InputBit.svg' // @ts-ignore
 import InputNibble from '../img/InputNibble.svg' // @ts-ignore
@@ -133,6 +134,7 @@ const images = {
     FlipflopD,
     FlipflopJK,
     FlipflopT,
+    HalfAdder,
     IMPLY,
     InputBit,
     InputNibble,

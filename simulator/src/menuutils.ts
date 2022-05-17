@@ -238,6 +238,11 @@ const componentsMenu: Array<Section> = [
         name: "Compo- sants",
         items: [
             {
+                type: "component", subtype: "halfadder",
+                title: "Demi-additionneur", caption: "Demi-add.",
+                img: "HalfAdder", width: 50,
+            },
+            {
                 type: "component", subtype: "adder",
                 title: "Additionneur", caption: "Add.",
                 img: "Adder", width: 50,

@@ -10,6 +10,7 @@ import { DecoderBCD4, DecoderBCD4Def } from "./DecoderBCD4"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
 import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
 import { FlipflopT, FlipflopTDef } from "./FlipflopT"
+import { HalfAdder, HalfAdderDef } from "./HalfAdder"
 import { LatchSR, LatchSRDef } from "./LatchSR"
 import { Mux2To1, Mux2To1Def, Mux4To1, Mux4To1Def, Mux4To2, Mux4To2Def, Mux8To1, Mux8To1Def, Mux8To2, Mux8To2Def, Mux8To4, Mux8To4Def } from "./Mux"
 import { RAM16by4, RAM16x4Def } from "./RAM"
@@ -18,6 +19,7 @@ import { Register, RegisterDef } from "./Register"
 export type IC = Adder
 
 export const ICDef = t.union([
+    HalfAdderDef.repr,
     AdderDef.repr,
     ALUDef.repr,
     Mux2To1Def.repr,
@@ -57,6 +59,8 @@ export const ICFactory = {
         }
 
         switch (savedData.type) {
+            case "halfadder":
+                return new HalfAdder(editor, blank ? null : savedData)
             case "adder":
                 return new Adder(editor, blank ? null : savedData)
             case "alu":
