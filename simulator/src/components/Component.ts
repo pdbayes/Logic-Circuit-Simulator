@@ -1,5 +1,5 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined } from "../utils"
-import { Node, NodeIn, NodeOut } from "./Node"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined, typeOrUndefined } from "../utils"
+import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
@@ -13,7 +13,10 @@ export type NodeID = t.TypeOf<typeof NodeID>
 // to a given value to bypass their naturally computed value
 export const InputNodeRepr = t.type({ id: NodeID }, "InputNode")
 export type InputNodeRepr = t.TypeOf<typeof InputNodeRepr>
-export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({ force: LogicValueRepr })], "OutputNode")
+export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({
+    force: LogicValueRepr,
+    color: typeOrUndefined(t.keyof(WireColor)),
+})], "OutputNode")
 export type OutputNodeRepr = t.TypeOf<typeof OutputNodeRepr>
 
 // Allows collapsing an array of 1 element into the element itself,
@@ -259,7 +262,7 @@ export abstract class ComponentBase<
             const genOutSpecs = function (outReprs: FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero>) {
                 const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(isNumber(outRepr)
                     ? { id: outRepr }
-                    : { id: outRepr.id, force: outRepr.force }
+                    : { id: outRepr.id, force: outRepr.force, color: outRepr.color }
                 )
                 if (isArray(outReprs)) {
                     for (const outRepr of outReprs) {
@@ -330,10 +333,16 @@ export abstract class ComponentBase<
         }
         function outNodeReprs(nodes: readonly Node[]): FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero> {
             const reprOne = (node: Node) => {
-                if (isUndefined(node.forceValue)) {
+                const valueNotForced = isUndefined(node.forceValue)
+                const hasStandardColor = node.color === DEFAULT_WIRE_COLOR
+                if (valueNotForced && hasStandardColor) {
                     return node.id
                 } else {
-                    return { id: node.id, force: toLogicValueRepr(node.forceValue) }
+                    return {
+                        id: node.id,
+                        force: valueNotForced ? undefined : toLogicValueRepr(node.forceValue),
+                        color: hasStandardColor ? undefined : node.color,
+                    }
                 }
             }
             if (nodes.length === 1) {

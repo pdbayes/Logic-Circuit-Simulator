@@ -965,6 +965,11 @@ export class LogicEditor extends HTMLElement {
         }
         registerPixelRatioListener()
 
+        // TODO: add a listener to the window to detect when dark/light mode is toggled
+        // document.body.addEventListener("themechanged", (e) => {
+        //     console.log("chaged, isdarK=",e.detail.is_dark_theme)
+        // })
+
         LogicEditor._globalListenersInstalled = true
     }
 

@@ -4,7 +4,6 @@
 ## High priority
 
  * undo/redo
- * Add Raph's exercise to Modulo
  * lock position
  * add label
  * add rectangle
@@ -26,22 +25,23 @@
  * high-Z bus logic
  * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
  * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
-
+ * allow wire coloring
 
 ## Low priority
 
- * disable input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
- * handle rapid second click as a repeated click if doubleClick not handled
- * embed images with esbuild's dataurl loader; import CSS and HTML templates as well?
+ * disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Add mouseovers to new components
  * switch to https://www.floating-ui.com for tooltips?
  * Lock component to some "parent" to move them more intuitively?
  * Lock component to prevent them from being moveable/selectable
  * add external component by drag-and-drop from file
+ * implement Quine–McCluskey algorithm for function normalization
 
 
 ### DONE
 
+ * handle rapid second click as a repeated click if doubleClick not handled
+ * embed images with esbuild's dataurl/text loader; import CSS and HTML templates as well
  * Switch to embeddable web components with single JS file
  * chainable 4-bit counter
  * option to have disconnected as high-Z
