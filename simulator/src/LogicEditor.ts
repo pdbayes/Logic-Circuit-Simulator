@@ -66,6 +66,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     showGateTypes: false,
     showDisconnectedPins: false,
     hideWireColors: false,
+    hideInputColors: false,
     hideOutputColors: false,
     hideMemoryContent: false,
     hideTooltips: false,
@@ -151,6 +152,7 @@ export class LogicEditor extends HTMLElement {
         showGateTypesCheckbox: HTMLInputElement,
         showDisconnectedPinsCheckbox: HTMLInputElement,
         hideWireColorsCheckbox: HTMLInputElement,
+        hideInputColorsCheckbox: HTMLInputElement,
         hideOutputColorsCheckbox: HTMLInputElement,
         hideMemoryContentCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
@@ -231,6 +233,7 @@ export class LogicEditor extends HTMLElement {
             this.setDocumentName(newOptions.name)
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
+            optionsHtml.hideInputColorsCheckbox.checked = newOptions.hideInputColors
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
             optionsHtml.hideMemoryContentCheckbox.checked = newOptions.hideMemoryContent
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
@@ -825,9 +828,13 @@ export class LogicEditor extends HTMLElement {
             "Cacher l’état des fils",
             "Si coché, les fils sont affichés avec une couleur neutre plutôt que de montrer s’ils véhiculent un 1 ou un 0."
         )
+        const hideInputColorsCheckbox = makeCheckbox("hideInputColors",
+            "Cacher l’état des entrées",
+            "Si coché, les entrées sont affichées avec une couleur neutre, même si elles livrent au circuit une valeur bien déterminée. S’utilise volontiers en cachant aussi l’état des fils."
+        )
         const hideOutputColorsCheckbox = makeCheckbox("hideOutputColors",
             "Cacher l’état des sorties",
-            "Si coché, les sorties sont affichées avec une couleur neutre. S’utilise volontiers avec l’option ci-dessus."
+            "Si coché, les sorties sont affichées avec une couleur neutre. S’utilise volontiers en cachant aussi l’état des fils."
         )
         const hideMemoryContentCheckbox = makeCheckbox("hideMemoryContent",
             "Cacher le contenu stocké",
@@ -875,6 +882,7 @@ export class LogicEditor extends HTMLElement {
         this.optionsHtml = {
             nameField,
             hideWireColorsCheckbox,
+            hideInputColorsCheckbox,
             hideOutputColorsCheckbox,
             hideMemoryContentCheckbox,
             showGateTypesCheckbox,

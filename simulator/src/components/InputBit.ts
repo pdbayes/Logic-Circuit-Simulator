@@ -77,7 +77,8 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         g.fill()
         g.stroke()
 
-        g.fillStyle = colorForBoolean(this.value)
+        const displayValue = this.editor.options.hideInputColors ? Unknown : this.value
+        g.fillStyle = colorForBoolean(displayValue)
         g.lineWidth = 4
         g.beginPath()
         circle(g, this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
@@ -88,7 +89,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }
-            drawRoundValueCentered(g, this.value, this)
+            drawRoundValueCentered(g, displayValue, this)
         })
     }
 

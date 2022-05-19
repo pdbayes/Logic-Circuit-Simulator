@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr } from "../utils"
+import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
@@ -104,13 +104,13 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         g.fill()
         g.stroke()
 
-        const values = this.value
+        const displayValues =  this.editor.options.hideInputColors ? FixedArrayFill(Unknown, 4) : this.value
 
         g.lineWidth = 1
         const cellHeight = height / 4
         for (let i = 0; i < 4; i++) {
             const y = top + i * cellHeight
-            g.fillStyle = colorForBoolean(values[i])
+            g.fillStyle = colorForBoolean(displayValues[i])
             g.beginPath()
             g.rect(left, y, width, height / 4)
             g.fill()
@@ -128,7 +128,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
             for (let i = 0; i < 4; i++) {
                 const y = top + cellHeight / 2 + i * cellHeight
-                drawRoundValue(g, values[i], ...ctx.rotatePoint(this.posX, y))
+                drawRoundValue(g, displayValues[i], ...ctx.rotatePoint(this.posX, y))
             }
         })
     }
