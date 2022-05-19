@@ -1,8 +1,9 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
-import { Node } from "./components/Node"
+import { Node, WireColor } from "./components/Node"
 import { Component } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
+import { LedColor } from "./components/OutputBar"
 
 
 //
@@ -64,7 +65,8 @@ export let COLOR_EMPTY: ColorString
 export let COLOR_UNSET: ColorString
 export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
-export let COLOR_LED_ON: { green: ColorString, red: ColorString, yellow: ColorString }
+export let COLOR_LED_ON: { [C in LedColor]: ColorString }
+export let COLOR_WIRE: { [C in WireColor]: ColorString }
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
 darkModeQuery.onchange = () => {
@@ -104,6 +106,15 @@ function setColors(darkMode: boolean) {
             red: ColorString([232, 20, 20]),
             yellow: ColorString([232, 232, 20]),
         }
+        COLOR_WIRE = {
+            black: COLOR_WIRE_BORDER,
+            red: ColorString([206, 63, 57]),
+            blue: ColorString([77, 102, 153]),
+            yellow: ColorString([245, 209, 63]),
+            green: ColorString([87, 136, 97]),
+            white: ColorString([230, 217, 199]),
+        }
+
     } else {
         // Dark Theme
         COLOR_BACKGROUND = ColorString(43)
@@ -130,6 +141,15 @@ function setColors(darkMode: boolean) {
             red: ColorString([144, 11, 11]),
             yellow: ColorString([144, 144, 11]),
         }
+        COLOR_WIRE = {
+            black: COLOR_WIRE_BORDER,
+            red: ColorString([206, 63, 57]), // TODO update these colors below
+            blue: ColorString([77, 102, 153]),
+            yellow: ColorString([245, 209, 63]),
+            green: ColorString([87, 136, 97]),
+            white: ColorString([230, 217, 199]),
+        }
+
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
     setColorMouseOverIsDanger(false)
@@ -219,7 +239,7 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     const neutral = options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
-    drawStraightWireLine(g, x0, y0, x1, y1, node.value, neutral)
+    drawStraightWireLine(g, x0, y0, x1, y1, node.value, node.color, neutral)
     if (withTriangle) {
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.fillStyle = COLOR_COMPONENT_BORDER
@@ -265,14 +285,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicValue, neutral: boolean) {
+export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicValue, color: WireColor, neutral: boolean) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
-    strokeAsWireLine(g, value, false, neutral)
+    strokeAsWireLine(g, value, color, false, neutral)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
+export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue, color: WireColor, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -282,7 +302,7 @@ export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue,
         g.strokeStyle = COLOR_MOUSE_OVER
     } else {
         g.lineWidth = mainStrokeWidth
-        g.strokeStyle = COLOR_WIRE_BORDER
+        g.strokeStyle = COLOR_WIRE[color]
     }
     if (path) { g.stroke(path) }
     else { g.stroke() }

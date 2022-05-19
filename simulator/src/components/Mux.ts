@@ -296,14 +296,15 @@ export abstract class Mux<
                 for (let i = 0; i < from.length; i++) {
                     g.beginPath()
                     const fromY = this.inputs[from[i]].posYInParentTransform
-                    const toY = this.outputs[to[i]].posYInParentTransform
+                    const toNode = this.outputs[to[i]]
+                    const toY = toNode.posYInParentTransform
                     g.moveTo(left + 2, fromY)
                     g.bezierCurveTo(
                         left + anchorDiffX, fromY, // anchor left
                         right - anchorDiffX, toY, // anchor right
                         right - 2, toY,
                     )
-                    strokeAsWireLine(g, this.inputs[from[i]].value, false, neutral)
+                    strokeAsWireLine(g, this.inputs[from[i]].value, toNode.color, false, neutral)
                 }
             }
         }

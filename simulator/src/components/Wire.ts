@@ -1,11 +1,12 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicValue, typeOrUndefined } from "../utils"
-import { Node, NodeIn } from "./Node"
+import { Node, NodeIn, WireColor } from "./Node"
 import * as t from "io-ts"
 import { NodeID } from "./Component"
-import { dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
+import { COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
+import { span, style, title } from "../htmlgen"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -101,7 +102,6 @@ export class Waypoint extends DrawableWithDraggablePosition {
         ]
     }
 }
-
 
 export type WireRepr = t.TypeOf<typeof Wire.Repr>
 
@@ -203,6 +203,7 @@ export class Wire extends Drawable {
         this._startNode.addOutgoingWire(this)
         this._endNode.incomingWire = this
         this._endNode.value = this.startNode.value
+        this._endNode.doSetColor(this._startNode.color)
     }
 
     propageNewValue(newValue: LogicValue, now: Timestamp) {
@@ -310,7 +311,7 @@ export class Wire extends Drawable {
 
         if (isNull(this.endNode)) {
             // draw to mouse position
-            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue, neutral)
+            drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue, this._startNode.color, neutral)
 
         } else {
             this.endNode.value = wireValue
@@ -377,7 +378,7 @@ export class Wire extends Drawable {
                 const frac = Math.min(1.0, (drawTime - timeSet) / propagationDelay)
                 const lengthToDraw = totalLength * frac
                 g.setLineDash([lengthToDraw, totalLength])
-                strokeAsWireLine(g, value, ctx.isMouseOver, neutral, path)
+                strokeAsWireLine(g, value, this._startNode.color, ctx.isMouseOver, neutral, path)
             }
             g.setLineDash(old)
 
@@ -418,6 +419,44 @@ export class Wire extends Drawable {
     public override makeContextMenu(): ContextMenuData {
         const customPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
 
+        const makeItemUseColor = (desc: string, color: WireColor) => {
+            const isCurrent = this._startNode.color === color
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this._startNode.doSetColor(color)
+            const cssColor = COLOR_WIRE[color]
+            return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: ${WIRE_WIDTH}px; background-color: ${cssColor}; margin-right: 8px`)), action)
+        }
+
+
+        const setWireOptionsItems =
+            this.editor.mode < Mode.DESIGN ? [] : [
+                ContextMenuData.sep(),
+                ContextMenuData.item("timer", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
+                    const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
+                    const defaultDelay = String(this.editor.options.propagationDelay)
+                    const message = `Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${defaultDelay} ms):`
+                    const newValueStr = prompt(message, currentStr)
+                    if (newValueStr !== null) {
+                        if (newValueStr === "") {
+                            this.customPropagationDelay = undefined
+                        } else {
+                            const asInt = parseInt(newValueStr)
+                            if (!isNaN(asInt)) {
+                                this.customPropagationDelay = asInt
+                            }
+                        }
+                    }
+                }),
+                ContextMenuData.submenu("palette", "Couleur du fil", [
+                    makeItemUseColor("Noir (standard)", WireColor.black),
+                    makeItemUseColor("Rouge", WireColor.red),
+                    makeItemUseColor("Bleu", WireColor.blue),
+                    makeItemUseColor("Jaune", WireColor.yellow),
+                    makeItemUseColor("Vert", WireColor.green),
+                    makeItemUseColor("Blanc", WireColor.white),
+                ]),
+            ]
+
         const setRefItems =
             this.editor.mode < Mode.FULL ? [] : [
                 ContextMenuData.sep(),
@@ -428,23 +467,7 @@ export class Wire extends Drawable {
             ContextMenuData.item("add", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
                 this.addWaypoint(contextEvent)
             }),
-            ContextMenuData.sep(),
-            ContextMenuData.item("timer", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
-                const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
-                const defaultDelay = String(this.editor.options.propagationDelay)
-                const message = `Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${defaultDelay} ms):`
-                const newValueStr = prompt(message, currentStr)
-                if (newValueStr !== null) {
-                    if (newValueStr === "") {
-                        this.customPropagationDelay = undefined
-                    } else {
-                        const asInt = parseInt(newValueStr)
-                        if (!isNaN(asInt)) {
-                            this.customPropagationDelay = asInt
-                        }
-                    }
-                }
-            }),
+            ...setWireOptionsItems,
             ...setRefItems,
             ContextMenuData.sep(),
             ContextMenuData.item("trash", "Supprimer", () => {

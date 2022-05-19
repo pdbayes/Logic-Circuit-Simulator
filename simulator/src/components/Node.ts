@@ -13,12 +13,27 @@ type NodeParent = DrawableWithPosition & { isMoving: boolean, state: ComponentSt
 
 export type Node = NodeIn | NodeOut
 
+
+export const WireColor = {
+    black: "black",
+    red: "red",
+    blue: "blue",
+    yellow: "yellow",
+    green: "green",
+    white: "white",
+} as const
+
+export const DEFAULT_WIRE_COLOR = WireColor.black
+
+export type WireColor = keyof typeof WireColor
+
 abstract class NodeBase extends DrawableWithPosition {
 
     public readonly id: number
     private _isAlive = true
     private _value: LogicValue = false
     protected _forceValue: LogicValue | undefined
+    protected _color: WireColor = DEFAULT_WIRE_COLOR
 
     constructor(
         editor: LogicEditor,
@@ -32,6 +47,9 @@ abstract class NodeBase extends DrawableWithPosition {
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
             this._forceValue = toLogicValue(nodeSpec.force)
+        }
+        if ("color" in nodeSpec && isDefined(nodeSpec.color)) {
+            this._color = nodeSpec.color
         }
         this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
@@ -52,6 +70,15 @@ abstract class NodeBase extends DrawableWithPosition {
 
     get unrotatedHeight() {
         return WAYPOINT_DIAMETER
+    }
+
+    get color(): WireColor {
+        return this._color
+    }
+
+    public doSetColor(color: WireColor) {
+        this._color = color
+        this.setNeedsRedraw("color changed")
     }
 
     override isOver(x: number, y: number) {

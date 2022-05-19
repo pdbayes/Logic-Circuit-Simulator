@@ -3,53 +3,54 @@
 
 ## High priority
 
- * undo/redo
- * lock position
- * add label
- * add rectangle
- * make input constant 0 or 1
- * prevent click event if right-click
+ * Undo/redo
+ * Lock position
+ * Add label
+ * Add rectangle
+ * Make input constant 0 or 1
+ * Prevent click event if right-click
  * 4 bit adder with carry in and out
- * show value on dip switch and register
- * more consistently set things dirty
- * custom display for 4-bit input
- * replace input with clock and conversely
+ * Show value on dip switch and register
+ * More consistently set things dirty
+ * Custom display for 4-bit input
+ * Replace input with clock and conversely
 
 
 ## Medium priority
 
  * Add contextual menu to clock
- * edge detector
- * mux graphics
- * demux
- * high-Z bus logic
- * [Ivan Moura] faire un copier-coller d'un circuit nous permettrait de répliquer ce lui-ci plusieurs, par exemple - dans notre cas  la création d'un registre puis d'une mémoire.
- * [Ivan Moura] dans le prolongement de ceci, la possibilité de définir un nouveau  composant sur la base d'un circuit créé (p.ex. une cellule de mémoire (bascule), puis un registre). Le même principe que l'additionneur en somme.
- * allow wire coloring
+ * Edge detector
+ * Mux graphics
+ * Demux
+ * High-Z bus logic
+ * Copy-paste
+ * Component creation
+
 
 ## Low priority
 
- * disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
+ * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Add mouseovers to new components
- * switch to https://www.floating-ui.com for tooltips?
+ * Switch to https://www.floating-ui.com for tooltips?
  * Lock component to some "parent" to move them more intuitively?
  * Lock component to prevent them from being moveable/selectable
- * add external component by drag-and-drop from file
- * implement Quine–McCluskey algorithm for function normalization
+ * Add external component by drag-and-drop from file
+ * Implement Quine–McCluskey algorithm for function normalization
 
 
 ### DONE
 
- * handle rapid second click as a repeated click if doubleClick not handled
- * embed images with esbuild's dataurl/text loader; import CSS and HTML templates as well
+ * Allow wire coloring
+ * Handle rapid second click as a repeated click if doubleClick not handled
+ * Embed images with esbuild's dataurl/text loader; import CSS and HTML templates as well
  * Switch to embeddable web components with single JS file
- * chainable 4-bit counter
- * option to have disconnected as high-Z
+ * Chainable 4-bit counter
+ * Option to have disconnected as high-Z
  * 16 x 4 bit memory
- * editor-level options and UI to set options
- * can now color all wires and nodes as neutral
- * replace fillText with drawLabel
- * edge detector -- can now be done with XOR(A, NOT(NOT(A)))) with new propagation system
+ * Editor-level options and UI to set options
+ * Can now color all wires and nodes as neutral
+ * Replace fillText with drawLabel
+ * Edge detector -- can now be done with XOR(A, NOT(NOT(A)))) with new propagation system
  * Fix flipflop update issue, e.g. in shift register
  * Multiplexers
  * Use esbuild to create bundle
