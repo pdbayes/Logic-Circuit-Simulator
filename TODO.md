@@ -5,8 +5,7 @@
 
  * Undo/redo
  * Lock position
- * Add label
- * Add rectangle
+ * Add label, rectangle, rich HTML annotation
  * Make input constant 0 or 1
  * Prevent click event if right-click
  * 4 bit adder with carry in and out

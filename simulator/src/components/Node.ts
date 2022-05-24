@@ -78,13 +78,18 @@ abstract class NodeBase extends DrawableWithPosition {
 
     public doSetColor(color: WireColor) {
         this._color = color
+        this.propagateColor(color)
         this.setNeedsRedraw("color changed")
+    }
+
+    protected propagateColor(__color: WireColor) {
+        // nothing by default; overridden in NodeOut
     }
 
     override isOver(x: number, y: number) {
         return this.editor.mode >= Mode.CONNECT
             && this.acceptsMoreConnections
-            && isOverWaypoint(x, y, this.posX, this.posY) 
+            && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
     destroy() {
@@ -295,6 +300,12 @@ export class NodeOut extends NodeBase {
         this._forceValue = newForceValue
         this.propagateNewValueIfNecessary(oldVisibleValue)
         this.setNeedsRedraw("changed forced output value")
+    }
+
+    protected override propagateColor(color: WireColor) {
+        for (const wire of this._outgoingWires) {
+            wire.endNode?.doSetColor(color)
+        }
     }
 
     protected propagateNewValue(newValue: LogicValue) {
