@@ -556,7 +556,7 @@ export abstract class ComponentBase<
         })
     }
 
-    override get cursorWhenMouseover() {
+    override get cursorWhenMouseover(): string | undefined {
         return "grab"
     }
 

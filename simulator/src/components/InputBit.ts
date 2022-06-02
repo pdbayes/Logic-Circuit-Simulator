@@ -6,7 +6,6 @@ import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { Node, NodeIn } from "./Node"
-import { TriStateBufferDef } from "./TriStateBuffer"
 
 export const InputBitBaseDef =
     defineComponent(0, 1, t.type({
@@ -219,11 +218,16 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override get cursorWhenMouseover() {
-        if (this.editor.mode === Mode.STATIC) {
+        const mode = this.editor.mode
+        if (mode === Mode.STATIC) {
             return "not-allowed"
         }
         if (this._isConstant) {
-            return "grab"
+            if (mode >= Mode.DESIGN) {
+                return "grab"
+            } else {
+                return undefined
+            }
         }
         return "pointer"
     }
