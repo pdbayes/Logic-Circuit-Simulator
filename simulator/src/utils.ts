@@ -409,7 +409,7 @@ export const typeOrNull = <T extends t.Mixed>(tpe: T) => {
 }
 
 
-// Unset; TriState
+// Unset; LogicValue
 
 export const HighImpedance = "Z" as const
 export type HighImpedance = typeof HighImpedance

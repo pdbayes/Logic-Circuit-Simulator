@@ -6,6 +6,7 @@ import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { Node, NodeIn } from "./Node"
+import { TriStateBufferDef } from "./TriStateBuffer"
 
 export const InputBitBaseDef =
     defineComponent(0, 1, t.type({
@@ -56,40 +57,49 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         this.outputs[0].value = newValue
     }
 
+    protected shouldDrawBorder() {
+        return true
+    }
+
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        drawWireLineToComponent(g, this.outputs[0], this.posX, this.posY)
-
-        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
-
-        if (drawMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-            g.fillStyle = COLOR_MOUSE_OVER
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-            g.fillStyle = COLOR_COMPONENT_BORDER
-        }
-        g.beginPath()
-        triangle(g,
-            this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,
-            this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY + 7,
-            this.posX + INPUT_OUTPUT_DIAMETER / 2 + 5, this.posY,
-        )
-        g.fill()
-        g.stroke()
+        drawWireLineToComponent(g, this.outputs[0], this.posX + 8, this.posY)
 
         const displayValue = this.editor.options.hideInputColors ? Unknown : this.value
-        g.fillStyle = colorForBoolean(displayValue)
-        g.lineWidth = 4
-        g.beginPath()
-        circle(g, this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
-        g.fill()
-        g.stroke()
+
+        const shouldDrawBorder = this.shouldDrawBorder()
+        if (shouldDrawBorder) {
+            const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+
+            if (drawMouseOver) {
+                g.strokeStyle = COLOR_MOUSE_OVER
+                g.fillStyle = COLOR_MOUSE_OVER
+            } else {
+                g.strokeStyle = COLOR_COMPONENT_BORDER
+                g.fillStyle = COLOR_COMPONENT_BORDER
+            }
+            g.beginPath()
+            triangle(g,
+                this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,
+                this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY + 7,
+                this.posX + INPUT_OUTPUT_DIAMETER / 2 + 5, this.posY,
+            )
+            g.fill()
+            g.stroke()
+
+            g.fillStyle = colorForBoolean(displayValue)
+            g.lineWidth = 4
+            g.beginPath()
+            circle(g, this.posX, this.posY, INPUT_OUTPUT_DIAMETER)
+            g.fill()
+            g.stroke()
+        }
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, this, false)
             }
-            drawRoundValueCentered(g, displayValue, this)
+            const forcedFillStyle = !shouldDrawBorder ? g.fillStyle = COLOR_COMPONENT_BORDER : undefined
+            drawRoundValueCentered(g, displayValue, this, forcedFillStyle)
         })
     }
 
@@ -156,12 +166,14 @@ export const InputBitDef =
     extendComponent(InputBitBaseDef, t.type({
         val: LogicValueRepr,
         isPushButton: typeOrUndefined(t.boolean),
+        isConstant: typeOrUndefined(t.boolean),
     }, "InputBit"))
 
 export type InputBitRepr = typeof InputBitDef.reprType
 
 const InputBitDefaults = {
     isPushButton: false,
+    isConstant: false,
 }
 
 
@@ -177,6 +189,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     private _isPushButton = InputBitDefaults.isPushButton
+    private _isConstant = InputBitDefaults.isConstant
 
     public constructor(editor: LogicEditor, savedData: InputBitRepr | null) {
         super(
@@ -187,6 +200,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         )
         if (isNotNull(savedData)) {
             this._isPushButton = savedData.isPushButton ?? InputBitDefaults.isPushButton
+            this._isConstant = savedData.isConstant ?? InputBitDefaults.isConstant
         }
 
     }
@@ -196,6 +210,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
             ...super.toJSONBase(),
             val: toLogicValueRepr(this.value),
             isPushButton: (this._isPushButton !== InputBitDefaults.isPushButton) ? this._isPushButton : undefined,
+            isConstant: (this._isConstant !== InputBitDefaults.isConstant) ? this._isConstant : undefined,
         }
     }
 
@@ -204,7 +219,13 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override get cursorWhenMouseover() {
-        return this.editor.mode === Mode.STATIC ? "not-allowed" : "pointer"
+        if (this.editor.mode === Mode.STATIC) {
+            return "not-allowed"
+        }
+        if (this._isConstant) {
+            return "grab"
+        }
+        return "pointer"
     }
 
     public override makeTooltip() {
@@ -216,8 +237,12 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return this.value
     }
 
+    protected override shouldDrawBorder() {
+        return !this._isConstant
+    }
+
     override mouseClicked(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode === Mode.STATIC || this._isPushButton) {
+        if (this.editor.mode === Mode.STATIC || this._isPushButton || this._isConstant) {
             // do nothing for normal push button
             return false
         }
@@ -226,7 +251,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
-        if (this.editor.mode !== Mode.STATIC && this._isPushButton) {
+        if (this.editor.mode !== Mode.STATIC && this._isPushButton && !this._isConstant) {
             this.doSetValue(true)
         }
         return super.mouseDown(e)
@@ -234,7 +259,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
 
     override mouseUp(e: MouseEvent | TouchEvent) {
         const result = super.mouseUp(e)
-        if (this.editor.mode !== Mode.STATIC && this._isPushButton) {
+        if (this.editor.mode !== Mode.STATIC && this._isPushButton && !this._isConstant) {
             this.doSetValue(false)
         }
         return result
@@ -248,6 +273,11 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         }
     }
 
+    private doSetIsConstant(isConstant: boolean) {
+        this._isConstant = isConstant
+        this.setNeedsRedraw("constant changed")
+    }
+
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
         const makeItemBehaveAs = (desc: string, value: boolean) => {
@@ -257,9 +287,17 @@ export class InputBit extends InputBitBase<InputBitRepr> {
             return ContextMenuData.item(icon, desc, action)
         }
 
+        const makeToggleConstantItem = () => {
+            const icon = this._isConstant ? "check" : "none"
+            const action = () => this.doSetIsConstant(!this._isConstant)
+            return ContextMenuData.item(icon, `Verrouiller cette valeur (${toLogicValueRepr(this.value)})`, action)
+        }
+
         const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", makeItemBehaveAs("Commutateur", false)],
             ["mid", makeItemBehaveAs("Poussoir", true)],
+            ["mid", ContextMenuData.sep()],
+            ["mid", makeToggleConstantItem()],
             ["mid", ContextMenuData.sep()],
         ]
 

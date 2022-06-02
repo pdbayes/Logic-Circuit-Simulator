@@ -383,11 +383,11 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition) {
-    drawRoundValue(g, value, comp.posX, comp.posY)
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, fillStyle?: string) {
+    drawRoundValue(g, value, comp.posX, comp.posY, fillStyle)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number) {
+export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, fillStyle?: string) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
@@ -395,19 +395,19 @@ export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x
     let label = ""
 
     if (isUnknown(value)) {
-        g.fillStyle = COLOR_LABEL_OFF
+        g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
         spec = "bold 18"
         label = '?'
     } else if (isHighImpedance(value)) {
-        g.fillStyle = COLOR_LABEL_OFF
+        g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
         spec = "16"
         label = 'Z'
     } else if (value) {
-        g.fillStyle = COLOR_LABEL_ON
+        g.fillStyle = fillStyle ?? COLOR_LABEL_ON
         spec = "bold 18"
         label = '1'
     } else {
-        g.fillStyle = COLOR_LABEL_OFF
+        g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
         spec = "18"
         label = '0'
     }
