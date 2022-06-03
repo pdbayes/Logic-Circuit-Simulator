@@ -1,0 +1,14 @@
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        path {
+            stroke: #000;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            path {
+                fill: #fff;
+            }
+        }
+    </style>
+    <path fill="none" stroke="#000" stroke-width="10" transform="scale(0.1)" transform-origin="-3 -3.5" d="M67.82 76.85h34.866c19.256 0 34.867 15.737 34.867 35.15 0 19.413-15.61 35.15-34.867 35.15H67.82z M68.563 95.614H31.506 M68.563 127.754H31.506 M160.831 111.996h23.522 M141.645 111.923a8.895 8.895 0 0 1 17.79 0 8.895 8.895 0 1 1-17.79 0z" />
+</svg>
