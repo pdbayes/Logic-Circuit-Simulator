@@ -1,5 +1,5 @@
 import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
@@ -13,7 +13,7 @@ const GRID_HEIGHT = 8
 export const OutputAsciiDef =
     defineComponent(7, 0, t.type({
         type: t.literal("ascii"),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
         additionalReprRadix: typeOrUndefined(t.number),
         showAsUnknown: typeOrUndefined(t.boolean),
     }, "OutputAscii"))
@@ -22,7 +22,7 @@ type OutputAsciiRepr = typeof OutputAsciiDef.reprType
 
 export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, number | "?"]> {
 
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
@@ -104,10 +104,6 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
 
         ctx.inNonTransformedFrame(ctx => {
 
-            if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, true)
-            }
-
             const isVertical = Orientation.isVertical(this.orient)
             const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
             let mainTextPosY = this.posY + (isVertical ? 4 : 0)
@@ -161,6 +157,10 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
             }
             g.fillText(mainText, this.posX, mainTextPosY)
 
+
+            if (isDefined(this._name)) {
+                drawComponentName(g, ctx, this._name, mainText, this, true)
+            }
         })
     }
 
@@ -194,7 +194,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return false
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

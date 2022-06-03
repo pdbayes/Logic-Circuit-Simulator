@@ -1,5 +1,5 @@
 import { isDefined, isNotNull, isUnknown, Mode, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
-import { Component, ComponentBase, defineComponent, extendComponent } from "./Component"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
@@ -9,14 +9,14 @@ import { Node, NodeIn } from "./Node"
 
 export const InputBitBaseDef =
     defineComponent(0, 1, t.type({
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
     }, "InputBitBase"))
 
 export type InputBitBaseRepr = typeof InputBitBaseDef.reprType
 
 export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends ComponentBase<0, 1, Repr, LogicValue> {
 
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
 
     protected constructor(editor: LogicEditor, initialValue: LogicValue, savedData: Repr | null) {
         super(editor, initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
@@ -95,7 +95,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, false)
+                drawComponentName(g, ctx, this._name, toLogicValueRepr(displayValue), this, false)
             }
             const forcedFillStyle = !shouldDrawBorder ? g.fillStyle = COLOR_COMPONENT_BORDER : undefined
             drawRoundValueCentered(g, displayValue, this, forcedFillStyle)
@@ -140,7 +140,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         }
     }
 
-    protected doSetName(name: string | undefined) {
+    protected doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }
@@ -220,15 +220,19 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     override get cursorWhenMouseover() {
         const mode = this.editor.mode
         if (mode === Mode.STATIC) {
+            // signal we can't switch it here
             return "not-allowed"
         }
         if (this._isConstant) {
             if (mode >= Mode.DESIGN) {
+                // we can still move it
                 return "grab"
             } else {
+                // no special pointer change, it's constant and static
                 return undefined
             }
         }
+        // we can switch it
         return "pointer"
     }
 

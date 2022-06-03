@@ -1,5 +1,5 @@
 import { isDefined, isNotNull, isUnknown, Unknown, typeOrUndefined, Mode } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
@@ -13,7 +13,7 @@ const DEFAULT_RADIX = 10
 export const OutputNibbleDef =
     defineComponent(4, 0, t.type({
         type: t.literal("nibble"),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
         radix: typeOrUndefined(t.number),
         showAsUnknown: typeOrUndefined(t.boolean),
     }, "DisplayNibble"))
@@ -22,7 +22,7 @@ type OutputNibbleRepr = typeof OutputNibbleDef.reprType
 
 export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string, number | Unknown]> {
 
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
     private _radix = DEFAULT_RADIX
     private _showAsUnknown = false
 
@@ -111,7 +111,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, true)
+                drawComponentName(g, ctx, this._name, value, this, true)
             }
 
             const isVertical = Orientation.isVertical(this.orient)
@@ -158,7 +158,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         return false
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

@@ -1,10 +1,10 @@
-import { FixedArrayFill, FixedReadonlyArray, isDefined, isNotNull, LogicValue as LogicValue, typeOrUndefined } from "../utils"
+import { FixedArrayFill, FixedReadonlyArray, isDefined, isNotNull, LogicValue as LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_OFF_BACKGROUND, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div, span, title, style } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
@@ -13,7 +13,7 @@ export const Output16SegDef =
         type: t.literal("16seg"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
         transparent: typeOrUndefined(t.boolean),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
     }, "Ouput16Seg"))
 
 const enum INPUT {
@@ -34,7 +34,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
 
     private _color = Output16SegDefaults.color
     private _transparent = Output16SegDefaults.transparent
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: Output16SegRepr | null) {
         super(editor, FixedArrayFill(false, 17), savedData, {
@@ -250,12 +250,13 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
             })
 
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, true)
+                const valueString = this.value.map(toLogicValueRepr).join("")
+                drawComponentName(g, ctx, this._name, valueString, this, true)
             }
         })
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

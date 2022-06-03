@@ -1,4 +1,4 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined, typeOrUndefined } from "../utils"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined, typeOrUndefined, isString } from "../utils"
 import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
@@ -145,6 +145,26 @@ export const ComponentTypes = RichStringEnum.withProps<{
 
 export type ComponentType = typeof ComponentTypes.type
 export type MainJsonFieldName = typeof ComponentTypes_[ComponentType]["jsonFieldName"]
+
+export type DynamicName = Record<string | number, string>
+export function isDynamicName(obj: any): obj is DynamicName {
+    if (typeof obj !== "object") {
+        return false
+    }
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && typeof obj[key] !== "string") {
+            return false
+        }
+    }
+    return true
+}
+export type ComponentName = string | DynamicName | undefined
+export const ComponentNameRepr = typeOrUndefined(
+    t.union([
+        t.string,
+        t.record(t.union([t.string, t.number]), t.string),
+    ])
+)
 
 export abstract class ComponentBase<
     NumInputs extends FixedArraySize, // statically know the number of inputs
@@ -685,17 +705,36 @@ export abstract class ComponentBase<
 
     }
 
-    protected makeSetNameContextMenuItem(currentName: string | undefined, handler: (newName: string | undefined) => void): ContextMenuItem {
+    protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): ContextMenuItem {
         const caption = isUndefined(currentName) ? "Ajouter un nom…" : "Changer le nom…"
         return ContextMenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
     }
 
-    protected runSetNameDialog(currentName: string | undefined, handler: (newName: string | undefined) => void): void {
-        const newName = window.prompt("Choisissez le nom à afficher ou laissez vide pour le supprimer:", currentName)
-        if (newName !== null) {
+    protected runSetNameDialog(currentName: ComponentName, handler: (newName: ComponentName) => void): void {
+        const currentDisplayName = isUndefined(currentName) || isString(currentName) ? currentName : JSON.stringify(currentName)
+        const promptReturnValue = window.prompt("Choisissez le nom à afficher ou laissez vide pour le supprimer:", currentDisplayName)
+        if (promptReturnValue !== null) {
             // OK button pressed
-            const handlerArg = newName.length === 0 ? undefined : newName
-            handler(handlerArg)
+            let newName
+            if (promptReturnValue.length === 0) {
+                newName = undefined
+            } else {
+                try {
+                    const parsedValue = JSON.parse(promptReturnValue)
+                    console.log("parsedValue", parsedValue)
+                    if (isDynamicName(parsedValue)) {
+                        console.log("good JSON!")
+                        newName = parsedValue
+                    } else {
+                        console.log("not JSON object")
+                        newName = promptReturnValue
+                    }
+                } catch {
+                    console.log("not JSON")
+                    newName = promptReturnValue
+                }
+            }
+            handler(newName)
         }
     }
 

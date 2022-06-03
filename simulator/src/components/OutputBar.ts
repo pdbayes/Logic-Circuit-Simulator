@@ -1,5 +1,5 @@
-import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
@@ -37,7 +37,7 @@ export const OutputBarDef =
         display: t.keyof(OutputBarTypes, "OutputBarType"),
         color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
         transparent: typeOrUndefined(t.boolean),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
     }, "OutputBar"))
 
 type OutputBarRepr = typeof OutputBarDef.reprType
@@ -56,7 +56,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
     private _display = OutputBarDefaults.display
     private _color = OutputBarDefaults.color
     private _transparent = OutputBarDefaults.transparent
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
         super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
@@ -136,12 +136,12 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, true)
+                drawComponentName(g, ctx, this._name, toLogicValueRepr(valueToShow), this, true)
             }
         })
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

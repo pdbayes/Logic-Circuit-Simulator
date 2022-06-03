@@ -1,7 +1,7 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isHighImpedance, isNumber, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { isArray, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 import { Node, WireColor } from "./components/Node"
-import { Component } from "./components/Component"
+import { Component, ComponentName } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
 import { LedColor } from "./components/OutputBar"
 
@@ -447,15 +447,39 @@ function textSettingsForName(onRight: boolean, orient: Orientation) {
     }
 }
 
-export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextExt, name: string, comp: Component, onRight: boolean) {
+export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextExt, name: ComponentName, value: string | number, comp: Component, onRight: boolean) {
+    if (isUndefined(name)) {
+        return
+    }
+
+    let displayName
+    if (isString(name)) {
+        displayName = name
+    } else {
+        // dynamic name
+        if (value in name) {
+            displayName = `${value}: ${name[value]}`
+        } else if ("default" in name) {
+            displayName = `${value}: ${name.default}`
+        } else if (isUnknown(value)) {
+            displayName = Unknown
+        } else {
+            displayName = undefined
+        }
+    }
+
+    if (isUndefined(displayName)) {
+        return
+    }
+
     const [hAlign, vAlign, deltaX] = textSettingsForName(onRight, comp.orient)
     g.textAlign = hAlign
     g.textBaseline = vAlign
     g.font = "italic 18px sans-serif"
     g.fillStyle = COLOR_COMPONENT_BORDER
     const point = ctx.rotatePoint(comp.posX + (onRight ? 1 : -1) * (comp.unrotatedWidth / 2 + deltaX), comp.posY)
-    g.fillText(name, ...point)
-    g.textBaseline = "middle"
+    g.fillText(displayName, ...point)
+    g.textBaseline = "middle" // restore
 }
 
 export function displayValuesFromArray(values: LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {

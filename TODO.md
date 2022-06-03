@@ -6,7 +6,6 @@
  * Undo/redo
  * Lock position
  * Add label, rectangle, rich HTML annotation
- * Make input constant 0 or 1
  * Prevent click event if right-click
  * 4 bit adder with carry in and out
  * Show value on dip switch and register
@@ -39,6 +38,8 @@
 
 ### DONE
 
+ * Allow dynamic component names
+ * Make input constant 0 or 1
  * Allow wire coloring
  * Handle rapid second click as a repeated click if doubleClick not handled
  * Embed images with esbuild's dataurl/text loader; import CSS and HTML templates as well

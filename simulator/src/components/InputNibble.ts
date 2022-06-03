@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, typeOrUndefined, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { isDefined, isNotNull, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
 import { tooltipContent, mods } from "../htmlgen"
@@ -14,7 +14,7 @@ export const InputNibbleDef =
     defineComponent(0, 4, t.type({
         type: t.literal("nibble"),
         val: t.tuple([LogicValueRepr, LogicValueRepr, LogicValueRepr, LogicValueRepr]),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
         // radix: typeOrUndefined(t.number),
     }, "InputNibble"))
 
@@ -30,7 +30,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
 
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
     // private _radix = DEFAULT_RADIX
 
     public constructor(editor: LogicEditor, savedData: InputNibbleRepr | null) {
@@ -104,7 +104,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         g.fill()
         g.stroke()
 
-        const displayValues =  this.editor.options.hideInputColors ? FixedArrayFill(Unknown, 4) : this.value
+        const displayValues = this.editor.options.hideInputColors ? FixedArrayFill(Unknown, 4) : this.value
 
         g.lineWidth = 1
         const cellHeight = height / 4
@@ -123,7 +123,8 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, false)
+                const valueString = displayValues.map(toLogicValueRepr).join("")
+                drawComponentName(g, ctx, this._name, valueString, this, false)
             }
 
             for (let i = 0; i < 4; i++) {
@@ -133,7 +134,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         })
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

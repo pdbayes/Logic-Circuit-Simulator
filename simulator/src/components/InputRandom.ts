@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, LogicValue, Unknown, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent } from "./Component"
+import { isDefined, isNotNull, LogicValue, Unknown, typeOrUndefined, toLogicValueRepr } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, drawComponentName, GRID_STEP, COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
@@ -13,7 +13,7 @@ export const InputRandomDef =
         prob1: typeOrUndefined(t.number),
         showProb: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
     }, "InputRandom"))
 
 
@@ -37,7 +37,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
     private _showProb: boolean = InputRandomDefaults.showProb
     private _lastClock: LogicValue = Unknown
     private _trigger: EdgeTrigger = InputRandomDefaults.trigger
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: InputRandomRepr | null) {
         super(editor, false, savedData, {
@@ -125,7 +125,8 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
 
 
         ctx.inNonTransformedFrame(ctx => {
-            FlipflopOrLatch.drawStoredValue(g, this.outputs[0].value, this.posX, this.posY, 26)
+            const outputValue = this.outputs[0].value
+            FlipflopOrLatch.drawStoredValue(g, outputValue, this.posX, this.posY, 26)
 
             if (this._showProb) {
                 const isVertical = Orientation.isVertical(this.orient)
@@ -155,12 +156,12 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
 
 
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, false)
+                drawComponentName(g, ctx, this._name, toLogicValueRepr(outputValue), this, false)
             }
         })
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

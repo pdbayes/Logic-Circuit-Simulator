@@ -1,5 +1,5 @@
-import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicValue as LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { Component, ComponentBase, defineComponent } from "./Component"
+import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicValue as LogicValue, Unknown, toLogicValueRepr } from "../utils"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
@@ -9,14 +9,14 @@ import { Node, NodeOut } from "./Node"
 
 export const OutputBitDef =
     defineComponent(1, 0, t.type({
-        name: typeOrUndefined(t.string),
+        name: ComponentNameRepr,
     }, "OutputBit"))
 
 type OutputBitRepr = typeof OutputBitDef.reprType
 
 export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
 
-    private _name: string | undefined = undefined
+    private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBitRepr | null) {
         super(editor, false, savedData, { inOffsets: [[-3, 0, "w"]] })
@@ -91,7 +91,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
 
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, this, true)
+                drawComponentName(g, ctx, this._name, toLogicValueRepr(valueToShow), this, true)
             }
             drawRoundValueCentered(g, valueToShow, this)
         })
@@ -133,7 +133,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         }
     }
 
-    private doSetName(name: string | undefined) {
+    private doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }
