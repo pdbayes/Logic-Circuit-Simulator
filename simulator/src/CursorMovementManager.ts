@@ -7,6 +7,7 @@ import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span
 import { ComponentFactory } from './ComponentFactory'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { IconName, makeIcon } from './images'
+import { ComponentBase, ComponentState } from './components/Component'
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -530,6 +531,10 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         editor.cursorMovementMgr.clearPopperIfNecessary()
         if (editor.options.hideTooltips) {
+            return
+        }
+        // maybe the component is now dead
+        if (comp instanceof ComponentBase && comp.state === ComponentState.DEAD) {
             return
         }
         const tooltip = comp.makeTooltip()

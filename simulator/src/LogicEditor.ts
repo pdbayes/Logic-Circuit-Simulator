@@ -251,7 +251,7 @@ export class LogicEditor extends HTMLElement {
         if (!this._isSingleton) {
             return
         }
-        const defaultTitle = "Simulateur de systèmes logiques"
+        const defaultTitle = "Logic"
         if (isUndefined(name)) {
             document.title = defaultTitle
         } else {

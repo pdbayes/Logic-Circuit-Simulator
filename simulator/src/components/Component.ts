@@ -719,18 +719,15 @@ export abstract class ComponentBase<
             if (promptReturnValue.length === 0) {
                 newName = undefined
             } else {
+                // is it JSON that can be valid as a DynamicName?
                 try {
                     const parsedValue = JSON.parse(promptReturnValue)
-                    console.log("parsedValue", parsedValue)
                     if (isDynamicName(parsedValue)) {
-                        console.log("good JSON!")
                         newName = parsedValue
                     } else {
-                        console.log("not JSON object")
                         newName = promptReturnValue
                     }
                 } catch {
-                    console.log("not JSON")
                     newName = promptReturnValue
                 }
             }
