@@ -67,6 +67,7 @@ export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { [C in LedColor]: ColorString }
 export let COLOR_WIRE: { [C in WireColor]: ColorString }
+export let PATTERN_STRIPED_GRAY: CanvasPattern
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
 darkModeQuery.onchange = () => {
@@ -114,6 +115,7 @@ function setColors(darkMode: boolean) {
             green: ColorString([87, 136, 97]),
             white: ColorString([230, 217, 199]),
         }
+        PATTERN_STRIPED_GRAY = createStripedPattern(COLOR_BACKGROUND, "rgba(128,128,128,0.2)")
 
     } else {
         // Dark Theme
@@ -149,12 +151,40 @@ function setColors(darkMode: boolean) {
             green: ColorString([87, 136, 97]),
             white: ColorString([230, 217, 199]),
         }
+        PATTERN_STRIPED_GRAY = createStripedPattern(COLOR_BACKGROUND, "rgba(128,128,128,0.4)")
 
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
     setColorMouseOverIsDanger(false)
     COLOR_FULL = ColorString(COLORCOMPS_FULL)
     COLOR_EMPTY = ColorString(COLORCOMPS_EMPTY)
+}
+
+function createStripedPattern(background: ColorString, stripeColor: string) {
+    const canvas = document.createElement("canvas")
+    const step = 4
+    canvas.width = 2 * step
+    canvas.height = 6 * step
+    const g = canvas.getContext("2d")!
+    g.fillStyle = background
+    g.fillRect(0, 0, canvas.width, canvas.height)
+    g.fillStyle = stripeColor
+    g.beginPath()
+    g.moveTo(step, 0)
+    g.lineTo(canvas.width, 0)
+    g.lineTo(0, canvas.height)
+    g.lineTo(0, 3 * step)
+    g.closePath()
+    g.moveTo(step, canvas.height)
+    g.lineTo(canvas.width, canvas.height)
+    g.lineTo(canvas.width, 3 * step)
+    g.closePath()
+    g.fill()
+    const pattern = g.createPattern(canvas, "repeat")
+    if (pattern === null) {
+        console.log("Failed to create pattern")
+    }
+    return pattern!
 }
 
 export function setColorMouseOverIsDanger(mouseOverIsDanger: boolean) {

@@ -1,7 +1,7 @@
 import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
 import * as t from "io-ts"
-import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -359,7 +359,7 @@ export abstract class GateBase<
         const gateType = this._showAsUnknown
             ? Unknown
             : this.poseAs ?? this.type
-        this.drawGate(g, gateType, gateType !== this.type, ctx)
+        this.drawGate(g, gateType, gateType !== this.type && !this._showAsUnknown, ctx)
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
@@ -399,10 +399,12 @@ export abstract class GateBase<
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
-        const gateBorderColor: ColorString = (isFake && this.editor.mode >= Mode.FULL) ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        const showAsFake = isFake && this.editor.mode >= Mode.FULL
+        const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
         g.lineWidth = 3
         g.strokeStyle = gateBorderColor
-        g.fillStyle = COLOR_BACKGROUND
+        g.fillStyle = gateFill
 
         const drawRightCircle = () => {
             gateRight += 5
@@ -420,12 +422,30 @@ export abstract class GateBase<
             g.fill()
             g.stroke()
         }
-        const drawWireEnds = (shortUp = false, shortDown = false) => {
+        const drawWireEnds = (shortUp = false, shortDown = false, isORLike = false) => {
             g.strokeStyle = COLOR_COMPONENT_BORDER
-            for (let i = 0; i < this.inputs.length; i++) {
+            const numInputs = this.inputs.length
+            for (let i = 0; i < numInputs; i++) {
                 const input = this.inputs[i]
                 const short = i === 0 ? shortUp : shortDown
-                drawWireLineToComponent(g, input, gateLeft - 1 - (short ? 9 : 0), input.posYInParentTransform)
+                let rightEnd = gateLeft - 1
+                if (short) {
+                    rightEnd -= 9
+                }
+                if (isORLike) {
+                    if (numInputs === 3) {
+                        rightEnd += 3
+                        if (i === 1) {
+                            rightEnd += 4
+                        }
+                    } else if (numInputs === 4) {
+                        rightEnd += 3
+                        if (i === 1 || i === 2) {
+                            rightEnd += 8
+                        }
+                    }
+                }
+                drawWireLineToComponent(g, input, rightEnd, input.posYInParentTransform)
             }
             drawWireLineToComponent(g, output, gateRight + 1, this.posY)
         }
@@ -522,7 +542,7 @@ export abstract class GateBase<
                     drawLeftCircle(false)
                     shortDown = true
                 }
-                drawWireEnds(shortUp, shortDown)
+                drawWireEnds(shortUp, shortDown, true)
                 if (type.startsWith("X")) {
                     gateLeft = savedGateLeft
                     g.strokeStyle = gateBorderColor
