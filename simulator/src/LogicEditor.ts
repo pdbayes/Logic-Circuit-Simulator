@@ -225,7 +225,7 @@ export class LogicEditor extends HTMLElement {
     }
 
     setPartialOptions(opts: Partial<EditorOptions>) {
-        const newOptions = { ...this._options, ...opts }
+        const newOptions = { ...DEFAULT_EDITOR_OPTIONS, ...opts }
         this._options = newOptions
         let optionsHtml
 
