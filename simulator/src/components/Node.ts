@@ -32,6 +32,7 @@ abstract class NodeBase extends DrawableWithPosition {
     public readonly id: number
     private _isAlive = true
     private _value: LogicValue = false
+    protected _initialValue: LogicValue | undefined = undefined
     protected _forceValue: LogicValue | undefined
     protected _color: WireColor = DEFAULT_WIRE_COLOR
 
@@ -52,7 +53,9 @@ abstract class NodeBase extends DrawableWithPosition {
             this._color = nodeSpec.color
         }
         if ("initialValue" in nodeSpec && isDefined(nodeSpec.initialValue)) {
-            this._value = toLogicValue(nodeSpec.initialValue)
+            const initialValue = toLogicValue(nodeSpec.initialValue)
+            this._initialValue = initialValue
+            this._value = initialValue
         }
         this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
@@ -139,6 +142,8 @@ abstract class NodeBase extends DrawableWithPosition {
     protected abstract propagateNewValue(newValue: LogicValue): void
 
     public abstract get forceValue(): LogicValue | undefined
+
+    public abstract get initialValue(): LogicValue | undefined
 
     public get gridOffsetX() {
         return this._gridOffsetX
@@ -262,6 +267,10 @@ export class NodeIn extends NodeBase {
         return undefined
     }
 
+    get initialValue() {
+        return undefined
+    }
+
     protected propagateNewValue(__newValue: LogicValue) {
         this.parent.setNeedsRecalc()
     }
@@ -303,6 +312,10 @@ export class NodeOut extends NodeBase {
         this._forceValue = newForceValue
         this.propagateNewValueIfNecessary(oldVisibleValue)
         this.setNeedsRedraw("changed forced output value")
+    }
+
+    get initialValue() {
+        return this._initialValue
     }
 
     protected override propagateColor(color: WireColor) {

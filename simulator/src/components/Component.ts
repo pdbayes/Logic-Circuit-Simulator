@@ -215,6 +215,13 @@ export abstract class ComponentBase<
         // build node specs either from scratch if new or from saved data
         const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
 
+        // so, hasAnyPrecomputedInitialValues is true if ANY of the outputs was built
+        // with "initialValue" in the JSON. This is used to stabilize circuits (such as
+        // an SR latch) that would otherwise oscillate. But this also means that NO OTHER
+        // OUTPUT from this component would be recomputed (even if they are always
+        // propagated). So, it is a good idea to either set no initial values at all, or
+        // to set all of them.
+
         // generate the input and output nodes
         this.inputs = this.makeNodes(inOffsets, inputSpecs, NodeIn) as FixedArray<NodeIn, NumInputs>
         this.outputs = this.makeNodes(outOffsets, outputSpecs, NodeOut) as FixedArray<NodeOut, NumOutputs>
@@ -363,12 +370,14 @@ export abstract class ComponentBase<
         function outNodeReprs(nodes: readonly Node[]): FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero> {
             const reprOne = (node: Node) => {
                 const valueNotForced = isUndefined(node.forceValue)
+                const noInitialValue = isUndefined(node.initialValue)
                 const hasStandardColor = node.color === DEFAULT_WIRE_COLOR
-                if (valueNotForced && hasStandardColor) {
+                if (valueNotForced && hasStandardColor && noInitialValue) {
                     return node.id
                 } else {
                     return {
                         id: node.id,
+                        intialValue: noInitialValue ? undefined : toLogicValueRepr(node.initialValue),
                         force: valueNotForced ? undefined : toLogicValueRepr(node.forceValue),
                         color: hasStandardColor ? undefined : node.color,
                     }
