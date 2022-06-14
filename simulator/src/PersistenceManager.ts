@@ -270,6 +270,7 @@ function migrate0To1(workspace: any) {
 
 
 function migrate1To2(workspace: any) {
+    // waypoints -> via
     if ("wires" in workspace) {
         const wires = workspace.wires
         if (Array.isArray(wires)) {
@@ -287,6 +288,7 @@ function migrate1To2(workspace: any) {
 }
 
 function migrate2To3(parsedContents: any) {
+    // add new input to ALU
     let nextNewId = 1000 // TODO be smarter about this
     if ("components" in parsedContents) {
         const components = parsedContents.components

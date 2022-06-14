@@ -51,6 +51,9 @@ abstract class NodeBase extends DrawableWithPosition {
         if ("color" in nodeSpec && isDefined(nodeSpec.color)) {
             this._color = nodeSpec.color
         }
+        if ("initialValue" in nodeSpec && isDefined(nodeSpec.initialValue)) {
+            this._value = toLogicValue(nodeSpec.initialValue)
+        }
         this.editor.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
         this.doSetOrient(relativePosition)

@@ -15,6 +15,7 @@ export const InputNodeRepr = t.type({ id: NodeID }, "InputNode")
 export type InputNodeRepr = t.TypeOf<typeof InputNodeRepr>
 export const OutputNodeRepr = t.intersection([t.type({ id: NodeID }), t.partial({
     force: LogicValueRepr,
+    initialValue: LogicValueRepr,
     color: typeOrUndefined(t.keyof(WireColor)),
 })], "OutputNode")
 export type OutputNodeRepr = t.TypeOf<typeof OutputNodeRepr>
@@ -212,7 +213,7 @@ export abstract class ComponentBase<
         }
 
         // build node specs either from scratch if new or from saved data
-        const [inputSpecs, outputSpecs] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
+        const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
 
         // generate the input and output nodes
         this.inputs = this.makeNodes(inOffsets, inputSpecs, NodeIn) as FixedArray<NodeIn, NumInputs>
@@ -222,7 +223,11 @@ export abstract class ComponentBase<
         // * the forced propagation allows the current value (e.g. for InputBits)
         //   to be set to the outputs, if if the "new" value is the same as the current one
         // * setNeedsRecalc schedules a recalculation (e.g. for Gates)
-        this.setNeedsRecalc(true)
+        if (!hasAnyPrecomputedInitialValues) {
+            this.setNeedsRecalc(true)
+        } else {
+            this.setNeedsPropagate()
+        }
     }
 
     public abstract toJSON(): Repr
@@ -260,10 +265,11 @@ export abstract class ComponentBase<
     // generates two arrays of normalized node specs either as loaded from
     // JSON or obtained with default values when _repr is null and we're
     // creating a new component from scratch
-    private nodeSpecsFromRepr(_repr: NodeIDsRepr<NumInputs, NumOutputs> | null, numInputs: number, numOutputs: number): [InputNodeRepr[], OutputNodeRepr[]] {
+    private nodeSpecsFromRepr(_repr: NodeIDsRepr<NumInputs, NumOutputs> | null, numInputs: number, numOutputs: number): [InputNodeRepr[], OutputNodeRepr[], boolean] {
         const inputSpecs: InputNodeRepr[] = []
         const outputSpecs: OutputNodeRepr[] = []
         const nodeMgr = this.editor.nodeMgr
+        let hasAnyPrecomputedInitialValues = false
 
         if (_repr === null) {
             // build default spec for nodes
@@ -280,10 +286,13 @@ export abstract class ComponentBase<
             // the next two functions take either a single ID or an array of them and
             // generate the corresponding node specs from it
             const genOutSpecs = function (outReprs: FixedArrayOrDirect<NodeID | OutputNodeRepr, FixedArraySizeNonZero>) {
-                const pushOne = (outRepr: NodeID | OutputNodeRepr) => outputSpecs.push(isNumber(outRepr)
-                    ? { id: outRepr }
-                    : { id: outRepr.id, force: outRepr.force, color: outRepr.color }
-                )
+                const pushOne = (outRepr: NodeID | OutputNodeRepr) => {
+                    const fullOutRepr = isNumber(outRepr)
+                        ? { id: outRepr }
+                        : { id: outRepr.id, force: outRepr.force, color: outRepr.color, initialValue: outRepr.initialValue }
+                    hasAnyPrecomputedInitialValues ||= isDefined(fullOutRepr.initialValue)
+                    outputSpecs.push(fullOutRepr)
+                }
                 if (isArray(outReprs)) {
                     for (const outRepr of outReprs) {
                         pushOne(outRepr)
@@ -331,7 +340,7 @@ export abstract class ComponentBase<
             }
         }
 
-        return [inputSpecs, outputSpecs]
+        return [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues]
     }
 
     // from the known nodes, builds the JSON representation of them,
