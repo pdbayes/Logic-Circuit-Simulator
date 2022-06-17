@@ -19,7 +19,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
     public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
         super(editor, savedData, {
-            inOffsets: [[-4, 2, "w"], [-4, -2, "w"]],
+            inOffsets: [[-4, -2, "w"], [-4, 2, "w"]],
         })
         this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
     }

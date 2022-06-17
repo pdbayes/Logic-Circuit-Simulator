@@ -38,6 +38,7 @@
 
 ### DONE
 
+ * Allow to force initial input to stabilize a circular circuit (e.g. SR latch)
  * Allow dynamic component names
  * Make input constant 0 or 1
  * Allow wire coloring
