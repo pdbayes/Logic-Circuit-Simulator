@@ -103,6 +103,13 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 }
 
+const WireStyles = {
+    straight: "straight",
+    bezier: "bezier",
+} as const
+
+type WireStyle = keyof typeof WireStyles
+
 export type WireRepr = t.TypeOf<typeof Wire.Repr>
 
 export class Wire extends Drawable {
@@ -115,6 +122,7 @@ export class Wire extends Drawable {
                     ref: typeOrUndefined(t.string),
                     via: typeOrUndefined(t.array(Waypoint.Repr)),
                     propagationDelay: typeOrUndefined(t.number),
+                    style: typeOrUndefined(t.keyof(WireStyles)),
                 }),
             ]), // alternative with more fields first
             t.tuple([NodeID, NodeID]),
@@ -124,6 +132,7 @@ export class Wire extends Drawable {
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
     private _propagatingValues: [LogicValue, Timestamp][] = []
+    private _style: WireStyle | undefined = undefined
     public customPropagationDelay: number | undefined = undefined
 
     constructor(
@@ -137,7 +146,7 @@ export class Wire extends Drawable {
 
     toJSON(): WireRepr {
         const endID = this._endNode?.id ?? -1
-        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay) && isUndefined(this.ref)) {
+        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay) && isUndefined(this.ref) && isUndefined(this.style)) {
             // no need for node options
             return [this._startNode.id, endID]
 
@@ -148,6 +157,7 @@ export class Wire extends Drawable {
                 ref: this.ref,
                 via: (waypoints.length === 0) ? undefined : waypoints,
                 propagationDelay: this.customPropagationDelay,
+                style: this.style,
             }]
         }
     }
@@ -170,6 +180,15 @@ export class Wire extends Drawable {
 
     public setWaypoints(reprs: WaypointRepr[]) {
         this._waypoints = reprs.map(repr => new Waypoint(this.editor, repr, this))
+    }
+
+    public get style() {
+        return this._style
+    }
+
+    public doSetStyle(style: WireStyle | undefined) {
+        this._style = style
+        this.setNeedsRedraw("style changed")
     }
 
     public setSecondNode(secondNode: Node | null) {
@@ -330,7 +349,7 @@ export class Wire extends Drawable {
                 const deltaY = nextY - prevY
                 const nextProlong = waypoint.orient
                 let x, y, x1, y1
-                if (prevX === nextX || prevY === nextY) {
+                if (this.style === WireStyles.straight || (isUndefined(this.style) && (prevX === nextX || prevY === nextY))) {
                     // straight line
                     if (i === 0) {
                         [x, y] = bezierAnchorForWire(prevProlong, prevX, prevY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2)
@@ -428,6 +447,14 @@ export class Wire extends Drawable {
         }
 
 
+        const makeItemDisplayStyle = (desc: string, style: WireStyle | undefined) => {
+            const isCurrent = this.style === style
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetStyle(style)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+
         const setWireOptionsItems =
             this.editor.mode < Mode.DESIGN ? [] : [
                 ContextMenuData.sep(),
@@ -454,6 +481,11 @@ export class Wire extends Drawable {
                     makeItemUseColor("Jaune", WireColor.yellow),
                     makeItemUseColor("Vert", WireColor.green),
                     makeItemUseColor("Blanc", WireColor.white),
+                ]),
+                ContextMenuData.submenu("wirestyle", "Style", [
+                    makeItemDisplayStyle("Automatique", undefined),
+                    makeItemDisplayStyle("Ligne droite", WireStyles.straight),
+                    makeItemDisplayStyle("Courbe", WireStyles.bezier),
                 ]),
             ]
 

@@ -33,6 +33,7 @@ import settings from '../img/icons/settings.icon.svg' // @ts-ignore
 import step from '../img/icons/step.icon.svg' // @ts-ignore
 import timer from '../img/icons/timer.icon.svg' // @ts-ignore
 import trash from '../img/icons/trash.icon.svg' // @ts-ignore
+import wirestyle from '../img/icons/wirestyle.icon.svg' // @ts-ignore
 
 
 // images
@@ -117,6 +118,7 @@ const icons = {
     step,
     timer,
     trash,
+    wirestyle,
 }
 
 const images = {

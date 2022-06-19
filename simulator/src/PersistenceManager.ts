@@ -138,6 +138,9 @@ class _PersistenceManager {
                     if (isDefined(wireOptions.propagationDelay)) {
                         completedWire.customPropagationDelay = wireOptions.propagationDelay
                     }
+                    if (isDefined(wireOptions.style)) {
+                        completedWire.doSetStyle(wireOptions.style)
+                    }
                 }
                 recalcMgr.recalcAndPropagateIfNeeded()
             }
