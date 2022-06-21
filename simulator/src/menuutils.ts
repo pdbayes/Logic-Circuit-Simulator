@@ -256,37 +256,37 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "mux-2to1",
                 title: "Multiplexer 2-vers-1 (1 bit de contrôle)", caption: "Mux 2-1",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to1",
                 title: "Multiplexer 4-vers-1 (2 bits de contrôle)", caption: "Mux 4-1",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to1",
                 title: "Multiplexer 8-vers-1 (3 bits de contrôle)", caption: "Mux 8-1",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to2",
                 title: "Multiplexer 4-vers-2 (1 bit de contrôle)", caption: "Mux 4-2",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to2",
                 title: "Multiplexer 8-vers-2 (2 bits de contrôle)", caption: "Mux 8-2",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to4",
                 title: "Multiplexer 8-vers-4 (1 bit de contrôle)", caption: "Mux 8-4",
-                img: "ALU", width: 50, // TODO mux icons
+                img: "Mux", width: 50, // TODO mux icons
                 normallyHidden: true,
             },
 

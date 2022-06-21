@@ -18,7 +18,6 @@
 
  * Add contextual menu to clock
  * Edge detector
- * Mux graphics
  * Demux
  * High-Z bus logic
  * Copy-paste
@@ -38,6 +37,7 @@
 
 ### DONE
 
+ * Mux graphics
  * Allow to force initial input to stabilize a circular circuit (e.g. SR latch)
  * Allow dynamic component names
  * Make input constant 0 or 1

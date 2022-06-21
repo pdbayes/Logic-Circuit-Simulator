@@ -48,6 +48,7 @@ import Counter from '../img/Counter.svg' // @ts-ignore
 import Decoder7Seg from '../img/Decoder7Seg.svg' // @ts-ignore
 import Decoder16Seg from '../img/Decoder16Seg.svg' // @ts-ignore
 import DecoderBCD4 from '../img/DecoderBCD4.svg' // @ts-ignore
+import Demux from '../img/Demux.svg' // @ts-ignore
 import FlipflopD from '../img/FlipflopD.svg' // @ts-ignore
 import FlipflopJK from '../img/FlipflopJK.svg' // @ts-ignore
 import FlipflopT from '../img/FlipflopT.svg' // @ts-ignore
@@ -57,6 +58,7 @@ import InputBit from '../img/InputBit.svg' // @ts-ignore
 import InputNibble from '../img/InputNibble.svg' // @ts-ignore
 import InputRandom from '../img/InputRandom.svg' // @ts-ignore
 import LatchSR from '../img/LatchSR.svg' // @ts-ignore
+import Mux from '../img/Mux.svg' // @ts-ignore
 import NAND from '../img/NAND.svg' // @ts-ignore
 import NAND3 from '../img/NAND3.svg' // @ts-ignore
 import NAND4 from '../img/NAND4.svg' // @ts-ignore
@@ -133,6 +135,7 @@ const images = {
     Decoder7Seg,
     Decoder16Seg,
     DecoderBCD4,
+    Demux,
     FlipflopD,
     FlipflopJK,
     FlipflopT,
@@ -142,6 +145,7 @@ const images = {
     InputNibble,
     InputRandom,
     LatchSR,
+    Mux,
     NAND,
     NAND3,
     NAND4,

@@ -7,8 +7,8 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 
 
-type MuxInputIndices<NumOutputs extends FixedArraySize> = {
-    I: ReadonlyArray<FixedReadonlyArray<number, NumOutputs>>, // array of arrays of input indices
+type MuxInputIndices<NumInputs extends FixedArraySize> = {
+    I: ReadonlyArray<FixedReadonlyArray<number, NumInputs>>, // array of arrays of input indices
     S: ReadonlyArray<number>, // array of indices of selectors
 }
 
