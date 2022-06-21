@@ -7,6 +7,7 @@ import { Counter, CounterDef } from "./Counter"
 import { Decoder16Seg, Decoder16SegDef } from "./Decoder16Seg"
 import { Decoder7Seg, Decoder7SegDef } from "./Decoder7Seg"
 import { DecoderBCD4, DecoderBCD4Def } from "./DecoderBCD4"
+import { Demux1To2, Demux1To2Def, Demux1To4, Demux1To4Def, Demux1To8, Demux1To8Def, Demux2To4, Demux2To4Def, Demux2To8, Demux2To8Def, Demux4To8, Demux4To8Def } from "./Demux"
 import { FlipflopD, FlipflopDDef } from "./FlipflopD"
 import { FlipflopJK, FlipflopJKDef } from "./FlipflopJK"
 import { FlipflopT, FlipflopTDef } from "./FlipflopT"
@@ -28,6 +29,12 @@ export const ICDef = t.union([
     Mux4To2Def.repr,
     Mux8To2Def.repr,
     Mux8To4Def.repr,
+    Demux1To2Def.repr,
+    Demux1To4Def.repr,
+    Demux1To8Def.repr,
+    Demux2To4Def.repr,
+    Demux2To8Def.repr,
+    Demux4To8Def.repr,
     LatchSRDef.repr,
     FlipflopJKDef.repr,
     FlipflopTDef.repr,
@@ -77,6 +84,18 @@ export const ICFactory = {
                 return new Mux8To2(editor, blank ? null : savedData)
             case "mux-8to4":
                 return new Mux8To4(editor, blank ? null : savedData)
+            case "demux-1to2":
+                return new Demux1To2(editor, blank ? null : savedData)
+            case "demux-1to4":
+                return new Demux1To4(editor, blank ? null : savedData)
+            case "demux-1to8":
+                return new Demux1To8(editor, blank ? null : savedData)
+            case "demux-2to4":
+                return new Demux2To4(editor, blank ? null : savedData)
+            case "demux-2to8":
+                return new Demux2To8(editor, blank ? null : savedData)
+            case "demux-4to8":
+                return new Demux4To8(editor, blank ? null : savedData)
             case "latch-sr":
                 return new LatchSR(editor, blank ? null : savedData)
             case "flipflop-jk":

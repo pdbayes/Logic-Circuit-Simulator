@@ -1146,7 +1146,7 @@ export class LogicEditor extends HTMLElement {
             try {
                 error = PersistenceManager.doLoadFromJson(this, this._initialData.json)
             } catch (e) {
-                error = String(e)
+                error = String(e) + " (JSON)"
             }
 
         } else {
@@ -1155,7 +1155,7 @@ export class LogicEditor extends HTMLElement {
                 decodedData = LZString.decompressFromEncodedURIComponent(this._initialData.str)
                 error = PersistenceManager.doLoadFromJson(this, decodedData!)
             } catch (e) {
-                error = String(e)
+                error = String(e) + " (LZString)"
             }
 
             if (isDefined(error)) {
@@ -1164,7 +1164,7 @@ export class LogicEditor extends HTMLElement {
                     decodedData = atob(this._initialData.str.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "="))
                     error = PersistenceManager.doLoadFromJson(this, decodeURIComponent(decodedData))
                 } catch (e) {
-                    error = String(e)
+                    error = String(e) + " (atob)"
                 }
             }
 

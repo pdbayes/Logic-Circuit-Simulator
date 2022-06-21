@@ -256,37 +256,74 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "mux-2to1",
                 title: "Multiplexer 2-vers-1 (1 bit de contrôle)", caption: "Mux 2-1",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to1",
                 title: "Multiplexer 4-vers-1 (2 bits de contrôle)", caption: "Mux 4-1",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to1",
                 title: "Multiplexer 8-vers-1 (3 bits de contrôle)", caption: "Mux 8-1",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to2",
                 title: "Multiplexer 4-vers-2 (1 bit de contrôle)", caption: "Mux 4-2",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to2",
                 title: "Multiplexer 8-vers-2 (2 bits de contrôle)", caption: "Mux 8-2",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to4",
                 title: "Multiplexer 8-vers-4 (1 bit de contrôle)", caption: "Mux 8-4",
-                img: "Mux", width: 50, // TODO mux icons
+                img: "Mux", width: 50,
+                normallyHidden: true,
+            },
+
+            {
+                type: "component", subtype: "demux-1to2",
+                title: "Démultiplexer 1-vers-2 (1 bit de contrôle)", caption: "Demux 1-2",
+                img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-1to4",
+                title: "Démultiplexer 1-vers-4 (2 bits de contrôle)", caption: "Demux 1-4",
+                img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-1to8",
+                title: "Démultiplexer 1-vers-8 (3 bits de contrôle)", caption: "Demux 1-8",
+                img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-2to4",
+                title: "Démultiplexer 2-vers-4 (1 bit de contrôle)", caption: "Demux 2-4",
+                img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-2to8",
+                title: "Démultiplexer 2-vers-8 (2 bits de contrôle)", caption: "Demux 2-8",
+                img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-4to8",
+                title: "Démultiplexer 4-vers-8 (1 bit de contrôle)", caption: "Demux 4-8",
+                img: "Demux", width: 50,
                 normallyHidden: true,
             },
 

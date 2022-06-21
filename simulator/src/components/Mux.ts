@@ -39,16 +39,15 @@ export abstract class Mux<
     extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>>{
 
     private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeOffset[] {
+        const offsets: NodeOffset[] = []
+
+        // left inputs
         const numGroups = numFrom / numTo
         const addByGroupSep = numTo > 1 ? 1 : 0
         const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
-
-        const offsets: NodeOffset[] = []
         let x = -2 - numSel
         let y = -(numLeftSlots - 1)
         const selY = y - 2
-
-        // left inputs
         for (let i = 0; i < numFrom; i++) {
             if (i !== 0 && i % numTo === 0) {
                 y += addByGroupSep * 2
@@ -66,11 +65,11 @@ export abstract class Mux<
     }
 
     private static generateOutOffsets<NumOutputs extends FixedArraySize>(numSel: number, numTo: NumOutputs): FixedArray<NodeOffset, NumOutputs> {
-        const from = -(numTo - 1)
         const offsets: NodeOffset[] = []
-        const x = 2 + numSel
 
         // right outputs
+        const from = -(numTo - 1)
+        const x = 2 + numSel
         for (let i = 0; i < numTo; i++) {
             offsets.push([x, from + 2 * i, "e"])
         }
@@ -104,7 +103,7 @@ export abstract class Mux<
         return { Z: Z as FixedArray<number, NumOutputs> }
     }
 
-    private static gridWidth(numFrom: number, numSel: number): number {
+    private static gridWidth(numSel: number): number {
         return 1 + 2 * numSel
     }
 
@@ -131,7 +130,7 @@ export abstract class Mux<
             inOffsets: Mux.generateInOffsets(numFrom, numSel, numTo),
             outOffsets: Mux.generateOutOffsets(numSel, numTo),
         } as unknown as NodeOffsets<NumInputs, NumOutputs>)
-        this.gridWidth = Mux.gridWidth(numFrom, numSel)
+        this.gridWidth = Mux.gridWidth(numSel)
         this.gridHeight = Mux.gridHeight(numFrom, numTo)
         if (isNotNull(savedData)) {
             this._showWiring = savedData.showWiring ?? MuxDefaults.showWiring
@@ -214,19 +213,10 @@ export abstract class Mux<
         const sels = this.inputValues(this.INPUT.S as any)
         const sel = displayValuesFromArray(sels, false)[1]
 
-        if (!isUnknown(sel)) {
-            return this.inputValues<NumOutputs>(this.INPUT.I[sel])
+        if (isUnknown(sel)) {
+            return FixedArrayFill(Unknown, this.numTo)
         }
-        return FixedArrayFill(Unknown, this.numTo)
-
-        // const a = this.inputValues<4>(INPUT.A)
-        // const b = this.inputValues<4>(INPUT.B)
-
-        // const vals: TriState[] = []
-        // for (let i = 0; i < a.length; i++) {
-        //     vals.push(a[i] === b[i] ? a[i] : Unset)
-        // }
-        // return vals as FixedArray<TriState, 4>
+        return this.inputValues<NumOutputs>(this.INPUT.I[sel])
     }
 
     protected override propagateValue(newValues: FixedArray<LogicValue, NumOutputs>) {
@@ -253,11 +243,11 @@ export abstract class Mux<
             }
         }
 
+        // selectors
         for (let i = 0; i < this.INPUT.S.length; i++) {
             const seli = this.inputs[this.INPUT.S[i]]
             drawWireLineToComponent(g, seli, seli.posXInParentTransform, top + 20)
         }
-
 
         // outputs
         for (let i = 0; i < this.OUTPUT.Z.length; i++) {
