@@ -103,12 +103,13 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 }
 
-const WireStyles = {
+export const WireStyles = {
+    auto: "auto",
     straight: "straight",
     bezier: "bezier",
 } as const
 
-type WireStyle = keyof typeof WireStyles
+export type WireStyle = keyof typeof WireStyles
 
 export type WireRepr = t.TypeOf<typeof Wire.Repr>
 
@@ -341,6 +342,7 @@ export class Wire extends Drawable {
             const lastWaypointData = { posX: this.endNode.posX, posY: this.endNode.posY, orient: this.endNode.wireProlongDirection }
             const allWaypoints = [...this._waypoints, lastWaypointData]
             let svgPathDesc = "M" + prevX + " " + prevY + " "
+            const wireStyle = this.style ?? this.startNode.editor.options.wireStyle
             for (let i = 0; i < allWaypoints.length; i++) {
                 const waypoint = allWaypoints[i]
                 const nextX = waypoint.posX
@@ -349,7 +351,7 @@ export class Wire extends Drawable {
                 const deltaY = nextY - prevY
                 const nextProlong = waypoint.orient
                 let x, y, x1, y1
-                if (this.style === WireStyles.straight || (isUndefined(this.style) && (prevX === nextX || prevY === nextY))) {
+                if (wireStyle === WireStyles.straight || (wireStyle === WireStyles.auto && (prevX === nextX || prevY === nextY))) {
                     // straight line
                     if (i === 0) {
                         [x, y] = bezierAnchorForWire(prevProlong, prevX, prevY, -WIRE_WIDTH / 2, -WIRE_WIDTH / 2)
@@ -483,7 +485,9 @@ export class Wire extends Drawable {
                     makeItemUseColor("Blanc", WireColor.white),
                 ]),
                 ContextMenuData.submenu("wirestyle", "Style", [
-                    makeItemDisplayStyle("Automatique", undefined),
+                    makeItemDisplayStyle("Par défaut", undefined),
+                    ContextMenuData.sep(),
+                    makeItemDisplayStyle("Automatique", WireStyles.auto),
                     makeItemDisplayStyle("Ligne droite", WireStyles.straight),
                     makeItemDisplayStyle("Courbe", WireStyles.bezier),
                 ]),

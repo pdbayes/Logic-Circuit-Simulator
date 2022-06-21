@@ -235,18 +235,18 @@ export class CursorMovementManager {
         this._currentMouseOverPopper.update()
     }
 
-    registerCanvasListenersOn(canvasContainer: HTMLElement) {
+    registerCanvasListenersOn(canvas: HTMLCanvasElement) {
         const editor = this.editor
-        canvasContainer.addEventListener("touchstart", editor.wrapHandler((e) => {
-            // console.log("canvas touchstart %o %o", offsetXY(e), e)
+        canvas.addEventListener("touchstart", editor.wrapHandler((e) => {
+            // console.log("canvas touchstart %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
             if (this.editor.mode >= Mode.CONNECT) {
                 // prevent scrolling when we can connect
                 e.preventDefault()
             }
             this._mouseDownTouchStart(e)
         }))
-        canvasContainer.addEventListener("touchmove", editor.wrapHandler((e) => {
-            // console.log("canvas touchmove %o %o", offsetXY(e), e)
+        canvas.addEventListener("touchmove", editor.wrapHandler((e) => {
+            // console.log("canvas touchmove %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
             if (this.editor.mode >= Mode.CONNECT) {
                 // prevent scrolling when we can connect
                 e.preventDefault()
@@ -254,8 +254,8 @@ export class CursorMovementManager {
             this._mouseMoveTouchMove(e)
         }))
 
-        canvasContainer.addEventListener("touchend", editor.wrapHandler((e) => {
-            // console.log("canvas touchend %o %o", offsetXY(e), e, e.detail)
+        canvas.addEventListener("touchend", editor.wrapHandler((e) => {
+            // console.log("canvas touchend %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
             // touchend should always be prevented, otherwise it may
             // generate mouse/click events
             e.preventDefault()
@@ -264,29 +264,29 @@ export class CursorMovementManager {
         }))
 
         // canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
-        //     // console.log("canvas touchcancel %o %o", offsetXY(e), e)
+        //     // console.log("canvas touchcancel %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
         // }))
 
-        canvasContainer.addEventListener("mousedown", editor.wrapHandler((e) => {
-            // console.log("mousedown %o", e)
+        canvas.addEventListener("mousedown", editor.wrapHandler((e) => {
+            // console.log("mousedown %o, composedPath = %o", e, e.composedPath())
             this._mouseDownTouchStart(e)
         }))
 
-        canvasContainer.addEventListener("mousemove", editor.wrapHandler((e) => {
-            // console.log("mousemove %o", e)
+        canvas.addEventListener("mousemove", editor.wrapHandler((e) => {
+            // console.log("mousemove %o, composedPath = %o", e, e.composedPath())
             this._mouseMoveTouchMove(e)
             this.editor.updateCursor()
         }))
 
-        canvasContainer.addEventListener("mouseup", editor.wrapHandler((e) => {
-            // console.log("mouseup %o", e)
+        canvas.addEventListener("mouseup", editor.wrapHandler((e) => {
+            // console.log("mouseup %o, composedPath = %o", e, e.composedPath())
             this._mouseUpTouchEnd(e)
             this.updateMouseOver([e.offsetX, e.offsetY])
             this.editor.updateCursor()
         }))
 
-        canvasContainer.addEventListener("contextmenu", editor.wrapHandler((e) => {
-            // console.log("contextmenu %o", e)
+        canvas.addEventListener("contextmenu", editor.wrapHandler((e) => {
+            // console.log("contextmenu %o, composedPath = %o", e, e.composedPath())
             e.preventDefault()
             if (this.editor.mode >= Mode.CONNECT && isNotNull(this._currentMouseOverComp)) {
                 this._currentHandlers.contextMenuOn(this._currentMouseOverComp, e)
@@ -354,7 +354,6 @@ export class CursorMovementManager {
                     if (isNaN(d) || d >= 5) {
                         // dragging component
                         this.clearStartDragTimeout()
-                        // console.log("this._currentMouseDownData", this._currentMouseDownData)
                         this._currentMouseDownData.fireMouseClickedOnFinish = false
                         this._currentHandlers.mouseDraggedOn(this._currentMouseDownData.mainComp, e)
                         for (const comp of this._currentMouseDownData.selectionComps) {

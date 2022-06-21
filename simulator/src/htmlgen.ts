@@ -132,6 +132,8 @@ export const th = elemBuilder("th")
 export const td = elemBuilder("td")
 
 export const input = elemBuilder("input")
+export const select = elemBuilder("select")
+export const option = elemBuilder("option")
 export const button = elemBuilder("button")
 export const label = elemBuilder("label")
 export const img = elemBuilder("img")

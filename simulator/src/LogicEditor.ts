@@ -1,17 +1,18 @@
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Waypoint, Wire, WireManager } from "./components/Wire"
+import { Waypoint, Wire, WireManager, WireStyle } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
-import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target } from "./htmlgen"
+import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target, select, option } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsField } from "./utils"
+import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { makeComponentMenuInto } from "./menuutils"
+import { WireStyles } from "./components/Wire"
 import dialogPolyfill from 'dialog-polyfill'
 
 import * as pngMeta from 'png-metadata-writer'
@@ -65,6 +66,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     showOnly: undefined as undefined | Array<string>,
     showGateTypes: false,
     showDisconnectedPins: false,
+    wireStyle: WireStyles.auto as WireStyle,
     hideWireColors: false,
     hideInputColors: false,
     hideOutputColors: false,
@@ -151,6 +153,7 @@ export class LogicEditor extends HTMLElement {
         nameField: HTMLInputElement,
         showGateTypesCheckbox: HTMLInputElement,
         showDisconnectedPinsCheckbox: HTMLInputElement,
+        wireStylePopup: HTMLSelectElement,
         hideWireColorsCheckbox: HTMLInputElement,
         hideInputColorsCheckbox: HTMLInputElement,
         hideOutputColorsCheckbox: HTMLInputElement,
@@ -237,6 +240,7 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
             optionsHtml.hideMemoryContentCheckbox.checked = newOptions.hideMemoryContent
             optionsHtml.showGateTypesCheckbox.checked = newOptions.showGateTypes
+            optionsHtml.wireStylePopup.value = newOptions.wireStyle
             optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
@@ -378,7 +382,7 @@ export class LogicEditor extends HTMLElement {
         // TODO add initial reason to redraw
         // draw
 
-        this.cursorMovementMgr.registerCanvasListenersOn(this.html.canvasContainer)
+        this.cursorMovementMgr.registerCanvasListenersOn(this.html.mainCanvas)
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
@@ -387,7 +391,7 @@ export class LogicEditor extends HTMLElement {
         insts.splice(insts.indexOf(this), 1)
 
         // TODO
-        // this.cursorMovementManager.unregisterCanvasListenersOn(this.html.canvasContainer)
+        // this.cursorMovementManager.unregisterCanvasListenersOn(this.html.mainCanvas)
     }
 
     private setup() {
@@ -453,7 +457,7 @@ export class LogicEditor extends HTMLElement {
         if (this._isSingleton) {
             console.log("LogicEditor is in singleton mode")
             window.addEventListener("keyup", this.wrapHandler(e => {
-                if (targetIsField(e)) {
+                if (targetIsFieldOrOtherInput(e)) {
                     return
                 }
                 switch (e.key) {
@@ -512,7 +516,7 @@ export class LogicEditor extends HTMLElement {
                 const shift = e.shiftKey || (keyLower !== e.key)
                 switch (keyLower) {
                     case "a":
-                        if (ctrlOrCommand && this.mode >= Mode.CONNECT && !targetIsField(e)) {
+                        if (ctrlOrCommand && this.mode >= Mode.CONNECT && !targetIsFieldOrOtherInput(e)) {
                             this.cursorMovementMgr.selectAll()
                             e.preventDefault()
                         }
@@ -526,7 +530,7 @@ export class LogicEditor extends HTMLElement {
                         return
 
                     case "z":
-                        if (ctrlOrCommand && !targetIsField(e)) {
+                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                             if (shift) {
                                 this.redo()
                             } else {
@@ -536,13 +540,13 @@ export class LogicEditor extends HTMLElement {
                         }
                         return
                     case "y":
-                        if (ctrlOrCommand && !targetIsField(e)) {
+                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                             this.redo()
                             e.preventDefault()
                         }
                         return
                     case "x":
-                        if (ctrlOrCommand && !targetIsField(e)) {
+                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                             this.cut()
                             e.preventDefault()
                         }
@@ -555,7 +559,7 @@ export class LogicEditor extends HTMLElement {
                     // }
                     // return
                     case "v":
-                        if (ctrlOrCommand && !targetIsField(e)) {
+                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                             this.paste()
                             e.preventDefault()
                         }
@@ -853,6 +857,22 @@ export class LogicEditor extends HTMLElement {
             "Si coché, les informations supplémentaires des tooltips (comme les tables de vérité) ne seront pas affichées."
         )
 
+        const wireStylePopup = select(
+            option(attr("value", WireStyles.auto), "Auto"),
+            option(attr("value", WireStyles.straight), "Ligne"),
+            option(attr("value", WireStyles.bezier), "Courbe"),
+        ).render()
+        wireStylePopup.addEventListener("change", this.wrapHandler(() => {
+            this._options.wireStyle = wireStylePopup.value as WireStyle
+            this.redrawMgr.addReason("wire style changed", null)
+        }))
+        optionsZone.appendChild(
+            div(
+                style("height: 20px"),
+                "Style des fils: ", wireStylePopup
+            ).render()
+        )
+
         const propagationDelayField = input(type("number"),
             style("margin: 0 4px; width: 4em"),
             attr("min", "0"), attr("step", "50"),
@@ -885,6 +905,7 @@ export class LogicEditor extends HTMLElement {
             hideInputColorsCheckbox,
             hideOutputColorsCheckbox,
             hideMemoryContentCheckbox,
+            wireStylePopup,
             showGateTypesCheckbox,
             showDisconnectedPinsCheckbox,
             hideTooltipsCheckbox,
