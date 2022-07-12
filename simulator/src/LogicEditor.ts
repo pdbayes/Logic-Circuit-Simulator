@@ -573,6 +573,7 @@ export class LogicEditor extends HTMLElement {
             }))
 
             // make load function available globally
+            window.Logic.singleton = this
             window.load = this.load.bind(this)
             window.save = this.save.bind(this)
             window.highlight = this.highlight.bind(this)
@@ -1081,7 +1082,7 @@ export class LogicEditor extends HTMLElement {
         })()
     }
 
-    private setModeFromString(modeStr: string | null) {
+    setModeFromString(modeStr: string | null) {
         let mode: Mode = this._maxInstanceMode
         if (modeStr !== null && (modeStr = modeStr.toUpperCase()) in Mode) {
             mode = (Mode as any)[modeStr]
@@ -1436,49 +1437,71 @@ export class LogicEditor extends HTMLElement {
         return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + compressedUriSafeJson
     }
 
-    downloadSnapshotImage() {
-        const f = window.devicePixelRatio ?? 1
-        const borderWidth = 2
-        let [width, height] = this.guessAdequateCanvasSize()
-        width -= borderWidth
-        height -= borderWidth
-        width *= f
-        height *= f
-
-        const tmpCanvas = document.createElement('canvas')
-        tmpCanvas.width = width
-        tmpCanvas.height = height
-
-        const g = tmpCanvas.getContext('2d')!
-        g.drawImage(this.html.mainCanvas, borderWidth, borderWidth, width, height,
-            0, 0, tmpCanvas.width, tmpCanvas.height)
-
-        tmpCanvas.toBlob(async pngBareBlob => {
-            if (pngBareBlob === null) {
-                return
+    private async toPNG(heightHint?: number) {
+        return new Promise<Blob | null>((resolve) => {
+            const drawingScale = 3 // super retina
+            let [width, height] = this.guessAdequateCanvasSize()
+            if (isDefined(heightHint)) {
+                height = heightHint
             }
-            const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+            width *= drawingScale
+            height *= drawingScale
 
-            const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
-            const pngChunks = pngMeta.extractChunks(pngBareData)
-            pngMeta.insertMetadata(pngChunks, { "tEXt": { "Description": compressedUriSafeJson } })
-            const pngCompletedBlob = new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
+            const transform = new DOMMatrix(`scale(${drawingScale})`)
 
-            const filename = (this.options.name ?? "circuit") + ".png"
-            const url = URL.createObjectURL(pngCompletedBlob)
-            downloadDataUrl(url, filename)
+            const tmpCanvas = document.createElement('canvas')
+            tmpCanvas.width = width
+            tmpCanvas.height = height
 
-        }, "image/png")
+            const g = tmpCanvas.getContext('2d')!
+            this.doDrawWithContext(g, width, height, transform, true, true)
+            tmpCanvas.toBlob(resolve, 'image/png')
+            tmpCanvas.remove()
 
-        tmpCanvas.remove()
-
-
-        // TODO this was an attempt at generating SVG rather than PNG
-        // const svgCtx = new C2S(width, height)
-        // this.doDrawWithContext(svgCtx)
-        // const serializedSVG = svgCtx.getSerializedSvg()
-        // console.log(serializedSVG)
+            // TODO this was an attempt at generating SVG rather than PNG
+            // const svgCtx = new C2S(width, height)
+            // this.doDrawWithContext(svgCtx)
+            // const serializedSVG = svgCtx.getSerializedSvg()
+            // console.log(serializedSVG)
+        })
     }
+
+    async toPNGBase64(heightHint?: number) {
+        const blob = await this.toPNG(heightHint)
+        if (blob === null) {
+            return null
+        }
+        return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                let dataURL = reader.result as string
+                const prefix = "data:image/png;base64,"
+                if (dataURL.startsWith(prefix)) {
+                    dataURL = dataURL.substring(prefix.length)
+                }
+                resolve(dataURL)
+            }
+            reader.readAsDataURL(blob)
+        })
+    }
+
+    async downloadSnapshotImage() {
+        const pngBareBlob = await this.toPNG()
+        if (pngBareBlob === null) {
+            return
+        }
+        const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+
+        const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
+        const pngChunks = pngMeta.extractChunks(pngBareData)
+        pngMeta.insertMetadata(pngChunks, { "tEXt": { "Description": compressedUriSafeJson } })
+        const pngCompletedBlob = new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
+
+        const filename = (this.options.name ?? "circuit") + ".png"
+        const url = URL.createObjectURL(pngCompletedBlob)
+        downloadDataUrl(url, filename)
+    }
+
 
     recalcPropagateAndDrawIfNeeded() {
         if (this._nextAnimationFrameHandle !== null) {
@@ -1554,24 +1577,26 @@ export class LogicEditor extends HTMLElement {
 
     private doRedraw() {
         const g = this.html.mainCanvas.getContext("2d")!
-        this.doDrawWithContext(g)
-    }
-
-    private doDrawWithContext(g: CanvasRenderingContext2D) {
         const mainCanvas = this.html.mainCanvas
         const baseDrawingScale = this._baseDrawingScale
 
         const width = mainCanvas.width / baseDrawingScale
         const height = mainCanvas.height / baseDrawingScale
+        this.doDrawWithContext(g, width, height, this._baseTransform, false, false)
+    }
 
-        g.setTransform(this._baseTransform)
+    private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrix, skipBorder: boolean, transparentBackground: boolean) {
+        g.setTransform(baseTransform)
         g.lineCap = "square"
         g.textBaseline = "middle"
 
         // clear background
         g.fillStyle = COLOR_BACKGROUND
-        g.fillRect(0, 0, width, height)
-
+        if (transparentBackground) {
+            g.clearRect(0, 0, width, height)
+        } else {
+            g.fillRect(0, 0, width, height)
+        }
 
         // draw highlight
         const highlightRectFor = (comp: Component) => {
@@ -1753,6 +1778,8 @@ export class LogicEditor extends HTMLElement {
 
 export class LogicStatic {
 
+    singleton: LogicEditor | undefined
+
     highlight(diagramRefs: string | string[], componentRefs: string | string[]) {
         if (isString(diagramRefs)) {
             diagramRefs = [diagramRefs]
@@ -1792,8 +1819,8 @@ const template = (() => {
 })()
 // cannot be in setup function because 'template' var is not assigned until that func returns
 // and promotion of elems occurs during this 'customElements.define' call
-window.customElements.define('logic-editor', LogicEditor)
 window.Logic = new LogicStatic()
+window.customElements.define('logic-editor', LogicEditor)
 document.addEventListener("toggle", e => {
     if (!(e.target instanceof HTMLDetailsElement)) {
         return
