@@ -62,6 +62,14 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return "grab"
     }
 
+    public getPrevAndNextAnchors(): [DrawableWithPosition, DrawableWithPosition] {
+        const waypoints = this.parent.waypoints
+        const index = waypoints.indexOf(this)
+        const prev = index > 0 ? waypoints[index -1] : this.parent.startNode
+        const next = index < waypoints.length - 1 ? waypoints[index + 1] : (this.parent.endNode ?? this.parent.startNode)
+        return [prev, next]
+    }
+
     public removeFromParent() {
         this.parent.removeWaypoint(this)
     }

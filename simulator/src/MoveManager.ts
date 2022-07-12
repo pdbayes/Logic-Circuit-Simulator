@@ -1,4 +1,5 @@
 import { DrawableWithPosition } from "./components/Drawable"
+import { Waypoint } from "./components/Wire"
 import { LogicEditor } from "./LogicEditor"
 
 export class MoveManager {
@@ -22,6 +23,16 @@ export class MoveManager {
 
     public areDrawablesMoving() {
         return this._movingDrawables.size > 0
+    }
+
+    public getSingleMovingWaypoint(): Waypoint | undefined {
+        if (this._movingDrawables.size === 1) {
+            const drawable = this._movingDrawables.values().next().value
+            if (drawable instanceof Waypoint) {
+                return drawable
+            }
+        }
+        return undefined
     }
 
     setDrawableMoving(comp: DrawableWithPosition) {

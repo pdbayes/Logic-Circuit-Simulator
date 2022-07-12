@@ -1,7 +1,7 @@
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager, WireStyle } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, GRID_STEP, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target, select, option } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
@@ -1639,8 +1639,24 @@ export class LogicEditor extends HTMLElement {
             g.stroke()
         }
 
+        // draw guidelines when moving waypoint
+        const singleMovingWayoint = this.moveMgr.getSingleMovingWaypoint()
+        if (isDefined(singleMovingWayoint)) {
+            const guides = singleMovingWayoint.getPrevAndNextAnchors()
+            g.strokeStyle = COLOR_GRID_LINES_GUIDES
+            g.lineWidth = 1.5
+            g.beginPath()
+            for (const guide of guides) {
+                g.moveTo(guide.posX, 0)
+                g.lineTo(guide.posX, height)
+                g.moveTo(0, guide.posY)
+                g.lineTo(width, guide.posY)
+            }
+            g.stroke()
+        }
+
         // draw border according to mode
-        if (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON) {
+        if (!skipBorder && (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON)) {
             g.strokeStyle = COLOR_BORDER
             g.lineWidth = 2
             g.strokeRect(0, 0, width, height)

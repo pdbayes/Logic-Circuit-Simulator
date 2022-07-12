@@ -48,6 +48,7 @@ export let COLOR_BACKGROUND_UNUSED_REGION: ColorString
 export let COLOR_BACKGROUND_INVALID: ColorString
 export let COLOR_BORDER: ColorString
 export let COLOR_GRID_LINES: ColorString
+export let COLOR_GRID_LINES_GUIDES: ColorString
 export let COLOR_LABEL_OFF: ColorString
 export let COLOR_LABEL_ON: ColorString
 export let COLORCOMP_COMPONENT_BORDER: ColorGreyLevel
@@ -89,6 +90,7 @@ function setColors(darkMode: boolean) {
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(0xEE)
         COLOR_BORDER = ColorString(200)
         COLOR_GRID_LINES = ColorString(240)
+        COLOR_GRID_LINES_GUIDES = ColorString(215)
         COLOR_LABEL_OFF = ColorString(0xFF)
         COLOR_LABEL_ON = ColorString(0)
         COLORCOMP_COMPONENT_BORDER = 0x00
@@ -125,6 +127,7 @@ function setColors(darkMode: boolean) {
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
         COLOR_BORDER = ColorString(0x55)
         COLOR_GRID_LINES = ColorString(30)
+        COLOR_GRID_LINES_GUIDES = ColorString(45)
         COLOR_LABEL_OFF = ColorString(185)
         COLOR_LABEL_ON = COLOR_BACKGROUND
         COLORCOMP_COMPONENT_BORDER = 200
