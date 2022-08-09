@@ -61,6 +61,8 @@ import IMPLY from '../img/IMPLY.svg' // @ts-ignore
 import InputBit from '../img/InputBit.svg' // @ts-ignore
 import InputNibble from '../img/InputNibble.svg' // @ts-ignore
 import InputRandom from '../img/InputRandom.svg' // @ts-ignore
+import LabelRectangle from '../img/LabelRectangle.svg' // @ts-ignore
+import LabelString from '../img/LabelString.svg' // @ts-ignore
 import LatchSR from '../img/LatchSR.svg' // @ts-ignore
 import Mux from '../img/Mux.svg' // @ts-ignore
 import NAND from '../img/NAND.svg' // @ts-ignore
@@ -152,6 +154,8 @@ const images = {
     InputBit,
     InputNibble,
     InputRandom,
+    LabelRectangle,
+    LabelString,
     LatchSR,
     Mux,
     NAND,

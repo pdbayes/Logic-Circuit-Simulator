@@ -88,13 +88,13 @@ const componentsMenu: Array<Section> = [
             {
                 type: "label", subtype: undefined,
                 title: "Étiquette", caption: undefined,
-                img: "InputBit", width: 32,
+                img: "LabelString", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "label", subtype: "rect",
                 title: "Rectangle", caption: undefined,
-                img: "InputBit", width: 32,
+                img: "LabelRectangle", width: 32,
                 normallyHidden: true,
             },
         ],
