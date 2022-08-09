@@ -138,6 +138,7 @@ const ComponentTypes_ = {
     out: { jsonFieldName: "out" },
     gate: { jsonFieldName: "gates" },
     ic: { jsonFieldName: "components" },
+    label: { jsonFieldName: "labels" },
 } as const
 
 export const ComponentTypes = RichStringEnum.withProps<{

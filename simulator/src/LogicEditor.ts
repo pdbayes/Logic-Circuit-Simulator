@@ -32,6 +32,7 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
 import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
+import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
 
 
 enum Mode {
@@ -115,7 +116,7 @@ export class LogicEditor extends HTMLElement {
     readonly moveMgr = new MoveManager(this)
     readonly cursorMovementMgr = new CursorMovementManager(this)
 
-    readonly components: Component[] = []
+    readonly components = new ComponentList()
 
     private _isEmbedded = false
     private _isSingleton = false
@@ -1205,29 +1206,18 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
-        let compDeleted = false
-        const comps = this.components
-        for (let i = 0; i < comps.length; i++) {
-            const comp = comps[i]
-            if (cond(comp)) {
-                comp.destroy()
-                comps.splice(i, 1)
-                compDeleted = true
-            }
-        }
-        if (compDeleted) {
-            this.redrawMgr.addReason("component(s) deleted", null)
-            return true
-        }
-        return false
-    }
-
     trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition) {
             currentMouseOverComp.doSetOrient(orient)
             e.preventDefault()
+        }
+    }
+
+    tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
+        const compDeleted = this.components.tryDeleteWhere(cond)
+        if (compDeleted) {
+            this.redrawMgr.addReason("component(s) deleted", null)
         }
     }
 
@@ -1333,7 +1323,7 @@ export class LogicEditor extends HTMLElement {
     private guessAdequateCanvasSize(): [number, number] {
         let rightmostX = Number.NEGATIVE_INFINITY, leftmostX = Number.POSITIVE_INFINITY
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
-        for (const comp of this.components) {
+        for (const comp of this.components.all()) {
             const x = comp.posX
             if (x > rightmostX) {
                 rightmostX = x
@@ -1544,7 +1534,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         const highlightComps: Component[] = []
-        for (const comp of this.components) {
+        for (const comp of this.components.all()) {
             if (isDefined(comp.ref) && refs.includes(comp.ref)) {
                 highlightComps.push(comp)
             }
@@ -1694,11 +1684,10 @@ export class LogicEditor extends HTMLElement {
             }
         }
 
-        const drawTime = this.timeline.adjustedTime()
         // const currentScale = this._currentScale
         // g.scale(currentScale, currentScale)
 
-        // draw wires
+        const drawTime = this.timeline.adjustedTime()
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         const drawParams: DrawParams = {
@@ -1708,17 +1697,32 @@ export class LogicEditor extends HTMLElement {
             highlightColor,
             currentSelection: undefined,
         }
-        this.wireMgr.draw(g, drawParams) // never show wires as selected
-
-        // draw components
         const currentSelection = this.cursorMovementMgr.currentSelection
         drawParams.currentSelection = currentSelection
-        for (const comp of this.components) {
+        const drawComp = (comp: Component) => {
             comp.draw(g, drawParams)
             comp.forEachNode((node) => {
                 node.draw(g, drawParams) // never show nodes as selected
                 return true
             })
+        }
+
+        // draw background components
+        for (const comp of this.components.withZIndex(ZIndexBackground)) {
+            drawComp(comp)
+        }
+
+        // draw wires
+        this.wireMgr.draw(g, drawParams) // never show wires as selected
+
+        // draw normal components
+        for (const comp of this.components.withZIndex(ZIndexNormal)) {
+            drawComp(comp)
+        }
+
+        // draw overlays
+        for (const comp of this.components.withZIndex(ZIndexOverlay)) {
+            drawComp(comp)
         }
 
         // draw selection

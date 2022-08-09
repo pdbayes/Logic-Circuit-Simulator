@@ -1,4 +1,4 @@
-All icons from: https://fonts.google.com/icons?icon.query=link&icon.style=Rounded
+All icons from: https://fonts.google.com/icons?icon.style=Rounded
 
 Fill: 1 (rightmost)
 Weight: 400 (middle value)

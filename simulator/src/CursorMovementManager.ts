@@ -8,6 +8,7 @@ import { ComponentFactory } from './ComponentFactory'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { IconName, makeIcon } from './images'
 import { ComponentBase, ComponentState } from './components/Component'
+import { ZIndexBackground, ZIndexNormal, ZIndexOverlay } from './ComponentList'
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -36,7 +37,7 @@ export class EditorSelection {
     public finishCurrentRect(editor: LogicEditor) {
         let rect
         if (isDefined(rect = this.currentlyDrawnRect)) {
-            for (const comp of editor.components) {
+            for (const comp of editor.components.all()) {
                 if (comp.isInRect(rect)) {
                     this.toggle(comp)
                 }
@@ -158,14 +159,22 @@ export class CursorMovementManager {
         const findMouseOver: () => Drawable | null = () => {
             // easy optimization: maybe we're still over the
             // same component as before, so quickly check this
-            if (isNotNull(this._currentMouseOverComp)) {
+            if (isNotNull(this._currentMouseOverComp) && this._currentMouseOverComp.drawZIndex !== 0) {
+                // second condition says: always revalidate the mouseover of background components (with z index 0)
                 if (this._currentMouseOverComp.isOver(x, y)) {
                     return this._currentMouseOverComp
                 }
             }
 
-            // check if we're over components or their nodes
-            for (const comp of this.editor.components) {
+            // overlays
+            for (const comp of this.editor.components.withZIndex(ZIndexOverlay)) {
+                if (comp.isOver(x, y)) {
+                    return comp
+                }
+            }
+
+            // normal components or their nodes
+            for (const comp of this.editor.components.withZIndex(ZIndexNormal)) {
                 let nodeOver: Node | null = null
                 comp.forEachNode((node) => {
                     if (node.isOver(x, y)) {
@@ -182,7 +191,7 @@ export class CursorMovementManager {
                 }
             }
 
-            // check if we're over a wire
+            // wires
             for (const wire of this.editor.wireMgr.wires) {
                 for (const waypoint of wire.waypoints) {
                     if (waypoint.isOver(x, y)) {
@@ -193,6 +202,14 @@ export class CursorMovementManager {
                     return wire
                 }
             }
+
+            // background elems
+            for (const comp of this.editor.components.withZIndex(ZIndexBackground)) {
+                if (comp.isOver(x, y)) {
+                    return comp
+                }
+            }
+
             return null
         }
 
@@ -202,7 +219,7 @@ export class CursorMovementManager {
     selectAll() {
         const sel = new EditorSelection(undefined)
         this.currentSelection = sel
-        for (const comp of this.editor.components) {
+        for (const comp of this.editor.components.all()) {
             sel.previouslySelectedElements.add(comp)
         }
         this.editor.redrawMgr.addReason("selected all", null)
@@ -721,7 +738,7 @@ class MoveHandlers extends ToolHandlers {
     }
 
     override mouseDownOnBackground(e: MouseEvent) {
-        for (const comp of this.editor.components) {
+        for (const comp of this.editor.components.all()) {
             comp.mouseDown(e)
         }
         for (const wire of this.editor.wireMgr.wires) {
@@ -731,7 +748,7 @@ class MoveHandlers extends ToolHandlers {
         }
     }
     override mouseDraggedOnBackground(e: MouseEvent) {
-        for (const comp of this.editor.components) {
+        for (const comp of this.editor.components.all()) {
             comp.mouseDragged(e)
         }
         for (const wire of this.editor.wireMgr.wires) {
@@ -741,7 +758,7 @@ class MoveHandlers extends ToolHandlers {
         }
     }
     override mouseUpOnBackground(e: MouseEvent) {
-        for (const comp of this.editor.components) {
+        for (const comp of this.editor.components.all()) {
             comp.mouseUp(e)
         }
         for (const wire of this.editor.wireMgr.wires) {

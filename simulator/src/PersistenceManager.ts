@@ -9,6 +9,7 @@ import { ICDef, ICFactory } from "./components/IC"
 import { LogicEditor } from "./LogicEditor"
 import { InputDef, InputFactory } from "./components/Inputs"
 import { OutputDef, OutputFactory } from "./components/Outputs"
+import { LabelDef, LabelFactory } from "./components/Labels"
 
 class _PersistenceManager {
 
@@ -66,10 +67,10 @@ class _PersistenceManager {
         }
         delete parsedContents["v"]
 
-        for (const elem of components) {
+        for (const elem of components.all()) {
             elem.destroy()
         }
-        components.splice(0, components.length)
+        components.clearAll()
         wireMgr.clearAllWires()
         nodeMgr.clearAllLiveNodes()
         editor.timeline.reset()
@@ -108,7 +109,7 @@ class _PersistenceManager {
             loadField(fieldName, repr, (d) => {
                 const comp = factory.make(editor, d)
                 if (isDefined(comp)) {
-                    components.push(comp)
+                    components.add(comp)
                 }
             })
         }
@@ -117,6 +118,7 @@ class _PersistenceManager {
         loadComponentField("out", OutputDef, OutputFactory)
         loadComponentField("gates", GateDef, GateFactory as any)
         loadComponentField("components", ICDef, ICFactory)
+        loadComponentField("labels", LabelDef, LabelFactory)
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
@@ -187,7 +189,7 @@ class _PersistenceManager {
             workspace["userdata"] = editor.userdata
         }
 
-        for (const comp of editor.components) {
+        for (const comp of editor.components.all()) {
             const fieldName = ComponentTypes.propsOf(comp.componentType).jsonFieldName
             let arr: Component[] = workspace[fieldName]
             if (isUndefined(arr)) {

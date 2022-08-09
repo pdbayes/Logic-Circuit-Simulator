@@ -7,12 +7,15 @@
 
 // icons
 import add from '../img/icons/add.icon.svg' // @ts-ignore
+import bordercolor from '../img/icons/bordercolor.icon.svg' // @ts-ignore
 import check from '../img/icons/check.icon.svg' // @ts-ignore
 import close from '../img/icons/close.icon.svg' // @ts-ignore
+import dimensions from '../img/icons/dimensions.icon.svg' // @ts-ignore
 import direction from '../img/icons/direction.icon.svg' // @ts-ignore
 import download from '../img/icons/download.icon.svg' // @ts-ignore
 import edit from '../img/icons/edit.icon.svg' // @ts-ignore
 import eye from '../img/icons/eye.icon.svg' // @ts-ignore
+import font from '../img/icons/font.icon.svg' // @ts-ignore
 import force from '../img/icons/force.icon.svg' // @ts-ignore
 import link from '../img/icons/link.icon.svg' // @ts-ignore
 import move from '../img/icons/move.icon.svg' // @ts-ignore
@@ -31,6 +34,7 @@ import reset from '../img/icons/reset.icon.svg' // @ts-ignore
 import screenshot from '../img/icons/screenshot.icon.svg' // @ts-ignore
 import settings from '../img/icons/settings.icon.svg' // @ts-ignore
 import step from '../img/icons/step.icon.svg' // @ts-ignore
+import strokewidth from '../img/icons/strokewidth.icon.svg' // @ts-ignore
 import timer from '../img/icons/timer.icon.svg' // @ts-ignore
 import trash from '../img/icons/trash.icon.svg' // @ts-ignore
 import wirestyle from '../img/icons/wirestyle.icon.svg' // @ts-ignore
@@ -94,12 +98,15 @@ void 0 // dummy line to consume the last 'ts-ignore'
 
 const icons = {
     add,
+    bordercolor,
     check,
     close,
+    dimensions,
     direction,
     download,
     edit,
     eye,
+    font,
     force,
     link,
     move,
@@ -118,6 +125,7 @@ const icons = {
     screenshot,
     settings,
     step,
+    strokewidth,
     timer,
     trash,
     wirestyle,

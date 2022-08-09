@@ -4,6 +4,7 @@ import { Node, WireColor } from "./components/Node"
 import { Component, ComponentName } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
 import { LedColor } from "./components/OutputBar"
+import { RectangleColor } from "./components/LabelRect"
 
 
 //
@@ -39,7 +40,8 @@ export function inRect(centerX: number, centerY: number, width: number, height: 
 //
 
 export type ColorGreyLevel = number
-export type ColorComponents = [number, number, number]
+export type ColorComponentsRGB = [number, number, number]
+export type ColorComponentsRGBA = [number, number, number, number]
 export type ColorString = string
 
 export let COLOR_BACKGROUND: ColorString
@@ -58,16 +60,18 @@ export let COLOR_WIRE_BORDER: ColorString
 export let COLOR_MOUSE_OVER: ColorString
 export let COLOR_MOUSE_OVER_NORMAL: ColorString
 export let COLOR_MOUSE_OVER_DANGER: ColorString
-export let COLORCOMPS_FULL: ColorComponents
+export let COLORCOMPS_FULL: ColorComponentsRGB
 export let COLOR_FULL: ColorString
 export let COLOR_DARK_RED: ColorString
-export let COLORCOMPS_EMPTY: ColorComponents
+export let COLORCOMPS_EMPTY: ColorComponentsRGB
 export let COLOR_EMPTY: ColorString
 export let COLOR_UNSET: ColorString
 export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { [C in LedColor]: ColorString }
 export let COLOR_WIRE: { [C in WireColor]: ColorString }
+export let COLOR_RECTANGLE_BACKGROUND: { [C in RectangleColor]: ColorString }
+export let COLOR_RECTANGLE_BORDER: { [C in RectangleColor]: ColorString }
 export let PATTERN_STRIPED_GRAY: CanvasPattern
 
 export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
@@ -154,8 +158,27 @@ function setColors(darkMode: boolean) {
             green: ColorString([87, 136, 97]),
             white: ColorString([230, 217, 199]),
         }
+
         PATTERN_STRIPED_GRAY = createStripedPattern(COLOR_BACKGROUND, "rgba(128,128,128,0.4)")
 
+    }
+
+    // same for both light and dark theme thanks to alpha
+    COLOR_RECTANGLE_BACKGROUND = {
+        yellow: ColorString([230, 230, 0, 0.2]),
+        blue: ColorString([54, 54, 255, 0.2]),
+        green: ColorString([54, 255, 54, 0.2]),
+        red: ColorString([255, 54, 54, 0.2]),
+        grey: ColorString([120, 120, 120, 0.2]),
+        turquoise: ColorString([0, 210, 210, 0.2]),
+    }
+    COLOR_RECTANGLE_BORDER = {
+        yellow: ColorString([196, 196, 0, 0.5]),
+        blue: ColorString([115, 115, 255, 0.5]),
+        green: ColorString([0, 167, 0, 0.5]),
+        red: ColorString([214, 0, 0, 0.5]),
+        grey: ColorString([35, 35, 35, 0.5]),
+        turquoise: ColorString([0, 162, 162, 0.5]),
     }
     COLOR_COMPONENT_BORDER = ColorString(COLORCOMP_COMPONENT_BORDER)
     setColorMouseOverIsDanger(false)
@@ -194,9 +217,13 @@ export function setColorMouseOverIsDanger(mouseOverIsDanger: boolean) {
     COLOR_MOUSE_OVER = mouseOverIsDanger ? COLOR_MOUSE_OVER_DANGER : COLOR_MOUSE_OVER_NORMAL
 }
 
-export function ColorString(input: ColorGreyLevel | ColorComponents): ColorString {
+export function ColorString(input: ColorGreyLevel | ColorComponentsRGB | ColorComponentsRGBA): ColorString {
     if (isArray(input)) {
-        return `rgb(${input[0]},${input[1]},${input[2]})`
+        if (input.length === 3) {
+            return `rgb(${input[0]},${input[1]},${input[2]})`
+        }
+        // else, rgba
+        return `rgba(${input[0]},${input[1]},${input[2]},${input[3]})`
     }
     // else, grey
     return `rgb(${input},${input},${input})`
@@ -219,7 +246,7 @@ export function colorForBoolean(value: LogicValue): ColorString {
 }
 
 export function colorForFraction(fraction: number): ColorString {
-    const c: ColorComponents = [
+    const c: ColorComponentsRGB = [
         (COLORCOMPS_FULL[0] - COLORCOMPS_EMPTY[0]) * fraction + COLORCOMPS_EMPTY[0],
         (COLORCOMPS_FULL[1] - COLORCOMPS_EMPTY[1]) * fraction + COLORCOMPS_EMPTY[1],
         (COLORCOMPS_FULL[2] - COLORCOMPS_EMPTY[2]) * fraction + COLORCOMPS_EMPTY[2],

@@ -5,6 +5,7 @@ import { LogicEditor } from "./LogicEditor"
 import { ICFactory } from "./components/IC"
 import { InputFactory } from "./components/Inputs"
 import { OutputFactory } from "./components/Outputs"
+import { LabelFactory } from "./components/Labels"
 
 type Factory = { make(editor: LogicEditor, type: string | undefined): Component | undefined }
 
@@ -28,6 +29,7 @@ const ComponentFactoryTypes = RichStringEnum.withProps<{
     "out": makeFactory("out", OutputFactory),
     "gate": makeFactory("gate", GateFactory),
     "component": makeFactory("component", ICFactory),
+    "label": makeFactory("label", LabelFactory),
 })
 // type ComponentFactoryType = typeof ComponentFactoryTypes.type
 
@@ -40,7 +42,7 @@ class _ComponentFactory {
         const compDef = ComponentFactoryTypes.propsOf(compType)
         return (editor) => {
             const newComp = compDef.make(editor, elem)
-            editor.components.push(newComp)
+            editor.components.add(newComp)
             return newComp
         }
     }

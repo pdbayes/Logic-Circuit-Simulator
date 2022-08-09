@@ -4,6 +4,7 @@ import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { IconName } from "../images"
+import { DrawZIndex } from "../ComponentList"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -93,6 +94,10 @@ export abstract class Drawable {
 
     protected setNeedsRedraw(reason: string) {
         this.editor.redrawMgr.addReason(reason, this)
+    }
+
+    public get drawZIndex(): DrawZIndex {
+        return 1
     }
 
     public draw(g: CanvasRenderingContext2D, drawParams: DrawParams): void {

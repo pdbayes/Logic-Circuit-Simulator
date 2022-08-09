@@ -83,6 +83,20 @@ const componentsMenu: Array<Section> = [
                 img: "OutputShiftBuffer", width: 50,
                 normallyHidden: true,
             },
+
+            // TODO move to new category once ironed out?
+            {
+                type: "label", subtype: undefined,
+                title: "Étiquette", caption: undefined,
+                img: "InputBit", width: 32,
+                normallyHidden: true,
+            },
+            {
+                type: "label", subtype: "rect",
+                title: "Rectangle", caption: undefined,
+                img: "InputBit", width: 32,
+                normallyHidden: true,
+            },
         ],
     },
 
@@ -232,6 +246,12 @@ const componentsMenu: Array<Section> = [
             },
         ],
     },
+
+    // { // TODO category for annotations
+    //     name: "Annota- tions",
+    //     items: [
+    //     ],
+    // },
 
 
     {

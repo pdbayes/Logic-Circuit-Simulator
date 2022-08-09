@@ -267,6 +267,13 @@ export const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, 
 export function FixedArrayFill<T, N extends FixedArraySize>(val: T, n: N): FixedArray<T, N> {
     return Array(n).fill(val) as FixedArray<T, N>
 }
+export function FixedArrayFillFactory<T, N extends FixedArraySize>(val: () => T, n: N): FixedArray<T, N> {
+    const arr = Array(n)
+    for (let i = 0; i < n; i++) {
+        arr[i] = val()
+    }
+    return arr as FixedArray<T, N>
+}
 
 // This seemingly identity function allows to convert back from a fixed-size tuple
 // to a regular array. It is a safe type cast, in a way, and allows to see the
