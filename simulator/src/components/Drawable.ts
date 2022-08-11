@@ -350,7 +350,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this.editor.mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
-    protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
+    public trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
         if (snapToGrid) {
             posX = Math.round(posX / GRID_STEP) * GRID_STEP
             posY = Math.round(posY / GRID_STEP) * GRID_STEP

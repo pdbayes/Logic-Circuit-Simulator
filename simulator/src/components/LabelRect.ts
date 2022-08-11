@@ -2,7 +2,7 @@ import { isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { ColorString, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, COLOR_WIRE, GRID_STEP } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
 import { span, style, title } from "../htmlgen"
@@ -230,11 +230,39 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
                     }
                     return n
                 }
-                this._w = parse(match.groups?.w, this._w)
-                this._h = parse(match.groups?.h, this._h)
-                this.setNeedsRedraw("size changed")
+                const w = parse(match.groups?.w, this._w)
+                const h = parse(match.groups?.h, this._h)
+                this.doSetDimensions(w, h)
             }
         }
+    }
+
+    private doSetDimensions(w: number, h: number) {
+        this._w = w
+        this._h = h
+        this.setNeedsRedraw("size changed")
+    }
+
+    public wrapContents(selectedComps: Set<Drawable>) {
+        let left = Number.POSITIVE_INFINITY
+        let top = Number.POSITIVE_INFINITY
+        let right = Number.NEGATIVE_INFINITY
+        let bottom = Number.NEGATIVE_INFINITY
+        for (const comp of selectedComps) {
+            if (comp instanceof DrawableWithPosition) {
+                left = Math.min(left, comp.posX - comp.width / 2)
+                top = Math.min(top, comp.posY - comp.height / 2)
+                right = Math.max(right, comp.posX + comp.width / 2)
+                bottom = Math.max(bottom, comp.posY + comp.height / 2)
+            }
+        }
+
+        const x = (left + right) / 2
+        const y = (top + bottom) / 2
+        const w = right - left + 4 * GRID_STEP
+        const h = bottom - top + 4 * GRID_STEP
+        this.trySetPosition(x, y, true)
+        this.doSetDimensions(w, h)
     }
 
     override mouseDoubleClicked(__e: MouseEvent | TouchEvent): boolean {

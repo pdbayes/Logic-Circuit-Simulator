@@ -33,6 +33,8 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
 import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
+import { ComponentFactory } from "./ComponentFactory"
+import { LabelRect } from "./components/LabelRect"
 
 
 enum Mode {
@@ -655,6 +657,27 @@ export class LogicEditor extends HTMLElement {
         }
 
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
+
+        const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-component=label][data-type=rect]")
+        if (groupButton === null) {
+            console.log("ERROR: Could not find group button")
+        } else {
+            groupButton.addEventListener("mousedown", this.wrapHandler(e => {
+                const selectedComps = this.cursorMovementMgr.currentSelection?.previouslySelectedElements || new Set()
+                if (selectedComps.size !== 0) {
+                    e.preventDefault()
+                    e.stopImmediatePropagation()
+                    const factory = ComponentFactory.makeFactoryForButton(groupButton as HTMLElement)
+                    const newGroup = factory(this)
+
+                    if (newGroup instanceof LabelRect) {
+                        newGroup.wrapContents(selectedComps)
+                    } else {
+                        console.log("ERROR: created component is not a LabelRect")
+                    }
+                }
+            }))
+        }
 
         this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
 
