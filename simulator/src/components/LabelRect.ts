@@ -124,6 +124,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         return "label" as const
     }
 
+    public override canRotate() {
+        return false
+    }
+
     get unrotatedWidth() {
         return this._w
     }
@@ -311,11 +315,13 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             return ContextMenuData.item(icon, desc, action)
         }
 
-        const toggleCaptionInsideItem = ContextMenuData.item(this._captionInside ? "check" : "none", "Titre à l’intérieur", () => {
-            this._captionInside = !this._captionInside
-            this.setNeedsRedraw("caption inside changed")
-        })
-
+        const toggleCaptionInsideItems = this._captionPos === "c" ? [] : [
+            ContextMenuData.item(this._captionInside ? "check" : "none", "À l’intérieur du cadre", () => {
+                this._captionInside = !this._captionInside
+                this.setNeedsRedraw("caption inside changed")
+            }),
+            ContextMenuData.sep(),
+        ]
 
         const setFontItem = ContextMenuData.item("font", "Police…", () => {
             this.runSetFontDialog(this._font, LabelRectDefaults.font, this.doSetFont.bind(this))
@@ -348,6 +354,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             ["mid", setCaptionItem],
             ["mid", setFontItem],
             ["mid", ContextMenuData.submenu("placement", "Position du titre", [
+                ...toggleCaptionInsideItems,
                 makeItemSetPlacement("En haut", CaptionPosition.n),
                 makeItemSetPlacement("En haut à gauche", CaptionPosition.nw),
                 makeItemSetPlacement("En haut à droite", CaptionPosition.ne),
@@ -358,7 +365,6 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
                 makeItemSetPlacement("À droite", CaptionPosition.e),
                 makeItemSetPlacement("Au centre", CaptionPosition.c),
             ])],
-            ["mid", toggleCaptionInsideItem],
         ]
     }
 

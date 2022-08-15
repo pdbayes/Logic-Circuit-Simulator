@@ -581,7 +581,7 @@ export abstract class ComponentBase<
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
-        if (this.editor.mode >= Mode.CONNECT && e.metaKey) {
+        if (this.editor.mode >= Mode.CONNECT && e.metaKey && this.canRotate()) {
             this.doSetOrient((() => {
                 switch (this.orient) {
                     case "e": return "s"
@@ -654,8 +654,13 @@ export abstract class ComponentBase<
                 ["end", ContextMenuData.sep()],
             ]
 
+        const rotateItems: [ContextMenuItemPlacement, ContextMenuItem][] =
+            !this.canRotate() ? [] : [
+                ["start", this.makeChangeOrientationContextMenuItem()],
+            ]
+
         return [
-            ["start", this.makeChangeOrientationContextMenuItem()],
+            ...rotateItems,
             ...setRefItems,
             ["end", this.makeDeleteContextMenuItem()],
         ]

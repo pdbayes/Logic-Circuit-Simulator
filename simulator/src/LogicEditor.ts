@@ -1232,7 +1232,7 @@ export class LogicEditor extends HTMLElement {
 
     trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
-        if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition) {
+        if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition && currentMouseOverComp.canRotate()) {
             currentMouseOverComp.doSetOrient(orient)
             e.preventDefault()
         }

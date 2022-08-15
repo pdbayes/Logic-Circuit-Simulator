@@ -312,6 +312,10 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._orient
     }
 
+    public canRotate() {
+        return true
+    }
+
     public doSetOrient(newOrient: Orientation) {
         this._orient = newOrient
         this.setNeedsRedraw("orientation changed")
