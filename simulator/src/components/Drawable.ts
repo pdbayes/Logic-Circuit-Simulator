@@ -456,7 +456,6 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             const { mouseOffsetToPosX, mouseOffsetToPosY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
             let targetX = x - mouseOffsetToPosX
             let targetY = y - mouseOffsetToPosY
-            console.log("targetX", targetX, "targetY", targetY)
             if (e.shiftKey) {
                 // move along axis only
                 const dx = Math.abs(lastAnchorX - targetX)

@@ -1,7 +1,7 @@
 import { isNotNull, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
@@ -18,7 +18,7 @@ export type LabelStringRepr = typeof LabelStringDef.reprType
 const LabelStringDefaults = {
     text: "Label",
     // align: "center" as const,
-    font: "18px sans-serif",
+    font: FONT_LABEL_DEFAULT,
 }
 export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined> {
 
@@ -99,15 +99,11 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
-        const setFontItem = ContextMenuData.item("font", "Police…", () => {
-            const promptReturnValue = window.prompt(`Entrez une spécification de police ou laissez vide pour la valeur par défaut (${LabelStringDefaults.font}):`, this._font === LabelStringDefaults.font ? "" : this._font)
-            if (promptReturnValue !== null) {
-                const newFont = promptReturnValue.length === 0 ? LabelStringDefaults.font : promptReturnValue
-                this.doSetFont(newFont)
-            }
-        })
-
         const setTextItem = ContextMenuData.item("pen", "Changer le texte…", this.runSetTextDialog.bind(this))
+
+        const setFontItem = ContextMenuData.item("font", "Police…", () => {
+            this.runSetFontDialog(this._font, LabelStringDefaults.font, this.doSetFont.bind(this))
+        })
 
         return [
             ["mid", setTextItem],

@@ -256,6 +256,13 @@ export function colorForFraction(fraction: number): ColorString {
 
 
 //
+// FONTS
+//
+
+export const FONT_LABEL_DEFAULT = "18px sans-serif"
+
+
+//
 // DRAWING
 //
 

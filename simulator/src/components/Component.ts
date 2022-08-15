@@ -767,6 +767,14 @@ export abstract class ComponentBase<
         }
     }
 
+    protected runSetFontDialog(currentFont: string, defaultIfEmpty: string, callback: (font: string) => void) {
+        const promptReturnValue = window.prompt(`Entrez une spécification de police ou laissez vide pour la valeur par défaut (${defaultIfEmpty}):`, currentFont === defaultIfEmpty ? "" : currentFont)
+        if (promptReturnValue !== null) {
+            const newFont = promptReturnValue.length === 0 ? defaultIfEmpty : promptReturnValue
+            callback(newFont)
+        }
+    }
+
 }
 
 

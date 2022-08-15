@@ -24,6 +24,7 @@ import open from '../img/icons/open.icon.svg' // @ts-ignore
 import palette from '../img/icons/palette.icon.svg' // @ts-ignore
 import pause from '../img/icons/pause.icon.svg' // @ts-ignore
 import pen from '../img/icons/pen.icon.svg' // @ts-ignore
+import placement from '../img/icons/placement.icon.svg' // @ts-ignore
 import play from '../img/icons/play.icon.svg' // @ts-ignore
 import question from '../img/icons/question.icon.svg' // @ts-ignore
 import questioncircled from '../img/icons/questioncircled.icon.svg' // @ts-ignore
@@ -117,6 +118,7 @@ const icons = {
     palette,
     pause,
     pen,
+    placement,
     play,
     question,
     questioncircled,

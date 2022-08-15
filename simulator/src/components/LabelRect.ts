@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, GRID_STEP } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
@@ -18,6 +18,19 @@ export const RectangleColor = {
 
 export type RectangleColor = keyof typeof RectangleColor
 
+export const CaptionPosition = {
+    n: "n",
+    ne: "ne",
+    e: "e",
+    se: "se",
+    s: "s",
+    sw: "sw",
+    w: "w",
+    nw: "nw",
+    c: "c",
+} as const
+
+export type CaptionPosition = keyof typeof CaptionPosition
 
 
 export const LabelRectDef =
@@ -29,6 +42,10 @@ export const LabelRectDef =
         strokeWidth: typeOrUndefined(t.number),
         noFill: typeOrUndefined(t.boolean),
         rounded: typeOrUndefined(t.boolean),
+        caption: typeOrUndefined(t.string),
+        captionPos: typeOrUndefined(t.keyof(CaptionPosition)),
+        captionInside: typeOrUndefined(t.boolean),
+        font: typeOrUndefined(t.string),
     }, "Rectangle"))
 
 export type LabelRectRepr = typeof LabelRectDef.reprType
@@ -40,6 +57,10 @@ const LabelRectDefaults = {
     strokeWidth: 2,
     noFill: false,
     rounded: false,
+    caption: undefined as string | undefined,
+    captionPos: CaptionPosition.n,
+    captionInside: true,
+    font: FONT_LABEL_DEFAULT,
 }
 
 export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
@@ -50,6 +71,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     private _strokeWidth: number
     private _noFill: boolean
     private _rounded: boolean
+    private _caption: string | undefined
+    private _captionPos: CaptionPosition
+    private _captionInside: boolean
+    private _font: string
 
     public constructor(editor: LogicEditor, savedData: LabelRectRepr | null) {
         super(editor, undefined, savedData, {})
@@ -60,6 +85,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             this._strokeWidth = savedData.strokeWidth ?? LabelRectDefaults.strokeWidth
             this._noFill = savedData.noFill ?? LabelRectDefaults.noFill
             this._rounded = savedData.rounded ?? LabelRectDefaults.rounded
+            this._caption = savedData.caption ?? LabelRectDefaults.caption
+            this._captionPos = savedData.captionPos ?? LabelRectDefaults.captionPos
+            this._captionInside = savedData.captionInside ?? LabelRectDefaults.captionInside
+            this._font = savedData.font ?? LabelRectDefaults.font
         } else {
             this._w = LabelRectDefaults.width
             this._h = LabelRectDefaults.height
@@ -67,6 +96,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             this._strokeWidth = LabelRectDefaults.strokeWidth
             this._noFill = LabelRectDefaults.noFill
             this._rounded = LabelRectDefaults.rounded
+            this._caption = LabelRectDefaults.caption
+            this._captionPos = LabelRectDefaults.captionPos
+            this._captionInside = LabelRectDefaults.captionInside
+            this._font = LabelRectDefaults.font
         }
     }
 
@@ -80,6 +113,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             strokeWidth: this._strokeWidth,
             noFill: this._noFill === LabelRectDefaults.noFill ? undefined : this._noFill,
             rounded: this._rounded === LabelRectDefaults.rounded ? undefined : this._rounded,
+            caption: this._caption === LabelRectDefaults.caption ? undefined : this._caption,
+            captionPos: this._captionPos === LabelRectDefaults.captionPos ? undefined : this._captionPos,
+            captionInside: this._captionInside === LabelRectDefaults.captionInside ? undefined : this._captionInside,
+            font: this._font === LabelRectDefaults.font ? undefined : this._font,
         }
     }
 
@@ -131,6 +168,58 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             g.fill()
         }
 
+        if (isDefined(this._caption)) {
+            g.fillStyle = COLOR_COMPONENT_BORDER
+            g.font = this._font
+            g.textAlign = "center"
+            g.textBaseline = "middle"
+
+            const metrics = g.measureText(this._caption)
+            const offsetV = (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + this._strokeWidth) / 2 + 2
+            const margin = 2
+            const offsetH = (metrics.width + this._strokeWidth) / 2 + margin
+
+            const captionY = (() => {
+                switch (this._captionPos) {
+                    case "c":
+                    case "w":
+                    case "e":
+                        return this.posY
+                    case "n":
+                    case "nw":
+                    case "ne":
+                        return this.posY - this.height / 2 + (this._captionInside ? 1 : -1) * offsetV
+                    case "s":
+                    case "se":
+                    case "sw":
+                        return this.posY + this.height / 2 + (this._captionInside ? -1 : 1) * offsetV
+                }
+            })()
+
+            const captionX = (() => {
+                switch (this._captionPos) {
+                    case "c":
+                    case "n":
+                    case "s":
+                        return this.posX
+
+                    case "w":
+                        return this.posX - this.width / 2 + (this._captionInside ? 1 : -1) * offsetH
+                    case "nw":
+                    case "sw":
+                        return this.posX - this.width / 2 + offsetH - (this._captionInside ? 0 : 1) * (margin + this._strokeWidth)
+
+                    case "e":
+                        return this.posX + this.width / 2 + (this._captionInside ? -1 : 1) * offsetH
+                    case "ne":
+                    case "se":
+                        return this.posX + this.width / 2 - offsetH + (this._captionInside ? 0 : 1) * (margin + this._strokeWidth)
+                }
+            })()
+
+            g.fillText(this._caption, captionX, captionY)
+        }
+
         if (ctx.isMouseOver) {
             g.lineWidth = Math.max(3, this._strokeWidth)
             g.strokeStyle = COLOR_MOUSE_OVER
@@ -150,6 +239,21 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     private doSetStrokeWidth(strokeWidth: number) {
         this._strokeWidth = strokeWidth
         this.setNeedsRedraw("stroke width changed")
+    }
+
+    private doSetCaption(caption: string | undefined) {
+        this._caption = caption
+        this.setNeedsRedraw("caption changed")
+    }
+
+    private doSetCaptionPos(captionPos: CaptionPosition) {
+        this._captionPos = captionPos
+        this.setNeedsRedraw("caption position changed")
+    }
+
+    private doSetFont(font: string) {
+        this._font = font
+        this.setNeedsRedraw("font changed")
     }
 
     private makeCurrentSizeString() {
@@ -190,6 +294,34 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             this.setNeedsRedraw("nofill changed")
         })
 
+        const setCaptionItemName = isDefined(this._caption) ? "Changer le titre…" : "Ajouter un titre…"
+        const setCaptionItem = ContextMenuData.item("pen", setCaptionItemName, () => {
+            const promptReturnValue = window.prompt("Entrez le titre à afficher ou laissez vide pour le supprimer:", this._caption)
+            if (promptReturnValue !== null) {
+                // OK button pressed
+                const newCaption = promptReturnValue.length === 0 ? undefined : promptReturnValue
+                this.doSetCaption(newCaption)
+            }
+        })
+
+        const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
+            const isCurrent = this._captionPos === placement
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetCaptionPos(placement)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+        const toggleCaptionInsideItem = ContextMenuData.item(this._captionInside ? "check" : "none", "Titre à l’intérieur", () => {
+            this._captionInside = !this._captionInside
+            this.setNeedsRedraw("caption inside changed")
+        })
+
+
+        const setFontItem = ContextMenuData.item("font", "Police…", () => {
+            this.runSetFontDialog(this._font, LabelRectDefaults.font, this.doSetFont.bind(this))
+        })
+
+
         return [
             ["mid", setSizeItem],
             ["mid", ContextMenuData.submenu("palette", "Couleur", [
@@ -212,6 +344,21 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
                 makeSetStrokeWidthItem(10, "Énorme (10 pixels)"),
             ])],
             ["mid", toggleRoundedItem],
+            ["mid", ContextMenuData.sep()],
+            ["mid", setCaptionItem],
+            ["mid", setFontItem],
+            ["mid", ContextMenuData.submenu("placement", "Position du titre", [
+                makeItemSetPlacement("En haut", CaptionPosition.n),
+                makeItemSetPlacement("En haut à gauche", CaptionPosition.nw),
+                makeItemSetPlacement("En haut à droite", CaptionPosition.ne),
+                makeItemSetPlacement("En bas", CaptionPosition.s),
+                makeItemSetPlacement("En bas à gauche", CaptionPosition.sw),
+                makeItemSetPlacement("En bas à droite", CaptionPosition.se),
+                makeItemSetPlacement("À gauche", CaptionPosition.w),
+                makeItemSetPlacement("À droite", CaptionPosition.e),
+                makeItemSetPlacement("Au centre", CaptionPosition.c),
+            ])],
+            ["mid", toggleCaptionInsideItem],
         ]
     }
 
