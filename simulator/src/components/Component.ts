@@ -238,6 +238,11 @@ export abstract class ComponentBase<
         }
     }
 
+    public setSpawned() {
+        this._state = ComponentState.SPAWNED
+        this.editor.moveMgr.setDrawableStoppedMoving(this)
+    }
+
     public abstract toJSON(): Repr
 
     // typically used by subclasses to provide only their specific JSON,
@@ -565,6 +570,14 @@ export abstract class ComponentBase<
 
     protected override positionChanged() {
         this.updateNodePositions()
+    }
+
+    override mouseClicked(e: MouseEvent | TouchEvent) {
+        if (this.editor.mode >= Mode.CONNECT && e.shiftKey) {
+            this.editor.cursorMovementMgr.toggleSelect(this)
+            return true
+        }
+        return false
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {

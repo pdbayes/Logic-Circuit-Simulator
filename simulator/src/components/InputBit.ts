@@ -250,6 +250,10 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseClicked(e)) {
+            return true
+        }
+
         if (this.editor.mode === Mode.STATIC || this._isPushButton || this._isConstant) {
             // do nothing for normal push button
             return false

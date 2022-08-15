@@ -26,7 +26,7 @@ export class EditorSelection {
         public currentlyDrawnRect: DOMRect | undefined,
     ) { }
 
-    private toggle(elem: Drawable) {
+    public toggle(elem: Drawable) {
         if (this.previouslySelectedElements.has(elem)) {
             this.previouslySelectedElements.delete(elem)
         } else {
@@ -223,6 +223,16 @@ export class CursorMovementManager {
             sel.previouslySelectedElements.add(comp)
         }
         this.editor.redrawMgr.addReason("selected all", null)
+    }
+
+    toggleSelect(comp: Drawable) {
+        let sel
+        if (isUndefined(sel = this.currentSelection)) {
+            sel = new EditorSelection(undefined)
+            this.currentSelection = sel
+        } 
+        sel.toggle(comp)
+        this.editor.redrawMgr.addReason("toggled selection", null)
     }
 
 
@@ -456,6 +466,7 @@ export class CursorMovementManager {
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
+                this.editor.cursorMovementMgr.currentSelection = undefined
                 const newComponent = factory(editor)
                 this._currentMouseOverComp = newComponent
                 const { lockMouseOver } = this._currentHandlers.mouseDownOn(newComponent, e)

@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { ColorString, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, COLOR_WIRE, GRID_STEP } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
@@ -244,6 +244,10 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     }
 
     public wrapContents(selectedComps: Set<Drawable>) {
+        if (selectedComps.size === 0) {
+            return
+        }
+
         let left = Number.POSITIVE_INFINITY
         let top = Number.POSITIVE_INFINITY
         let right = Number.NEGATIVE_INFINITY

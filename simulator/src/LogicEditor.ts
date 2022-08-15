@@ -669,6 +669,7 @@ export class LogicEditor extends HTMLElement {
                     e.stopImmediatePropagation()
                     const factory = ComponentFactory.makeFactoryForButton(groupButton as HTMLElement)
                     const newGroup = factory(this)
+                    newGroup.setSpawned()
 
                     if (newGroup instanceof LabelRect) {
                         newGroup.wrapContents(selectedComps)

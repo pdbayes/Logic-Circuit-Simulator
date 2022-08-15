@@ -384,8 +384,8 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
 
 interface DragContext {
-    mouseOffsetX: number
-    mouseOffsetY: number
+    mouseOffsetToPosX: number
+    mouseOffsetToPosY: number
     lastAnchorX: number
     lastAnchorY: number
 }
@@ -407,8 +407,8 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
         if (isUndefined(this._isMovingWithContext)) {
             const [offsetX, offsetY] = this.editor.offsetXY(e)
             this._isMovingWithContext = {
-                mouseOffsetX: this.posX - offsetX,
-                mouseOffsetY: this.posY - offsetY,
+                mouseOffsetToPosX: offsetX - this.posX,
+                mouseOffsetToPosY: offsetY - this.posY,
                 lastAnchorX: this.posX,
                 lastAnchorY: this.posY,
             }
@@ -453,11 +453,12 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     protected updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
         if (isDefined(this._isMovingWithContext)) {
-            const { mouseOffsetX, mouseOffsetY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
-            let targetX = x + mouseOffsetX
-            let targetY = y + mouseOffsetY
+            const { mouseOffsetToPosX, mouseOffsetToPosY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
+            let targetX = x - mouseOffsetToPosX
+            let targetY = y - mouseOffsetToPosY
+            console.log("targetX", targetX, "targetY", targetY)
             if (e.shiftKey) {
-                // mvoe along axis only
+                // move along axis only
                 const dx = Math.abs(lastAnchorX - targetX)
                 const dy = Math.abs(lastAnchorY - targetY)
                 if (dx <= dy) {

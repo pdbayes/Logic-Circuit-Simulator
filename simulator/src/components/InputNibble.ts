@@ -154,6 +154,10 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     override mouseClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseClicked(e)) {
+            return true
+        }
+
         // TODO rotate coordinates here
         const editor = this.editor
         if (editor.mode === Mode.STATIC) {
