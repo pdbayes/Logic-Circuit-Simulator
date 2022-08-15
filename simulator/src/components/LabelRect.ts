@@ -299,14 +299,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         })
 
         const setCaptionItemName = isDefined(this._caption) ? "Changer le titre…" : "Ajouter un titre…"
-        const setCaptionItem = ContextMenuData.item("pen", setCaptionItemName, () => {
-            const promptReturnValue = window.prompt("Entrez le titre à afficher ou laissez vide pour le supprimer:", this._caption)
-            if (promptReturnValue !== null) {
-                // OK button pressed
-                const newCaption = promptReturnValue.length === 0 ? undefined : promptReturnValue
-                this.doSetCaption(newCaption)
-            }
-        })
+        const setCaptionItem = ContextMenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog())
 
         const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
             const isCurrent = this._captionPos === placement
@@ -422,11 +415,27 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         this.doSetDimensions(w, h)
     }
 
+    private runSetCaptionDialog() {
+        const promptReturnValue = window.prompt("Entrez le titre à afficher ou laissez vide pour le supprimer:", this._caption)
+        if (promptReturnValue !== null) {
+            // OK button pressed
+            const newCaption = promptReturnValue.length === 0 ? undefined : promptReturnValue
+            this.doSetCaption(newCaption)
+        }
+    }
+
     override mouseDoubleClicked(__e: MouseEvent | TouchEvent): boolean {
         // TODO: implement dragging for resizing the rectangle
         // don't call super, which would rotate the rectangle, this is useless here
         this.runSetSizeDialog(this.makeCurrentSizeString())
         return true
+    }
+
+
+    override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter") {
+            this.runSetCaptionDialog()
+        }
     }
 
 }
