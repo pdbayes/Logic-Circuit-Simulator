@@ -19,7 +19,10 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
     public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
         super(editor, savedData, {
-            inOffsets: [[-4, -2, "w"], [-4, 2, "w"]],
+            ins: [
+                ["S (Set, mise à 1)", -4, -2, "w"], 
+                ["R (Reset, mise à 0)", -4, 2, "w"],
+            ],
         })
         this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
     }
@@ -30,15 +33,6 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
             ...this.toJSONBase(),
         }
     }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Set: return "S (Set, mise à 1)"
-            case INPUT.Reset: return "R (Reset, mise à 0)"
-        }
-        return undefined
-    }
-
 
     public override makeTooltip() {
         return tooltipContent("Verrou SR", mods(

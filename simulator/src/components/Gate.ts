@@ -1,5 +1,5 @@
 import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import * as t from "io-ts"
 import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
@@ -285,7 +285,7 @@ export abstract class GateBase<
     private _poseAs: G | undefined = undefined
     private _showAsUnknown = false
 
-    protected constructor(editor: LogicEditor, savedData: Repr | GateMandatoryParams<G>, nodeOffsets: NodeOffsets<NumInput, 1>) {
+    protected constructor(editor: LogicEditor, savedData: Repr | GateMandatoryParams<G>, nodeOffsets: NodeVisuals<NumInput, 1>) {
         super(editor, false, "in" in savedData ? savedData : null, nodeOffsets)
         this._type = savedData.type
         if ("poseAs" in savedData) {
@@ -701,8 +701,8 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
     constructor(editor: LogicEditor, savedData: Gate1Repr | Gate1MandatoryParams) {
         super(editor, savedData, {
-            inOffsets: [[-4, 0, "w"]],
-            outOffsets: [[+4, 0, "e"]],
+            ins: [[undefined, -4, 0, "w"]],
+            outs: [[undefined, +4, 0, "e"]],
         })
     }
 
@@ -786,8 +786,11 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
     constructor(editor: LogicEditor, savedData: Gate2Repr | Gate2MandatoryParams) {
         super(editor, savedData, {
-            inOffsets: [[-4, -1, "w"], [-4, +1, "w"]],
-            outOffsets: [[+4, 0, "e"]],
+            ins: [
+                [undefined, -4, -1, "w", "In"],
+                [undefined, -4, +1, "w", "In"],
+            ],
+            outs: [[undefined, +4, 0, "e"]],
         })
     }
 
@@ -890,8 +893,12 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
     constructor(editor: LogicEditor, savedData: Gate3Repr | Gate3MandatoryParams) {
         super(editor, savedData, {
-            inOffsets: [[-5, -2, "w"], [-5, 0, "w"], [-5, +2, "w"]],
-            outOffsets: [[+5, 0, "e"]],
+            ins: [
+                [undefined, -5, -2, "w", "In"],
+                [undefined, -5, 0, "w", "In"],
+                [undefined, -5, +2, "w", "In"],
+            ],
+            outs: [[undefined, +5, 0, "e"]],
         })
     }
 
@@ -976,8 +983,13 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
 
     constructor(editor: LogicEditor, savedData: Gate4Repr | Gate4MandatoryParams) {
         super(editor, savedData, {
-            inOffsets: [[-6, -3, "w"], [-6, -1, "w"], [-6, +1, "w"], [-6, +3, "w"]],
-            outOffsets: [[+6, 0, "e"]],
+            ins: [
+                [undefined, -6, -3, "w", "In"],
+                [undefined, -6, -1, "w", "In"],
+                [undefined, -6, +1, "w", "In"],
+                [undefined, -6, +3, "w", "In"],
+            ],
+            outs: [[undefined, +6, 0, "e"]],
         })
     }
 

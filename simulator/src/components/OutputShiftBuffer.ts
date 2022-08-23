@@ -93,10 +93,10 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
 
     public constructor(editor: LogicEditor, savedData: OutputShiftBufferRepr | null) {
         super(editor, OutputShiftBuffer.savedStateFrom(savedData), savedData, {
-            inOffsets: [
-                [-14, +1, "w"], // Clock
-                [-10, +3, "s"], // Clear
-                [-14, -1, "w"], // Data in
+            ins: [
+                ["Clock (horloge)", -14, +1, "w"], // Clock
+                ["C (Clear, effacement)", -10, +3, "s"], // Clear
+                ["D (Données)", -14, -1, "w"], // Data in
             ],
         })
         if (isNotNull(savedData)) {
@@ -135,15 +135,6 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
 
     get trigger() {
         return this._trigger
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Clock: return "Clock (horloge)"
-            case INPUT.Clear: return "C (Clear, effacement)"
-            case INPUT.Data: return "D (Données)"
-        }
-        return undefined
     }
 
     public override makeTooltip() {

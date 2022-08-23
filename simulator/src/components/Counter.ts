@@ -60,13 +60,16 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
 
     public constructor(editor: LogicEditor, savedData: CounterRepr | null) {
         super(editor, Counter.savedStateFrom(savedData), savedData, {
-            inOffsets: [
-                [-4, +4, "w"], // Clock
-                [0, +6, "s"], // Clear
+            ins: [
+                ["Clock (horloge)", -4, +4, "w"],
+                ["C (Clear, mise à 0)", 0, +6, "s"],
             ],
-            outOffsets: [
-                [+4, -4, "e"], [+4, -2, "e"], [+4, 0, "e"], [+4, +2, "e"], // Data out
-                [+4, +4, "e"],
+            outs: [
+                ["Q0", +4, -4, "e", "Q"],
+                ["Q1", +4, -2, "e", "Q"],
+                ["Q2", +4, 0, "e", "Q"],
+                ["Q3", +4, +2, "e", "Q"],
+                ["V (oVerflow)", +4, +4, "e"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -104,24 +107,6 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
 
     get trigger() {
         return this._trigger
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Clock: return "Clock (horloge)"
-            case INPUT.Clear: return "C (Clear, mise à 0)"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        if (i <= OUTPUT.Q[OUTPUT.Q.length - 1]) {
-            return "Q" + (i - OUTPUT.Q[0])
-        }
-        if (i === OUTPUT.V) {
-            return "V (oVerflow)"
-        }
-        return undefined
     }
 
     public override makeTooltip() {

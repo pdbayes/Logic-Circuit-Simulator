@@ -38,9 +38,15 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
     public constructor(editor: LogicEditor, savedData: Output7SegRepr | null) {
         super(editor, FixedArrayFill(false, 8), savedData, {
-            inOffsets: [
-                [-5, -4, "w"], [-5, -3, "w"], [-5, -2, "w"], [-5, -1, "w"],
-                [-5, 0, "w"], [-5, +1, "w"], [-5, +2, "w"], [-5, +4, "w"],
+            ins: [
+                ["a", -5, -4, "w", "In"],
+                ["b", -5, -3, "w", "In"],
+                ["c", -5, -2, "w", "In"],
+                ["d", -5, -1, "w", "In"],
+                ["e", -5, 0, "w", "In"],
+                ["f", -5, +1, "w", "In"],
+                ["g", -5, +2, "w", "In"],
+                ["p", -5, +4, "w", "In"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -70,20 +76,6 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.a: return "a"
-            case INPUT.b: return "b"
-            case INPUT.c: return "c"
-            case INPUT.d: return "d"
-            case INPUT.e: return "e"
-            case INPUT.f: return "f"
-            case INPUT.g: return "g"
-            case INPUT.p: return "p"
-        }
-        return undefined
     }
 
     public override makeTooltip() {
@@ -181,8 +173,8 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            this.inputs.forEach((input, i) => {
-                drawLabel(ctx, this.orient, this.getInputName(i)!, "w", left, input)
+            this.inputs.forEach(input => {
+                drawLabel(ctx, this.orient, input.name, "w", left, input)
             })
 
             if (isDefined(this._name)) {

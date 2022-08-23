@@ -1,4 +1,4 @@
-import { isDefined, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -22,7 +22,7 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
 
     public constructor(editor: LogicEditor, savedData: FlipflopTRepr | null) {
         super(editor, savedData, {
-            inOffsets: [[-4, -2, "w"]],
+            ins: [["T (toggle)", -4, -2, "w"]],
             clockYOffset: 2,
         })
     }
@@ -32,17 +32,6 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
             type: "flipflop-t" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    override getInputName(i: number): string | undefined {
-        const superName = super.getInputName(i)
-        if (isDefined(superName)) {
-            return superName
-        }
-        switch (i) {
-            case INPUT.T: return "T (toggle)"
-        }
-        return undefined
     }
 
     public override makeTooltip() {

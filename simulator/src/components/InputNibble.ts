@@ -35,7 +35,12 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
     public constructor(editor: LogicEditor, savedData: InputNibbleRepr | null) {
         super(editor, InputNibble.savedStateFrom(savedData), savedData, {
-            outOffsets: [[2, -3, "e"], [2, -1, "e"], [2, +1, "e"], [2, +3, "e"]],
+            outs: [
+                [undefined, 2, -3, "e", "Out"],
+                [undefined, 2, -1, "e", "Out"],
+                [undefined, 2, +1, "e", "Out"],
+                [undefined, 2, +3, "e", "Out"],
+            ],
         })
         if (isNotNull(savedData)) {
             this._name = savedData.name

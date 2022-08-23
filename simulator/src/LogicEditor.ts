@@ -75,6 +75,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     hideOutputColors: false,
     hideMemoryContent: false,
     hideTooltips: false,
+    groupParallelWires: false,
     propagationDelay: 100,
 }
 
@@ -162,6 +163,7 @@ export class LogicEditor extends HTMLElement {
         hideOutputColorsCheckbox: HTMLInputElement,
         hideMemoryContentCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
+        groupParallelWiresCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
@@ -246,6 +248,7 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.wireStylePopup.value = newOptions.wireStyle
             optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
+            optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
 
             optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
@@ -467,6 +470,7 @@ export class LogicEditor extends HTMLElement {
                     case "Escape":
                         this.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
                         this.wireMgr.tryCancelWire()
+                        e.preventDefault()
                         return
 
                     case "Backspace":
@@ -479,19 +483,23 @@ export class LogicEditor extends HTMLElement {
                         } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
                             this.tryDeleteDrawable(selComp)
                         }
+                        e.preventDefault()
                         return
                     }
 
                     case "e":
                         this.setCurrentMouseAction("edit")
+                        e.preventDefault()
                         return
 
                     case "d":
                         this.setCurrentMouseAction("delete")
+                        e.preventDefault()
                         return
 
                     case "m":
                         this.setCurrentMouseAction("move")
+                        e.preventDefault()
                         return
 
                     case "ArrowRight":
@@ -882,6 +890,10 @@ export class LogicEditor extends HTMLElement {
             "Désactiver tooltips",
             "Si coché, les informations supplémentaires des tooltips (comme les tables de vérité) ne seront pas affichées."
         )
+        const groupParallelWiresCheckbox = makeCheckbox("groupParallelWires",
+            "Grouper les fils parallèles",
+            "Les fils parralèles allant d'un composant à un autre seront regroupés en un seul fil plus épais."
+        )
 
         const wireStylePopup = select(
             option(attr("value", WireStyles.auto), "Auto"),
@@ -935,6 +947,7 @@ export class LogicEditor extends HTMLElement {
             showGateTypesCheckbox,
             showDisconnectedPinsCheckbox,
             hideTooltipsCheckbox,
+            groupParallelWiresCheckbox,
             propagationDelayField,
             showUserDataLinkContainer,
         }
@@ -1235,6 +1248,7 @@ export class LogicEditor extends HTMLElement {
         if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition && currentMouseOverComp.canRotate()) {
             currentMouseOverComp.doSetOrient(orient)
             e.preventDefault()
+            e.stopPropagation()
         }
     }
 

@@ -59,7 +59,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
     private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
-        super(editor, false, savedData, { inOffsets: [[0, 0, "w"]] })
+        super(editor, false, savedData, { ins: [[undefined, 0, 0, "w"]] })
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
             this._color = savedData.color ?? OutputBarDefaults.color

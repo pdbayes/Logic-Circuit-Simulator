@@ -424,7 +424,10 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string, anchor: Orientation | undefined, x: number | Node, y: number | Node) {
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node, y: number | Node) {
+    if (isUndefined(text)) {
+        return
+    }
 
     // we assume a color and a font have been set before this function is called
     const [halign, valign, dx, dy] = (() => {

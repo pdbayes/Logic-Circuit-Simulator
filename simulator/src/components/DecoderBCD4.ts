@@ -15,9 +15,9 @@ const INPUT = {
     I: [0, 1, 2, 3] as const,
 }
 
-const OUTPUT = {
-    B: [0, 1, 2, 3, 5] as const,
-}
+// const OUTPUT = {
+//     B: [0, 1, 2, 3, 5] as const,
+// }
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 12
@@ -28,8 +28,19 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
 
     public constructor(editor: LogicEditor, savedData: DecoderBCD4Repr | null) {
         super(editor, FixedArrayFill(false, 5), savedData, {
-            inOffsets: [[-4, -3, "w"], [-4, -1, "w"], [-4, +1, "w"], [-4, +3, "w"]],
-            outOffsets: [[+4, -5, "e"], [+4, -3, "e"], [+4, -1, "e"], [+4, +1, "e"], [+4, +5, "e"]],
+            ins: [
+                ["D", -4, -3, "w", "In"],
+                ["C", -4, -1, "w", "In"],
+                ["B", -4, +1, "w", "In"],
+                ["A", -4, +3, "w", "In"],
+            ],
+            outs: [
+                ["Z0", +4, -5, "e", "Z"],
+                ["Z1", +4, -3, "e", "Z"],
+                ["Z2", +4, -1, "e", "Z"],
+                ["Z3", +4, +1, "e", "Z"],
+                ["Z4", +4, +5, "e", "Z"],
+            ],
         })
     }
 
@@ -51,24 +62,6 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.I[0]: return "D"
-            case INPUT.I[1]: return "C"
-            case INPUT.I[2]: return "B"
-            case INPUT.I[3]: return "A"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        if (i < OUTPUT.B.length) {
-            return "B" + i
-        }
-        return undefined
-    }
-
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
@@ -144,11 +137,11 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            this.inputs.forEach((input, i) => {
-                drawLabel(ctx, this.orient, this.getInputName(i)!, "w", left, input)
+            this.inputs.forEach(input => {
+                drawLabel(ctx, this.orient, input.name, "w", left, input)
             })
-            this.outputs.forEach((output, i) => {
-                drawLabel(ctx, this.orient, this.getOutputName(i)!, "e", right, output)
+            this.outputs.forEach(output => {
+                drawLabel(ctx, this.orient, output.name, "e", right, output)
             })
 
         })

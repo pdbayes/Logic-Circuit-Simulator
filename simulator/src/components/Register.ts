@@ -52,14 +52,22 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
 
     public constructor(editor: LogicEditor, savedData: RegisterRepr | null) {
         super(editor, Register.savedStateFrom(savedData), savedData, {
-            inOffsets: [
-                [-5, +6, "w"], // Clock
-                [0, -8, "n"], // Preset
-                [0, +8, "s"], // Clear
-                [-5, -3, "w"], [-5, -1, "w"], [-5, +1, "w"], [-5, 3, "w"], // Data in
+            ins: [
+                ["Clock (horloge)", -5, +6, "w"], // Clock
+                ["P (Preset, mise à 1)", 0, -8, "n"], // Preset
+                ["C (Clear, mise à 0)", 0, +8, "s"], // Clear
+                // Data in
+                ["D0", -5, -3, "w", "D"],
+                ["D0", -5, -1, "w", "D"],
+                ["D0", -5, +1, "w", "D"],
+                ["D0", -5, 3, "w", "D"],
             ],
-            outOffsets: [
-                [+5, -3, "e"], [+5, -1, "e"], [+5, +1, "e"], [+5, 3, "e"], // Data out
+            outs: [
+                // Data out
+                ["Q0", +5, -3, "e", "Q"],
+                ["Q1", +5, -1, "e", "Q"],
+                ["Q2", +5, +1, "e", "Q"],
+                ["Q3", +5, 3, "e", "Q"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -93,25 +101,6 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
 
     get trigger() {
         return this._trigger
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Clock: return "Clock (horloge)"
-            case INPUT.Preset: return "P (Preset, mise à 1)"
-            case INPUT.Clear: return "C (Clear, mise à 0)"
-        }
-        if (i <= INPUT.Data[INPUT.Data.length - 1]) {
-            return "D" + (i - INPUT.Data[0])
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        if (i <= OUTPUT.Q[OUTPUT.Q.length - 1]) {
-            return "Q" + (i - OUTPUT.Q[0])
-        }
-        return undefined
     }
 
     public override makeTooltip() {

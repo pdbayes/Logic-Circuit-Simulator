@@ -1,5 +1,5 @@
 import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisual, NodeVisuals } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
@@ -38,8 +38,8 @@ export abstract class Mux<
     Repr extends MuxRepr<NumInputs, NumOutputs>>
     extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>>{
 
-    private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeOffset[] {
-        const offsets: NodeOffset[] = []
+    private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
+        const offsets: NodeVisual[] = []
 
         // left inputs
         const numGroups = numFrom / numTo
@@ -48,32 +48,34 @@ export abstract class Mux<
         let x = -2 - numSel
         let y = -(numLeftSlots - 1)
         const selY = y - 2
+        let groupLetter = "A"
         for (let i = 0; i < numFrom; i++) {
             if (i !== 0 && i % numTo === 0) {
                 y += addByGroupSep * 2
+                groupLetter = String.fromCharCode(groupLetter.charCodeAt(0) + 1)
             }
-            offsets.push([x, y, "w"])
+            offsets.push([groupLetter + (i % numTo), x, y, "w", groupLetter])
             y += 2
         }
 
         // top input selectors
         x = (numSel - 1)
         for (let s = 0; s < numSel; s++) {
-            offsets.push([x - 2 * s, selY, "n"])
+            offsets.push([`S${s}`, x - 2 * s, selY, "n", "S"])
         }
         return offsets
     }
 
-    private static generateOutOffsets<NumOutputs extends FixedArraySize>(numSel: number, numTo: NumOutputs): FixedArray<NodeOffset, NumOutputs> {
-        const offsets: NodeOffset[] = []
+    private static generateOutOffsets<NumOutputs extends FixedArraySize>(numSel: number, numTo: NumOutputs): FixedArray<NodeVisual, NumOutputs> {
+        const offsets: NodeVisual[] = []
 
         // right outputs
         const from = -(numTo - 1)
         const x = 2 + numSel
         for (let i = 0; i < numTo; i++) {
-            offsets.push([x, from + 2 * i, "e"])
+            offsets.push([`Z${i}`, x, from + 2 * i, "e", "Z"])
         }
-        return offsets as FixedArray<NodeOffset, NumOutputs>
+        return offsets as FixedArray<NodeVisual, NumOutputs>
     }
 
     protected static generateInputIndices<NumOutputs extends FixedArraySize>(numFrom: number, numSel: number, numTo: NumOutputs): MuxInputIndices<NumOutputs> {
@@ -127,9 +129,9 @@ export abstract class Mux<
         public readonly numTo: NumOutputs,
     ) {
         super(editor, FixedArrayFill(false as LogicValue, numTo), savedData, {
-            inOffsets: Mux.generateInOffsets(numFrom, numSel, numTo),
-            outOffsets: Mux.generateOutOffsets(numSel, numTo),
-        } as unknown as NodeOffsets<NumInputs, NumOutputs>)
+            ins: Mux.generateInOffsets(numFrom, numSel, numTo),
+            outs: Mux.generateOutOffsets(numSel, numTo),
+        } as unknown as NodeVisuals<NumInputs, NumOutputs>)
         this.gridWidth = Mux.gridWidth(numSel)
         this.gridHeight = Mux.gridHeight(numFrom, numTo)
         if (isNotNull(savedData)) {
@@ -174,25 +176,6 @@ export abstract class Mux<
 
     public get componentType() {
         return "ic" as const
-    }
-
-    override getInputName(i: number): string | undefined {
-        const I = this.INPUT.I
-        for (let k = 0; k < I.length; k++) {
-            const ins = I[k]
-            if (i <= ins[ins.length - 1]) {
-                return String.fromCharCode(65 + k) + (i - ins[0 as number])
-            }
-        }
-        const S = this.INPUT.S
-        if (i <= S[S.length - 1]) {
-            return "S" + (i - S[0])
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        return "Z" + i
     }
 
     get unrotatedWidth() {

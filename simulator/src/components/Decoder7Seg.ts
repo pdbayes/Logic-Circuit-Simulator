@@ -28,8 +28,21 @@ export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReado
 
     public constructor(editor: LogicEditor, savedData: Decoder7SegRepr | null) {
         super(editor, FixedArrayFill(false, 7), savedData, {
-            inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]],
-            outOffsets: [[+3, -3, "e"], [+3, -2, "e"], [+3, -1, "e"], [+3, 0, "e"], [+3, +1, "e"], [+3, +2, "e"], [+3, +3, "e"]],
+            ins: [
+                ["D", -3, -3, "w", "In"],
+                ["C", -3, -1, "w", "In"],
+                ["B", -3, +1, "w", "In"],
+                ["A", -3, +3, "w", "In"],
+            ],
+            outs: [
+                ["a", +3, -3, "e", "Out"],
+                ["b", +3, -2, "e", "Out"],
+                ["c", +3, -1, "e", "Out"],
+                ["d", +3, 0, "e", "Out"],
+                ["e", +3, +1, "e", "Out"],
+                ["f", +3, +2, "e", "Out"],
+                ["g", +3, +3, "e", "Out"],
+            ],
         })
     }
 
@@ -51,30 +64,6 @@ export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReado
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.I[0]: return "D"
-            case INPUT.I[1]: return "C"
-            case INPUT.I[2]: return "B"
-            case INPUT.I[3]: return "A"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.a: return "a"
-            case OUTPUT.b: return "b"
-            case OUTPUT.c: return "c"
-            case OUTPUT.d: return "d"
-            case OUTPUT.e: return "e"
-            case OUTPUT.f: return "f"
-            case OUTPUT.g: return "g"
-        }
-        return undefined
-    }
-
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
@@ -154,11 +143,11 @@ export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReado
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            this.inputs.forEach((input, i) => {
-                drawLabel(ctx, this.orient, this.getInputName(i)!, "w", left, input)
+            this.inputs.forEach(input => {
+                drawLabel(ctx, this.orient, input.name, "w", left, input)
             })
-            this.outputs.forEach((output, i) => {
-                drawLabel(ctx, this.orient, this.getOutputName(i)!, "e", right, output)
+            this.outputs.forEach(output => {
+                drawLabel(ctx, this.orient, output.name, "e", right, output)
             })
 
         })

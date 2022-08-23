@@ -1,5 +1,5 @@
 import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown, isDefined } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeOffsets } from "./Component"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawRoundValue, drawWireLineToComponent, GRID_STEP } from "../drawutils"
@@ -48,10 +48,10 @@ export abstract class FlipflopOrLatch<
     protected _showContent: boolean = FlipflorOrLatchDefaults.showContent
     protected _isInInvalidState = false
 
-    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0>) {
+    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeVisuals<NumInputs, 0>) {
         super(editor, FlipflopOrLatch.savedStateFrom(savedData), savedData, {
-            inOffsets: (nodeInOffsets as any).inOffsets,
-            outOffsets: [[+4, -2, "e"], [+4, 2, "e"]],
+            ins: (nodeInOffsets as any).ins,
+            outs: [["Q (sortie)", +4, -2, "e"], ["Q̅ (sortie inversée)", +4, 2, "e"]],
         })
         if (isNotNull(savedData)) {
             this._showContent = savedData.showContent ?? FlipflorOrLatchDefaults.showContent
@@ -68,14 +68,6 @@ export abstract class FlipflopOrLatch<
 
     public get componentType() {
         return "ic" as const
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.Q: return "Q (sortie)"
-            case OUTPUT.Qb: return "Q̅ (sortie inversée)"
-        }
-        return undefined
     }
 
     get unrotatedWidth() {
@@ -205,13 +197,13 @@ export abstract class Flipflop<
     protected _lastClock: LogicValue = Unknown
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
 
-    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeOffsets<NumInputs, 0> & { clockYOffset: number }) {
+    protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeVisuals<NumInputs, 0> & { clockYOffset: number }) {
         super(editor, savedData, {
-            inOffsets: [
-                [-4, nodeInOffsets.clockYOffset, "w"], // Clock
-                [0, -4, "n"], // Preset
-                [0, +4, "s"], // Clear
-                ...nodeInOffsets.inOffsets, // subclass
+            ins: [
+                ["Clock (horloge)", -4, nodeInOffsets.clockYOffset, "w"], // Clock
+                ["P (Preset, mise à 1)", 0, -4, "n"], // Preset
+                ["C (Clear, mise à 0)", 0, +4, "s"], // Clear
+                ...nodeInOffsets.ins, // subclass
             ] as any,
         })
         if (isNotNull(savedData)) {
@@ -230,16 +222,6 @@ export abstract class Flipflop<
     get trigger() {
         return this._trigger
     }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Clock: return "Clock (horloge)"
-            case INPUT.Preset: return "P (Preset, mise à 1)"
-            case INPUT.Clear: return "C (Clear, mise à 0)"
-        }
-        return undefined
-    }
-
 
     public static doRecalcValueForSyncComponent<State>(comp: SyncComponent<State>, prevClock: LogicValue, clock: LogicValue, preset: LogicValue, clear: LogicValue): { isInInvalidState: boolean, newState: State } {
         // handle set and reset signals

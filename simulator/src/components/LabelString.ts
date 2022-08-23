@@ -53,6 +53,7 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
     }
 
     get unrotatedWidth() {
+        // TODO measure text width
         return GRID_STEP * this._text.length
     }
 
@@ -85,7 +86,6 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         g.textBaseline = "middle"
         g.fillText(this._text, this.posX, this.posY)
     }
-
 
     private doSetText(text: string) {
         this._text = text
@@ -125,5 +125,14 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
             this.runSetTextDialog()
         }
     }
+
+    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        if (super.mouseDoubleClicked(e)) {
+            return true // already handled
+        }
+        this.runSetTextDialog()
+        return true
+    }
+
 
 }

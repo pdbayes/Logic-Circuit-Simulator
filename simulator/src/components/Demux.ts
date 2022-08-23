@@ -1,5 +1,5 @@
 import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, HighImpedance, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeOffset, NodeOffsets } from "./Component"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisual, NodeVisuals } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
@@ -42,8 +42,8 @@ export abstract class Demux<
     Repr extends DemuxRepr<NumInputs, NumOutputs>>
     extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>>{
 
-    private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeOffset[] {
-        const offsets: NodeOffset[] = []
+    private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
+        const offsets: NodeVisual[] = []
 
         // left inputs
         const numGroups = numTo / numFrom
@@ -54,19 +54,19 @@ export abstract class Demux<
         const y = -(numLeftSlots - 1)
         const selY = y - 2
         for (let i = 0; i < numFrom; i++) {
-            offsets.push([x, from + 2 * i, "w"])
+            offsets.push([`A${i}`, x, from + 2 * i, "w", "A"])
         }
 
         // top input selectors
         x = (numSel - 1)
         for (let s = 0; s < numSel; s++) {
-            offsets.push([x - 2 * s, selY, "n"])
+            offsets.push([`S${s}`, x - 2 * s, selY, "n", "S"])
         }
         return offsets
     }
 
-    private static generateOutOffsets<NumOutputs extends FixedArraySize>(numFrom: number, numSel: number, numTo: NumOutputs): FixedArray<NodeOffset, NumOutputs> {
-        const offsets: NodeOffset[] = []
+    private static generateOutOffsets<NumOutputs extends FixedArraySize>(numFrom: number, numSel: number, numTo: NumOutputs): FixedArray<NodeVisual, NumOutputs> {
+        const offsets: NodeVisual[] = []
 
         const numGroups = numTo / numFrom
         const addByGroupSep = numFrom > 1 ? 1 : 0
@@ -76,14 +76,16 @@ export abstract class Demux<
         let y = -(numLeftSlots - 1)
 
         // right outputs
+        let groupLetter = "B"
         for (let i = 0; i < numTo; i++) {
             if (i !== 0 && i % numFrom === 0) {
                 y += addByGroupSep * 2
+                groupLetter = String.fromCharCode(groupLetter.charCodeAt(0) + 1)
             }
-            offsets.push([x, y, "e"])
+            offsets.push([groupLetter + (i % numFrom), x, y, "e", groupLetter])
             y += 2
         }
-        return offsets as FixedArray<NodeOffset, NumOutputs>
+        return offsets as FixedArray<NodeVisual, NumOutputs>
     }
 
     protected static generateInputIndices<NumInputs extends FixedArraySize>(numFrom: NumInputs, numSel: number): DemuxInputIndices<NumInputs> {
@@ -142,9 +144,9 @@ export abstract class Demux<
         public readonly numTo: NumOutputs,
     ) {
         super(editor, FixedArrayFill(false as LogicValue, numTo), savedData, {
-            inOffsets: Demux.generateInOffsets(numFrom, numSel, numTo),
-            outOffsets: Demux.generateOutOffsets(numFrom, numSel, numTo),
-        } as unknown as NodeOffsets<NumInputs, NumOutputs>)
+            ins: Demux.generateInOffsets(numFrom, numSel, numTo),
+            outs: Demux.generateOutOffsets(numFrom, numSel, numTo),
+        } as unknown as NodeVisuals<NumInputs, NumOutputs>)
         this.numGroups = this.numTo / this.numFrom
         this.gridWidth = Demux.gridWidth(numSel)
         this.gridHeight = Demux.gridHeight(numFrom, numTo)
@@ -194,29 +196,6 @@ export abstract class Demux<
         return "ic" as const
     }
 
-    override getInputName(i: number): string | undefined {
-        const I = this.INPUT.I
-        if (i <= I[I.length - 1]) {
-            return "A" + (i - I[0]!)
-        }
-        const S = this.INPUT.S
-        if (i <= S[S.length - 1]) {
-            return "S" + (i - S[0])
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        const Z = this.OUTPUT.Z
-        for (let k = 0; k < Z.length; k++) {
-            const outs = Z[k]
-            if (i <= outs[outs.length - 1]) {
-                return String.fromCharCode(66 + k) + (i - outs[0 as number])
-            }
-        }
-        return undefined
-    }
-
     get unrotatedWidth() {
         return this.gridWidth * GRID_STEP
     }
@@ -249,7 +228,7 @@ export abstract class Demux<
                 }
             } else {
                 for (let i = 0; i < this.numFrom; i++) {
-                    values.push(disconnected) 
+                    values.push(disconnected)
                 }
             }
         }
@@ -349,9 +328,9 @@ export abstract class Demux<
         this.setNeedsRecalc()
     }
 
-    
+
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        
+
         let icon: IconName = this._showWiring ? "check" : "none"
         const toggleShowWiringItem = ContextMenuData.item(icon, "Afficher les connexions", () => {
             this.doSetShowWiring(!this._showWiring)

@@ -41,8 +41,8 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
 
     public constructor(editor: LogicEditor, savedData: InputRandomRepr | null) {
         super(editor, false, savedData, {
-            inOffsets: [[-3, +2, "w"]],
-            outOffsets: [[+3, 0, "e"]],
+            ins: [["Next", -3, +2, "w"]],
+            outs: [[undefined, +3, 0, "e"]],
         })
         if (isNotNull(savedData)) {
             if (isDefined(savedData.prob1)) {

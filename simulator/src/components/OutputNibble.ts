@@ -28,7 +28,12 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
 
     public constructor(editor: LogicEditor, savedData: OutputNibbleRepr | null) {
         super(editor, ["0000", 0], savedData, {
-            inOffsets: [[-3, -3, "w"], [-3, -1, "w"], [-3, +1, "w"], [-3, +3, "w"]],
+            ins: [
+                ["I0", -3, -3, "w", "I"],
+                ["I1", -3, -1, "w", "I"],
+                ["I2", -3, +1, "w", "I"],
+                ["I3", -3, +3, "w", "I"],
+            ],
         })
         if (isNotNull(savedData)) {
             this._name = savedData.name

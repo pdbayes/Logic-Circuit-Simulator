@@ -61,16 +61,27 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
 
     public constructor(editor: LogicEditor, savedData: ALURepr | null) {
         super(editor, [[false, false, false, false], false, true], savedData, {
-            inOffsets: [
-                [-4, -8, "w"], [-4, -6, "w"], [-4, -4, "w"], [-4, -2, "w"], // A
-                [-4, 2, "w"], [-4, 4, "w"], [-4, 6, "w"], [-4, 8, "w"], // B
-                [0, -10, "n"], [-2, -10, "n"], // Op
-                [2, -10, "n"], // Cin
+            ins: [
+                // A
+                ["A0", -4, -8, "w", "A"],
+                ["A1", -4, -6, "w", "A"],
+                ["A2", -4, -4, "w", "A"],
+                ["A3", -4, -2, "w", "A"],
+                // B
+                ["B0", -4, 2, "w", "B"],
+                ["B1", -4, 4, "w", "B"],
+                ["B2", -4, 6, "w", "B"],
+                ["B3", -4, 8, "w", "B"],
+                ["Op0", 0, -10, "n", "Op"], ["Op1", -2, -10, "n", "Op"],
+                ["Cin (retenue d’entrée)", 2, -10, "n"],
             ],
-            outOffsets: [
-                [4, -3, "e"], [4, -1, "e"], [4, 1, "e"], [4, 3, "e"], // Y
-                [-1, 10, "s"], // V
-                [1, 10, "s"], // Z
+            outs: [
+                ["S0", 4, -3, "e", "S"],
+                ["S1", 4, -1, "e", "S"],
+                ["S2", 4, 1, "e", "S"],
+                ["S3", 4, 3, "e", "S"],
+                ["V (oVerflow)", -1, 10, "s"],
+                ["Z (Zero)", 1, 10, "s"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -88,35 +99,6 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
 
     public get componentType() {
         return "ic" as const
-    }
-
-    override getInputName(i: number): string | undefined {
-        if (i <= INPUT.A[INPUT.A.length - 1]) {
-            return "A" + i
-        }
-        if (i <= INPUT.B[INPUT.B.length - 1]) {
-            return "B" + (i - INPUT.B[0])
-        }
-        if (i <= INPUT.Op[INPUT.Op.length - 1]) {
-            return "Op" + (i - INPUT.Op[0])
-        }
-        if (i === INPUT.Cin) {
-            return "Cin (retenue d’entrée)"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        if (i <= OUTPUT.S[OUTPUT.S.length - 1]) {
-            return "S" + i
-        }
-        if (i === OUTPUT.V) {
-            return "V (oVerflow)"
-        }
-        if (i === OUTPUT.Z) {
-            return "Z (Zero)"
-        }
-        return undefined
     }
 
     get unrotatedWidth() {

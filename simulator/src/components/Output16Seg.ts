@@ -38,24 +38,24 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
 
     public constructor(editor: LogicEditor, savedData: Output16SegRepr | null) {
         super(editor, FixedArrayFill(false, 17), savedData, {
-            inOffsets: [
-                [-5, -4, "w"],
-                [-6, -3.5, "w"],
-                [-5, -3, "w"],
-                [-6, -2.5, "w"],
-                [-5, -2, "w"],
-                [-6, -1.5, "w"],
-                [-5, -1, "w"],
-                [-6, -0.5, "w"],
-                [-5, 0, "w"],
-                [-6, 0.5, "w"],
-                [-5, +1, "w"],
-                [-6, +1.5, "w"],
-                [-5, +2, "w"],
-                [-6, +2.5, "w"],
-                [-5, +3, "w"],
-                [-6, +3.5, "w"],
-                [-5, +4, "w"],
+            ins: [
+                ["a1", -5, -4, "w", "In"],
+                ["a2", -6, -3.5, "w", "In"],
+                ["b", -5, -3, "w", "In"],
+                ["c", -6, -2.5, "w", "In"],
+                ["d2", -5, -2, "w", "In"],
+                ["d1", -6, -1.5, "w", "In"],
+                ["e", -5, -1, "w", "In"],
+                ["f", -6, -0.5, "w", "In"],
+                ["g1", -5, 0, "w", "In"],
+                ["g2", -6, 0.5, "w", "In"],
+                ["h", -5, +1, "w", "In"],
+                ["i", -6, +1.5, "w", "In"],
+                ["j", -5, +2, "w", "In"],
+                ["k", -6, +2.5, "w", "In"],
+                ["l", -5, +3, "w", "In"],
+                ["m", -6, +3.5, "w", "In"],
+                ["p", -5, +4, "w", "In"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -85,29 +85,6 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
 
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.a1: return "a1"
-            case INPUT.a2: return "a2"
-            case INPUT.b: return "b"
-            case INPUT.c: return "c"
-            case INPUT.d2: return "d2"
-            case INPUT.d1: return "d1"
-            case INPUT.e: return "e"
-            case INPUT.f: return "f"
-            case INPUT.g1: return "g1"
-            case INPUT.g2: return "g2"
-            case INPUT.h: return "h"
-            case INPUT.i: return "i"
-            case INPUT.j: return "j"
-            case INPUT.k: return "k"
-            case INPUT.l: return "l"
-            case INPUT.m: return "m"
-            case INPUT.p: return "p"
-        }
-        return undefined
     }
 
     public override makeTooltip() {
@@ -245,8 +222,8 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "7px sans-serif"
 
-            this.inputs.forEach((input, i) => {
-                drawLabel(ctx, this.orient, this.getInputName(i)!, "w", left, input)
+            this.inputs.forEach(input => {
+                drawLabel(ctx, this.orient, input.name, "w", left, input)
             })
 
             if (isDefined(this._name)) {

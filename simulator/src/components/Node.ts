@@ -1,5 +1,5 @@
 import { isDefined, isUnknown, Mode, LogicValue, Unknown, toLogicValue, isNull, HighImpedance } from "../utils"
-import { ComponentState, InputNodeRepr, OutputNodeRepr } from "./Component"
+import { ComponentState, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
 import { Wire } from "./Wire"
@@ -27,7 +27,7 @@ export const DEFAULT_WIRE_COLOR = WireColor.black
 
 export type WireColor = keyof typeof WireColor
 
-abstract class NodeBase extends DrawableWithPosition {
+abstract class NodeBase<N extends Node> extends DrawableWithPosition {
 
     public readonly id: number
     private _isAlive = true
@@ -40,6 +40,8 @@ abstract class NodeBase extends DrawableWithPosition {
         editor: LogicEditor,
         nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
+        public readonly group: NodeGroup<N> | undefined,
+        public readonly name: string | undefined,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
         relativePosition: Orientation,
@@ -184,7 +186,7 @@ abstract class NodeBase extends DrawableWithPosition {
                 case "n": return [+this._gridOffsetY, -this._gridOffsetX]
             }
         })()
-        return this.trySetPosition(
+        return super.trySetPosition(
             this.parent.posX + appliedGridOffsetX * GRID_STEP,
             this.parent.posY + appliedGridOffsetY * GRID_STEP,
             false
@@ -235,7 +237,7 @@ abstract class NodeBase extends DrawableWithPosition {
 
 }
 
-export class NodeIn extends NodeBase {
+export class NodeIn extends NodeBase<NodeIn> {
 
     public readonly _tag = "_nodein"
 
@@ -278,8 +280,8 @@ export class NodeIn extends NodeBase {
 }
 
 
-export class NodeOut extends NodeBase {
-
+export class NodeOut extends NodeBase<NodeOut> {
+    
     public readonly _tag = "_nodeout"
 
     private readonly _outgoingWires: Wire[] = []
@@ -301,6 +303,10 @@ export class NodeOut extends NodeBase {
 
     get isDisconnected() {
         return this._outgoingWires.length === 0
+    }
+    
+    findWireTo(node: NodeIn): Wire | undefined {
+        return this._outgoingWires.find(wire => wire.endNode === node)
     }
 
     get forceValue() {

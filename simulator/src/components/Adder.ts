@@ -28,8 +28,8 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
 
     public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
         super(editor, [false, false], savedData, {
-            inOffsets: [[-2, -4, "n"], [2, -4, "n"], [5, 0, "e"]],
-            outOffsets: [[0, 4, "s"], [-5, 0, "w"]],
+            ins: [["A", -2, -4, "n"], ["B", 2, -4, "n"], ["Cin (retenue précédente)", 5, 0, "e"]],
+            outs: [["S (somme)", 0, 4, "s"], ["Cout (retenue)", -5, 0, "w"]],
         })
     }
 
@@ -42,23 +42,6 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
 
     public get componentType() {
         return "ic" as const
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.A: return "A"
-            case INPUT.B: return "B"
-            case INPUT.Cin: return "Cin (retenue précédente)"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.S: return "S (somme)"
-            case OUTPUT.Cout: return "Cout (retenue)"
-        }
-        return undefined
     }
 
     get unrotatedWidth() {

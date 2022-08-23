@@ -109,18 +109,58 @@ export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs
     return t.intersection([ComponentRepr(n, m), savedData], savedData.name)
 }
 
-export type NodeOffset = [number, number, Orientation]
+export type NodeVisualNoGroup = readonly [string | undefined, number, number, Orientation]
+export type NodeVisualWithGroup = readonly [string | undefined, number, number, Orientation, string]
+export type NodeVisual = NodeVisualNoGroup | NodeVisualWithGroup
 
-// Node offsets are not stored in JSON, but provided by the concrete
+function hasGroup(nodeVisual: NodeVisual): nodeVisual is NodeVisualWithGroup {
+    return nodeVisual.length === 5
+}
+
+export class NodeGroup<N extends Node> {
+
+    private _nodes: N[] = []
+
+    public constructor(
+        public readonly parent: Component,
+        public readonly name: string,
+    ) {
+    }
+
+    public get nodes(): readonly N[] {
+        return this._nodes
+    }
+    
+    public addNode(node: N) {
+        this._nodes.push(node)
+    }
+
+    public indexOf(node: Node): number {
+        for (let i = 0; i < this._nodes.length; i++) {
+            if (this._nodes[i] === node) {
+                return i
+            }
+        }
+        return -1
+    }
+
+}
+
+
+// Node visuals are not stored in JSON, but provided by the concrete
 // subclasses to the Component superclass to indicate where to place
 // the input and output nodes. Strong typing allows us to check the
 // size of the passed arrays in the super() call.
-export type NodeOffsets<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>
+export type NodeVisuals<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize>
     // eslint-disable-next-line @typescript-eslint/ban-types
-    = (NumInputs extends 0 ? {} : { inOffsets: FixedArray<NodeOffset, NumInputs> })
+    = (NumInputs extends 0 ? {} : { ins: FixedArray<NodeVisual, NumInputs> })
     // eslint-disable-next-line @typescript-eslint/ban-types
-    & (NumOutputs extends 0 ? {} : { outOffsets: FixedArray<NodeOffset, NumOutputs> })
+    & (NumOutputs extends 0 ? {} : { outs: FixedArray<NodeVisual, NumOutputs> })
 
+// Given an "as const" variable with NodeVisuals for in or out, this allows stuff like
+//   type OutName = NodeNamesFrom<typeof outs>
+// to statically yield a disjunction type of all node names
+export type NodeNamesFrom<V extends ReadonlyArray<NodeVisual>> = V[number][0]
 
 export enum ComponentState {
     SPAWNING,
@@ -177,29 +217,31 @@ export abstract class ComponentBase<
 
     private _state: ComponentState
     protected readonly inputs: FixedArray<NodeIn, NumInputs>
+    private readonly _inputGroups: Map<string, NodeGroup<NodeIn>> | undefined
     protected readonly outputs: FixedArray<NodeOut, NumOutputs>
+    private readonly _outputGroups: Map<string, NodeGroup<NodeOut>> | undefined
 
     protected constructor(
         editor: LogicEditor,
         private _value: Value,
         savedData: Repr | null,
-        nodeOffsets: NodeOffsets<NumInputs, NumOutputs>) {
+        nodeOffsets: NodeVisuals<NumInputs, NumOutputs>) {
         super(editor, savedData)
 
         // hack to get around the inOffsets and outOffsets properties
         // being inferred as nonexistant (basically, the '"key" in savedData'
         // check fails to provide enough info for type narrowing)
-        type NodeOffsetsKey = keyof NodeOffsets<1, 0> | keyof NodeOffsets<0, 1>
-        function get(key: NodeOffsetsKey): ReadonlyArray<[number, number, Orientation]> {
+        type NodeOffsetsKey = keyof NodeVisuals<1, 0> | keyof NodeVisuals<0, 1>
+        function get(key: NodeOffsetsKey): ReadonlyArray<NodeVisual> {
             if (key in nodeOffsets) {
-                return (nodeOffsets as any as NodeOffsets<1, 1>)[key]
+                return (nodeOffsets as any as NodeVisuals<1, 1>)[key]
             } else {
                 return [] as const
             }
         }
 
-        const inOffsets = get("inOffsets")
-        const outOffsets = get("outOffsets")
+        const inOffsets = get("ins")
+        const outOffsets = get("outs")
         const numInputs = inOffsets.length as NumInputs
         const numOutputs = outOffsets.length as NumOutputs
 
@@ -214,7 +256,7 @@ export abstract class ComponentBase<
         }
 
         // build node specs either from scratch if new or from saved data
-        const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
+        const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] = this.nodeSpecsFromRepr(savedData, numInputs, numOutputs);
 
         // so, hasAnyPrecomputedInitialValues is true if ANY of the outputs was built
         // with "initialValue" in the JSON. This is used to stabilize circuits (such as
@@ -224,8 +266,8 @@ export abstract class ComponentBase<
         // to set all of them.
 
         // generate the input and output nodes
-        this.inputs = this.makeNodes(inOffsets, inputSpecs, NodeIn) as FixedArray<NodeIn, NumInputs>
-        this.outputs = this.makeNodes(outOffsets, outputSpecs, NodeOut) as FixedArray<NodeOut, NumOutputs>
+        [this.inputs, this._inputGroups] = this.makeNodes<NodeIn, NumInputs>(inOffsets, inputSpecs, NodeIn);
+        [this.outputs, this._outputGroups] = this.makeNodes<NodeOut, NumOutputs>(outOffsets, outputSpecs, NodeOut)
 
         // setNeedsRecalc with a force propadation is needed:
         // * the forced propagation allows the current value (e.g. for InputBits)
@@ -256,23 +298,46 @@ export abstract class ComponentBase<
 
     // creates the input/output nodes based on array of offsets (provided
     // by subclass) and spec (either loaded from JSON repr or newly generated)
-    private makeNodes<N extends Node>(
-        offsets: readonly [number, number, Orientation][],
+    private makeNodes<N extends Node, Num extends FixedArraySize>(
+        nodeVisuals: readonly NodeVisual[],
         specs: readonly (InputNodeRepr | OutputNodeRepr)[], node: new (
             editor: LogicEditor,
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
+            group: NodeGroup<N> | undefined,
+            name: string | undefined,
             _gridOffsetX: number,
             _gridOffsetY: number,
             relativePosition: Orientation,
-        ) => N): readonly N[] {
+        ) => N): [FixedArray<N, Num>, Map<string, NodeGroup<N>> | undefined] {
 
         const nodes: N[] = []
-        for (let i = 0; i < offsets.length; i++) {
-            const gridOffset = offsets[i]
-            nodes.push(new node(this.editor, specs[i], this, gridOffset[0], gridOffset[1], gridOffset[2]))
+        let groupMap: Map<string, NodeGroup<N>> | undefined = undefined
+
+        for (let i = 0; i < nodeVisuals.length; i++) {
+            const nodeVisual = nodeVisuals[i]
+            let group: NodeGroup<N> | undefined = undefined
+            const [name, offsetX, offsetY, orient] = nodeVisual
+            if (hasGroup(nodeVisual)) {
+                const groupName = nodeVisual[4]
+                // lazily create group map
+                if (isUndefined(groupMap)) {
+                    groupMap = new Map<string, NodeGroup<N>>()
+                }
+                group = groupMap.get(groupName)
+                if (isUndefined(group)) {
+                    group = new NodeGroup<N>(this, groupName)
+                    groupMap.set(groupName, group)
+                }
+            }
+            const newNode = new node(this.editor, specs[i], this, group, name, offsetX, offsetY, orient)
+            nodes.push(newNode)
+            if (isDefined(group)) {
+                group.addNode(newNode)
+            }
         }
-        return nodes
+
+        return [nodes as FixedArray<N, Num>, groupMap]
     }
 
     // generates two arrays of normalized node specs either as loaded from
@@ -432,32 +497,6 @@ export abstract class ComponentBase<
     }
 
     public abstract get componentType(): ComponentType
-
-    public getInputName(__i: number): string | undefined {
-        return undefined
-    }
-
-    public getInputNodeName(node: NodeIn): string | undefined {
-        for (let i = 0; i < this.inputs.length; i++) {
-            if (this.inputs[i] === node) {
-                return this.getInputName(i)
-            }
-        }
-        return undefined
-    }
-
-    public getOutputName(__i: number): string | undefined {
-        return undefined
-    }
-
-    public getOutputNodeName(node: NodeOut): string | undefined {
-        for (let i = 0; i < this.outputs.length; i++) {
-            if (this.outputs[i] === node) {
-                return this.getOutputName(i)
-            }
-        }
-        return undefined
-    }
 
     public get state() {
         return this._state
@@ -727,11 +766,10 @@ export abstract class ComponentBase<
             ])
 
         } else {
-            const makeName = (i: number) => this.getOutputName(i) ?? "Sortie " + (i + 1)
             return ContextMenuData.submenu("force", "Forcer une sortie", [
-                ...asArray(this.outputs).map((out, i) => {
+                ...asArray(this.outputs).map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
-                    return ContextMenuData.submenu(icon, makeName(i),
+                    return ContextMenuData.submenu(icon, "Sortie " + out.name,
                         makeOutputItems(out)
                     )
                 }),
@@ -783,7 +821,6 @@ export abstract class ComponentBase<
 }
 
 
-// type ReprType<Repr extends t.Mixed> = PartialWhereUndefinedRecursively<t.TypeOf<Repr>>
 type ReprType<Repr extends t.Mixed> = Expand<t.TypeOf<Repr>>
 
 export function defineComponent<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, T extends t.Mixed>(numInputs: NumInputs, numOutputs: NumOutputs, type: T) {

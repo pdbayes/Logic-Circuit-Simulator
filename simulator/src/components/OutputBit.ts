@@ -19,7 +19,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
     private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBitRepr | null) {
-        super(editor, false, savedData, { inOffsets: [[-3, 0, "w"]] })
+        super(editor, false, savedData, { ins: [[undefined, -3, 0, "w"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
         }
@@ -103,11 +103,8 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         }
         const [inNode, comp, outNode] = newLinks[0]
         if (outNode instanceof NodeOut) {
-            if (isUndefined(this._name)) {
-                const name = comp.getOutputNodeName(outNode)
-                if (isDefined(name)) {
-                    this.doSetName(name)
-                }
+            if (isUndefined(this._name) && isDefined(outNode.name)) {
+                this.doSetName(outNode.name)
             }
         }
 

@@ -1,4 +1,4 @@
-import { isDefined, LogicValue } from "../utils"
+import { LogicValue } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
@@ -22,7 +22,7 @@ export class FlipflopD extends Flipflop<1, FlipflopDRepr> {
 
     public constructor(editor: LogicEditor, savedData: FlipflopDRepr | null) {
         super(editor, savedData, {
-            inOffsets: [[-4, -2, "w"]],
+            ins: [["D (donnée)", -4, -2, "w"]],
             clockYOffset: 2,
         })
     }
@@ -32,17 +32,6 @@ export class FlipflopD extends Flipflop<1, FlipflopDRepr> {
             type: "flipflop-d" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    override getInputName(i: number): string | undefined {
-        const superName = super.getInputName(i)
-        if (isDefined(superName)) {
-            return superName
-        }
-        switch (i) {
-            case INPUT.D: return "D (donnée)"
-        }
-        return undefined
     }
 
     public override makeTooltip() {

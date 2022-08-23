@@ -59,7 +59,7 @@ const LabelRectDefaults = {
     rounded: false,
     caption: undefined as string | undefined,
     captionPos: CaptionPosition.n,
-    captionInside: true,
+    captionInside: false,
     font: FONT_LABEL_DEFAULT,
 }
 
@@ -407,11 +407,16 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             }
         }
 
-        const x = (left + right) / 2
-        const y = (top + bottom) / 2
+        const tryX = (left + right) / 2
+        const tryY = (top + bottom) / 2
+        const [x, y] = this.trySetPosition(tryX, tryY, true) ?? [tryX, tryY]
+
+        left = Math.floor((left + Math.max(0, tryX - x)) / GRID_STEP) * GRID_STEP
+        top = Math.floor((top + Math.max(0, tryY - y)) / GRID_STEP) * GRID_STEP
+        right = Math.ceil((right + Math.max(0, x - tryX)) / GRID_STEP) * GRID_STEP
+        bottom = Math.ceil((bottom + Math.max(0, y - tryY)) / GRID_STEP) * GRID_STEP
         const w = right - left + 4 * GRID_STEP
         const h = bottom - top + 4 * GRID_STEP
-        this.trySetPosition(x, y, true)
         this.doSetDimensions(w, h)
     }
 

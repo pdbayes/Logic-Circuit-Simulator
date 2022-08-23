@@ -19,7 +19,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
     private _name: ComponentName = undefined
 
     protected constructor(editor: LogicEditor, initialValue: LogicValue, savedData: Repr | null) {
-        super(editor, initialValue, savedData, { outOffsets: [[+3, 0, "e"]] })
+        super(editor, initialValue, savedData, { outs: [[undefined, +3, 0, "e"]] })
         if (isNotNull(savedData)) {
             this._name = savedData.name
         }
@@ -111,11 +111,8 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
             if (inNode._prefersSpike) {
                 this.doSetIsPushButton(true)
             }
-            if (isUndefined(this._name)) {
-                const name = comp.getInputNodeName(inNode)
-                if (isDefined(name)) {
-                    this.doSetName(name)
-                }
+            if (isUndefined(this._name) && isDefined(inNode.name)) {
+                this.doSetName(inNode.name)
             }
         }
         if (outNode.orient !== "e") {

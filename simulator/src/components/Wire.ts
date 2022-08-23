@@ -1,12 +1,13 @@
 import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicValue, typeOrUndefined } from "../utils"
-import { Node, NodeIn, WireColor } from "./Node"
+import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 import * as t from "io-ts"
-import { NodeID } from "./Component"
-import { COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
+import { NodeGroup, NodeID } from "./Component"
+import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNSET, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
 import { span, style, title } from "../htmlgen"
+import { Bezier, Offset } from "bezier-js"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -65,7 +66,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     public getPrevAndNextAnchors(): [DrawableWithPosition, DrawableWithPosition] {
         const waypoints = this.parent.waypoints
         const index = waypoints.indexOf(this)
-        const prev = index > 0 ? waypoints[index -1] : this.parent.startNode
+        const prev = index > 0 ? waypoints[index - 1] : this.parent.startNode
         const next = index < waypoints.length - 1 ? waypoints[index + 1] : (this.parent.endNode ?? this.parent.startNode)
         return [prev, next]
     }
@@ -143,9 +144,10 @@ export class Wire extends Drawable {
     private _propagatingValues: [LogicValue, Timestamp][] = []
     private _style: WireStyle | undefined = undefined
     public customPropagationDelay: number | undefined = undefined
+    public ribbon: Ribbon | undefined = undefined
 
     constructor(
-        private _startNode: Node
+        private _startNode: Node // not NodeOut since we can start from the end
     ) {
         super(_startNode.editor)
         const editor = _startNode.editor
@@ -175,7 +177,7 @@ export class Wire extends Drawable {
         return this._startNode
     }
 
-    public get endNode(): Node | null {
+    public get endNode(): NodeIn | null {
         return this._endNode
     }
 
@@ -535,10 +537,170 @@ function bezierAnchorForWire(wireProlongDirection: Orientation, x: number, y: nu
     }
 }
 
+export class Ribbon extends Drawable {
+
+    private _startGroupStartIndex = Number.MAX_SAFE_INTEGER
+    private _startGroupEndIndex = Number.MIN_SAFE_INTEGER
+    private _endGroupStartIndex = Number.MAX_SAFE_INTEGER
+    private _endGroupEndIndex = Number.MIN_SAFE_INTEGER
+    private _coveredWires: Wire[] = []
+    private _startNodes: NodeOut[] = []
+    private _endNodes: NodeIn[] = []
+
+    constructor(editor: LogicEditor,
+        public readonly startNodeGroup: NodeGroup<NodeOut>,
+        public readonly endNodeGroup: NodeGroup<NodeIn>,
+    ) {
+        super(editor)
+    }
+
+    addCoveredWire(wire: Wire, newNodeGroupStartIndex: number, newNodeGroupEndIndex: number) {
+        this._coveredWires.push(wire)
+        this._startGroupStartIndex = Math.min(this._startGroupStartIndex, newNodeGroupStartIndex)
+        this._startGroupEndIndex = Math.max(this._startGroupEndIndex, newNodeGroupStartIndex)
+        this._endGroupStartIndex = Math.min(this._endGroupStartIndex, newNodeGroupEndIndex)
+        this._endGroupEndIndex = Math.max(this._endGroupEndIndex, newNodeGroupEndIndex)
+    }
+
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+        const [[startX, startY], startOrient] = this.drawRibbonEnd(g, ctx, this.startNodeGroup, this._startGroupStartIndex, this._startGroupEndIndex)
+        const [[endX, endY], endOrient] = this.drawRibbonEnd(g, ctx, this.endNodeGroup, this._endGroupStartIndex, this._endGroupEndIndex)
+
+        const deltaX = endX - startX
+        const deltaY = endY - startY
+        // bezier curve
+        const bezierAnchorPointDistX = Math.max(25, Math.abs(deltaX) / 3)
+        const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3)
+
+        // first anchor point
+        const [anchor1X, anchor1Y] = bezierAnchorForWire(Orientation.invert(startOrient), startX, startY, bezierAnchorPointDistX, bezierAnchorPointDistY)
+        const [anchor2X, anchor2Y] = bezierAnchorForWire(Orientation.invert(endOrient), endX, endY, bezierAnchorPointDistX, bezierAnchorPointDistY)
+
+        const b = new Bezier(startX, startY, anchor1X, anchor1Y, anchor2X, anchor2Y, endX, endY)
+
+        const values: LogicValue[] = []
+        for (let i = this._startGroupStartIndex; i <= this._startGroupEndIndex; i++) {
+            values.push(this.startNodeGroup.nodes[i].value)
+        }
+        this.strokeWireBezier(g, b, values, WireColor.black, ctx.isMouseOver, false)
+    }
+
+    private strokeWireBezier(g: CanvasRenderingContext2D, b: Bezier, values: LogicValue[], color: WireColor, isMouseOver: boolean, neutral: boolean) {
+        const numWires = values.length
+
+        const WIRE_MARGIN_OUTER = (numWires === 1) ? 1 : (numWires <= 4 || numWires > 8) ? 2 : 3
+        const WIRE_MARGIN_INNER = 1
+        const WIRE_WIDTH = (numWires <= 8) ? 2 : 1
+
+        if (numWires === 0) {
+            return
+        }
+
+        const totalWidth = 2 * WIRE_MARGIN_OUTER + numWires * WIRE_WIDTH + (numWires - 1) * WIRE_MARGIN_INNER
+
+        const addBezierToPath = (b: Bezier) => {
+            const [p0, a0, a1, p1] = b.points
+            g.moveTo(p0.x, p0.y)
+            g.bezierCurveTo(a0.x, a0.y, a1.x, a1.y, p1.x, p1.y)
+        }
+
+        const drawBezier = (b: Bezier) => {
+            g.beginPath()
+            addBezierToPath(b)
+            g.stroke()
+        }
+
+        const drawBeziers = (bs: Offset | Bezier[]) => {
+            if (Array.isArray(bs)) {
+                g.beginPath()
+                for (const bb of bs) {
+                    addBezierToPath(bb)
+                }
+                g.stroke()
+            }
+        }
+
+        const oldLineCap = g.lineCap
+        g.lineCap = "butt"
+
+        // margin
+        if (isMouseOver) {
+            g.lineWidth = totalWidth + 2
+            g.strokeStyle = COLOR_MOUSE_OVER
+            drawBezier(b)
+            g.lineWidth = totalWidth - 2 * WIRE_MARGIN_OUTER
+        } else {
+            g.lineWidth = totalWidth
+        }
+
+        g.strokeStyle = COLOR_WIRE[color]
+        drawBezier(b)
+
+        g.lineWidth = WIRE_WIDTH
+        let dist = -((numWires - 1) / 2) * (WIRE_WIDTH + WIRE_MARGIN_INNER)
+        for (const value of values) {
+            g.strokeStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
+            const b1 = b.offset(dist)
+            drawBeziers(b1)
+            dist += WIRE_WIDTH + WIRE_MARGIN_INNER
+        }
+
+        // restore
+        g.lineCap = oldLineCap
+    }
+
+    private drawRibbonEnd(g: CanvasRenderingContext2D, ctx: DrawContext, nodeGroup: NodeGroup<Node>, startIndex: number, endIndex: number): [readonly [number, number], Orientation] {
+        const nodes = nodeGroup.nodes
+        const orient = nodes[startIndex].orient
+        const numNodes = endIndex - startIndex + 1
+
+        let minX = Number.POSITIVE_INFINITY
+        let minY = Number.POSITIVE_INFINITY
+        let maxX = Number.NEGATIVE_INFINITY
+        let maxY = Number.NEGATIVE_INFINITY
+        let sumX = 0
+        let sumY = 0
+        for (let i = startIndex; i <= endIndex; i++) {
+            const node = nodes[i]
+            const x = node.posX
+            const y = node.posY
+            minX = Math.min(minX, x)
+            minY = Math.min(minY, y)
+            maxX = Math.max(maxX, x)
+            maxY = Math.max(maxY, y)
+            sumX += x
+            sumY += y
+        }
+
+        const [[startX, startY], [endX, endY], mid] = (() => {
+            switch (orient) {
+                case "e": return [[maxX, minY], [maxX, maxY], [maxX, sumY / numNodes]] as const
+                case "w": return [[minX, minY], [minX, maxY], [minX, sumY / numNodes]] as const
+                case "s": return [[minX, minY], [maxX, minY], [sumX / numNodes, minY]] as const
+                case "n": return [[minX, maxY], [maxX, maxY], [sumX / numNodes, maxY]] as const
+            }
+        })()
+
+        drawStraightWireLine(g, startX, startY, endX, endY, "Z", "black", true)
+        return [mid, orient]
+    }
+
+
+    public isOver(x: number, y: number): boolean {
+        return false // TODO
+    }
+    public isInRect(rect: DOMRect): boolean {
+        return false // TODO
+    }
+
+}
+
+
 export class WireManager {
 
     public readonly editor: LogicEditor
     private readonly _wires: Wire[] = []
+    private readonly _ribbons: Ribbon[] = []
     private _isAddingWire = false
 
     constructor(editor: LogicEditor) {
@@ -549,18 +711,32 @@ export class WireManager {
         return this._wires
     }
 
+    public get ribbons(): readonly Ribbon[] {
+        return this._ribbons
+    }
+
     public get isAddingWire() {
         return this._isAddingWire
     }
 
     draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
         this.removeDeadWires()
+        const useRibbons = this.editor.options.groupParallelWires
+        if (useRibbons) {
+            for (const ribbon of this._ribbons) {
+                ribbon.draw(g, drawParams)
+            }
+        }
         for (const wire of this._wires) {
+            if (useRibbons && isDefined(wire.ribbon)) {
+                continue
+            }
             wire.draw(g, drawParams)
             for (const waypoint of wire.waypoints) {
                 waypoint.draw(g, drawParams)
             }
         }
+
     }
 
     private removeDeadWires() {
@@ -611,6 +787,7 @@ export class WireManager {
                 this._wires.length--
             } else {
                 completedWire = currentWire
+                this.tryMergeWire(completedWire)
                 this.editor.setDirty("added wire")
             }
 
@@ -621,7 +798,54 @@ export class WireManager {
         return completedWire
     }
 
+    private tryMergeWire(wire: Wire) {
+        const startNode = wire.startNode
+        const endNode = wire.endNode
+        if (endNode === null || !(startNode instanceof NodeOut)) {
+            return
+        }
+
+        const startGroup = startNode.group
+        const endGroup = endNode.group
+        if (isUndefined(startGroup) || isUndefined(endGroup)) {
+            return
+        }
+
+        const findWire = (group1: NodeGroup<NodeOut>, i1: number, group2: NodeGroup<NodeIn>, i2: number): Wire | undefined => {
+            if (i1 < 0 || i2 < 0 || i1 >= group1.nodes.length || i2 >= group2.nodes.length) {
+                return undefined
+            }
+            return group1.nodes[i1].findWireTo(group2.nodes[i2])
+        }
+
+        const indexStart = startGroup.nodes.indexOf(startNode)
+        const indexEnd = endGroup.nodes.indexOf(endNode)
+
+        const wireBefore = findWire(startGroup, indexStart - 1, endGroup, indexEnd - 1)
+        if (isDefined(wireBefore)) {
+            let ribbon = wireBefore.ribbon
+            if (isUndefined(ribbon)) {
+                ribbon = new Ribbon(startNode.editor, startGroup, endGroup)
+                this._ribbons.push(ribbon) // TODO determine when we must remove them
+                wireBefore.ribbon = ribbon
+                ribbon.addCoveredWire(wireBefore, indexStart - 1, indexEnd - 1)
+            }
+            ribbon.addCoveredWire(wire, indexStart, indexEnd)
+            wire.ribbon = ribbon
+        }
+
+        // TODO merge after, too!
+
+        // if (isDefined(wireAfter)) {
+        //     console.log("we have a wire after")
+        // }
+
+
+        // const wireAfter = findWire(startGroup, indexStart + 1, endGroup, indexEnd + 1)
+    }
+
     deleteWire(wire: Wire) {
+        // TODO check in ribbon
         wire.destroy()
         for (let i = 0; i < this._wires.length; i++) {
             if (this._wires[i] === wire) {
@@ -633,6 +857,7 @@ export class WireManager {
     }
 
     clearAllWires() {
+        // TODO clear ribbons
         for (const wire of this._wires) {
             wire.destroy()
         }

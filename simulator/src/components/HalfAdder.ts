@@ -28,8 +28,14 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
 
     public constructor(editor: LogicEditor, savedData: HalfAdderRepr | null) {
         super(editor, [false, false], savedData, {
-            inOffsets: [[-4, -2, "w"], [-4, 2, "w"]],
-            outOffsets: [[4, -2, "e"], [4, 2, "e"]],
+            ins: [
+                ["A", -4, -2, "w"],
+                ["B", -4, 2, "w"],
+            ],
+            outs: [
+                ["S (somme)", 4, -2, "e"],
+                ["C (retenue)", 4, 2, "e"],
+            ],
         })
     }
 
@@ -42,22 +48,6 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
 
     public get componentType() {
         return "ic" as const
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.A: return "A"
-            case INPUT.B: return "B"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.S: return "S (somme)"
-            case OUTPUT.C: return "C (retenue)"
-        }
-        return undefined
     }
 
     get unrotatedWidth() {
@@ -134,7 +124,7 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
 
             drawLabel(ctx, this.orient, "S", "e", right, this.outputs[OUTPUT.S])
             drawLabel(ctx, this.orient, "C", "e", right, this.outputs[OUTPUT.C])
-            
+
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "26px sans-serif"
             g.textAlign = "center"

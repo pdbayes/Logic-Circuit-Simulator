@@ -28,7 +28,15 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
 
     public constructor(editor: LogicEditor, savedData: OutputAsciiRepr | null) {
         super(editor, ["0000000", 0], savedData, {
-            inOffsets: [[-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"]],
+            ins: [
+                ["Z0", -3, -3, "w", "Z"],
+                ["Z1", -3, -2, "w", "Z"],
+                ["Z2", -3, -1, "w", "Z"],
+                ["Z3", -3, 0, "w", "Z"],
+                ["Z4", -3, +1, "w", "Z"],
+                ["Z5", -3, +2, "w", "Z"],
+                ["Z6", -3, +3, "w", "Z"],
+            ],
         })
         if (isNotNull(savedData)) {
             this._name = savedData.name

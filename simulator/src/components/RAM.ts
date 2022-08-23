@@ -88,15 +88,27 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     public constructor(editor: LogicEditor, savedData: RAM16x4Repr | null) {
         super(editor, RAM16by4.savedStateFrom(savedData), savedData, {
-            inOffsets: [
-                [-7, +6, "w"], // Clock
-                [-2, +8, "s"], // WriteEnable
-                [+2, +8, "s"], // Clear
-                [-7, -3, "w"], [-7, -1, "w"], [-7, +1, "w"], [-7, 3, "w"], // Data in
-                [+3, -8, "n"], [+1, -8, "n"], [-1, -8, "n"], [-3, -8, "n"], // Address
+            ins: [
+                ["Clock (horloge)", -7, +6, "w"], // Clock
+                ["WE (Write Enable)", -2, +8, "s"], // WriteEnable
+                ["C (Clear, mise à 0)", +2, +8, "s"], // Clear
+                // Data in
+                ["D0", -7, -3, "w", "D"],
+                ["D1", -7, -1, "w", "D"],
+                ["D2", -7, +1, "w", "D"],
+                ["D3", -7, 3, "w", "D"],
+                // Address
+                ["Addr0", +3, -8, "n", "Addr"],
+                ["Addr1", +1, -8, "n", "Addr"],
+                ["Addr2", -1, -8, "n", "Addr"],
+                ["Addr3", -3, -8, "n", "Addr"],
             ],
-            outOffsets: [
-                [+7, -3, "e"], [+7, -1, "e"], [+7, +1, "e"], [+7, 3, "e"], // Data out
+            outs: [
+                // Data out
+                ["Q0", +7, -3, "e", "Q"],
+                ["Q1", +7, -1, "e", "Q"],
+                ["Q2", +7, +1, "e", "Q"],
+                ["Q3", +7, 3, "e", "Q"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -146,28 +158,6 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
             }
         }
         return cells.length === 0 ? undefined : cells
-    }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.Clock: return "Clock (horloge)"
-            case INPUT.WriteEnable: return "WE (Write Enable)"
-            case INPUT.Clear: return "C (Clear, mise à 0)"
-        }
-        if (i <= INPUT.Data[INPUT.Data.length - 1]) {
-            return "D" + (i - INPUT.Data[0])
-        }
-        if (i <= INPUT.Address[INPUT.Address.length - 1]) {
-            return "Addr" + (i - INPUT.Address[0])
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        if (i <= OUTPUT.Q[OUTPUT.Q.length - 1]) {
-            return "Q" + (i - OUTPUT.Q[0])
-        }
-        return undefined
     }
 
     public override makeTooltip() {

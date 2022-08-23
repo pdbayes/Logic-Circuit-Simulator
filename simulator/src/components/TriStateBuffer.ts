@@ -28,8 +28,11 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
 
     public constructor(editor: LogicEditor, savedData: TriStateBufferRepr | null) {
         super(editor, HighImpedance, savedData, {
-            inOffsets: [[-4, 0, "w"], [0, -3, "n"]],
-            outOffsets: [[+4, 0, "e"]],
+            ins: [
+                ["In", -4, 0, "w"],
+                ["E (enable)", 0, -3, "n"],
+            ],
+            outs: [["Out", +4, 0, "e"]],
         })
     }
 
@@ -51,22 +54,6 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
-
-    override getInputName(i: number): string | undefined {
-        switch (i) {
-            case INPUT.In: return "In"
-            case INPUT.Enable: return "E (enable)"
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.Out: return "Out"
-        }
-        return undefined
-    }
-
 
     public override makeTooltip() {
         return tooltipContent("Sortie à 3 états", mods(

@@ -15,9 +15,9 @@ const INPUT = {
     I: [0, 1, 2, 3, 4, 5, 6] as const,
 }
 
-const enum OUTPUT {
-    a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p
-}
+// const enum OUTPUT {
+//     a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p
+// }
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 10
@@ -28,27 +28,33 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
 
     public constructor(editor: LogicEditor, savedData: Decoder16SegRepr | null) {
         super(editor, FixedArrayFill(false, 17), savedData, {
-            inOffsets: [
-                [-3, -3, "w"], [-3, -2, "w"], [-3, -1, "w"], [-3, 0, "w"], [-3, +1, "w"], [-3, +2, "w"], [-3, +3, "w"],
+            ins: [
+                ["I0", -3, -3, "w", "In"],
+                ["I1", -3, -2, "w", "In"],
+                ["I2", -3, -1, "w", "In"],
+                ["I3", -3, 0, "w", "In"],
+                ["I4", -3, +1, "w", "In"],
+                ["I5", -3, +2, "w", "In"],
+                ["I6", -3, +3, "w", "In"],
             ],
-            outOffsets: [
-                [+4, -4, "e"],
-                [+3, -3.5, "e"],
-                [+4, -3, "e"],
-                [+3, -2.5, "e"],
-                [+4, -2, "e"],
-                [+3, -1.5, "e"],
-                [+4, -1, "e"],
-                [+3, -0.5, "e"],
-                [+4, 0, "e"],
-                [+3, 0.5, "e"],
-                [+4, +1, "e"],
-                [+3, +1.5, "e"],
-                [+4, +2, "e"],
-                [+3, +2.5, "e"],
-                [+4, +3, "e"],
-                [+3, +3.5, "e"],
-                [+4, +4, "e"],
+            outs: [
+                ["a1", +4, -4, "e", "Out"],
+                ["a2", +3, -3.5, "e", "Out"],
+                ["b", +4, -3, "e", "Out"],
+                ["c", +3, -2.5, "e", "Out"],
+                ["d2", +4, -2, "e", "Out"],
+                ["d1", +3, -1.5, "e", "Out"],
+                ["e", +4, -1, "e", "Out"],
+                ["f", +3, -0.5, "e", "Out"],
+                ["g1", +4, 0, "e", "Out"],
+                ["g2", +3, 0.5, "e", "Out"],
+                ["h", +4, +1, "e", "Out"],
+                ["i", +3, +1.5, "e", "Out"],
+                ["j", +4, +2, "e", "Out"],
+                ["k", +3, +2.5, "e", "Out"],
+                ["l", +4, +3, "e", "Out"],
+                ["m", +3, +3.5, "e", "Out"],
+                ["p", +4, +4, "e", "Out"],
             ],
         })
     }
@@ -71,37 +77,6 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
     get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
-
-    override getInputName(i: number): string | undefined {
-        if (i < INPUT.I.length) {
-            return "I" + i
-        }
-        return undefined
-    }
-
-    override getOutputName(i: number): string | undefined {
-        switch (i) {
-            case OUTPUT.a1: return "a1"
-            case OUTPUT.a2: return "a2"
-            case OUTPUT.b: return "b"
-            case OUTPUT.c: return "c"
-            case OUTPUT.d2: return "d2"
-            case OUTPUT.d1: return "d1"
-            case OUTPUT.e: return "e"
-            case OUTPUT.f: return "f"
-            case OUTPUT.g1: return "g1"
-            case OUTPUT.g2: return "g2"
-            case OUTPUT.h: return "h"
-            case OUTPUT.i: return "i"
-            case OUTPUT.j: return "j"
-            case OUTPUT.k: return "k"
-            case OUTPUT.l: return "l"
-            case OUTPUT.m: return "m"
-            case OUTPUT.p: return "p"
-        }
-        return undefined
-    }
-
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
@@ -167,8 +142,8 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
             drawLabel(ctx, this.orient, "C", "w", left, this.posY)
 
             g.font = "7px sans-serif"
-            this.outputs.forEach((output, i) => {
-                drawLabel(ctx, this.orient, this.getOutputName(i)!, "e", right, output)
+            this.outputs.forEach(output => {
+                drawLabel(ctx, this.orient, output.name, "e", right, output)
             })
 
         })
