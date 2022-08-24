@@ -74,18 +74,21 @@ export let COLOR_RECTANGLE_BACKGROUND: { [C in RectangleColor]: ColorString }
 export let COLOR_RECTANGLE_BORDER: { [C in RectangleColor]: ColorString }
 export let PATTERN_STRIPED_GRAY: CanvasPattern
 
-export const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
-darkModeQuery.onchange = () => {
-    setColors(darkModeQuery.matches)
-    for (const editor of LogicEditor.allConnectedEditors) {
-        editor.wrapHandler(() => {
-            editor.redrawMgr.addReason("dark/light mode switch", null)
-        })
+let _currentModeIsDark = false
+doSetColors(_currentModeIsDark)
+
+export function setColors(darkMode: boolean) {
+    if (darkMode !== _currentModeIsDark) {
+        doSetColors(darkMode)
+        for (const editor of LogicEditor.allConnectedEditors) {
+            editor.wrapHandler(() => {
+                editor.redrawMgr.addReason("dark/light mode switch", null)
+            })()
+        }
     }
 }
-setColors(darkModeQuery.matches)
 
-function setColors(darkMode: boolean) {
+function doSetColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
         COLOR_BACKGROUND = ColorString(0xFF)
@@ -125,8 +128,8 @@ function setColors(darkMode: boolean) {
 
     } else {
         // Dark Theme
-        COLOR_BACKGROUND = ColorString(43)
-        COLOR_OFF_BACKGROUND = ColorString(65)
+        COLOR_BACKGROUND = ColorString([19, 20, 22])
+        COLOR_OFF_BACKGROUND = ColorString(60)
         COLOR_BACKGROUND_INVALID = ColorString([0xA8, 0x14, 0x14])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
         COLOR_BORDER = ColorString(0x55)
@@ -184,6 +187,8 @@ function setColors(darkMode: boolean) {
     setColorMouseOverIsDanger(false)
     COLOR_FULL = ColorString(COLORCOMPS_FULL)
     COLOR_EMPTY = ColorString(COLORCOMPS_EMPTY)
+
+    _currentModeIsDark = darkMode
 }
 
 function createStripedPattern(background: ColorString, stripeColor: string) {

@@ -1,7 +1,7 @@
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Waypoint, Wire, WireManager, WireStyle } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target, select, option } from "./htmlgen"
 import { MoveManager } from "./MoveManager"
@@ -462,6 +462,14 @@ export class LogicEditor extends HTMLElement {
 
         if (this._isSingleton) {
             console.log("LogicEditor is in singleton mode")
+
+            // singletons manage their dark mode according to system settings
+            const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
+            darkModeQuery.onchange = () => {
+                setColors(darkModeQuery.matches)
+            }
+            setColors(darkModeQuery.matches)
+
             window.addEventListener("keyup", this.wrapHandler(e => {
                 if (targetIsFieldOrOtherInput(e)) {
                     return
@@ -1033,10 +1041,10 @@ export class LogicEditor extends HTMLElement {
         }
         registerPixelRatioListener()
 
-        // TODO: add a listener to the window to detect when dark/light mode is toggled
-        // document.body.addEventListener("themechanged", (e) => {
-        //     console.log("chaged, isdarK=",e.detail.is_dark_theme)
-        // })
+        document.body.addEventListener("themechanged", (e) => {
+            const isDark = Boolean((e as any).detail?.is_dark_theme)
+            setColors(isDark)
+        })
 
         LogicEditor._globalListenersInstalled = true
     }

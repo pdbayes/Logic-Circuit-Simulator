@@ -9,6 +9,7 @@
         ]
     },
     "plugins": [
+        // "i18n-text",
         "@typescript-eslint"
     ],
     "extends": [
@@ -44,7 +45,8 @@
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
         "prefer-named-capture-group": "warn",
+        // "no-unexpected-multiline": "error",
+        // "i18n-text/no-en": 2,
         "@typescript-eslint/strict-boolean-expressions": "error"
-        // "no-unexpected-multiline": "error"
     }
 }
