@@ -76,6 +76,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
                 g.strokeStyle = COLOR_COMPONENT_BORDER
                 g.fillStyle = COLOR_COMPONENT_BORDER
             }
+            g.lineWidth = 3
             g.beginPath()
             triangle(g,
                 this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,

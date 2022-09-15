@@ -544,8 +544,8 @@ export class Ribbon extends Drawable {
     private _endGroupStartIndex = Number.MAX_SAFE_INTEGER
     private _endGroupEndIndex = Number.MIN_SAFE_INTEGER
     private _coveredWires: Wire[] = []
-    private _startNodes: NodeOut[] = []
-    private _endNodes: NodeIn[] = []
+    // private _startNodes: NodeOut[] = []
+    // private _endNodes: NodeIn[] = []
 
     constructor(editor: LogicEditor,
         public readonly startNodeGroup: NodeGroup<NodeOut>,
@@ -554,13 +554,51 @@ export class Ribbon extends Drawable {
         super(editor)
     }
 
+    isEmpty() {
+        return this._coveredWires.length === 0
+    }
+
     addCoveredWire(wire: Wire, newNodeGroupStartIndex: number, newNodeGroupEndIndex: number) {
         this._coveredWires.push(wire)
+        this.updateIndices(newNodeGroupStartIndex, newNodeGroupEndIndex)
+    }
+
+    wireWasDeleted(wire: Wire) {
+        // TODO check ribbons here
+        // const index = this._coveredWires.indexOf(wire)
+        // if (index >= 0) {
+        //     this._coveredWires.splice(index, 1)
+        // }
+        // // remove start node
+        // const startNode = wire.startNode as any
+        // const startNodeIndex = this._startNodes.indexOf(startNode)
+        // if (startNodeIndex >= 0) {
+        //     this._startNodes.splice(startNodeIndex, 1)
+        // }
+        // // remove end node
+        // const endNode = wire.endNode as any
+        // const endNodeIndex = this._endNodes.indexOf(endNode)
+        // if (endNodeIndex >= 0) {
+        //     this._endNodes.splice(endNodeIndex, 1)
+        // }
+        // // recalculate start and end group indices
+        // this._startGroupStartIndex = Number.MAX_SAFE_INTEGER
+        // this._startGroupEndIndex = Number.MIN_SAFE_INTEGER
+        // this._endGroupStartIndex = Number.MAX_SAFE_INTEGER
+        // this._endGroupEndIndex = Number.MIN_SAFE_INTEGER
+        // for (const coveredWire of this._coveredWires) {
+
+        //     this.updateIndices(coveredWire)
+        // }
+    }
+
+    private updateIndices(newNodeGroupStartIndex: number, newNodeGroupEndIndex: number) {
         this._startGroupStartIndex = Math.min(this._startGroupStartIndex, newNodeGroupStartIndex)
         this._startGroupEndIndex = Math.max(this._startGroupEndIndex, newNodeGroupStartIndex)
         this._endGroupStartIndex = Math.min(this._endGroupStartIndex, newNodeGroupEndIndex)
         this._endGroupEndIndex = Math.max(this._endGroupEndIndex, newNodeGroupEndIndex)
     }
+
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
         const [[startX, startY], startOrient] = this.drawRibbonEnd(g, ctx, this.startNodeGroup, this._startGroupStartIndex, this._startGroupEndIndex)
@@ -847,12 +885,15 @@ export class WireManager {
     deleteWire(wire: Wire) {
         // TODO check in ribbon
         wire.destroy()
-        for (let i = 0; i < this._wires.length; i++) {
-            if (this._wires[i] === wire) {
-                this._wires.splice(i, 1)
-                break
+        const ribbon = wire.ribbon
+        if (isDefined(ribbon)) {
+            ribbon.wireWasDeleted(wire)
+            if (ribbon.isEmpty()) {
+                this._ribbons.splice(this._ribbons.indexOf(ribbon), 1)
             }
         }
+        // remove wire from array
+        this._wires.splice(this._wires.indexOf(wire), 1)
         this.editor.redrawMgr.addReason("deleted wire", null)
     }
 

@@ -279,7 +279,7 @@ export abstract class GateBase<
     G extends GateType,
     NumInput extends FixedArraySizeNonZero,
     Repr extends GateRepr<NumInput, G>
-    > extends ComponentBase<NumInput, 1, Repr, LogicValue> {
+> extends ComponentBase<NumInput, 1, Repr, LogicValue> {
 
     private _type: G
     private _poseAs: G | undefined = undefined
@@ -423,7 +423,6 @@ export abstract class GateBase<
             g.stroke()
         }
         const drawWireEnds = (shortUp = false, shortDown = false, isORLike = false) => {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
             const numInputs = this.inputs.length
             for (let i = 0; i < numInputs; i++) {
                 const input = this.inputs[i]
@@ -542,16 +541,16 @@ export abstract class GateBase<
                     drawLeftCircle(false)
                     shortDown = true
                 }
-                drawWireEnds(shortUp, shortDown, true)
                 if (type.startsWith("X")) {
-                    gateLeft = savedGateLeft
-                    g.strokeStyle = gateBorderColor
-                    g.lineWidth = 3
+                    gateLeft = savedGateLeft - 2
                     g.beginPath()
-                    g.moveTo(gateLeft - 6, bottom)
-                    g.quadraticCurveTo(this.posX - 14, this.posY, gateLeft - 6, top)
+                    g.moveTo(savedGateLeft - 6, bottom)
+                    g.quadraticCurveTo(this.posX - 14, this.posY, savedGateLeft - 6, top)
+                    g.lineWidth = 3
+                    g.strokeStyle = gateBorderColor
                     g.stroke()
                 }
+                drawWireEnds(shortUp, shortDown, true)
                 nameDeltaX -= 1
                 break
             }

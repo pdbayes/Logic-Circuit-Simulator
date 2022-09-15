@@ -163,7 +163,7 @@ export class LogicEditor extends HTMLElement {
         hideOutputColorsCheckbox: HTMLInputElement,
         hideMemoryContentCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
-        groupParallelWiresCheckbox: HTMLInputElement,
+        // groupParallelWiresCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
@@ -248,7 +248,7 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.wireStylePopup.value = newOptions.wireStyle
             optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
-            optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
+            // optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
 
             optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
@@ -898,10 +898,10 @@ export class LogicEditor extends HTMLElement {
             "Désactiver tooltips",
             "Si coché, les informations supplémentaires des tooltips (comme les tables de vérité) ne seront pas affichées."
         )
-        const groupParallelWiresCheckbox = makeCheckbox("groupParallelWires",
-            "Grouper les fils parallèles",
-            "Les fils parralèles allant d'un composant à un autre seront regroupés en un seul fil plus épais."
-        )
+        // const groupParallelWiresCheckbox = makeCheckbox("groupParallelWires",
+        //     "Grouper les fils parallèles",
+        //     "Les fils parralèles allant d'un composant à un autre seront regroupés en un seul fil plus épais."
+        // )
 
         const wireStylePopup = select(
             option(attr("value", WireStyles.auto), "Auto"),
@@ -955,7 +955,7 @@ export class LogicEditor extends HTMLElement {
             showGateTypesCheckbox,
             showDisconnectedPinsCheckbox,
             hideTooltipsCheckbox,
-            groupParallelWiresCheckbox,
+            // groupParallelWiresCheckbox,
             propagationDelayField,
             showUserDataLinkContainer,
         }
@@ -1652,8 +1652,9 @@ export class LogicEditor extends HTMLElement {
         if (isDefined(highlightedItems)) {
             const HOLD_TIME = 2000
             const FADE_OUT_TIME = 200
+            const START_ALPHA = 0.4
             const elapsed = this.timeline.unadjustedTime() - highlightedItems.start
-            const highlightAlpha = (elapsed < HOLD_TIME) ? 1 : 1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME
+            const highlightAlpha = (elapsed < HOLD_TIME) ? START_ALPHA : START_ALPHA * (1 - (elapsed - HOLD_TIME) / FADE_OUT_TIME)
             if (highlightAlpha <= 0) {
                 this._highlightedItems = undefined
             } else {
@@ -1668,7 +1669,7 @@ export class LogicEditor extends HTMLElement {
                     g.closePath()
                 }
 
-                highlightColor = `rgba(255,255,120,${highlightAlpha})`
+                highlightColor = `rgba(238,241,0,${highlightAlpha})`
                 g.shadowColor = highlightColor
                 g.shadowBlur = 20
                 g.shadowOffsetX = 0

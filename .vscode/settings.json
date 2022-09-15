@@ -15,5 +15,41 @@
         "index.html": true
     },
     "typescript.tsdk": "node_modules/typescript/lib",
-    "ltex.enabled": false
+    "ltex.enabled": false,
+    "restoreTerminals.terminals": [
+        {
+            "splitTerminals": [
+                {
+                    "name": "compile",
+                    "commands": [
+                        "npm run compile-watch"
+                    ]
+                },
+                {
+                    "name": "lint",
+                    "commands": [
+                        "npm run lint-watch"
+                    ]
+                },
+                {
+                    "name": "bundle",
+                    "commands": [
+                        "npm run bundle-watch"
+                    ]
+                },
+                {
+                    "name": "server",
+                    "commands": [
+                        "npm run server"
+                    ]
+                },
+                {
+                    "name": "bash",
+                    "commands": [
+                        "ls"
+                    ]
+                },
+            ]
+        }
+    ]
 }
