@@ -3,6 +3,7 @@ import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 
 // Node IDs are just represented by a non-negative number
@@ -130,7 +131,7 @@ export class NodeGroup<N extends Node> {
     public get nodes(): readonly N[] {
         return this._nodes
     }
-    
+
     public addNode(node: N) {
         this._nodes.push(node)
     }
@@ -710,21 +711,9 @@ export abstract class ComponentBase<
     }
 
     protected makeDeleteContextMenuItem(): ContextMenuItem {
-        return ContextMenuData.item("trash", "Supprimer", () => {
+        return ContextMenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
             this.editor.tryDeleteComponentsWhere(c => c === this)
         }, true)
-    }
-
-    protected makeShowAsUnknownContextMenuItem(isUnknown: boolean, set: (newUnknown: boolean) => void): ContextMenuItem {
-        return ContextMenuData.submenu("questioncircled", "Cacher la fonction", [
-            ...[false, true].map(newUnkown => ContextMenuData.item(newUnkown === isUnknown ? "check" : "none",
-                newUnkown ? "Cacher avec «?»" : "Afficher normalement", () => {
-                    set(newUnkown)
-                })
-            ),
-            ContextMenuData.sep(),
-            ContextMenuData.text("Changez entre normal ou caché avec Option + double-clic sur le composant"),
-        ])
     }
 
     protected makeForceOutputsContextMenuItem(): undefined | ContextMenuItem {
@@ -734,6 +723,8 @@ export abstract class ComponentBase<
             return undefined
         }
 
+        const s = S.Components.Generic.contextMenu
+
         function makeOutputItems(out: NodeOut): ContextMenuItem[] {
             const currentForceValue = out.forceValue
             return [undefined, Unknown, true, false, HighImpedance]
@@ -741,11 +732,11 @@ export abstract class ComponentBase<
                     currentForceValue === newForceValue ? "check" : "none",
                     (() => {
                         switch (newForceValue) {
-                            case undefined: return "Sortie normale"
-                            case Unknown: return "Forcer comme état inconnu"
-                            case true: return "Forcer à 1"
-                            case false: return "Forcer à 0"
-                            case HighImpedance: return "Forcer à haute impédance"
+                            case undefined: return s.NormalOutput
+                            case Unknown: return s.ForceAsUnknown
+                            case true: return s.ForceAs1
+                            case false: return s.ForceAs0
+                            case HighImpedance: return s.ForceAsZ
                         }
                     })(),
                     () => {
@@ -756,38 +747,37 @@ export abstract class ComponentBase<
 
         const footerItems = [
             ContextMenuData.sep(),
-            ContextMenuData.text("Forcez une sortie avec Option + double-clic sur la sortie"),
+            ContextMenuData.text(s.ForceOutputDesc),
         ]
 
         if (numOutputs === 1) {
-            return ContextMenuData.submenu("force", "Forcer la sortie", [
+            return ContextMenuData.submenu("force", s.ForceOutputSingle, [
                 ...makeOutputItems(this.outputs[0]!),
                 ...footerItems,
             ])
 
         } else {
-            return ContextMenuData.submenu("force", "Forcer une sortie", [
+            return ContextMenuData.submenu("force", s.ForceOutputMultiple, [
                 ...asArray(this.outputs).map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
-                    return ContextMenuData.submenu(icon, "Sortie " + out.name,
+                    return ContextMenuData.submenu(icon, s.Output + " " + out.name,
                         makeOutputItems(out)
                     )
                 }),
                 ...footerItems,
             ])
         }
-
-
     }
 
     protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): ContextMenuItem {
-        const caption = isUndefined(currentName) ? "Ajouter un nom…" : "Changer le nom…"
+        const s = S.Components.Generic.contextMenu
+        const caption = isUndefined(currentName) ? s.SetName : s.ChangeName
         return ContextMenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
     }
 
     protected runSetNameDialog(currentName: ComponentName, handler: (newName: ComponentName) => void): void {
         const currentDisplayName = isUndefined(currentName) || isString(currentName) ? currentName : JSON.stringify(currentName)
-        const promptReturnValue = window.prompt("Choisissez le nom à afficher ou laissez vide pour le supprimer:", currentDisplayName)
+        const promptReturnValue = window.prompt(S.Components.Generic.contextMenu.SetNamePrompt, currentDisplayName)
         if (promptReturnValue !== null) {
             // OK button pressed
             let newName
@@ -811,7 +801,8 @@ export abstract class ComponentBase<
     }
 
     protected runSetFontDialog(currentFont: string, defaultIfEmpty: string, callback: (font: string) => void) {
-        const promptReturnValue = window.prompt(`Entrez une spécification de police ou laissez vide pour la valeur par défaut (${defaultIfEmpty}):`, currentFont === defaultIfEmpty ? "" : currentFont)
+        const s = S.Components.Generic.contextMenu
+        const promptReturnValue = window.prompt(s.SetFontPrompt[0] + defaultIfEmpty + s.SetFontPrompt[1], currentFont === defaultIfEmpty ? "" : currentFont)
         if (promptReturnValue !== null) {
             const newFont = promptReturnValue.length === 0 ? defaultIfEmpty : promptReturnValue
             callback(newFont)

@@ -35,6 +35,7 @@ import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
 import { ComponentFactory } from "./ComponentFactory"
 import { LabelRect } from "./components/LabelRect"
+import { DefaultLang, isLang, S, setLang } from "./strings"
 
 
 enum Mode {
@@ -50,6 +51,7 @@ const MAX_MODE_WHEN_EMBEDDED = Mode.DESIGN
 const DEFAULT_MODE = Mode.DESIGN
 
 const ATTRIBUTE_NAMES = {
+    lang: "lang",
     singleton: "singleton", // whether this is the only editor in the page
     mode: "mode",
 
@@ -389,6 +391,10 @@ export class LogicEditor extends HTMLElement {
         // draw
 
         this.cursorMovementMgr.registerCanvasListenersOn(this.html.mainCanvas)
+        if (LogicEditor._allConnectedEditors.length === 0) {
+            // set lang on first instance of editor on the page
+            this.setupLang()
+        }
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
@@ -398,6 +404,31 @@ export class LogicEditor extends HTMLElement {
 
         // TODO
         // this.cursorMovementManager.unregisterCanvasListenersOn(this.html.mainCanvas)
+    }
+
+    private setupLang() {
+        const getNavigatorLanguage = () => {
+            const lang = navigator.languages?.[0] ?? navigator.language
+            if (lang.length > 2) {
+                return lang.substring(0, 2)
+            }
+            if (lang.length === 2) {
+                return lang
+            }
+            return undefined
+        }
+
+        const getSavedLang = () => {
+            return localStorage.getItem(ATTRIBUTE_NAMES.lang)
+        }
+
+        const langStr = getURLParameter(ATTRIBUTE_NAMES.lang)
+            ?? this.getAttribute(ATTRIBUTE_NAMES.lang)
+            ?? getSavedLang()
+            ?? getNavigatorLanguage()
+            ?? DefaultLang
+        const lang = isLang(langStr) ? langStr : DefaultLang
+        setLang(lang)
     }
 
     private setup() {
@@ -621,7 +652,7 @@ export class LogicEditor extends HTMLElement {
             window.onbeforeunload = e => {
                 if (this._isSingleton && this._isDirty && this.mode >= Mode.CONNECT) {
                     e.preventDefault() // ask to save changes
-                    e.returnValue = "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?"
+                    e.returnValue = S.Messages.ReallyCloseWindow
                 }
             }
         }
@@ -672,6 +703,31 @@ export class LogicEditor extends HTMLElement {
             })
         }
 
+        const setCaption = (buttonId: string, name: string) => this.elemWithId(buttonId).insertAdjacentText("beforeend", name)
+
+        {
+            // set strings in the UI
+            const s = S.Palette
+            setCaption("editToolButton", s.Design)
+            setCaption("deleteToolButton", s.Delete)
+            setCaption("moveToolButton", s.Move)
+            setCaption("saveToolButton", s.Download)
+            setCaption("screenshotToolButton", s.Screenshot)
+            setCaption("openToolButton", s.Open)
+            setCaption("resetToolButtonCaption", s.Reset)
+            setCaption("settingsTitle", S.Settings.Settings)
+        }
+
+        {
+            const s = S.Dialogs.Share
+            setCaption("shareDialogTitle", s.title)
+            setCaption("shareDialogUrl", s.URL)
+            setCaption("shareDialogIframe", s.EmbedInIframe)
+            setCaption("shareDialogWebComp", s.EmbedWithWebComp)
+            setCaption("shareDialogMarkdown", s.EmbedInMarkdown)
+            setCaption("shareDialogClose", S.Dialogs.Generic.Close)
+        }
+
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
 
         const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-component=label][data-type=rect]")
@@ -714,12 +770,12 @@ export class LogicEditor extends HTMLElement {
                     "Mode",
                 ),
                 ...[Mode.FULL, Mode.DESIGN, Mode.CONNECT, Mode.TRYOUT, Mode.STATIC].map((buttonMode) => {
-                    const [modeTitle, expl, addElem] = (() => {
+                    const [[modeTitle, expl], addElem] = (() => {
                         switch (buttonMode) {
                             case Mode.FULL: {
                                 const optionsDiv =
                                     div(cls("sim-mode-link"),
-                                        title("Réglages"),
+                                        title(S.Settings.Settings),
                                         makeIcon("settings")
                                     ).render()
 
@@ -727,12 +783,12 @@ export class LogicEditor extends HTMLElement {
                                     setVisible(this.html.optionsZone, true)
                                 })
 
-                                return ["Admin", "En plus du mode complet, ce mode permet de rendre les entrées, les sorties des portes, voire les portes elles-mêmes indéterminées", optionsDiv]
+                                return [S.Modes.FULL, optionsDiv]
                             }
-                            case Mode.DESIGN: return ["Complet", "La totalité des actions de conception d’un circuit sont possible", emptyMod]
-                            case Mode.CONNECT: return ["Connexion", "Il est possible de déplacer et de connecter des éléments déjà sur le canevas, mais pas d’en rajouter (le menu de gauche ne serait pas actif)", emptyMod]
-                            case Mode.TRYOUT: return ["Test", "Il est seulement possible de changer les entrées pour tester un circuit préétabli", emptyMod]
-                            case Mode.STATIC: return ["Statique", "Les éléments sont juste affichés; aucune interaction n’est possible", emptyMod]
+                            case Mode.DESIGN: return [S.Modes.DESIGN, emptyMod]
+                            case Mode.CONNECT: return [S.Modes.CONNECT, emptyMod]
+                            case Mode.TRYOUT: return [S.Modes.TRYOUT, emptyMod]
+                            case Mode.STATIC: return [S.Modes.STATIC, emptyMod]
                         }
                     })()
 
@@ -791,7 +847,7 @@ export class LogicEditor extends HTMLElement {
 
 
         const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
-        const makeTimelineButton = (icon: IconName, text: string | undefined, expl: string, action: () => unknown) => {
+        const makeTimelineButton = (icon: IconName, [text, expl]: [string | undefined, string], action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
                     isUndefined(text) ? style("text-align: center") : emptyMod,
@@ -802,9 +858,9 @@ export class LogicEditor extends HTMLElement {
             but.addEventListener("click", action)
             return but
         }
-        const playButton = makeTimelineButton("play", "Play", "Démarre l’écoulement du temps", () => this.timeline.play())
-        const pauseButton = makeTimelineButton("pause", "Pause", "Arrête l’écoulement du temps", () => this.timeline.pause())
-        const stepButton = makeTimelineButton("step", undefined, "Avance au prochain événement", () => this.timeline.step())
+        const playButton = makeTimelineButton("play", S.Timeline.Play, () => this.timeline.play())
+        const pauseButton = makeTimelineButton("pause", S.Timeline.Pause, () => this.timeline.pause())
+        const stepButton = makeTimelineButton("step", S.Timeline.Step, () => this.timeline.step())
         applyModifierTo(timelineControls, mods(playButton, pauseButton, stepButton))
 
         const showTimelineButtons = true
@@ -834,7 +890,7 @@ export class LogicEditor extends HTMLElement {
             setVisible(optionsZone, false)
         })
 
-        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, title: string, mouseover: string) => {
+        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, [title, mouseover]: [string, string]) => {
             const checkbox = input(type("checkbox")).render()
             if (this.options[optionName] === true) {
                 checkbox.checked = true
@@ -856,7 +912,7 @@ export class LogicEditor extends HTMLElement {
             style("margin-left: 4px"),
             attr("value", this.options.name ?? ""),
             attr("placeholder", "circuit"),
-            attr("title", "Ceci sera le nom du fichier téléchargé."),
+            attr("title", S.Settings.NameOfDownloadedFile),
         ).render()
         nameField.addEventListener("change", () => {
             const newName = nameField.value
@@ -866,47 +922,22 @@ export class LogicEditor extends HTMLElement {
         optionsZone.appendChild(
             div(
                 style("height: 20px; margin-bottom: 4px"),
-                "Nom:", nameField
+                S.Settings.CircuitName, nameField
             ).render()
         )
 
-        const hideWireColorsCheckbox = makeCheckbox("hideWireColors",
-            "Cacher l’état des fils",
-            "Si coché, les fils sont affichés avec une couleur neutre plutôt que de montrer s’ils véhiculent un 1 ou un 0."
-        )
-        const hideInputColorsCheckbox = makeCheckbox("hideInputColors",
-            "Cacher l’état des entrées",
-            "Si coché, les entrées sont affichées avec une couleur neutre, même si elles livrent au circuit une valeur bien déterminée. S’utilise volontiers en cachant aussi l’état des fils."
-        )
-        const hideOutputColorsCheckbox = makeCheckbox("hideOutputColors",
-            "Cacher l’état des sorties",
-            "Si coché, les sorties sont affichées avec une couleur neutre. S’utilise volontiers en cachant aussi l’état des fils."
-        )
-        const hideMemoryContentCheckbox = makeCheckbox("hideMemoryContent",
-            "Cacher le contenu stocké",
-            "Si coché, les verrous, bascules, registres et autres mémoires ne montrent pas leur contenu."
-        )
-        const showGateTypesCheckbox = makeCheckbox("showGateTypes",
-            "Montrer type des portes",
-            "Si coché, affiche sur les portes logique le nom de la fonction réalisée."
-        )
-        const showDisconnectedPinsCheckbox = makeCheckbox("showDisconnectedPins",
-            "Toujours montrer les pattes",
-            "Si non coché, les pattes non connectées des composants sont masquées dans les modes où les connexions du circuit ne peuvent pas être modifiées (et restent visibles sinon)."
-        )
-        const hideTooltipsCheckbox = makeCheckbox("hideTooltips",
-            "Désactiver tooltips",
-            "Si coché, les informations supplémentaires des tooltips (comme les tables de vérité) ne seront pas affichées."
-        )
-        // const groupParallelWiresCheckbox = makeCheckbox("groupParallelWires",
-        //     "Grouper les fils parallèles",
-        //     "Les fils parralèles allant d'un composant à un autre seront regroupés en un seul fil plus épais."
-        // )
+        const hideWireColorsCheckbox = makeCheckbox("hideWireColors", S.Settings.hideWireColors)
+        const hideInputColorsCheckbox = makeCheckbox("hideInputColors", S.Settings.hideInputColors)
+        const hideOutputColorsCheckbox = makeCheckbox("hideOutputColors", S.Settings.hideOutputColors)
+        const hideMemoryContentCheckbox = makeCheckbox("hideMemoryContent", S.Settings.hideMemoryContent)
+        const showGateTypesCheckbox = makeCheckbox("showGateTypes", S.Settings.showGateTypes)
+        const showDisconnectedPinsCheckbox = makeCheckbox("showDisconnectedPins", S.Settings.showDisconnectedPins)
+        const hideTooltipsCheckbox = makeCheckbox("hideTooltips", S.Settings.hideTooltips)
 
         const wireStylePopup = select(
-            option(attr("value", WireStyles.auto), "Auto"),
-            option(attr("value", WireStyles.straight), "Ligne"),
-            option(attr("value", WireStyles.bezier), "Courbe"),
+            option(attr("value", WireStyles.auto), S.Settings.WireStyleAuto),
+            option(attr("value", WireStyles.straight), S.Settings.WireStyleLine),
+            option(attr("value", WireStyles.bezier), S.Settings.WireStyleCurve),
         ).render()
         wireStylePopup.addEventListener("change", this.wrapHandler(() => {
             this._options.wireStyle = wireStylePopup.value as WireStyle
@@ -915,7 +946,7 @@ export class LogicEditor extends HTMLElement {
         optionsZone.appendChild(
             div(
                 style("height: 20px"),
-                "Style des fils: ", wireStylePopup
+                S.Settings.wireStyle + " ", wireStylePopup
             ).render()
         )
 
@@ -923,7 +954,7 @@ export class LogicEditor extends HTMLElement {
             style("margin: 0 4px; width: 4em"),
             attr("min", "0"), attr("step", "50"),
             attr("value", String(this.options.propagationDelay)),
-            attr("title", "Un 1 ou un 0 imposé sur une connexion sera répercuté à l’autre bout de la connexion après ce délai de propagation."),
+            attr("title", S.Settings.propagationDelay),
         ).render()
         propagationDelayField.addEventListener("change", () => {
             this._options.propagationDelay = propagationDelayField.valueAsNumber
@@ -931,17 +962,17 @@ export class LogicEditor extends HTMLElement {
         optionsZone.appendChild(
             div(
                 style("height: 20px"),
-                "Propagation en", propagationDelayField, "ms"
+                S.Settings.propagationDelayField[0], propagationDelayField, S.Settings.propagationDelayField[1]
             ).render()
         )
 
-        const showUserdataLink = a("données liées", style("text-decoration: underline; cursor: pointer")).render()
+        const showUserdataLink = a(S.Settings.showUserDataLink[1], style("text-decoration: underline; cursor: pointer")).render()
         showUserdataLink.addEventListener("click", () => {
-            alert("Les données suivantes sont exportées avec le circuit:\n\n" + JSON.stringify(this.userdata, undefined, 4))
+            alert(S.Settings.userDataHeader + "\n\n" + JSON.stringify(this.userdata, undefined, 4))
         })
         const showUserDataLinkContainer = div(
             style("margin-top: 5px; display: none"),
-            "Voir les ", showUserdataLink,
+            S.Settings.showUserDataLink[0], showUserdataLink,
         ).render()
         optionsZone.appendChild(showUserDataLinkContainer)
 

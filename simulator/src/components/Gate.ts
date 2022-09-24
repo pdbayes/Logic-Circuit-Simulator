@@ -1,19 +1,18 @@
 import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import * as t from "io-ts"
-import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY, strokeSingleLine } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { TriStateBuffer, TriStateBufferDef } from "./TriStateBuffer"
+import { S } from "../strings"
 
 
 type GateProps = {
     includeInContextMenu: boolean
     includeInPoseAs: boolean
-    localName: string
-    shortName: string | undefined
-    localDesc: string
+    fullShortDesc: [string, string | undefined, string]
 }
 
 
@@ -22,13 +21,13 @@ type GateProps = {
 const Gate1Types_ = {
     NOT: {
         out: (in1: boolean) => !in1,
-        localName: "NON", shortName: "NON", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie est égale à l’entrée inversée.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NOT,
     },
     BUF: {
         out: (in1: boolean) => in1,
-        localName: "OUI", shortName: "OUI", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie est égale à l’entrée.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.BUF,
     },
 } as const
 
@@ -50,77 +49,77 @@ const Gate2Types_ = {
     // usual suspects
     AND: {
         out: (in1: boolean, in2: boolean) => in1 && in2,
-        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsque les deux entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.AND,
     },
     OR: {
         out: (in1: boolean, in2: boolean) => in1 || in2,
-        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsqu’au moins une des deux entrées vaut 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.OR,
     },
     XOR: {
         out: (in1: boolean, in2: boolean) => in1 !== in2,
-        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsque l’une ou l’autre des deux entrées vaut 1, mais pas les deux.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XOR,
     },
     NAND: {
         out: (in1: boolean, in2: boolean) => !(in1 && in2),
-        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les deux entrées ne valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NAND,
     },
     NOR: {
         out: (in1: boolean, in2: boolean) => !(in1 || in2),
-        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les deux entrées valent 0.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NOR,
     },
     XNOR: {
         out: (in1: boolean, in2: boolean) => in1 === in2,
-        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsque les entrées valent soit les deux 1, soit les deux 0.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XNOR,
     },
 
     // less common gates
     IMPLY: {
         out: (in1: boolean, in2: boolean) => !in1 || in2,
-        localName: "IMPLIQUE", shortName: "IMPL", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.IMPLY,
     },
     RIMPLY: {
         out: (in1: boolean, in2: boolean) => in1 || !in2,
-        localName: "IMPLIQUE (bis)", shortName: "IMPL", includeInContextMenu: false, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1.",
+        includeInContextMenu: false, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.RIMPLY,
     },
     NIMPLY: {
         out: (in1: boolean, in2: boolean) => in1 && !in2,
-        localName: "NON-IMPLIQUE", shortName: "N-IMPL", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NIMPLY,
     },
     RNIMPLY: {
         out: (in1: boolean, in2: boolean) => !in1 && in2,
-        localName: "NON-IMPLIQUE (bis)", shortName: "N-IMPL", includeInContextMenu: false, includeInPoseAs: true,
-        localDesc: "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1.",
+        includeInContextMenu: false, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.RNIMPLY,
     },
 
     // observing only one input
     TXA: {
         out: (in1: boolean, __: boolean) => in1,
-        localName: "TRANSFERT-A", shortName: undefined, includeInContextMenu: true, includeInPoseAs: false,
-        localDesc: "La sortie est égale à la première entrée; la seconde entrée est ignorée.",
+        includeInContextMenu: true, includeInPoseAs: false,
+        fullShortDesc: S.Components.Gate.TXA,
     },
     TXB: {
         out: (__: boolean, in2: boolean) => in2,
-        localName: "TRANSFERT-B", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
-        localDesc: "La sortie est égale à la seconde entrée; la première entrée est ignorée.",
+        includeInContextMenu: false, includeInPoseAs: false,
+        fullShortDesc: S.Components.Gate.TXB,
     },
     TXNA: {
         out: (in1: boolean, __: boolean) => !in1,
-        localName: "TRANSFERT-NON-A", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
-        localDesc: "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée.",
+        includeInContextMenu: false, includeInPoseAs: false,
+        fullShortDesc: S.Components.Gate.TXNA,
     },
     TXNB: {
         out: (__: boolean, in2: boolean) => !in2,
-        localName: "TRANSFERT-NON-B", shortName: undefined, includeInContextMenu: false, includeInPoseAs: false,
-        localDesc: "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée.",
+        includeInContextMenu: false, includeInPoseAs: false,
+        fullShortDesc: S.Components.Gate.TXNB,
     },
 } as const
 
@@ -142,33 +141,33 @@ type Gate2MandatoryParams = t.TypeOf<typeof Gate2MandatoryParams>
 const Gate3Types_ = {
     AND3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => in1 && in2 && in3,
-        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsque les trois entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.AND3,
     },
     OR3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => in1 || in2 || in3,
-        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsqu’au moins une des troie entrées vaut 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.OR3,
     },
     XOR3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => (Number(in1) + Number(in2) + Number(in3)) % 2 === 1,
-        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XOR3,
     },
     NAND3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => !(in1 && in2 && in3),
-        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les trois entrées ne valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NAND3,
     },
     NOR3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => !(in1 || in2 || in3),
-        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les trois entrées valent 0.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NOR3,
     },
     XNOR3: {
         out: (in1: boolean, in2: boolean, in3: boolean) => (Number(in1) + Number(in2) + Number(in3)) % 2 === 0,
-        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XNOR3,
     },
 } as const
 
@@ -190,33 +189,33 @@ type Gate3MandatoryParams = t.TypeOf<typeof Gate3MandatoryParams>
 const Gate4Types_ = {
     AND4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => in1 && in2 && in3 && in4,
-        localName: "ET", shortName: "ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsque les quatre entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.AND4,
     },
     OR4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => in1 || in2 || in3 || in4,
-        localName: "OU", shortName: "OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsqu’au moins une des quatre entrées vaut 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.OR4,
     },
     XOR4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => (Number(in1) + Number(in2) + Number(in3) + Number(in4)) % 2 === 1,
-        localName: "OU-X", shortName: "OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XOR4,
     },
     NAND4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => !(in1 && in2 && in3 && in4),
-        localName: "NON-ET", shortName: "N-ET", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte ET inversée: la sortie vaut 1 à moins que les quatre entrées ne valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NAND4,
     },
     NOR4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => !(in1 || in2 || in3 || in4),
-        localName: "NON-OU", shortName: "N-OU", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU inversée: la sortie vaut 1 lorsque les quatre entrées valent 0.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.NOR4,
     },
     XNOR4: {
         out: (in1: boolean, in2: boolean, in3: boolean, in4: boolean) => (Number(in1) + Number(in2) + Number(in3) + Number(in4)) % 2 === 0,
-        localName: "NON-OU-X", shortName: "N-OU-X", includeInContextMenu: true, includeInPoseAs: true,
-        localDesc: "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1.",
+        includeInContextMenu: true, includeInPoseAs: true,
+        fullShortDesc: S.Components.Gate.XNOR4,
     },
 } as const
 
@@ -279,7 +278,7 @@ export abstract class GateBase<
     G extends GateType,
     NumInput extends FixedArraySizeNonZero,
     Repr extends GateRepr<NumInput, G>
-> extends ComponentBase<NumInput, 1, Repr, LogicValue> {
+    > extends ComponentBase<NumInput, 1, Repr, LogicValue> {
 
     private _type: G
     private _poseAs: G | undefined = undefined
@@ -399,12 +398,6 @@ export abstract class GateBase<
         let gateLeft = this.posX - gateWidth / 2
         let gateRight = this.posX + gateWidth / 2
         let nameDeltaX = 0
-        const showAsFake = isFake && this.editor.mode >= Mode.FULL
-        const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
-        const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
-        g.lineWidth = 3
-        g.strokeStyle = gateBorderColor
-        g.fillStyle = gateFill
 
         const drawRightCircle = () => {
             gateRight += 5
@@ -449,7 +442,14 @@ export abstract class GateBase<
             drawWireLineToComponent(g, output, gateRight + 1, this.posY)
         }
 
+        const showAsFake = isFake && this.editor.mode >= Mode.FULL
+        const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
+        g.lineWidth = 3
+        g.strokeStyle = gateBorderColor
+        g.fillStyle = gateFill
         g.beginPath()
+
         switch (type) {
             case "NOT":
             case "BUF":
@@ -483,7 +483,12 @@ export abstract class GateBase<
                 g.arc(this.posX, this.posY, height / 2, -pi2, pi2)
                 g.closePath()
                 g.fill()
+                g.lineWidth = 1
                 g.stroke()
+                g.strokeStyle = gateBorderColor
+                g.lineWidth = 3
+                g.stroke()
+                g.beginPath()
                 if (type.startsWith("NAND")) {
                     drawRightCircle()
                 }
@@ -614,7 +619,7 @@ export abstract class GateBase<
         }
 
         if (this.editor.options.showGateTypes && !isUnknown(type)) {
-            const gateShortName = this.gateTypeEnum.propsOf(type).shortName
+            const gateShortName = this.gateTypeEnum.propsOf(type).fullShortDesc[1]
             if (isDefined(gateShortName)) {
                 g.fillStyle = COLOR_GATE_NAMES
                 g.textAlign = "center"
@@ -650,32 +655,34 @@ export abstract class GateBase<
 
     private makeReplaceByMenuItem(): ContextMenuItem {
         const enumDef = this.gateTypeEnum
+        const s = S.Components.Gate.contextMenu
         const otherTypes = enumDef.values.filter(t => t !== this._type && enumDef.propsOf(t).includeInContextMenu)
-        return ContextMenuData.submenu("replace", "Remplacer par", [
+        return ContextMenuData.submenu("replace", s.ReplaceBy, [
             ...otherTypes.map(newType => {
                 const gateProps = enumDef.propsOf(newType)
-                return ContextMenuData.item(undefined, "Porte " + gateProps.localName, () => {
+                return ContextMenuData.item(undefined, s.GateTempl.expand({ type: gateProps.fullShortDesc[0] }), () => {
                     this.doSetType(newType)
                 })
             }),
             ContextMenuData.sep(),
-            ContextMenuData.text("Changez entre les variantes avec Majuscule + double-clic sur la porte"),
+            ContextMenuData.text(s.VariantChangeDesc),
         ])
     }
 
     private makePoseAsMenuItem(): ContextMenuItem {
         const enumDef = this.gateTypeEnum
+        const s = S.Components.Gate.contextMenu
         const otherTypes = enumDef.values.filter(t => t !== this._type && enumDef.propsOf(t).includeInPoseAs)
         const currentShowAsUnknown = this._showAsUnknown
         const currentPoseAs = this.poseAs
-        return ContextMenuData.submenu("questioncircled", "Afficher comme", [
+        return ContextMenuData.submenu("questioncircled", s.ShowAs, [
             ContextMenuData.item(!currentShowAsUnknown && isUndefined(currentPoseAs) ? "check" : "none",
-                `Porte ${enumDef.propsOf(this._type).localName} normale`, () => {
+                s.NormalGateTempl.expand({ type: enumDef.propsOf(this._type).fullShortDesc[0] }), () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(false)
                 }),
             ContextMenuData.item(currentShowAsUnknown ? "check" : "none",
-                "Porte inconnue (avec «?»)", () => {
+                s.UnknownGate, () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(true)
                 }),
@@ -683,7 +690,7 @@ export abstract class GateBase<
             ...otherTypes.map(newType => {
                 const gateProps = enumDef.propsOf(newType)
                 return ContextMenuData.item(!currentShowAsUnknown && newType === currentPoseAs ? "check" : "none",
-                    "Porte " + gateProps.localName, () => {
+                    s.GateTempl.expand({ type: gateProps.fullShortDesc[0] }), () => {
                         this.doSetShowAsUnknown(false)
                         this.poseAs = newType
                     })
@@ -723,8 +730,9 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
     }
 
     public override makeTooltip() {
+        const s = S.Components.Gate.tooltip
         if (this.showAsUnknown) {
-            return div("Porte inconnue")
+            return div(s.UnknownGate)
         }
 
         const myIn = this.inputs[0].value
@@ -733,7 +741,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         const gateProps = Gate1Types.propsOf(this.type)
 
         const genTruthTableData = () => {
-            const header = ["Entrée", "Sortie"]
+            const header = [s.Input, s.Output]
             const rows: TruthTableRowData[] = []
             for (const in0 of [false, true]) {
                 const matchesCurrent = myIn === in0
@@ -745,23 +753,23 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
         const nodeOut = this.outputs[0].value
         const desc = nodeOut === myOut
-            ? "Actuellement, il livre"
-            : "Actuellement, il devrait livrer"
+            ? s.CurrentlyDelivers
+            : s.ShouldCurrentlyDeliver
 
         const explanation = isUnknown(myIn)
-            ? mods(desc + " une sortie indéterminée comme son entrée n’est pas connue. Sa table de vérité est:")
-            : mods(desc + " une sortie de ", asValue(myOut), " car son entrée est ", asValue(myIn), ", selon la table de vérité suivante:")
+            ? mods(desc + " " + s.UndeterminedOutputBecauseInputUnknown)
+            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.BecauseInputIs + " ", asValue(myIn), ", " + s.AccordingToTruthTable)
 
         const header = (() => {
             switch (this.type) {
-                case "NOT": return mods("Inverseur (porte ", b("NON"), ")")
-                case "BUF": return mods("Buffer (porte ", b("OUI"), ")")
+                case "NOT": return mods(s.Inverter[0], b(S.Components.Gate.NOT[0]), s.Inverter[1])
+                case "BUF": return mods(s.Buffer[0], b(S.Components.Gate.BUF[0]), s.Buffer[1])
             }
         })()
 
         return makeGateTooltip(1,
             header,
-            Gate1Types.propsOf(this.type).localDesc,
+            Gate1Types.propsOf(this.type).fullShortDesc[2],
             explanation,
             makeTruthTable(genTruthTableData())
         )
@@ -802,8 +810,9 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
     }
 
     public override makeTooltip() {
+        const s = S.Components.Gate.tooltip
         if (this.showAsUnknown) {
-            return div("Porte inconnue")
+            return div(s.UnknownGate)
         }
 
         const gateProps = Gate2Types.propsOf(this.type)
@@ -812,7 +821,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         const myOut = this.value
 
         const genTruthTableData = () => {
-            const header = ["Entrée 1", "Entrée 2", "Sortie"]
+            const header = [s.Input + " 1", s.Input + " 2", s.Output]
             const rows: TruthTableRowData[] = []
             for (const in0 of [false, true]) {
                 for (const in1 of [false, true]) {
@@ -826,17 +835,17 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
         const nodeOut = this.outputs[0].value
         const desc = nodeOut === myOut
-            ? "Actuellement, elle livre"
-            : "Actuellement, elle devrait livrer"
+            ? s.CurrentlyDelivers
+            : s.ShouldCurrentlyDeliver
 
         const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
-            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
-            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+            ? mods(desc + " " + s.UndeterminedOutputBecauseInputsUnknown)
+            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.AccordingToTruthTable)
 
         return makeGateTooltip(2,
-            mods("Porte ", b(gateProps.localName)),
-            gateProps.localDesc,
+            s.GateTitle(b(gateProps.fullShortDesc[0])),
+            gateProps.fullShortDesc[2],
             explanation,
             makeTruthTable(genTruthTableData())
         )
@@ -918,8 +927,9 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
     }
 
     public override makeTooltip() {
+        const s = S.Components.Gate.tooltip
         if (this.showAsUnknown) {
-            return div("Porte inconnue")
+            return div(s.UnknownGate)
         }
 
         const gateProps = Gate3Types.propsOf(this.type)
@@ -929,7 +939,8 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
         const myOut = this.value
 
         const genTruthTableData = () => {
-            const header = ["Entrée 1", "Entrée 2", "Entrée 3", "Sortie"]
+            const header = [s.Input + " 1", s.Input + " 2", s.Input + " 3", s.Output]
+
             const rows: TruthTableRowData[] = []
             for (const in0 of [false, true]) {
                 for (const in1 of [false, true]) {
@@ -945,17 +956,17 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
         const nodeOut = this.outputs[0].value
         const desc = nodeOut === myOut
-            ? "Actuellement, elle livre"
-            : "Actuellement, elle devrait livrer"
+            ? s.CurrentlyDelivers
+            : s.ShouldCurrentlyDeliver
 
         const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
-            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
-            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+            ? mods(desc + " " + s.UndeterminedOutputBecauseInputsUnknown)
+            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.AccordingToTruthTable)
 
         return makeGateTooltip(3,
-            mods("Porte ", b(gateProps.localName)),
-            gateProps.localDesc,
+            s.GateTitle(b(gateProps.fullShortDesc[0])),
+            gateProps.fullShortDesc[2],
             explanation,
             makeTruthTable(genTruthTableData())
         )
@@ -1009,9 +1020,9 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
     }
 
     public override makeTooltip() {
-        // TODO extract this in superclass?
+        const s = S.Components.Gate.tooltip
         if (this.showAsUnknown) {
-            return div("Porte inconnue")
+            return div(s.UnknownGate)
         }
 
         const gateProps = Gate4Types.propsOf(this.type)
@@ -1022,7 +1033,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         const myOut = this.value
 
         const genTruthTableData = () => {
-            const header = ["Entrée 1", "Entrée 2", "Entrée 3", "Entrée 4", "Sortie"]
+            const header = [s.Input + " 1", s.Input + " 2", s.Input + " 3", s.Input + " 4", s.Output]
             const rows: TruthTableRowData[] = []
             for (const in0 of [false, true]) {
                 for (const in1 of [false, true]) {
@@ -1040,17 +1051,17 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
 
         const nodeOut = this.outputs[0].value
         const desc = nodeOut === myOut
-            ? "Actuellement, elle livre"
-            : "Actuellement, elle devrait livrer"
+            ? s.CurrentlyDelivers
+            : s.ShouldCurrentlyDeliver
 
         const gateIsUnspecified = isUnknown(myIn0) || isUnknown(myIn1)
         const explanation = gateIsUnspecified
-            ? mods(desc + " une sortie indéterminée comme toutes ses entrées ne sont pas connues. Sa table de vérité est:")
-            : mods(desc + " une sortie de ", asValue(myOut), " selon la table de vérité suivante:")
+            ? mods(desc + " " + s.UndeterminedOutputBecauseInputsUnknown)
+            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.AccordingToTruthTable)
 
         return makeGateTooltip(4,
-            mods("Porte ", b(gateProps.localName)),
-            gateProps.localDesc,
+            s.GateTitle(b(gateProps.fullShortDesc[0])),
+            gateProps.fullShortDesc[2],
             explanation,
             makeTruthTable(genTruthTableData())
         )

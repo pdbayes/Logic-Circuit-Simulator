@@ -6,6 +6,7 @@ import { tooltipContent, mods } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { InputBit } from "./InputBit"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 2
 const GRID_HEIGHT = 8
@@ -77,7 +78,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     public override makeTooltip() {
-        return tooltipContent("Entrée semioctet", mods("TODO"))
+        return tooltipContent(undefined, mods(S.Components.InputNibble.tooltip))
     }
 
     protected doRecalcValue(): FixedArray<LogicValue, 4> {

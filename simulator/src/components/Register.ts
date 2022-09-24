@@ -2,10 +2,11 @@ import { FixedArray, isNull, isNotNull, isUndefined, toLogicValue, toLogicValueR
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
+import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 15
@@ -53,9 +54,9 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
     public constructor(editor: LogicEditor, savedData: RegisterRepr | null) {
         super(editor, Register.savedStateFrom(savedData), savedData, {
             ins: [
-                ["Clock (horloge)", -5, +6, "w"], // Clock
-                ["P (Preset, mise à 1)", 0, -8, "n"], // Preset
-                ["C (Clear, mise à 0)", 0, +8, "s"], // Clear
+                [S.Components.Generic.InputClockDesc, -5, +6, "w"], // Clock
+                [S.Components.Generic.InputPresetDesc, 0, -8, "n"], // Preset
+                [S.Components.Generic.InputClearDesc, 0, +8, "s"], // Clear
                 // Data in
                 ["D0", -5, -3, "w", "D"],
                 ["D0", -5, -1, "w", "D"],
@@ -104,8 +105,9 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
     }
 
     public override makeTooltip() {
-        return tooltipContent("Registre", mods(
-            div(`Stocke quatre bits.`) // TODO more info
+        const s = S.Components.Register.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc) // TODO more info
         ))
     }
 
@@ -208,23 +210,12 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
 
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        // TODO merge with FlipFlip items
-        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
-            const isCurrent = this._trigger === trigger
-            const icon = isCurrent ? "check" : "none"
-            const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined :
-                () => this.doSetTrigger(trigger)
-            return ContextMenuData.item(icon, caption, action)
-        }
-
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
+        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
         const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
-            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem],
         ]

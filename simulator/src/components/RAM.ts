@@ -2,10 +2,11 @@ import { FixedArray, isNotNull, LogicValue, typeOrUndefined, Unknown, isNull, is
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop } from "./FlipflopOrLatch"
+import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 11
 const GRID_HEIGHT = 15
@@ -89,9 +90,9 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     public constructor(editor: LogicEditor, savedData: RAM16x4Repr | null) {
         super(editor, RAM16by4.savedStateFrom(savedData), savedData, {
             ins: [
-                ["Clock (horloge)", -7, +6, "w"], // Clock
+                [S.Components.Generic.InputClockDesc, -7, +6, "w"], // Clock
                 ["WE (Write Enable)", -2, +8, "s"], // WriteEnable
-                ["C (Clear, mise à 0)", +2, +8, "s"], // Clear
+                [S.Components.Generic.InputClearDesc, +2, +8, "s"], // Clear
                 // Data in
                 ["D0", -7, -3, "w", "D"],
                 ["D1", -7, -1, "w", "D"],
@@ -161,8 +162,9 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     }
 
     public override makeTooltip() {
-        return tooltipContent("RAM", mods(
-            div(`Stocke 16 fois quatre bits.`) // TODO more info
+        const s = S.Components.RAM.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc) // TODO more info
         ))
     }
 
@@ -342,23 +344,12 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        // TODO merge with FlipFlip items
-        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
-            const isCurrent = this._trigger === trigger
-            const icon = isCurrent ? "check" : "none"
-            const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined :
-                () => this.doSetTrigger(trigger)
-            return ContextMenuData.item(icon, caption, action)
-        }
-
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
+        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
         const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
-            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem]]
 

@@ -5,6 +5,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 7
 const GRID_HEIGHT = 5
@@ -53,8 +54,8 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
     }
 
     public override makeTooltip() {
-        return tooltipContent("Additionneur", mods(
-            div(`Additionne deux bits A et B et une retenue d’entrée Cin, et fournit un bit de somme S et une retenue de sortie Cout.`)
+        return tooltipContent(S.Components.Adder.caption, mods(
+            div(S.Components.Adder.tooltip),
         ))
     }
 

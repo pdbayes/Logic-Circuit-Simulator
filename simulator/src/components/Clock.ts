@@ -6,6 +6,7 @@ import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 
 export const ClockDef =
@@ -35,7 +36,7 @@ export class Clock extends InputBitBase<ClockRepr> {
 
     constructor(editor: LogicEditor, savedData: ClockRepr | null) {
         super(editor, false, savedData)
-        if(isNotNull(savedData)) {
+        if (isNotNull(savedData)) {
             this._period = savedData.period
             if (isDefined(savedData.dutycycle)) {
                 this._dutycycle = savedData.dutycycle % 100
@@ -65,11 +66,13 @@ export class Clock extends InputBitBase<ClockRepr> {
     }
 
     public override makeTooltip() {
-        return tooltipContent("Horloge",
-            mods(`Période: ${this._period} ms`, br, `Rapport cyclique: ${this._dutycycle}%`,
+        const s = S.Components.Clock.tooltip
+        return tooltipContent(s.title,
+            mods(s.period[0] + this._period + s.period[1], br,
+                s.dutycycle[0] + this._dutycycle + s.dutycycle[1],
                 this._phase === 0
                     ? emptyMod
-                    : mods(br, `Déphasage: ${this._phase} ms`)
+                    : mods(br, s.phase[0] + this._phase + s.phase[1])
             ))
     }
 
@@ -155,6 +158,7 @@ export class Clock extends InputBitBase<ClockRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
         const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = []
+        const s = S.Components.Clock.contextMenu
 
         const superItems = super.makeComponentSpecificContextMenuItems()
         if (isDefined(superItems)) {
@@ -180,7 +184,7 @@ export class Clock extends InputBitBase<ClockRepr> {
 
         const myItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("timer", "Période", periodPresets.map(makeItemSetPeriod))],
+            ["mid", ContextMenuData.submenu("timer", s.Period, periodPresets.map(makeItemSetPeriod))],
         ]
 
         newItems.push(...myItems)

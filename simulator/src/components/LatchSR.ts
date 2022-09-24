@@ -4,6 +4,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const enum INPUT {
     Set,
@@ -20,8 +21,8 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
     public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
         super(editor, savedData, {
             ins: [
-                ["S (Set, mise à 1)", -4, -2, "w"], 
-                ["R (Reset, mise à 0)", -4, 2, "w"],
+                [S.Components.Generic.InputSetDesc, -4, -2, "w"],
+                [S.Components.Generic.InputResetDesc, -4, 2, "w"],
             ],
         })
         this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
@@ -35,8 +36,9 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
     }
 
     public override makeTooltip() {
-        return tooltipContent("Verrou SR", mods(
-            div(`Stocke un bit.`) // TODO more info
+        const s = S.Components.LatchSR.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc) // TODO more info
         ))
     }
 
@@ -83,7 +85,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu", () => {
+        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent, () => {
             this.doSetShowContent(!this._showContent)
         })
 

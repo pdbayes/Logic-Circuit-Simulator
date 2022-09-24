@@ -5,6 +5,7 @@ import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, form
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -69,22 +70,23 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
     }
 
     public override makeTooltip() {
+        const s = S.Components.OutputNibble.tooltip
         const radixStr = (() => {
             switch (this._radix) {
-                case 2: return "binaire"
-                case 10: return "décimale"
-                case -10: return "décimale signée"
-                case 16: return "hexadécimale"
-                default: return `en base ${this._radix}`
+                case 2: return s.RadixBinary
+                case 10: return s.RadixDecimal
+                case -10: return s.RadixSignedDecimal
+                case 16: return s.RadixHexadecimal
+                default: return s.RadixGeneric.expand({ radix: this._radix })
             }
         })()
         const [binaryStringRep, value] = this.value
 
-        return tooltipContent("Afficheur de semioctet", mods(
-            div(`Affiche la valeur ${radixStr} de ses 4 entrées, actuellement `, b(binaryStringRep), "."),
+        return tooltipContent("", mods(
+            div(s.desc[0].expand({ radixStr }) + " ", b(binaryStringRep), s.desc[1]),
             !isUnknown(value) || this.showAsUnknown
                 ? emptyMod
-                : div("Comme toutes ses entrées ne sont pas connues, cette valeur est actuellement indéfinie.")
+                : div(s.CurrentlyUndefined)
         ))
     }
 
@@ -180,9 +182,10 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
+        const s = S.Components.OutputNibble.contextMenu
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
             const icon = isCurrent ? "check" : "none"
-            const caption = "Afficher " + desc
+            const caption = s.DisplayAs + " " + desc
             const action = isCurrent ? () => undefined : handler
             return ContextMenuData.item(icon, caption, action)
         }
@@ -197,10 +200,10 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         }
 
         return [
-            ["mid", makeItemShowRadix(10, "en décimal")],
-            ["mid", makeItemShowRadix(-10, "en décimal signé")],
-            ["mid", makeItemShowRadix(16, "en hexadécimal")],
-            ["mid", makeItemShowAs("comme inconnu", () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
+            ["mid", makeItemShowRadix(10, s.DisplayAsDecimal)],
+            ["mid", makeItemShowRadix(-10, s.DisplayAsSignedDecimal)],
+            ["mid", makeItemShowRadix(16, s.DisplayAsHexadecimal)],
+            ["mid", makeItemShowAs(s.DisplayAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]

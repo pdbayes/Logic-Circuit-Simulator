@@ -5,6 +5,7 @@ import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxTo
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 
 export const OutputBarTypes = {
@@ -94,15 +95,16 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
     }
 
     public override makeTooltip() {
+        const s = S.Components.OutputBar.tooltip
         const expl: Modifier = (() => {
             switch (this.value) {
-                case Unknown: return "Son état est indéterminé car son entrée n’est pas connue."
-                case HighImpedance: return "Son état est indéterminé car son entrée est flottante (haute impédance)."
-                case true: return mods("Il est actuellement allumé car son entrée est de ", asValue(this.value), ".")
-                case false: return mods("Il est actuellement éteint car son entrée est de ", asValue(this.value), ".")
+                case Unknown: return s.ValueUnknown
+                case HighImpedance: return s.ValueUnknown
+                case true: return mods(s.Value1[0], asValue(this.value), s.Value1[1])
+                case false: return mods(s.Value0[0], asValue(this.value), s.Value0[1])
             }
         })()
-        return tooltipContent("Afficheur lumineux", expl)
+        return tooltipContent(s.title, expl)
     }
 
     public get display() {
@@ -200,6 +202,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const s = S.Components.OutputBar.contextMenu
 
         const makeItemShowAs = (desc: string, display: OutputBarType) => {
             const isCurrent = this._display === display
@@ -218,23 +221,23 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
 
         const itemTransparent = ContextMenuData.item(
             this._transparent ? "check" : "none",
-            "Transparent si éteint",
+            s.TransparentWhenOff,
             () => this.doSetTransparent(!this._transparent)
         )
 
         return [
-            ["mid", ContextMenuData.submenu("eye", "Affichage", [
-                makeItemShowAs("Barre verticale", "v"),
-                makeItemShowAs("Barre horizontale", "h"),
-                makeItemShowAs("Petit carré", "px"),
-                makeItemShowAs("Gros carré", "PX"),
+            ["mid", ContextMenuData.submenu("eye", s.Display, [
+                makeItemShowAs(s.DisplayVerticalBar, "v"),
+                makeItemShowAs(s.DisplayHorizontalBar, "h"),
+                makeItemShowAs(s.DisplaySmallSquare, "px"),
+                makeItemShowAs(s.DisplayLargeSquare, "PX"),
                 ContextMenuData.sep(),
-                ContextMenuData.text("Changez l’affichage avec un double-clic sur le composant"),
+                ContextMenuData.text(s.DisplayChangeDesc),
             ])],
-            ["mid", ContextMenuData.submenu("palette", "Couleur", [
-                makeItemUseColor("Vert", "green"),
-                makeItemUseColor("Rouge", "red"),
-                makeItemUseColor("Jaune", "yellow"),
+            ["mid", ContextMenuData.submenu("palette", s.Color, [
+                makeItemUseColor(s.ColorGreen, "green"),
+                makeItemUseColor(s.ColorRed, "red"),
+                makeItemUseColor(s.ColorYellow, "yellow"),
                 ContextMenuData.sep(),
                 itemTransparent,
             ])],

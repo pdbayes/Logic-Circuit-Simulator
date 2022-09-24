@@ -5,6 +5,7 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
+import { S } from "../strings"
 
 export const Decoder7SegDef =
     defineComponent(4, 7, t.type({
@@ -67,7 +68,7 @@ export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReado
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div("Décodeur 7 segments")
+            div(S.Components.Decoder7Seg.tooltip) // TODO better info
         ))
     }
 

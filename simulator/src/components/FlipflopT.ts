@@ -4,6 +4,7 @@ import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { defineFlipflop, Flipflop, OUTPUT } from "./FlipflopOrLatch"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 
 const enum INPUT {
@@ -22,7 +23,7 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
 
     public constructor(editor: LogicEditor, savedData: FlipflopTRepr | null) {
         super(editor, savedData, {
-            ins: [["T (toggle)", -4, -2, "w"]],
+            ins: [[S.Components.FlipflopT.InputTDesc, -4, -2, "w"]],
             clockYOffset: 2,
         })
     }
@@ -35,8 +36,9 @@ export class FlipflopT extends Flipflop<1, FlipflopTRepr> {
     }
 
     public override makeTooltip() {
-        return tooltipContent("Bascule T", mods(
-            div(`Stocke un bit.`) // TODO more info
+        const s = S.Components.FlipflopT.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc) // TODO more info
         ))
     }
 

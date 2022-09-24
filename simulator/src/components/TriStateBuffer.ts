@@ -5,6 +5,7 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
+import { S } from "../strings"
 
 export const TriStateBufferDef =
     defineComponent(2, 1, t.type({
@@ -56,8 +57,8 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
     }
 
     public override makeTooltip() {
-        return tooltipContent("Sortie à 3 états", mods(
-            div("TODO") // TODO
+        return tooltipContent(undefined, mods(
+            div(S.Components.TriStateBuffer.tooltip) // TODO
         ))
     }
 

@@ -6,6 +6,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, D
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
 import { span, style, title } from "../htmlgen"
+import { S } from "../strings"
 
 export const RectangleColor = {
     grey: "grey",
@@ -265,8 +266,9 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const s = S.Components.LabelRect.contextMenu
         const currentSizeStr = this.makeCurrentSizeString()
-        const setSizeItem = ContextMenuData.item("dimensions", `Taille (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))
+        const setSizeItem = ContextMenuData.item("dimensions", s.Size + ` (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))
 
         const makeSetStrokeWidthItem = (strokeWidth: number, desc: string) => {
             const isCurrent = this._strokeWidth === strokeWidth
@@ -288,17 +290,17 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
             }
         }
 
-        const toggleRoundedItem = ContextMenuData.item(this._rounded ? "check" : "none", "Arrondi", () => {
+        const toggleRoundedItem = ContextMenuData.item(this._rounded ? "check" : "none", s.Rounded, () => {
             this._rounded = !this._rounded
             this.setNeedsRedraw("rounded changed")
         })
 
-        const toggleNoFillItem = ContextMenuData.item(!this._noFill ? "check" : "none", "Avec couleur de fond", () => {
+        const toggleNoFillItem = ContextMenuData.item(!this._noFill ? "check" : "none", s.WithBackgroundColor, () => {
             this._noFill = !this._noFill
             this.setNeedsRedraw("nofill changed")
         })
 
-        const setCaptionItemName = isDefined(this._caption) ? "Changer le titre…" : "Ajouter un titre…"
+        const setCaptionItemName = isDefined(this._caption) ? s.ChangeTitle : s.SetTitle
         const setCaptionItem = ContextMenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog())
 
         const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
@@ -309,60 +311,60 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         }
 
         const toggleCaptionInsideItems = this._captionPos === "c" ? [] : [
-            ContextMenuData.item(this._captionInside ? "check" : "none", "À l’intérieur du cadre", () => {
+            ContextMenuData.item(this._captionInside ? "check" : "none", s.InsideFrame, () => {
                 this._captionInside = !this._captionInside
                 this.setNeedsRedraw("caption inside changed")
             }),
             ContextMenuData.sep(),
         ]
 
-        const setFontItem = ContextMenuData.item("font", "Police…", () => {
+        const setFontItem = ContextMenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelRectDefaults.font, this.doSetFont.bind(this))
         })
 
 
         return [
             ["mid", setSizeItem],
-            ["mid", ContextMenuData.submenu("palette", "Couleur", [
+            ["mid", ContextMenuData.submenu("palette", s.Color, [
                 toggleNoFillItem,
                 ContextMenuData.sep(),
-                makeItemUseColor("Jaune", RectangleColor.yellow),
-                makeItemUseColor("Rouge", RectangleColor.red),
-                makeItemUseColor("Vert", RectangleColor.green),
-                makeItemUseColor("Bleu", RectangleColor.blue),
-                makeItemUseColor("Bleu", RectangleColor.turquoise),
-                makeItemUseColor("Bleu", RectangleColor.grey),
+                makeItemUseColor(s.ColorYellow, RectangleColor.yellow),
+                makeItemUseColor(s.ColorRed, RectangleColor.red),
+                makeItemUseColor(s.ColorGreen, RectangleColor.green),
+                makeItemUseColor(s.ColorBlue, RectangleColor.blue),
+                makeItemUseColor(s.ColorTurquoise, RectangleColor.turquoise),
+                makeItemUseColor(s.ColorGrey, RectangleColor.grey),
             ])],
-            ["mid", ContextMenuData.submenu("strokewidth", "Bordure", [
-                makeSetStrokeWidthItem(0, "Aucune bordure"),
+            ["mid", ContextMenuData.submenu("strokewidth", s.Border, [
+                makeSetStrokeWidthItem(0, s.BorderNone),
                 ContextMenuData.sep(),
-                makeSetStrokeWidthItem(1, "Fine (1 pixel)"),
-                makeSetStrokeWidthItem(2, "Moyenne (2 pixels)"),
-                makeSetStrokeWidthItem(3, "Épaisse (3 pixels)"),
-                makeSetStrokeWidthItem(5, "Très épaisse (5 pixels)"),
-                makeSetStrokeWidthItem(10, "Énorme (10 pixels)"),
+                makeSetStrokeWidthItem(1, s.Border1px),
+                makeSetStrokeWidthItem(2, s.Border2px),
+                makeSetStrokeWidthItem(3, s.Border3px),
+                makeSetStrokeWidthItem(5, s.Border5px),
+                makeSetStrokeWidthItem(10, s.Border10px),
             ])],
             ["mid", toggleRoundedItem],
             ["mid", ContextMenuData.sep()],
             ["mid", setCaptionItem],
             ["mid", setFontItem],
-            ["mid", ContextMenuData.submenu("placement", "Position du titre", [
+            ["mid", ContextMenuData.submenu("placement", s.TitlePlacement, [
                 ...toggleCaptionInsideItems,
-                makeItemSetPlacement("En haut", CaptionPosition.n),
-                makeItemSetPlacement("En haut à gauche", CaptionPosition.nw),
-                makeItemSetPlacement("En haut à droite", CaptionPosition.ne),
-                makeItemSetPlacement("En bas", CaptionPosition.s),
-                makeItemSetPlacement("En bas à gauche", CaptionPosition.sw),
-                makeItemSetPlacement("En bas à droite", CaptionPosition.se),
-                makeItemSetPlacement("À gauche", CaptionPosition.w),
-                makeItemSetPlacement("À droite", CaptionPosition.e),
-                makeItemSetPlacement("Au centre", CaptionPosition.c),
+                makeItemSetPlacement(s.PlacementTop, CaptionPosition.n),
+                makeItemSetPlacement(s.PlacementTopLeft, CaptionPosition.nw),
+                makeItemSetPlacement(s.PlacementTopRight, CaptionPosition.ne),
+                makeItemSetPlacement(s.PlacementBottom, CaptionPosition.s),
+                makeItemSetPlacement(s.PlacementBottomLeft, CaptionPosition.sw),
+                makeItemSetPlacement(s.PlacementBottomRight, CaptionPosition.se),
+                makeItemSetPlacement(s.PlacementLeft, CaptionPosition.w),
+                makeItemSetPlacement(s.PlacementRight, CaptionPosition.e),
+                makeItemSetPlacement(s.PlacementCenter, CaptionPosition.c),
             ])],
         ]
     }
 
     private runSetSizeDialog(currentSizeStr: string) {
-        const promptReturnValue = window.prompt(`Entrez la taille de ce rectangle:`, currentSizeStr)
+        const promptReturnValue = window.prompt(S.Components.LabelRect.contextMenu.SizePrompt, currentSizeStr)
         if (promptReturnValue !== null) {
             let match
             if ((match = /^(?<w>\d*)(?:(?:\s+|(?: *[×x,;] *))(?<h>\d*))?$/.exec(promptReturnValue)) !== null) {
@@ -421,7 +423,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     }
 
     private runSetCaptionDialog() {
-        const promptReturnValue = window.prompt("Entrez le titre à afficher ou laissez vide pour le supprimer:", this._caption)
+        const promptReturnValue = window.prompt(S.Components.LabelRect.contextMenu.SetTitlePrompt, this._caption)
         if (promptReturnValue !== null) {
             // OK button pressed
             const newCaption = promptReturnValue.length === 0 ? undefined : promptReturnValue

@@ -6,6 +6,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { IconName } from "../images"
+import { S } from "../strings"
 
 
 type DemuxInputIndices<NumInputs extends FixedArraySize> = {
@@ -205,8 +206,8 @@ export abstract class Demux<
     }
 
     public override makeTooltip() {
-        return tooltipContent(`Démultiplexeur ${this.numFrom} vers ${this.numTo}`, mods(
-            div(`TODO`)
+        return tooltipContent(undefined, mods(
+            div(S.Components.Demux.tooltip.expand({ from: this.numFrom, to: this.numTo })) // TODO better tooltip
         ))
     }
 
@@ -331,13 +332,14 @@ export abstract class Demux<
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
+        const s = S.Components.Demux.contextMenu
         let icon: IconName = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, "Afficher les connexions", () => {
+        const toggleShowWiringItem = ContextMenuData.item(icon, S.Components.Mux.contextMenu.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 
         icon = this._disconnectedAsHighZ ? "check" : "none"
-        const toggleUseHighZItem = ContextMenuData.item(icon, "Utiliser Z pour sorties déconnectées", () => {
+        const toggleUseHighZItem = ContextMenuData.item(icon, s.UseZForDisconnected, () => {
             this.doSetDisconnectedAsHighZ(!this._disconnectedAsHighZ)
         })
 

@@ -5,6 +5,7 @@ import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { IconName } from "../images"
 import { DrawZIndex } from "../ComponentList"
+import { S } from "../strings"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -139,9 +140,10 @@ export abstract class Drawable {
 
     protected makeSetRefContextMenuItem(): ContextMenuItem {
         const currentRef = this.ref
-        const caption: Modifier = isUndefined(currentRef) ? "Attribuer un identifiant…" : span("Changer l’identifiant (", span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), ")")
+        const s = S.Components.Generic.contextMenu
+        const caption: Modifier = isUndefined(currentRef) ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
         return ContextMenuData.item("ref", caption, () => {
-            const newRef = window.prompt("Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)", currentRef)
+            const newRef = window.prompt(s.SetIdentifierPrompt, currentRef)
             if (newRef !== null) {
                 // OK button pressed
                 this.ref = newRef.length === 0 ? undefined : newRef
@@ -199,14 +201,13 @@ export interface HasPosition {
 }
 
 export const Orientations_ = {
-    "e": { localDesc: "Vers la droite (par défaut)" },
-    "s": { localDesc: "Vers le bas" },
-    "w": { localDesc: "Vers la gauche" },
-    "n": { localDesc: "Vers le haut" },
+    "e": {},
+    "s": {},
+    "w": {},
+    "n": {},
 } as const
 
 export const Orientations = RichStringEnum.withProps<{
-    localDesc: string
 }>()(Orientations_)
 
 
@@ -369,18 +370,19 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     protected makeChangeOrientationContextMenuItem(): ContextMenuItem {
-        return ContextMenuData.submenu("direction", "Orientation", [
+        const s = S.Components.Generic.contextMenu
+        return ContextMenuData.submenu("direction", s.Orientation, [
             ...Orientations.values.map(orient => {
                 const isCurrent = this._orient === orient
                 const icon = isCurrent ? "check" : "none"
-                const caption = Orientations.propsOf(orient).localDesc
+                const caption = S.Orientations[orient]
                 const action = isCurrent ? () => undefined : () => {
                     this.doSetOrient(orient)
                 }
                 return ContextMenuData.item(icon, caption, action)
             }),
             ContextMenuData.sep(),
-            ContextMenuData.text("Changez l’orientation avec Commande + double-clic sur le composant"),
+            ContextMenuData.text(s.ChangeOrientationDesc),
         ])
     }
 

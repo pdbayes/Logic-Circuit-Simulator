@@ -5,6 +5,7 @@ import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { DrawZIndex } from "../ComponentList"
+import { S } from "../strings"
 
 export const LabelStringDef =
     defineComponent(0, 0, t.type({
@@ -98,10 +99,10 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const s = S.Components.LabelString.contextMenu
+        const setTextItem = ContextMenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
 
-        const setTextItem = ContextMenuData.item("pen", "Changer le texte…", this.runSetTextDialog.bind(this))
-
-        const setFontItem = ContextMenuData.item("font", "Police…", () => {
+        const setFontItem = ContextMenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelStringDefaults.font, this.doSetFont.bind(this))
         })
 
@@ -112,7 +113,7 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
     }
 
     private runSetTextDialog() {
-        const promptReturnValue = window.prompt("Choisissez le texte à afficher:", this._text)
+        const promptReturnValue = window.prompt(S.Components.LabelString.contextMenu.ChangeTextPrompt, this._text)
         if (promptReturnValue !== null) {
             // OK button pressed
             const newText = promptReturnValue.length === 0 ? LabelStringDefaults.text : promptReturnValue

@@ -6,6 +6,7 @@ import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { Node, NodeOut } from "./Node"
+import { S } from "../strings"
 
 export const OutputBitDef =
     defineComponent(1, 0, t.type({
@@ -53,7 +54,8 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
     }
 
     public override makeTooltip() {
-        return tooltipContent(undefined, mods("Sortie", isUnknown(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
+        const s = S.Components.OutputBit.tooltip
+        return tooltipContent(undefined, mods(s.title, isUnknown(this.value) ? " " + s.WhoseValueIsUndefined : emptyMod))
     }
 
     protected doRecalcValue(): LogicValue {

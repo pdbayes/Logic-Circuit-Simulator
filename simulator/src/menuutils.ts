@@ -1,404 +1,347 @@
 import { a, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
-import { isDefined, isUndefined } from "./utils"
+import { S, Strings } from "./strings"
+import { isDefined, isString, isUndefined } from "./utils"
+
+type ComponentKey = Strings["ComponentBar"]["Components"]["type"]
+
+// type ComponentStrings = Strings["ComponentBar"]["Components"][ComponentKey]
 
 type ComponentItem = {
     type: string // TODO better types for this
     subtype: string | undefined // explicit undefined
-    title: string
-    caption: string | undefined
+    strings: ComponentKey
     img: ImageName
     width: number
     normallyHidden?: boolean
 }
 
+type SectionNameKey = keyof Strings["ComponentBar"]["SectionNames"]
 
 type Section = {
-    name: string,
+    nameKey: SectionNameKey,
     items: Array<ComponentItem>
 }
 
 const componentsMenu: Array<Section> = [
     {
-        name: "Entrées/ sorties",
+        nameKey: "InputOutput",
         items: [
             {
                 type: "in", subtype: undefined,
-                title: "Entrée", caption: undefined,
-                img: "InputBit", width: 32,
+                strings: "InputBit", img: "InputBit", width: 32,
             },
             {
                 type: "out", subtype: undefined,
-                title: "Sortie", caption: undefined,
-                img: "OutputBit", width: 32,
+                strings: "OutputBit", img: "OutputBit", width: 32,
             },
             {
                 type: "out", subtype: "nibble",
-                title: "Affichage de 4 bits", caption: undefined,
-                img: "OutputNibble", width: 32,
+                strings: "OutputNibble", img: "OutputNibble", width: 32,
             },
             {
                 type: "out", subtype: "7seg",
-                title: "Afficheur à 7 segments", caption: undefined,
-                img: "Output7Seg", width: 32,
+                strings: "Output7Seg", img: "Output7Seg", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "out", subtype: "16seg",
-                title: "Afficheur à 16 segments", caption: undefined,
-                img: "Output16Seg", width: 32,
+                strings: "Output16Seg", img: "Output16Seg", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "out", subtype: "ascii",
-                title: "Affichage d’un caractère ASCII", caption: undefined,
-                img: "OutputAscii", width: 32,
+                strings: "OutputAscii", img: "OutputAscii", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "out", subtype: "bar",
-                title: "Affichage d’un bit sous forme de segment lumineux", caption: undefined,
-                img: "OutputBar", width: 32,
+                strings: "OutputBar", img: "OutputBar", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "in", subtype: "clock",
-                title: "Horloge", caption: undefined,
-                img: "Clock", width: 50,
+                strings: "Clock", img: "Clock", width: 50,
             },
             {
                 type: "in", subtype: "nibble",
-                title: "Entrée semioctet", caption: undefined,
-                img: "InputNibble", width: 32,
+                strings: "InputNibble", img: "InputNibble", width: 32,
             },
             {
                 type: "in", subtype: "random",
-                title: "Entrée aléatoire", caption: undefined,
-                img: "InputRandom", width: 32,
+                strings: "InputRandom", img: "InputRandom", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "out", subtype: "shiftbuffer",
-                title: "Affichage avec buffer à décalage", caption: undefined,
-                img: "OutputShiftBuffer", width: 50,
+                strings: "OutputShiftBuffer", img: "OutputShiftBuffer", width: 50,
                 normallyHidden: true,
             },
 
             // TODO move to new category once ironed out?
             {
                 type: "label", subtype: undefined,
-                title: "Étiquette", caption: undefined,
-                img: "LabelString", width: 32,
+                strings: "LabelString", img: "LabelString", width: 32,
                 normallyHidden: true,
             },
             {
                 type: "label", subtype: "rect",
-                title: "Rectangle", caption: undefined,
-                img: "LabelRectangle", width: 32,
+                strings: "LabelRectangle", img: "LabelRectangle", width: 32,
                 normallyHidden: true,
             },
         ],
     },
 
     {
-        name: "Portes",
+        nameKey: "Gates",
         items: [
             {
                 type: "gate", subtype: "NOT",
-                title: "Porte NON", caption: "NON",
-                img: "NOT", width: 50,
+                strings: "NOT", img: "NOT", width: 50,
             },
             {
                 type: "gate", subtype: "BUF",
-                title: "Buffer (porte OUI)", caption: "OUI",
-                img: "BUF", width: 50,
+                strings: "BUF", img: "BUF", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "TRI",
-                title: "Sortie à 3 états", caption: "3 états",
-                img: "BUF", width: 50,
+                strings: "TRI", img: "BUF", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "AND",
-                title: "Porte ET", caption: "ET",
-                img: "AND", width: 50,
+                strings: "AND", img: "AND", width: 50,
             },
             {
                 type: "gate", subtype: "OR",
-                title: "Porte OU", caption: "OU",
-                img: "OR", width: 50,
+                strings: "OR", img: "OR", width: 50,
             },
             {
                 type: "gate", subtype: "XOR",
-                title: "Porte OU-X", caption: "OU-X",
-                img: "XOR", width: 50,
+                strings: "XOR", img: "XOR", width: 50,
             },
             {
                 type: "gate", subtype: "NAND",
-                title: "Porte NON-ET", caption: "NON-ET",
-                img: "NAND", width: 50,
+                strings: "NAND", img: "NAND", width: 50,
             },
             {
                 type: "gate", subtype: "NOR",
-                title: "Porte NON-OU", caption: "NON-OU",
-                img: "NOR", width: 50,
+                strings: "NOR", img: "NOR", width: 50,
             },
 
             {
                 type: "gate", subtype: "XNOR",
-                title: "Porte NON-OU-X", caption: "NON-OU-X",
-                img: "XNOR", width: 50,
+                strings: "XNOR", img: "XNOR", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "IMPLY",
-                title: "Porte IMPLIQUE", caption: "IMPLIQUE",
-                img: "IMPLY", width: 50,
+                strings: "IMPLY", img: "IMPLY", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "NIMPLY",
-                title: "Porte NON-IMPLIQUE", caption: "NON-IMPL.",
-                img: "NIMPLY", width: 50,
+                strings: "NIMPLY", img: "NIMPLY", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "TXA",
-                title: "Fausse porte TRANSFERT à deux entrée", caption: "TRANSF.",
-                img: "TXA", width: 50,
+                strings: "TRANSFER", img: "TXA", width: 50,
                 normallyHidden: true,
             },
 
             {
                 type: "gate", subtype: "AND3",
-                title: "Porte ET à 3 entrées", caption: "ET (3)",
-                img: "AND3", width: 50,
+                strings: "AND3", img: "AND3", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "OR3",
-                title: "Porte OU à 3 entrées", caption: "OU (3)",
-                img: "OR3", width: 50,
+                strings: "OR3", img: "OR3", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "XOR3",
-                title: "Porte OU-X à 3 entrées", caption: "OU-X (3)",
-                img: "XNOR3", width: 50,
+                strings: "XOR3", img: "XOR3", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "NAND3",
-                title: "Porte NON-ET à 3 entrées", caption: "NON-ET (3)",
-                img: "NAND3", width: 50,
+                strings: "NAND3", img: "NAND3", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "NOR3",
-                title: "Porte NON-OU à 3 entrées", caption: "NON-OU (3)",
-                img: "NOR3", width: 50,
+                strings: "NOR3", img: "NOR3", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "XNOR3",
-                title: "Porte NON-OU-X à 3 entrées", caption: "NON-OU-X (3)",
-                img: "XNOR3", width: 50,
+                strings: "XNOR3", img: "XNOR3", width: 50,
                 normallyHidden: true,
             },
 
             {
                 type: "gate", subtype: "AND4",
-                title: "Porte ET à 4 entrées", caption: "ET (4)",
-                img: "AND4", width: 50,
+                strings: "AND4", img: "AND4", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "OR4",
-                title: "Porte OU à 4 entrées", caption: "OU (4)",
-                img: "OR4", width: 50,
+                strings: "OR4", img: "OR4", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "XOR4",
-                title: "Porte OU-X à 4 entrées", caption: "OU-X (4)",
-                img: "XNOR4", width: 50,
+                strings: "XNOR4", img: "XNOR4", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "NAND4",
-                title: "Porte NON-ET à 4 entrées", caption: "NON-ET (4)",
-                img: "NAND4", width: 50,
+                strings: "NAND4", img: "NAND4", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "NOR4",
-                title: "Porte NON-OU à 4 entrées", caption: "NON-OU (4)",
-                img: "NOR4", width: 50,
+                strings: "NOR4", img: "NOR4", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "gate", subtype: "XNOR4",
-                title: "Porte NON-OU-X à 4 entrées", caption: "NON-OU-X (4)",
-                img: "XNOR4", width: 50,
+                strings: "XNOR4", img: "XNOR4", width: 50,
                 normallyHidden: true,
             },
         ],
     },
 
     // { // TODO category for annotations
-    //     name: "Annota- tions",
+    //     nameKey: "Annota- tions",
     //     items: [
     //     ],
     // },
 
 
     {
-        name: "Compo- sants",
+        nameKey: "Components",
         items: [
             {
                 type: "component", subtype: "halfadder",
-                title: "Demi-additionneur", caption: "Demi-add.",
-                img: "HalfAdder", width: 50,
+                strings: "HalfAdder", img: "HalfAdder", width: 50,
             },
             {
                 type: "component", subtype: "adder",
-                title: "Additionneur", caption: "Add.",
-                img: "Adder", width: 50,
+                strings: "Adder", img: "Adder", width: 50,
             },
             {
                 type: "component", subtype: "alu",
-                title: "Unité arithmétique et logique à 4 bits", caption: "ALU",
-                img: "ALU", width: 50,
+                strings: "ALU", img: "ALU", width: 50,
             },
 
             {
                 type: "component", subtype: "mux-2to1",
-                title: "Multiplexer 2-vers-1 (1 bit de contrôle)", caption: "Mux 2-1",
-                img: "Mux", width: 50,
+                strings: "Mux2to1", img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to1",
-                title: "Multiplexer 4-vers-1 (2 bits de contrôle)", caption: "Mux 4-1",
-                img: "Mux", width: 50,
+                strings: "Mux4to1", img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to1",
-                title: "Multiplexer 8-vers-1 (3 bits de contrôle)", caption: "Mux 8-1",
-                img: "Mux", width: 50,
+                strings: "Mux8to1", img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-4to2",
-                title: "Multiplexer 4-vers-2 (1 bit de contrôle)", caption: "Mux 4-2",
-                img: "Mux", width: 50,
+                strings: "Mux4to2", img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to2",
-                title: "Multiplexer 8-vers-2 (2 bits de contrôle)", caption: "Mux 8-2",
-                img: "Mux", width: 50,
+                strings: "Mux8to2", img: "Mux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "mux-8to4",
-                title: "Multiplexer 8-vers-4 (1 bit de contrôle)", caption: "Mux 8-4",
-                img: "Mux", width: 50,
+                strings: "Mux8to4", img: "Mux", width: 50,
                 normallyHidden: true,
             },
 
             {
                 type: "component", subtype: "demux-1to2",
-                title: "Démultiplexer 1-vers-2 (1 bit de contrôle)", caption: "Demux 1-2",
-                img: "Demux", width: 50,
+                strings: "Demux1to2", img: "Demux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "demux-1to4",
-                title: "Démultiplexer 1-vers-4 (2 bits de contrôle)", caption: "Demux 1-4",
-                img: "Demux", width: 50,
+                strings: "Demux1to4", img: "Demux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "demux-1to8",
-                title: "Démultiplexer 1-vers-8 (3 bits de contrôle)", caption: "Demux 1-8",
-                img: "Demux", width: 50,
+                strings: "Demux1to8", img: "Demux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "demux-2to4",
-                title: "Démultiplexer 2-vers-4 (1 bit de contrôle)", caption: "Demux 2-4",
-                img: "Demux", width: 50,
+                strings: "Demux2to4", img: "Demux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "demux-2to8",
-                title: "Démultiplexer 2-vers-8 (2 bits de contrôle)", caption: "Demux 2-8",
-                img: "Demux", width: 50,
+                strings: "Demux2to8", img: "Demux", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "demux-4to8",
-                title: "Démultiplexer 4-vers-8 (1 bit de contrôle)", caption: "Demux 4-8",
-                img: "Demux", width: 50,
+                strings: "Demux4to8", img: "Demux", width: 50,
                 normallyHidden: true,
             },
 
             {
                 type: "component", subtype: "latch-sr",
-                title: "Verrou SR", caption: "Verrou SR",
-                img: "LatchSR", width: 50,
+                strings: "LatchSR", img: "LatchSR", width: 50,
             },
             {
                 type: "component", subtype: "flipflop-jk",
-                title: "Bascule JK", caption: "Basc. JK",
-                img: "FlipflopJK", width: 50,
+                strings: "FlipflopJK", img: "FlipflopJK", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "flipflop-t",
-                title: "Bascule T", caption: "Basc. T",
-                img: "FlipflopT", width: 50,
+                strings: "FlipflopT", img: "FlipflopT", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "flipflop-d",
-                title: "Bascule D", caption: "Basc. D",
-                img: "FlipflopD", width: 50,
+                strings: "FlipflopD", img: "FlipflopD", width: 50,
             },
             {
                 type: "component", subtype: "register",
-                title: "Registre à 4 bits", caption: "Registre",
-                img: "Register", width: 50,
+                strings: "Register", img: "Register", width: 50,
             },
             {
                 type: "component", subtype: "ram-16x4",
-                title: "RAM, 16 × 4 bits", caption: "RAM",
-                img: "RAM", width: 50,
+                strings: "RAM", img: "RAM", width: 50,
             },
             {
                 type: "component", subtype: "counter",
-                title: "Compteur 4 bits", caption: "Compteur",
-                img: "Counter", width: 50,
+                strings: "Counter", img: "Counter", width: 50,
             },
             {
                 type: "component", subtype: "decoder-7seg",
-                title: "Décodeur 7 segments", caption: "Déc. 7 seg.",
-                img: "Decoder7Seg", width: 50,
+                strings: "Decoder7Seg", img: "Decoder7Seg", width: 50,
             },
             {
                 type: "component", subtype: "decoder-16seg",
-                title: "Décodeur ASCII vers 16 segments", caption: "Déc. 16 seg.",
-                img: "Decoder16Seg", width: 50,
+                strings: "Decoder16Seg", img: "Decoder16Seg", width: 50,
                 normallyHidden: true,
             },
             {
                 type: "component", subtype: "decoder-bcd4",
-                title: "Décodeur 4 bits vers BCD sur 5 bits", caption: "Déc. BCD",
-                img: "DecoderBCD4", width: 50,
+                strings: "DecoderBCD4", img: "DecoderBCD4", width: 50,
                 normallyHidden: true,
             },
 
@@ -437,7 +380,7 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
         // section header
         const header =
             div(cls("leftToolbarHeader"),
-                section.name
+                S.ComponentBar.SectionNames[section.nameKey]
             ).render()
         target.appendChild(header)
 
@@ -453,8 +396,10 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
                 buttonStyle += "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
             }
             const dataTypeOpt = isUndefined(item.subtype) ? emptyMod : dataType(item.subtype)
-            const caption = isUndefined(item.caption) ? emptyMod : span(cls("gate-label"), item.caption)
-            const buttonTitle = isUndefined(item.title) ? emptyMod : title(item.title)
+            const compStrings = S.ComponentBar.Components.propsOf(item.strings)
+            const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
+            const caption = isUndefined(captionStr) ? emptyMod : span(cls("gate-label"), captionStr)
+            const buttonTitle = isUndefined(titleStr) ? emptyMod : title(titleStr)
             const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
             const compButton =
                 button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
@@ -477,7 +422,7 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
         // link to show more if needed
         if (numHidden !== 0 && isUndefined(showOnly)) {
             let moreShown = false
-            const names = ["Plus ↓", "Moins ↑"]
+            const names = [S.ComponentBar.Labels.More + " ↓", S.ComponentBar.Labels.Less + " ↑"]
             const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
             linkShowMore.addEventListener("click", () => {
                 moreShown = !moreShown

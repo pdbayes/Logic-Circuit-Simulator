@@ -6,6 +6,7 @@ import { emptyMod, mods, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { Node, NodeIn } from "./Node"
+import { S } from "../strings"
 
 export const InputBitBaseDef =
     defineComponent(0, 1, t.type({
@@ -235,7 +236,8 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     public override makeTooltip() {
-        return tooltipContent(undefined, mods("Entrée", isUnknown(this.value) ? " dont la valeur n’est pas déterminée" : emptyMod))
+        const s = S.Components.InputBit.tooltip
+        return tooltipContent(undefined, mods(s.title, isUnknown(this.value) ? " " + s.WhoseValueIsUnknown : emptyMod))
     }
 
     protected doRecalcValue(): LogicValue {
@@ -289,6 +291,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+        const s = S.Components.InputBit.contextMenu
 
         const makeItemBehaveAs = (desc: string, value: boolean) => {
             const isCurrent = this._isPushButton === value
@@ -300,12 +303,12 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         const makeToggleConstantItem = () => {
             const icon = this._isConstant ? "check" : "none"
             const action = () => this.doSetIsConstant(!this._isConstant)
-            return ContextMenuData.item(icon, `Verrouiller cette valeur (${toLogicValueRepr(this.value)})`, action)
+            return ContextMenuData.item(icon, s.LockValue + ` (${toLogicValueRepr(this.value)})`, action)
         }
 
         const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", makeItemBehaveAs("Commutateur", false)],
-            ["mid", makeItemBehaveAs("Poussoir", true)],
+            ["mid", makeItemBehaveAs(s.ToggleButton, false)],
+            ["mid", makeItemBehaveAs(s.PushButton, true)],
             ["mid", ContextMenuData.sep()],
             ["mid", makeToggleConstantItem()],
             ["mid", ContextMenuData.sep()],

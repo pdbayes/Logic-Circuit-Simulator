@@ -5,6 +5,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, 
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 6
 const GRID_HEIGHT = 19
@@ -34,20 +35,10 @@ export type ALURepr = typeof ALUDef.reprType
 export type ALUOp = "add" | "sub" | "and" | "or"
 export const ALUOp = {
     shortName(op: ALUOp): string {
-        switch (op) {
-            case "add": return "+"
-            case "sub": return "–"
-            case "and": return "ET"
-            case "or": return "OU"
-        }
+        return S.Components.ALU[op][0]
     },
     fullName(op: ALUOp): string {
-        switch (op) {
-            case "add": return "Addition"
-            case "sub": return "Soustraction"
-            case "and": return "ET"
-            case "or": return "OU"
-        }
+        return S.Components.ALU[op][1]
     },
 }
 
@@ -73,7 +64,7 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                 ["B2", -4, 6, "w", "B"],
                 ["B3", -4, 8, "w", "B"],
                 ["Op0", 0, -10, "n", "Op"], ["Op1", -2, -10, "n", "Op"],
-                ["Cin (retenue d’entrée)", 2, -10, "n"],
+                [`Cin (${S.Components.ALU.InputCinDesc})`, 2, -10, "n"],
             ],
             outs: [
                 ["S0", 4, -3, "e", "S"],
@@ -111,9 +102,10 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
 
     public override makeTooltip() {
         const op = this.op
-        const opDesc = isUnknown(op) ? "une opération inconnue" : "l’opération " + ALUOp.fullName(op)
-        return tooltipContent("Unité arithmétique et logique (ALU)", mods(
-            div(`Effectue actuellement ${opDesc}.`)
+        const s = S.Components.ALU.tooltip
+        const opDesc = isUnknown(op) ? s.SomeUnknownOperation : s.ThisOperation + " " + ALUOp.fullName(op)
+        return tooltipContent(s.title, mods(
+            div(`${s.CurrentlyCarriesOut} ${opDesc}.`)
         ))
     }
 
@@ -374,7 +366,7 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
         const icon = this._showOp ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Afficher l’opération", () => {
+        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.ALU.contextMenu.toggleShowOp, () => {
             this.doSetShowOp(!this._showOp)
         })
 

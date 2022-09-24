@@ -6,6 +6,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { LogicEditor } from "../LogicEditor"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { tooltipContent } from "../htmlgen"
+import { S } from "../strings"
 
 export const InputRandomDef =
     defineComponent(1, 1, t.type({
@@ -83,7 +84,10 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
     }
 
     public override makeTooltip() {
-        return tooltipContent("Valeur aléatoire", `À chaque coup d’horloge, la valeur de sortie sera 1 avec une probabilité de ${this._prob1}.`)
+        const s = S.Components.InputRandom.tooltip
+        return tooltipContent(s.title,
+            s.desc[0] + this._prob1 + s.desc[1]
+        )
     }
 
     protected doRecalcValue(): LogicValue {
@@ -172,9 +176,9 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
+        const s = S.Components.InputRandom.contextMenu
         const icon = this._showProb ? "check" : "none"
-        const toggleShowProbItem = ContextMenuData.item(icon, "Montrer la probabilité",
+        const toggleShowProbItem = ContextMenuData.item(icon, s.ShowProb,
             () => this.doSetShowProb(!this._showProb))
 
         return [

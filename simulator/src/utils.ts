@@ -69,6 +69,11 @@ export class RichStringEnum<K extends keyof any, P> {
 
 }
 
+// returns the passed parameter typed as a tuple
+export function tuple<T extends readonly any[]>(...items: [...T]): [...T] {
+    return items
+}
+
 // Utility types to force the evaluation of computed types
 // See: https://stackoverflow.com/a/57683652/390581
 

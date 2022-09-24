@@ -5,6 +5,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, 
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 
 type MuxInputIndices<NumInputs extends FixedArraySize> = {
@@ -187,8 +188,8 @@ export abstract class Mux<
     }
 
     public override makeTooltip() {
-        return tooltipContent(`Multiplexeur ${this.numFrom} vers ${this.numTo}`, mods(
-            div(`TODO`)
+        return tooltipContent(undefined, mods(
+            div(S.Components.Mux.tooltip.expand({ from: this.numFrom, to: this.numTo }))
         ))
     }
 
@@ -292,7 +293,7 @@ export abstract class Mux<
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
         const icon = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, "Afficher les connexions", () => {
+        const toggleShowWiringItem = ContextMenuData.item(icon, S.Components.Mux.contextMenu.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 

@@ -6,6 +6,7 @@ import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
+import { S } from "../strings"
 
 
 export const Output7SegDef =
@@ -80,7 +81,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div("Afficheur 7 segments")
+            div(S.Components.Output7Seg.tooltip)
         ))
     }
 
@@ -202,6 +203,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
         // TODO merge with OutputBar
+        const s = S.Components.OutputBar.contextMenu
         const makeItemUseColor = (desc: string, color: LedColor) => {
             const isCurrent = this._color === color
             const icon = isCurrent ? "check" : "none"
@@ -212,15 +214,15 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
 
         const itemTransparent = ContextMenuData.item(
             this._transparent ? "check" : "none",
-            "Transparent si éteint",
+            s.TransparentWhenOff,
             () => this.doSetTransparent(!this._transparent)
         )
 
         return [
-            ["mid", ContextMenuData.submenu("palette", "Couleur", [
-                makeItemUseColor("Vert", "green"),
-                makeItemUseColor("Rouge", "red"),
-                makeItemUseColor("Jaune", "yellow"), ContextMenuData.sep(),
+            ["mid", ContextMenuData.submenu("palette", s.Color, [
+                makeItemUseColor(s.ColorGreen, "green"),
+                makeItemUseColor(s.ColorRed, "red"),
+                makeItemUseColor(s.ColorYellow, "yellow"), ContextMenuData.sep(),
                 itemTransparent,
 
             ])],

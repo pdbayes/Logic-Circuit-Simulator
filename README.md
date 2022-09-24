@@ -38,7 +38,7 @@ See <https://jp.pellet.name/hep/logiga/>
  * Demo circuits are predefined and can be loaded from the JavaScript console
  * Circuits can be loaded from a JSON export by drag-n-drop
  * An animated propagation delay can be set
- * UI is in French (for now, could be translated upon request)
+ * UI can be in English or French (easy to add more translations)
 
 
 ## License

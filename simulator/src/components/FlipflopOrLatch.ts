@@ -5,6 +5,7 @@ import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawRoundValue, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { NodeIn } from "./Node"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 7
@@ -35,7 +36,7 @@ export const enum OUTPUT {
 export abstract class FlipflopOrLatch<
     NumInputs extends FixedArraySize,
     Repr extends FlipflopOrLatchRepr<NumInputs>,
-    > extends ComponentBase<NumInputs, 2, Repr, [LogicValue, LogicValue]> {
+> extends ComponentBase<NumInputs, 2, Repr, [LogicValue, LogicValue]> {
 
     private static savedStateFrom(savedData: { state: LogicValueRepr | undefined } | null): [LogicValue, LogicValue] {
         if (isNull(savedData)) {
@@ -51,8 +52,11 @@ export abstract class FlipflopOrLatch<
     protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeVisuals<NumInputs, 0>) {
         super(editor, FlipflopOrLatch.savedStateFrom(savedData), savedData, {
             ins: (nodeInOffsets as any).ins,
-            outs: [["Q (sortie)", +4, -2, "e"], ["Q̅ (sortie inversée)", +4, 2, "e"]],
-        })
+            outs: [
+                [S.Components.Generic.OutputQDesc, +4, -2, "e"],
+                [S.Components.Generic.OutputQBarDesc, +4, 2, "e"],
+            ],
+        } as any)
         if (isNotNull(savedData)) {
             this._showContent = savedData.showContent ?? FlipflorOrLatchDefaults.showContent
         }
@@ -189,10 +193,28 @@ interface SyncComponent<State> {
     makeStateAfterClock(): State
 }
 
+export function makeTriggerItems(currentTrigger: EdgeTrigger, handler: (trigger: EdgeTrigger) => void): [ContextMenuItemPlacement, ContextMenuItem][] {
+    const s = S.Components.Generic.contextMenu
+
+    const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
+        const isCurrent = currentTrigger === trigger
+        const icon = isCurrent ? "check" : "none"
+        const caption = s.TriggerOn + " " + desc
+        const action = isCurrent ? () => undefined :
+            () => handler(trigger)
+        return ContextMenuData.item(icon, caption, action)
+    }
+
+    return [
+        ["mid", makeTriggerItem(EdgeTrigger.rising, s.TriggerRisingEdge)],
+        ["mid", makeTriggerItem(EdgeTrigger.falling, s.TriggerFallingEdge)],
+    ]
+}
+
 export abstract class Flipflop<
     NumInputs extends FixedArraySizeNonZero,
     Repr extends FlipflopRepr<Plus3<NumInputs>>,
-    > extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[LogicValue, LogicValue]> {
+> extends FlipflopOrLatch<Plus3<NumInputs>, Repr> implements SyncComponent<[LogicValue, LogicValue]> {
 
     protected _lastClock: LogicValue = Unknown
     protected _trigger: EdgeTrigger = FlipflopDefaults.trigger
@@ -200,12 +222,12 @@ export abstract class Flipflop<
     protected constructor(editor: LogicEditor, savedData: Repr | null, nodeInOffsets: NodeVisuals<NumInputs, 0> & { clockYOffset: number }) {
         super(editor, savedData, {
             ins: [
-                ["Clock (horloge)", -4, nodeInOffsets.clockYOffset, "w"], // Clock
-                ["P (Preset, mise à 1)", 0, -4, "n"], // Preset
-                ["C (Clear, mise à 0)", 0, +4, "s"], // Clear
+                [S.Components.Generic.InputClockDesc, -4, nodeInOffsets.clockYOffset, "w"], // Clock
+                [S.Components.Generic.InputPresetDesc, 0, -4, "n"], // Preset
+                [S.Components.Generic.InputClearDesc, 0, +4, "s"], // Clear
                 ...nodeInOffsets.ins, // subclass
-            ] as any,
-        })
+            ],
+        } as any)
         if (isNotNull(savedData)) {
             this._trigger = savedData.trigger ?? FlipflopDefaults.trigger
         }
@@ -330,22 +352,12 @@ export abstract class Flipflop<
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
-        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
-            const isCurrent = this._trigger === trigger
-            const icon = isCurrent ? "check" : "none"
-            const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined :
-                () => this.doSetTrigger(trigger)
-            return ContextMenuData.item(icon, caption, action)
-        }
-
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, "Montrer le contenu",
+        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
         const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
-            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowOpItem],
         ]

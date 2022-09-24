@@ -2,11 +2,12 @@ import { isNotNull, isNull, isUndefined, isUnknown, repeatString, RichStringEnum
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop } from "./FlipflopOrLatch"
+import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { OutputAscii } from "./OutputAscii"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 25
 const GRID_HEIGHT = 5
@@ -94,9 +95,9 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     public constructor(editor: LogicEditor, savedData: OutputShiftBufferRepr | null) {
         super(editor, OutputShiftBuffer.savedStateFrom(savedData), savedData, {
             ins: [
-                ["Clock (horloge)", -14, +1, "w"], // Clock
-                ["C (Clear, effacement)", -10, +3, "s"], // Clear
-                ["D (Données)", -14, -1, "w"], // Data in
+                [S.Components.Generic.InputClockDesc, -14, +1, "w"], // Clock
+                [S.Components.Generic.InputClearDesc, -10, +3, "s"], // Clear
+                [S.Components.Generic.InputData, -14, -1, "w"], // Data in
             ],
         })
         if (isNotNull(savedData)) {
@@ -138,7 +139,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     }
 
     public override makeTooltip() {
-        return tooltipContent("Affichage à décalage", mods(
+        return tooltipContent(S.Components.OutputShiftBuffer.tooltip, mods(
             div(JSON.stringify(this.value)) // TODO more info
         ))
     }
@@ -216,7 +217,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
             if (isUndefined(text)) {
                 g.fillStyle = COLOR_COMPONENT_INNER_LABELS
                 g.font = "15px sans-serif"
-                toDraw = "(vide)"
+                toDraw = S.Components.OutputShiftBuffer.EmptyCaption
             } else {
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.font = "bold 16px sans-serif"
@@ -305,16 +306,8 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        // TODO merge with FlipFlip items
-        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
-            const isCurrent = this._trigger === trigger
-            const icon = isCurrent ? "check" : "none"
-            const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined :
-                () => this.doSetTrigger(trigger)
-            return ContextMenuData.item(icon, caption, action)
-        }
 
+        const s = S.Components.OutputShiftBuffer.contextMenu
         const makeItemDecodeAs = (decoder: ShiftBufferDecoder, desc: string) => {
             const isCurrent = this._decodeAs === decoder
             const icon = isCurrent ? "check" : "none"
@@ -328,33 +321,32 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         }
 
         return [
-            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
-            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("eye", "Décodage", [
-                makeItemDecodeAs("raw", "Aucun"),
-                makeItemDecodeAs("octal", "Octal"),
-                makeItemDecodeAs("hex", "Hexadécimal"),
-                makeItemDecodeAs("ascii", "ASCII (7 bits)"),
-                makeItemDecodeAs("ascii8", "ASCII (8 bits)"),
-                makeItemDecodeAs("uint4", "Entier sur 4 bits"),
-                makeItemDecodeAs("int4", "Entier signé sur 4 bits"),
-                makeItemDecodeAs("uint8", "Entier sur 8 bits"),
-                makeItemDecodeAs("int8", "Entier signé sur 8 bits"),
-                makeItemDecodeAs("uint16", "Entier sur 16 bits"),
-                makeItemDecodeAs("int16", "Entier signé sur 16 bits"),
+            ["mid", ContextMenuData.submenu("eye", s.Decoding, [
+                makeItemDecodeAs("raw", s.DecodingNone),
+                makeItemDecodeAs("octal", s.DecodingOctal),
+                makeItemDecodeAs("hex", s.DecodingHex),
+                makeItemDecodeAs("ascii", s.DecodingAscii7),
+                makeItemDecodeAs("ascii8", s.DecodingAscii8),
+                makeItemDecodeAs("uint4", s.DecodingUint4),
+                makeItemDecodeAs("int4", s.DecodingInt4),
+                makeItemDecodeAs("uint8", s.DecodingUint8),
+                makeItemDecodeAs("int8", s.DecodingInt8),
+                makeItemDecodeAs("uint16", s.DecodingUint16),
+                makeItemDecodeAs("int16", s.DecodingInt16),
                 ContextMenuData.sep(),
-                ContextMenuData.text("Attention, changer le décodage peut tronquer la valeur stockée"),
+                ContextMenuData.text(s.DecodingChangeWarning),
             ])],
-            ["mid", ContextMenuData.submenu("regroup", "Regrouper les données", [
-                makeItemGroupEvery(undefined, "Pas de regroupement"),
+            ["mid", ContextMenuData.submenu("regroup", s.Grouping, [
+                makeItemGroupEvery(undefined, s.GroupingNone),
                 ContextMenuData.sep(),
-                makeItemGroupEvery(2, "Par 2"),
-                makeItemGroupEvery(3, "Par 3"),
-                makeItemGroupEvery(4, "Par 4"),
-                makeItemGroupEvery(7, "Par 7"),
-                makeItemGroupEvery(8, "Par 8"),
-                makeItemGroupEvery(16, "Par 16"),
+                makeItemGroupEvery(2, s.GroupBy.expand({ n: 2 })),
+                makeItemGroupEvery(3, s.GroupBy.expand({ n: 3 })),
+                makeItemGroupEvery(4, s.GroupBy.expand({ n: 4 })),
+                makeItemGroupEvery(7, s.GroupBy.expand({ n: 7 })),
+                makeItemGroupEvery(8, s.GroupBy.expand({ n: 8 })),
+                makeItemGroupEvery(16, s.GroupBy.expand({ n: 16 })),
             ])],
         ]
     }

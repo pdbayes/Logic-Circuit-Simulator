@@ -5,6 +5,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 6
@@ -59,8 +60,9 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
     }
 
     public override makeTooltip() {
-        return tooltipContent("Demi-additionneur", mods(
-            div(`Additionne deux bits A et B et fournit un bit de somme S et une retenue de sortie C.`)
+        const s = S.Components.HalfAdder.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc)
         ))
     }
 

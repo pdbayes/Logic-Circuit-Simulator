@@ -5,6 +5,7 @@ import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, 
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
@@ -72,17 +73,18 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
     }
 
     public override makeTooltip() {
+        const s = S.Components.OutputAscii.tooltip
         const [binaryStringRep, value] = this.value
 
-        return tooltipContent("Afficheur de caractère", mods(
-            div(`Affiche le caractère ASCII représenté par ses 7 entrées, actuellement `, b(binaryStringRep), "."),
+        return tooltipContent(s.title, mods(
+            div(s.desc[0], b(binaryStringRep), s.desc[1]),
             this.showAsUnknown
                 ? emptyMod
                 : isUnknown(value)
-                    ? div("Comme toutes ses entrées ne sont pas connues, ce caractère est actuellement indéfini.")
-                    : mods("Actuellement, c’est le caractère numéro ", b("" + value),
+                    ? div(s.CurrentlyUndefined)
+                    : mods(s.CurrentlyThisCharacter + " ", b("" + value),
                         (value < 32)
-                            ? " (un caractère non imprimable)."
+                            ? s.WhichIsNotPrintable
                             : mods(", ‘", b(String.fromCharCode(value)), "’.")
                     )
         ))
@@ -219,6 +221,8 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
+        const s = S.Components.OutputAscii.contextMenu
+
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
             const icon = isCurrent ? "check" : "none"
             return ContextMenuData.item(icon, desc, handler)
@@ -232,15 +236,15 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         }
 
         return [
-            ["mid", ContextMenuData.submenu("eye", "Affichage supplémentaire", [
-                makeItemShowRadix(undefined, "Aucun"),
-                makeItemShowRadix(10, "Valeur décimale"),
-                makeItemShowRadix(16, "Valeur hexadécimale"),
+            ["mid", ContextMenuData.submenu("eye", s.AdditionalDisplay, [
+                makeItemShowRadix(undefined, s.DisplayNone),
+                makeItemShowRadix(10, s.DisplayDecimal),
+                makeItemShowRadix(16, s.DisplayHex),
                 ContextMenuData.sep(),
-                ContextMenuData.text("Changez l’affichage supplémentaire avec un double-clic sur le composant"),
+                ContextMenuData.text(s.ChangeDisplayDesc),
 
             ])],
-            ["mid", makeItemShowAs("Afficher comme inconnu", () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
+            ["mid", makeItemShowAs(S.Components.Generic.contextMenu.ShowAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]

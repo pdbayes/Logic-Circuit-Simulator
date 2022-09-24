@@ -2,10 +2,11 @@ import { FixedArray, isNull, isNotNull, isUndefined, LogicValue, typeOrUndefined
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_LABEL_OFF, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, formatWithRadix, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
+import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 11
@@ -61,8 +62,8 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
     public constructor(editor: LogicEditor, savedData: CounterRepr | null) {
         super(editor, Counter.savedStateFrom(savedData), savedData, {
             ins: [
-                ["Clock (horloge)", -4, +4, "w"],
-                ["C (Clear, mise à 0)", 0, +6, "s"],
+                [S.Components.Generic.InputClockDesc, -4, +4, "w"],
+                [S.Components.Generic.InputClearDesc, 0, +6, "s"],
             ],
             outs: [
                 ["Q0", +4, -4, "e", "Q"],
@@ -110,8 +111,9 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
     }
 
     public override makeTooltip() {
-        return tooltipContent("Compteur", mods(
-            div(`Compteur à quatre bits.`) // TODO more info
+        const s = S.Components.Counter.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc) // TODO more info
         ))
     }
 
@@ -218,30 +220,21 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
 
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        // TODO merge with FlipFlip items
-        const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {
-            const isCurrent = this._trigger === trigger
-            const icon = isCurrent ? "check" : "none"
-            const caption = "Stocker au " + desc
-            const action = isCurrent ? () => undefined :
-                () => this.doSetTrigger(trigger)
-            return ContextMenuData.item(icon, caption, action)
-        }
 
+        const s = S.Components.Counter.contextMenu
         const makeItemShowRadix = (displayRadix: number | undefined, desc: string) => {
             const icon = this._displayRadix === displayRadix ? "check" : "none"
-            const caption = "Affichage " + desc
+            const caption = s.DisplayTempl.expand({ desc })
             const action = () => this.doSetDisplayRadix(displayRadix)
             return ContextMenuData.item(icon, caption, action)
         }
 
         const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", makeTriggerItem(EdgeTrigger.rising, "flanc montant")],
-            ["mid", makeTriggerItem(EdgeTrigger.falling, "flanc descendant")],
+            ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
-            ["mid", makeItemShowRadix(undefined, "absent")],
-            ["mid", makeItemShowRadix(10, "décimal")],
-            ["mid", makeItemShowRadix(16, "hexadécimal")],
+            ["mid", makeItemShowRadix(undefined, s.DisplayNone)],
+            ["mid", makeItemShowRadix(10, s.DisplayDecimal)],
+            ["mid", makeItemShowRadix(16, s.DisplayHex)],
         ]
 
         const forceOutputItem = this.makeForceOutputsContextMenuItem()

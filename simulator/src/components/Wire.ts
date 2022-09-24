@@ -8,6 +8,7 @@ import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
 import { span, style, title } from "../htmlgen"
 import { Bezier, Offset } from "bezier-js"
+import { S } from "../strings"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -448,7 +449,9 @@ export class Wire extends Drawable {
     }
 
     public override makeContextMenu(): ContextMenuData {
-        const customPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
+
+        const s = S.Components.Wire.contextMenu
+        const currentPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
 
         const makeItemUseColor = (desc: string, color: WireColor) => {
             const isCurrent = this._startNode.color === color
@@ -470,10 +473,10 @@ export class Wire extends Drawable {
         const setWireOptionsItems =
             this.editor.mode < Mode.DESIGN ? [] : [
                 ContextMenuData.sep(),
-                ContextMenuData.item("timer", `Délai de propagation spécifique${customPropDelayStr}…`, (__itemEvent) => {
+                ContextMenuData.item("timer", s.CustomPropagationDelay.expand({ current: currentPropDelayStr }), (__itemEvent) => {
                     const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
                     const defaultDelay = String(this.editor.options.propagationDelay)
-                    const message = `Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${defaultDelay} ms):`
+                    const message = s.CustomPropagationDelayDesc.expand({ current: defaultDelay })
                     const newValueStr = prompt(message, currentStr)
                     if (newValueStr !== null) {
                         if (newValueStr === "") {

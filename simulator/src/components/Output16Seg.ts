@@ -6,6 +6,7 @@ import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
+import { S } from "../strings"
 
 
 export const Output16SegDef =
@@ -89,7 +90,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div("Afficheur 16 segments")
+            div(S.Components.Output16Seg.tooltip),
         ))
     }
 
@@ -251,6 +252,8 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
 
         // TODO merge with OutputBar
+        const s = S.Components.OutputBar.contextMenu // same between 16 and 7 seg; merge?
+
         const makeItemUseColor = (desc: string, color: LedColor) => {
             const isCurrent = this._color === color
             const icon = isCurrent ? "check" : "none"
@@ -261,15 +264,15 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
 
         const itemTransparent = ContextMenuData.item(
             this._transparent ? "check" : "none",
-            "Transparent si éteint",
+            s.TransparentWhenOff,
             () => this.doSetTransparent(!this._transparent)
         )
 
         return [
-            ["mid", ContextMenuData.submenu("palette", "Couleur", [
-                makeItemUseColor("Vert", "green"),
-                makeItemUseColor("Rouge", "red"),
-                makeItemUseColor("Jaune", "yellow"), ContextMenuData.sep(),
+            ["mid", ContextMenuData.submenu("palette", s.Color, [
+                makeItemUseColor(s.ColorGreen, "green"),
+                makeItemUseColor(s.ColorRed, "red"),
+                makeItemUseColor(s.ColorYellow, "yellow"), ContextMenuData.sep(),
                 itemTransparent,
 
             ])],
