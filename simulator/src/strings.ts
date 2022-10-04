@@ -73,6 +73,8 @@ const Strings_fr = {
             NOR4: ["Porte NON-OU à 4 entrées", "NON-OU (4)"],
             XNOR4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
 
+            SwitchedInverter: ["Inverseur commuté", "Inv. comm."],
+
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Add."],
             ALU: ["Unité arithmétique et logique à 4 bits", "ALU"],
@@ -526,6 +528,12 @@ const Strings_fr = {
                 desc: "Stocke quatre bits.",
             },
         },
+        SwitchedInverter: {
+            tooltip: {
+                title: "Inverseur commuté",
+                desc: "Inverse l’état de son entrée si le bit S vaut 1.",
+            },
+        },
         TriStateBuffer: {
             tooltip: "Sortie à 3 états",
         },
@@ -625,6 +633,8 @@ const Strings_en: Strings = {
             NAND4: ["4-Input AND Gate", "NAND (4)"],
             NOR4: ["4-Input AND Gate", "NOR (4)"],
             XNOR4: ["4-Input AND Gate", "XNOR (4)"],
+
+            SwitchedInverter: ["Switched Inverter", "Switched Inv."],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
@@ -1077,6 +1087,12 @@ const Strings_en: Strings = {
             tooltip: {
                 title: "Register",
                 desc: "Stores four bits.",
+            },
+        },
+        SwitchedInverter: {
+            tooltip: {
+                title: "Switched Inverter",
+                desc: "Inverts the input when bit S is on.",
             },
         },
         TriStateBuffer: {

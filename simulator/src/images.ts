@@ -86,6 +86,7 @@ import OutputNibble from '../img/OutputNibble.svg' // @ts-ignore
 import OutputShiftBuffer from '../img/OutputShiftBuffer.svg' // @ts-ignore
 import RAM from '../img/RAM.svg' // @ts-ignore
 import Register from '../img/Register.svg' // @ts-ignore
+import SwitchedInverter from '../img/SwitchedInverter.svg' // @ts-ignore
 import TXA from '../img/TXA.svg' // @ts-ignore
 import XNOR from '../img/XNOR.svg' // @ts-ignore
 import XNOR3 from '../img/XNOR3.svg' // @ts-ignore
@@ -180,6 +181,7 @@ const images = {
     OutputShiftBuffer,
     RAM,
     Register,
+    SwitchedInverter,
     TXA,
     XNOR,
     XNOR3,

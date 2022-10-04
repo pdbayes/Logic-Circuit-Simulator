@@ -16,10 +16,12 @@ import { LatchSR, LatchSRDef } from "./LatchSR"
 import { Mux2To1, Mux2To1Def, Mux4To1, Mux4To1Def, Mux4To2, Mux4To2Def, Mux8To1, Mux8To1Def, Mux8To2, Mux8To2Def, Mux8To4, Mux8To4Def } from "./Mux"
 import { RAM16by4, RAM16x4Def } from "./RAM"
 import { Register, RegisterDef } from "./Register"
+import { SwitchedInverter, SwitchedInverterDef } from "./SwitchedInverter"
 
 export type IC = Adder
 
 export const ICDef = t.union([
+    SwitchedInverterDef.repr,
     HalfAdderDef.repr,
     AdderDef.repr,
     ALUDef.repr,
@@ -66,6 +68,8 @@ export const ICFactory = {
         }
 
         switch (savedData.type) {
+            case "switched-inverter":
+                return new SwitchedInverter(editor, blank ? null : savedData)
             case "halfadder":
                 return new HalfAdder(editor, blank ? null : savedData)
             case "adder":

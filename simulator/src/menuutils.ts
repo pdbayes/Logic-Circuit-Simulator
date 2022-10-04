@@ -212,6 +212,15 @@ const componentsMenu: Array<Section> = [
                 strings: "XNOR4", img: "XNOR4", width: 50,
                 normallyHidden: true,
             },
+
+            
+            {
+                type: "component", subtype: "switched-inverter",
+                strings: "SwitchedInverter", img: "SwitchedInverter", width: 50,
+                normallyHidden: true,
+            },
+
+            
         ],
     },
 
