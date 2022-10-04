@@ -1,7 +1,7 @@
 import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNSET, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
+import { COLOR_UNKNOWN, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -27,7 +27,7 @@ export const LedColors = {
 export type LedColor = keyof typeof LedColors
 
 export function ledColorForLogicValue(v: LogicValue, onColor: LedColor) {
-    return isUnknown(v) ? COLOR_UNSET :
+    return isUnknown(v) ? COLOR_UNKNOWN :
         isHighImpedance(v) ? COLOR_HIGH_IMPEDANCE :
             v ? COLOR_LED_ON[onColor] : COLOR_WIRE_BORDER
 }

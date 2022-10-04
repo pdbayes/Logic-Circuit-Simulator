@@ -2,7 +2,7 @@ import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicValue, typeOrUnde
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 import * as t from "io-ts"
 import { NodeGroup, NodeID } from "./Component"
-import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNSET, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
+import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
@@ -680,7 +680,7 @@ export class Ribbon extends Drawable {
         g.lineWidth = WIRE_WIDTH
         let dist = -((numWires - 1) / 2) * (WIRE_WIDTH + WIRE_MARGIN_INNER)
         for (const value of values) {
-            g.strokeStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
+            g.strokeStyle = neutral ? COLOR_UNKNOWN : colorForBoolean(value)
             const b1 = b.offset(dist)
             drawBeziers(b1)
             dist += WIRE_WIDTH + WIRE_MARGIN_INNER

@@ -34,8 +34,8 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
                 ["B", -4, 2, "w"],
             ],
             outs: [
-                ["S (somme)", 4, -2, "e"],
-                ["C (retenue)", 4, 2, "e"],
+                [S.Components.Generic.OutputSumDesc, 4, -2, "e"],
+                [S.Components.Generic.OutputCarryDesc, 4, 2, "e"],
             ],
         })
     }

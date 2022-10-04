@@ -29,8 +29,15 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
 
     public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
         super(editor, [false, false], savedData, {
-            ins: [["A", -2, -4, "n"], ["B", 2, -4, "n"], ["Cin (retenue précédente)", 5, 0, "e"]],
-            outs: [["S (somme)", 0, 4, "s"], ["Cout (retenue)", -5, 0, "w"]],
+            ins: [
+                ["A", -2, -4, "n"],
+                ["B", 2, -4, "n"],
+                [S.Components.Generic.InputCarryInDesc, 5, 0, "e"],
+            ],
+            outs: [
+                [S.Components.Generic.OutputSumDesc, 0, 4, "s"],
+                [S.Components.Generic.OutputCarryOutDesc, -5, 0, "w"],
+            ],
         })
     }
 

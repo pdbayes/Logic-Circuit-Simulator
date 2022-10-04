@@ -1,7 +1,7 @@
 import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import * as t from "io-ts"
-import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY, strokeSingleLine } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNKNOWN, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY, strokeSingleLine } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -597,7 +597,7 @@ export abstract class GateBase<
             }
 
             case "?":
-                g.strokeStyle = COLOR_UNSET
+                g.strokeStyle = COLOR_UNKNOWN
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateRight, top)
@@ -610,7 +610,7 @@ export abstract class GateBase<
                 drawWireEnds()
 
                 ctx.inNonTransformedFrame(() => {
-                    g.fillStyle = COLOR_UNSET
+                    g.fillStyle = COLOR_UNKNOWN
                     g.textAlign = "center"
                     g.font = "bold 20px sans-serif"
                     g.fillText('?', this.posX, this.posY)

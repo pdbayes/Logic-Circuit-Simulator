@@ -65,7 +65,7 @@ export let COLOR_FULL: ColorString
 export let COLOR_DARK_RED: ColorString
 export let COLORCOMPS_EMPTY: ColorComponentsRGB
 export let COLOR_EMPTY: ColorString
-export let COLOR_UNSET: ColorString
+export let COLOR_UNKNOWN: ColorString
 export let COLOR_HIGH_IMPEDANCE: ColorString
 export let COLOR_GATE_NAMES: ColorString
 export let COLOR_LED_ON: { [C in LedColor]: ColorString }
@@ -108,7 +108,7 @@ function doSetColors(darkMode: boolean) {
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [52, 58, 64]
-        COLOR_UNSET = ColorString([152, 158, 164])
+        COLOR_UNKNOWN = ColorString([152, 158, 164])
         COLOR_HIGH_IMPEDANCE = ColorString([137, 114, 35])
         COLOR_GATE_NAMES = ColorString([190, 190, 190])
         COLOR_LED_ON = {
@@ -145,7 +145,7 @@ function doSetColors(darkMode: boolean) {
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [80, 89, 99]
-        COLOR_UNSET = ColorString([108, 106, 98])
+        COLOR_UNKNOWN = ColorString([108, 106, 98])
         COLOR_HIGH_IMPEDANCE = ColorString([103, 84, 23])
         COLOR_GATE_NAMES = ColorString([95, 95, 95])
         COLOR_LED_ON = {
@@ -247,7 +247,7 @@ export function colorComps(c: ColorString) {
 }
 
 export function colorForBoolean(value: LogicValue): ColorString {
-    return isUnknown(value) ? COLOR_UNSET : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
+    return isUnknown(value) ? COLOR_UNKNOWN : isHighImpedance(value) ? COLOR_HIGH_IMPEDANCE : value ? COLOR_FULL : COLOR_EMPTY
 }
 
 export function colorForFraction(fraction: number): ColorString {
@@ -379,7 +379,7 @@ export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue,
     if (path) { g.stroke(path) }
     else { g.stroke() }
 
-    g.strokeStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
+    g.strokeStyle = neutral ? COLOR_UNKNOWN : colorForBoolean(value)
     g.lineWidth = mainStrokeWidth - 2
     if (path) { g.stroke(path) }
     else { g.stroke() }
@@ -392,7 +392,7 @@ export function isOverWaypoint(x: number, y: number, waypointX: number, waypoint
 }
 
 export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, value: LogicValue, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
-    g.fillStyle = neutral ? COLOR_UNSET : colorForBoolean(value)
+    g.fillStyle = neutral ? COLOR_UNKNOWN : colorForBoolean(value)
 
     const [circleColor, thickness] =
         showForced

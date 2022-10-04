@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnknown, Unknown, typeOrUndefined, Mode } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, COLOR_UNSET, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, colorForFraction, COLOR_COMPONENT_BORDER, colorComps, ColorString, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, emptyMod, b } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -100,7 +100,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, [string,
         const [binaryStringRep, value] = this.value
 
         const maxValue = (1 << this.inputs.length) - 1
-        const backColor = isUnknown(value) || this.showAsUnknown ? COLOR_UNSET : colorForFraction(value / maxValue)
+        const backColor = isUnknown(value) || this.showAsUnknown ? COLOR_UNKNOWN : colorForFraction(value / maxValue)
         g.fillStyle = backColor
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4

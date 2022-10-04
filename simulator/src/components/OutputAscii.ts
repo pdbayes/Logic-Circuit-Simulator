@@ -1,7 +1,7 @@
 import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNSET, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
+import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNKNOWN, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
 import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
@@ -153,7 +153,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
             if (isUnknown(value) || this.showAsUnknown) {
                 g.font = "bold 18px sans-serif"
                 if (this.showAsUnknown) {
-                    g.fillStyle = COLOR_UNSET
+                    g.fillStyle = COLOR_UNKNOWN
                 }
                 mainText = "?"
             } else {
