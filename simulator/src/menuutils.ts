@@ -213,14 +213,14 @@ const componentsMenu: Array<Section> = [
                 normallyHidden: true,
             },
 
-            
+
             {
                 type: "component", subtype: "switched-inverter",
                 strings: "SwitchedInverter", img: "SwitchedInverter", width: 50,
                 normallyHidden: true,
             },
 
-            
+
         ],
     },
 
@@ -408,7 +408,8 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
             const compStrings = S.ComponentBar.Components.propsOf(item.strings)
             const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
             const caption = isUndefined(captionStr) ? emptyMod : span(cls("gate-label"), captionStr)
-            const buttonTitle = isUndefined(titleStr) ? emptyMod : title(titleStr)
+            const componentId = componentIdFor(item)
+            const buttonTitle = title(isUndefined(titleStr) ? "" : (titleStr + " \n") + `(“${componentId}”)`)
             const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
             const compButton =
                 button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
@@ -476,6 +477,21 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
 }
 
 function shouldShow(item: ComponentItem, showOnly: string[]) {
+    const componentId = componentIdFor(item)
+
+    let visible = false
+    if (showOnly.includes(componentId)) {
+        visible = true
+        const ind = showOnly.indexOf(componentId)
+        showOnly.splice(ind, 1)
+    }
+
+    // console.log(`buttonId '${buttonId}' is visible: ${visible}`)
+
+    return visible
+}
+
+function componentIdFor(item: ComponentItem): string {
     const compType = item.type
     const compSubtype = item.subtype
 
@@ -491,17 +507,6 @@ function shouldShow(item: ComponentItem, showOnly: string[]) {
             buttonId = `${compType}.${compSubtype}`
         }
     }
-    buttonId = buttonId.toLowerCase()
-
-    let visible = false
-    if (showOnly.includes(buttonId)) {
-        visible = true
-        const ind = showOnly.indexOf(buttonId)
-        showOnly.splice(ind, 1)
-    }
-
-    // console.log(`buttonId '${buttonId}' is visible: ${visible}`)
-
-    return visible
+    return buttonId.toLowerCase()
 }
 
