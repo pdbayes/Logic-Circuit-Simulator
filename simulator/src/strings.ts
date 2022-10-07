@@ -73,7 +73,7 @@ const Strings_fr = {
             NOR4: ["Porte NON-OU à 4 entrées", "NON-OU (4)"],
             XNOR4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
 
-            SwitchedInverter: ["Inverseur commuté", "Inv. comm."],
+            SwitchedInverter: ["Inverseur commuté à 4 bits", "Inv. comm."],
 
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Add."],
@@ -184,6 +184,7 @@ const Strings_fr = {
                 ShowContent: "Montrer le contenu",
             },
 
+            InputCarryInDesc: "Cin (retenue précédente)",
             InputClockDesc: "Clock (horloge)",
             InputClearDesc: "C (Clear, mise à 0)",
             InputPresetDesc: "P (Preset, mise à 1)",
@@ -191,6 +192,9 @@ const Strings_fr = {
             InputResetDesc: "R (Reset, mise à 0)",
             InputData: "D (Données)",
 
+            OutputSumDesc: "S (somme)",
+            OutputCarryDesc: "C (retenue)",
+            OutputCarryOutDesc: "Cout (retenue)",
             OutputQDesc: "Q (sortie normale)",
             OutputQBarDesc: "Q̅ (sortie inversée)",
         },
@@ -530,8 +534,8 @@ const Strings_fr = {
         },
         SwitchedInverter: {
             tooltip: {
-                title: "Inverseur commuté",
-                desc: "Inverse l’état de son entrée si le bit S vaut 1.",
+                title: "Inverseur commuté à 4 bits",
+                desc: "Inverse ses 4 entrées si le bit de contrôle S vaut 1; sinon, les sorties sont égales aux entrées.",
             },
         },
         TriStateBuffer: {
@@ -634,7 +638,7 @@ const Strings_en: Strings = {
             NOR4: ["4-Input AND Gate", "NOR (4)"],
             XNOR4: ["4-Input AND Gate", "XNOR (4)"],
 
-            SwitchedInverter: ["Switched Inverter", "Switched Inv."],
+            SwitchedInverter: ["4-Bit Switched Inverter", "Switched Inv."],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
@@ -661,7 +665,7 @@ const Strings_en: Strings = {
             RAM: ["RAM, 16 × 4 Bits", "RAM"],
 
             Counter: ["4-Bit Counter", "Counter"],
-            Decoder7Seg: ["7 segments Decoder", "7-Seg. Dec."],
+            Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
             Decoder16Seg: ["ASCII-to-16-Segment Decoder", "16-Seg. Dec."],
             DecoderBCD4: ["4-Bit-to-BCD Decoder", "BCD Dec."],
         }),
@@ -745,6 +749,7 @@ const Strings_en: Strings = {
                 ShowContent: "Show Content",
             },
 
+            InputCarryInDesc: "Cin (Previous Carry)",
             InputClockDesc: "Clock",
             InputClearDesc: "C (Clear, set to 0)",
             InputPresetDesc: "P (Preset, set to 1)",
@@ -752,6 +757,9 @@ const Strings_en: Strings = {
             InputResetDesc: "R (Reset, set to 0)",
             InputData: "D (Data)",
 
+            OutputSumDesc: "S (Sum)",
+            OutputCarryDesc: "C (Carry)",
+            OutputCarryOutDesc: "Cout (Carry)",
             OutputQDesc: "Q (Normal Output)",
             OutputQBarDesc: "Q̅ (Inverted Output)",
         },
@@ -1091,8 +1099,8 @@ const Strings_en: Strings = {
         },
         SwitchedInverter: {
             tooltip: {
-                title: "Switched Inverter",
-                desc: "Inverts the input when bit S is on.",
+                title: "4-Bit Switched Inverter",
+                desc: "Inverts its four inputs when the control bit S is on; otherwise, just outputs the inputs.",
             },
         },
         TriStateBuffer: {
