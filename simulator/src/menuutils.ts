@@ -219,6 +219,11 @@ const componentsMenu: Array<Section> = [
                 strings: "SwitchedInverter", img: "SwitchedInverter", width: 50,
                 normallyHidden: true,
             },
+            {
+                type: "component", subtype: "quad-gate",
+                strings: "QuadGate", img: "QuadGate", width: 50,
+                normallyHidden: true,
+            },
 
 
         ],

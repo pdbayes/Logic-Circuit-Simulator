@@ -74,6 +74,7 @@ const Strings_fr = {
             XNOR4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
 
             SwitchedInverter: ["Inverseur commuté à 4 bits", "Inv. comm."],
+            QuadGate: ["Porte quadruple", "4 × Porte"],
 
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Add."],
@@ -520,6 +521,16 @@ const Strings_fr = {
             },
             EmptyCaption: "(vide)",
         },
+        QuadGate: {
+            tooltip: {
+                title: "Porte quadruple",
+                desc: template("Effectue quatre fois en parallèle l’opération logique choisie; actuellement, ${op}.", "op"),
+            },
+            contextMenu: {
+                Type: "Type",
+                ShowAsUnknown: "Masquer le type",
+            },
+        },
         RAM: {
             tooltip: {
                 title: "RAM (mémoire vive)",
@@ -639,6 +650,7 @@ const Strings_en: Strings = {
             XNOR4: ["4-Input AND Gate", "XNOR (4)"],
 
             SwitchedInverter: ["4-Bit Switched Inverter", "Switched Inv."],
+            QuadGate: ["Quadruple Gate", "4 × Gate"],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
@@ -1084,6 +1096,16 @@ const Strings_en: Strings = {
                 GroupBy: template("By ${n}", "n"),
             },
             EmptyCaption: "(empty)",
+        },
+        QuadGate: {
+            tooltip: {
+                title: "Quadruple Gate",
+                desc: template("Computes in parallel four times the chosen logical operation, which currently is ${op}.", "op"),
+            },
+            contextMenu: {
+                Type: "Type",
+                ShowAsUnknown: "Hide Type",
+            },
         },
         RAM: {
             tooltip: {

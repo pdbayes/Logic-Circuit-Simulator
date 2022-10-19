@@ -9,7 +9,7 @@ import { TriStateBuffer, TriStateBufferDef } from "./TriStateBuffer"
 import { S } from "../strings"
 
 
-type GateProps = {
+export type GateProps = {
     includeInContextMenu: boolean
     includeInPoseAs: boolean
     fullShortDesc: [string, string | undefined, string]
@@ -45,7 +45,7 @@ type Gate1MandatoryParams = t.TypeOf<typeof Gate1MandatoryParams>
 
 // Gates with two inputs
 
-const Gate2Types_ = {
+export const Gate2Types_ = {
     // usual suspects
     AND: {
         out: (in1: boolean, in2: boolean) => in1 && in2,
@@ -123,9 +123,11 @@ const Gate2Types_ = {
     },
 } as const
 
-export const Gate2Types = RichStringEnum.withProps<GateProps & {
+export type Gate2Props = GateProps & {
     out: (in1: boolean, in2: boolean) => boolean
-}>()(Gate2Types_)
+}
+
+export const Gate2Types = RichStringEnum.withProps<Gate2Props>()(Gate2Types_)
 
 export type Gate2Type = typeof Gate2Types.type
 
