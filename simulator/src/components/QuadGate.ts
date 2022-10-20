@@ -150,7 +150,7 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         // outline
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+        g.lineWidth = 3
 
         g.beginPath()
         g.rect(left, top, width, height)
@@ -299,25 +299,36 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         const s = S.Components.QuadGate.contextMenu
 
         const typeItems: ContextMenuData = []
-        for (const _subtype of Object.keys(Gate2Types_)) {
-            const subtype = _subtype as Gate2Type
+        for (const subtype of ["AND", "OR", "XOR", "NAND", "NOR", "XNOR"] as const) {
             const icon = this._subtype === subtype ? "check" : "none"
-            const shouldAdd = this.editor.mode === Mode.FULL || !subtype.startsWith("TX")
-            if (shouldAdd) {
-                typeItems.push(ContextMenuData.item(icon, subtype, () => {
-                    this.doSetSubtype(subtype)
-                }))
-            }
+            typeItems.push(ContextMenuData.item(icon, subtype, () => {
+                this.doSetSubtype(subtype)
+            }))
         }
 
-        const showAsUnknownItem = ContextMenuData.item(this._showAsUnknown ? "check" : "none", s.ShowAsUnknown, () => {
-            this.doSetShowAsUnknown(!this._showAsUnknown)
-        })
-
-        return [
+        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
             ["mid", ContextMenuData.submenu("settings", s.Type, typeItems)],
-            ["mid", showAsUnknownItem],
         ]
+
+        if (this.editor.mode >= Mode.FULL) {
+            const showAsUnknownItem = ContextMenuData.item(this._showAsUnknown ? "check" : "none", s.ShowAsUnknown, () => {
+                this.doSetShowAsUnknown(!this._showAsUnknown)
+            })
+
+            items.push(
+                ["mid", showAsUnknownItem],
+            )
+        }
+
+        const forceOutputItem = this.makeForceOutputsContextMenuItem()
+        if (isDefined(forceOutputItem)) {
+            items.push(
+                ["mid", ContextMenuData.sep()],
+                ["mid", forceOutputItem]
+            )
+        }
+
+        return items
     }
 
 }

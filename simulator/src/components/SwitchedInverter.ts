@@ -101,7 +101,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+        g.lineWidth = 3
 
         g.beginPath()
         g.rect(this.posX - width / 2, this.posY - height / 2, width, height)

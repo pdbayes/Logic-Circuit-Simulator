@@ -727,7 +727,7 @@ export abstract class ComponentBase<
 
         function makeOutputItems(out: NodeOut): ContextMenuItem[] {
             const currentForceValue = out.forceValue
-            return [undefined, Unknown, true, false, HighImpedance]
+            const items = [undefined, Unknown, true, false, HighImpedance]
                 .map(newForceValue => ContextMenuData.item(
                     currentForceValue === newForceValue ? "check" : "none",
                     (() => {
@@ -743,6 +743,10 @@ export abstract class ComponentBase<
                         out.forceValue = newForceValue
                     }
                 ))
+
+            // insert separator
+            items.splice(1, 0, ContextMenuData.sep())
+            return items
         }
 
         const footerItems = [

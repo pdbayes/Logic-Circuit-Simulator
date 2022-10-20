@@ -205,7 +205,7 @@ const Strings_fr = {
         },
         ALU: {
             add: tuple("+", "Addition"),
-            sub: tuple("-", "Soustraction"),
+            sub: tuple("–", "Soustraction"),
             and: tuple("ET", "ET"),
             or: tuple("OU", "OU"),
             InputCinDesc: "retenue d’entrée",
@@ -781,7 +781,7 @@ const Strings_en: Strings = {
         },
         ALU: {
             add: tuple("+", "Addition"),
-            sub: tuple("-", "Subtraction"),
+            sub: tuple("–", "Subtraction"),
             and: tuple("AND", "AND"),
             or: tuple("OR", "OR"),
             InputCinDesc: "input carry",

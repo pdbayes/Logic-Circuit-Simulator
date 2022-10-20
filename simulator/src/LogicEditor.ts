@@ -635,7 +635,7 @@ export class LogicEditor extends HTMLElement {
             }
 
             this.html.canvasContainer.appendChild(
-                div(style("position: absolute; bottom: 0; right: 0; padding: 5px 3px 2px 5px; background-color: rgba(255,255,255,0.3); color: rgba(0,0,0,0.2); border-radius: 10px 0 0 0; font-size: 69%; font-style: italic;"),
+                div(style("user-select: none; position: absolute; bottom: 0; right: 0; padding: 5px 3px 2px 5px; background-color: rgba(255,255,255,0.3); color: rgba(0,0,0,0.2); border-radius: 10px 0 0 0; font-size: 69%; font-style: italic;"),
                     "Développé par ",
                     a(style("color: inherit"),
                         href("https://github.com/jppellet/Logic-Circuit-Simulator"), target("_blank"),
