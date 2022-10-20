@@ -48,7 +48,7 @@ export abstract class Mux<
         const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
         let x = -2 - numSel
         let y = -(numLeftSlots - 1)
-        const selY = y - 2
+        const selY = -y + 2
         let groupLetter = "A"
         for (let i = 0; i < numFrom; i++) {
             if (i !== 0 && i % numTo === 0) {
@@ -59,10 +59,10 @@ export abstract class Mux<
             y += 2
         }
 
-        // top input selectors
+        // bottom input selectors
         x = (numSel - 1)
         for (let s = 0; s < numSel; s++) {
-            offsets.push([`S${s}`, x - 2 * s, selY, "n", "S"])
+            offsets.push([`S${s}`, x - 2 * s, selY, "s", "S"])
         }
         return offsets
     }

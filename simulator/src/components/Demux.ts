@@ -52,16 +52,15 @@ export abstract class Demux<
         const numLeftSlots = numTo + (numGroups - 1) * addByGroupSep
         const from = -(numFrom - 1)
         let x = -2 - numSel
-        const y = -(numLeftSlots - 1)
-        const selY = y - 2
         for (let i = 0; i < numFrom; i++) {
             offsets.push([`A${i}`, x, from + 2 * i, "w", "A"])
         }
 
-        // top input selectors
+        // bottom input selectors
+        const selY = numLeftSlots + 1
         x = (numSel - 1)
         for (let s = 0; s < numSel; s++) {
-            offsets.push([`S${s}`, x - 2 * s, selY, "n", "S"])
+            offsets.push([`S${s}`, x - 2 * s, selY, "s", "S"])
         }
         return offsets
     }
