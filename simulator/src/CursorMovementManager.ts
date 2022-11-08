@@ -583,6 +583,7 @@ class EditHandlers extends ToolHandlers {
     }
     override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseUp(e)
+        this.editor.wireMgr.tryCancelWire()
     }
     override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseClicked(e)

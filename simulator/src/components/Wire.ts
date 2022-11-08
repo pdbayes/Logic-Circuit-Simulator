@@ -742,7 +742,7 @@ export class WireManager {
     public readonly editor: LogicEditor
     private readonly _wires: Wire[] = []
     private readonly _ribbons: Ribbon[] = []
-    private _isAddingWire = false
+    private _wireBeingAdded: Wire | undefined = undefined
 
     constructor(editor: LogicEditor) {
         this.editor = editor
@@ -757,7 +757,7 @@ export class WireManager {
     }
 
     public get isAddingWire() {
-        return this._isAddingWire
+        return isDefined(this._wireBeingAdded)
     }
 
     draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
@@ -795,10 +795,11 @@ export class WireManager {
 
     addNode(newNode: Node): Wire | undefined {
         let completedWire = undefined
-        if (!this._isAddingWire) {
+        if (!this.isAddingWire) {
             // start drawing a new wire
-            this._wires.push(new Wire(newNode))
-            this._isAddingWire = true
+            const wire = new Wire(newNode)
+            this._wires.push(wire)
+            this._wireBeingAdded = wire
             this.editor.setToolCursor("crosshair")
 
         } else {
@@ -832,7 +833,7 @@ export class WireManager {
                 this.editor.setDirty("added wire")
             }
 
-            this._isAddingWire = false
+            this._wireBeingAdded = undefined
             this.editor.setToolCursor(null)
         }
         this.editor.redrawMgr.addReason("started or stopped wire", null)
@@ -910,9 +911,10 @@ export class WireManager {
     }
 
     tryCancelWire() {
-        if (this._isAddingWire) {
+        const wireBeingAdded = this._wireBeingAdded
+        if (isDefined(wireBeingAdded)) {
             // adding the start node as end node to trigger deletion
-            this.addNode(this._wires[this._wires.length - 1].startNode)
+            this.addNode(wireBeingAdded.startNode)
         }
     }
 
