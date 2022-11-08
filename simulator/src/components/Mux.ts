@@ -6,6 +6,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { WireStyles } from "./Wire"
 
 
 type MuxInputIndices<NumInputs extends FixedArraySize> = {
@@ -259,25 +260,33 @@ export abstract class Mux<
 
         // wiring
         if (this._showWiring) {
-            const neutral = this.editor.options.hideWireColors
             const sels = this.inputValues(this.INPUT.S as any)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
+                const neutral = this.editor.options.hideWireColors
                 const from = this.INPUT.I[sel]
                 const to = this.OUTPUT.Z
                 const anchorDiffX = (right - left) / 3
+                const wireStyleStraight = this.editor.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < from.length; i++) {
+                    this.editor.options.wireStyle
                     g.beginPath()
                     const fromY = this.inputs[from[i]].posYInParentTransform
                     const toNode = this.outputs[to[i]]
                     const toY = toNode.posYInParentTransform
                     g.moveTo(left + 2, fromY)
-                    g.bezierCurveTo(
-                        left + anchorDiffX, fromY, // anchor left
-                        right - anchorDiffX, toY, // anchor right
-                        right - 2, toY,
-                    )
+                    if (wireStyleStraight) {
+                        g.lineTo(left + 4, fromY)
+                        g.lineTo(right - 4, toY)
+                        g.lineTo(right - 2, toY)
+                    } else {
+                        g.bezierCurveTo(
+                            left + anchorDiffX, fromY, // anchor left
+                            right - anchorDiffX, toY, // anchor right
+                            right - 2, toY,
+                        )
+                    }
                     strokeAsWireLine(g, this.inputs[from[i]].value, toNode.color, false, neutral)
                 }
             }

@@ -7,6 +7,7 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { IconName } from "../images"
 import { S } from "../strings"
+import { WireStyles } from "./Wire"
 
 
 type DemuxInputIndices<NumInputs extends FixedArraySize> = {
@@ -299,6 +300,7 @@ export abstract class Demux<
                 const from = this.INPUT.I
                 const to = this.OUTPUT.Z[sel]
                 const anchorDiffX = (right - left) / 3
+                const wireStyleStraight = this.editor.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < from.length; i++) {
                     g.beginPath()
@@ -306,11 +308,17 @@ export abstract class Demux<
                     const fromY = fromNode.posYInParentTransform
                     const toY = this.outputs[to[i]].posYInParentTransform
                     g.moveTo(left + 2, fromY)
-                    g.bezierCurveTo(
-                        left + anchorDiffX, fromY, // anchor left
-                        right - anchorDiffX, toY, // anchor right
-                        right - 2, toY,
-                    )
+                    if (wireStyleStraight) {
+                        g.lineTo(left + 4, fromY)
+                        g.lineTo(right - 4, toY)
+                        g.lineTo(right - 2, toY)
+                    } else {
+                        g.bezierCurveTo(
+                            left + anchorDiffX, fromY, // anchor left
+                            right - anchorDiffX, toY, // anchor right
+                            right - 2, toY,
+                        )
+                    }
                     strokeAsWireLine(g, this.inputs[from[i]].value, fromNode.color, false, neutral)
                 }
             }
