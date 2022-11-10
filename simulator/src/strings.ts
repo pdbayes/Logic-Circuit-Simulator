@@ -75,6 +75,7 @@ const Strings_fr = {
 
             SwitchedInverter: ["Inverseur commuté à 4 bits", "Inv. comm."],
             QuadGate: ["Porte quadruple", "4 × Porte"],
+            QuadTriState: ["Sortie à 3 états quadruple", "4 × 3 états"],
 
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Add."],
@@ -531,6 +532,12 @@ const Strings_fr = {
                 ShowAsUnknown: "Masquer le type",
             },
         },
+        QuadTriState: {
+            tooltip: {
+                title: "Sortie à 3 états quadruple",
+                desc: "Représente quatre fois une sortie à trois états, pilotées par un bit de contrôle.",
+            },
+        },
         RAM: {
             tooltip: {
                 title: "RAM (mémoire vive)",
@@ -651,6 +658,7 @@ const Strings_en: Strings = {
 
             SwitchedInverter: ["4-Bit Switched Inverter", "Switched Inv."],
             QuadGate: ["Quadruple Gate", "4 × Gate"],
+            QuadTriState: ["Quadruple Tri-State Buffer", "4 × Tri-state"],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
@@ -1105,6 +1113,12 @@ const Strings_en: Strings = {
             contextMenu: {
                 Type: "Type",
                 ShowAsUnknown: "Hide Type",
+            },
+        },
+        QuadTriState: {
+            tooltip: {
+                title: "Quadruple Tri-State Buffer",
+                desc: "Represents four tri-state buffers switched by a single control bit.",
             },
         },
         RAM: {

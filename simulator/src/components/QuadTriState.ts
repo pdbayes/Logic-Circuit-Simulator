@@ -1,5 +1,5 @@
-import { FixedArrayFill, FixedReadonlyArray, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { FixedArrayFill, FixedReadonlyArray, HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { DrawContext } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
@@ -7,31 +7,31 @@ import * as t from "io-ts"
 import { ComponentBase, defineComponent } from "./Component"
 import { S } from "../strings"
 
-export const SwitchedInverterDef =
+export const QuadTriStateDef =
     defineComponent(5, 4, t.type({
-        type: t.literal("switched-inverter"),
-    }, "SwitchedInverter"))
+        type: t.literal("quad-tristate"),
+    }, "QuadTriState"))
 
 const INPUT = {
     I: [0, 1, 2, 3] as const,
-    S: 4 as const,
+    E: 4 as const,
 }
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8
 
-export type SwitchedInverterRepr = typeof SwitchedInverterDef.reprType
+export type QuadTriStateRepr = typeof QuadTriStateDef.reprType
 
-export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, FixedReadonlyArray<LogicValue, 4>> {
+export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedReadonlyArray<LogicValue, 4>> {
 
-    public constructor(editor: LogicEditor, savedData: SwitchedInverterRepr | null) {
-        super(editor, FixedArrayFill(false, 4), savedData, {
+    public constructor(editor: LogicEditor, savedData: QuadTriStateRepr | null) {
+        super(editor, FixedArrayFill(HighImpedance, 4), savedData, {
             ins: [
                 ["I0", -3, -3, "w", "In"],
                 ["I1", -3, -1, "w", "In"],
                 ["I2", -3, +1, "w", "In"],
                 ["I3", -3, +3, "w", "In"],
-                ["S", 0, +5, "s"],
+                ["E (Enable)", 0, +5, "s"],
             ],
             outs: [
                 ["O0", +3, -3, "e", "Out"],
@@ -44,7 +44,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
 
     toJSON() {
         return {
-            type: "switched-inverter" as const,
+            type: "quad-tristate" as const,
             ...this.toJSONBase(),
         }
     }
@@ -62,7 +62,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
     }
 
     public override makeTooltip() {
-        const s = S.Components.SwitchedInverter.tooltip
+        const s = S.Components.QuadTriState.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc)
         ))
@@ -70,17 +70,17 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
 
     protected doRecalcValue(): FixedReadonlyArray<LogicValue, 4> {
         const input = this.inputValues<4>(INPUT.I)
-        const switch_ = this.inputs[INPUT.S].value
+        const enable = this.inputs[INPUT.E].value
 
-        if (isUnknown(switch_) || isHighImpedance(switch_)) {
+        if (isUnknown(enable) || isHighImpedance(enable)) {
             return FixedArrayFill(Unknown, 4)
         }
 
-        if (!switch_) {
-            return input
+        if (!enable) {
+            return FixedArrayFill(HighImpedance, 4)
         }
 
-        return input.map(LogicValue.invert) as unknown as FixedReadonlyArray<LogicValue, 4>
+        return input
     }
 
     protected override propagateValue(newValue: FixedReadonlyArray<LogicValue, 4>) {
@@ -90,8 +90,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const invert = this.inputs[INPUT.S].value
+        const enable = this.inputs[INPUT.E].value
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
@@ -109,21 +108,18 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         g.stroke()
 
         g.lineWidth = 2
-        g.strokeStyle = colorForBoolean(invert)
+        g.strokeStyle = colorForBoolean(enable)
         g.beginPath()
         g.moveTo(this.posX, bottom - 3)
         g.lineTo(this.posX, this.posY + 4)
         g.stroke()
 
-        g.strokeStyle = invert === true ? COLOR_COMPONENT_BORDER : COLOR_UNKNOWN
+        g.strokeStyle = COLOR_COMPONENT_BORDER
         g.beginPath()
         g.moveTo(left + 12, this.posY - 8)
         g.lineTo(right - 13, this.posY)
         g.lineTo(left + 12, this.posY + 8)
         g.closePath()
-        g.stroke()
-        g.beginPath()
-        circle(g, right - 10, this.posY, 5)
         g.stroke()
 
 
@@ -132,7 +128,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        drawWireLineToComponent(g, this.inputs[INPUT.S], this.inputs[INPUT.S].posXInParentTransform, bottom + 2)
+        drawWireLineToComponent(g, this.inputs[INPUT.E], this.inputs[INPUT.E].posXInParentTransform, bottom + 2)
 
 
         for (const output of this.outputs) {

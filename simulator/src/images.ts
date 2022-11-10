@@ -85,9 +85,11 @@ import OutputBit from '../img/OutputBit.svg' // @ts-ignore
 import OutputNibble from '../img/OutputNibble.svg' // @ts-ignore
 import OutputShiftBuffer from '../img/OutputShiftBuffer.svg' // @ts-ignore
 import QuadGate from '../img/QuadGate.svg' // @ts-ignore
+import QuadTriState from '../img/QuadTriState.svg' // @ts-ignore
 import RAM from '../img/RAM.svg' // @ts-ignore
 import Register from '../img/Register.svg' // @ts-ignore
 import SwitchedInverter from '../img/SwitchedInverter.svg' // @ts-ignore
+import TRI from '../img/TRI.svg' // @ts-ignore
 import TXA from '../img/TXA.svg' // @ts-ignore
 import XNOR from '../img/XNOR.svg' // @ts-ignore
 import XNOR3 from '../img/XNOR3.svg' // @ts-ignore
@@ -181,9 +183,11 @@ const images = {
     OutputNibble,
     OutputShiftBuffer,
     QuadGate,
+    QuadTriState,
     RAM,
     Register,
     SwitchedInverter,
+    TRI,
     TXA,
     XNOR,
     XNOR3,

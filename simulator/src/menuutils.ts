@@ -106,7 +106,7 @@ const componentsMenu: Array<Section> = [
             },
             {
                 type: "gate", subtype: "TRI",
-                strings: "TRI", img: "BUF", width: 50,
+                strings: "TRI", img: "TRI", width: 50,
                 normallyHidden: true,
             },
             {
@@ -222,6 +222,11 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "quad-gate",
                 strings: "QuadGate", img: "QuadGate", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "quad-tristate",
+                strings: "QuadTriState", img: "QuadTriState", width: 50,
                 normallyHidden: true,
             },
 
