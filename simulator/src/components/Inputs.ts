@@ -5,6 +5,7 @@ import { InputNibble, InputNibbleDef } from "./InputNibble"
 import { InputBit, InputBitDef } from "./InputBit"
 import { isUndefined, isString } from "../utils"
 import { InputRandom, InputRandomDef } from "./InputRandom"
+import { InputByte, InputByteDef } from "./InputByte"
 
 export type Input = InputBit | Clock | InputNibble
 
@@ -12,6 +13,7 @@ export const InputDef = t.union([
     InputBitDef.repr,
     ClockDef.repr,
     InputNibbleDef.repr,
+    InputByteDef.repr,
     InputRandomDef.repr,
 ], "Input")
 
@@ -45,6 +47,8 @@ export const InputFactory = {
                 return new Clock(editor, blank ? null : savedData)
             case "nibble":
                 return new InputNibble(editor, blank ? null : savedData)
+            case "byte":
+                return new InputByte(editor, blank ? null : savedData)
             case "random":
                 return new InputRandom(editor, blank ? null : savedData)
         }

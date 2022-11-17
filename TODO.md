@@ -3,23 +3,24 @@
 
 ## High priority
 
+ * Separate V and Cout output for ALU
+ * Adder orientation
+ * Add waypoint by dragging; add wire by alt-dragging from existing wire
  * Undo/redo
  * Lock position
- * Add label, rectangle, rich HTML annotation
  * Prevent click event if right-click
  * 4-bit adder with carry in and out
  * Show value on dip switch and register
  * More consistently set things dirty
  * Custom display for 4-bit input
  * Replace input with clock and conversely
- * 8-bit adder, ALU, register, RAM, ROM, dip switch, display
+ * 8-bit adder, ALU, register, ROM, display, counter
 
 
 ## Medium priority
 
  * Add contextual menu to clock
  * Edge detector
- * Demux
  * High-Z bus logic
  * Copy-paste
  * Component creation
@@ -27,6 +28,7 @@
 
 ## Low priority
 
+ * Add rich HTML annotation
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Add mouseovers to new components
  * Switch to https://www.floating-ui.com for tooltips?
@@ -34,10 +36,14 @@
  * Lock component to prevent them from being moveable/selectable
  * Add external component by drag-and-drop from file
  * Implement Quine–McCluskey algorithm for function normalization
+ * Menu item to replace 4-bit component with 8-bit version and inversely
 
 
 ### DONE
 
+ * 8-bit input, 8-bit RAM
+ * Add label, rectangle
+ * Demux
  * Mux graphics
  * Allow to force initial input to stabilize a circular circuit (e.g. SR latch)
  * Allow dynamic component names

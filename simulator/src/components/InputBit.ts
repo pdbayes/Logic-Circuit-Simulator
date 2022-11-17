@@ -100,7 +100,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
                 drawComponentName(g, ctx, this._name, toLogicValueRepr(displayValue), this, false)
             }
             const forcedFillStyle = !shouldDrawBorder ? g.fillStyle = COLOR_COMPONENT_BORDER : undefined
-            drawRoundValueCentered(g, displayValue, this, forcedFillStyle)
+            drawRoundValueCentered(g, displayValue, this, { fillStyle: forcedFillStyle })
         })
     }
 

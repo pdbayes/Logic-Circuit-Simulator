@@ -40,6 +40,7 @@ const Strings_fr = {
             OutputAscii: ["Affichage d’un caractère ASCII (sur 7 bits)", "Caractère"],
             OutputBar: ["Affichage d’un bit sous forme de segment lumineux", "Segment"],
             Clock: ["Générateur de signal d’horloge", "Horloge"],
+            InputByte: ["Entrée octet", "In 8 bits"],
             InputNibble: ["Entrée semioctet", "In 4 bits"],
             InputRandom: ["Entrée aléatoire", "Aléatoire"],
             OutputShiftBuffer: ["Affichage avec buffer à décalage", "Affichage à décalage"],
@@ -99,7 +100,8 @@ const Strings_fr = {
             FlipflopT: ["Bascule T", "Basc. T"],
             FlipflopD: ["Bascule D", "Basc. D"],
             Register: ["Registre à 4 bits", "Registre"],
-            RAM: ["RAM, 16 × 4 bits", "RAM"],
+            RAM: ["RAM, 16 × 4 bits", "RAM 16×4"],
+            RAM8: ["RAM, 16 × 8 bits", "RAM 16×8"],
 
             Counter: ["Compteur 4 bits", "Compteur"],
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
@@ -355,8 +357,11 @@ const Strings_fr = {
                 ToggleButton: "Commutateur",
             },
         },
+        InputByte: {
+            tooltip: "Entrée octet (8 bits)",
+        },
         InputNibble: {
-            tooltip: "Entrée semioctet",
+            tooltip: "Entrée semioctet (4 bits)",
         },
         InputRandom: {
             tooltip: {
@@ -544,6 +549,12 @@ const Strings_fr = {
                 desc: "Stocke 16 fois quatre bits.",
             },
         },
+        RAM8: {
+            tooltip: {
+                title: "RAM (mémoire vive)",
+                desc: "Stocke 16 fois huit bits.",
+            },
+        },
         Register: {
             tooltip: {
                 title: "Registre",
@@ -623,6 +634,7 @@ const Strings_en: Strings = {
             OutputAscii: ["ASCII Character (7-Bit) Display", "Character"],
             OutputBar: ["Bit Display as a Light Bar", "Bar"],
             Clock: ["Clock Generator", "Clock"],
+            InputByte: ["Byte (8-Bit) Input", "8-Bit In"],
             InputNibble: ["Nibble (4-Bit) Input", "4-Bit In"],
             InputRandom: ["Random Input", "Random"],
             OutputShiftBuffer: ["Display with Shift Buffer", "Shift Displ."],
@@ -682,7 +694,8 @@ const Strings_en: Strings = {
             FlipflopT: ["T Flip-Flop", "FF-T"],
             FlipflopD: ["D Flip-Flop", "FF-D"],
             Register: ["4-Bit Register", "Register"],
-            RAM: ["RAM, 16 × 4 Bits", "RAM"],
+            RAM: ["RAM, 16 × 4 Bits", "RAM 16×4"],
+            RAM8: ["RAM, 16 × 8 Bits", "RAM 16×8"],
 
             Counter: ["4-Bit Counter", "Counter"],
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
@@ -938,6 +951,9 @@ const Strings_en: Strings = {
                 ToggleButton: "Toggle Button",
             },
         },
+        InputByte: {
+            tooltip: "Byte (8-bit) Input",
+        },
         InputNibble: {
             tooltip: "Nibble (4-Bit) Input",
         },
@@ -1125,6 +1141,12 @@ const Strings_en: Strings = {
             tooltip: {
                 title: "RAM",
                 desc: "Stores 16 times four bits.",
+            },
+        },
+        RAM8: {
+            tooltip: {
+                title: "RAM (mémoire vive)",
+                desc: "Stores 16 times eight bits.",
             },
         },
         Register: {

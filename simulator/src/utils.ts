@@ -208,7 +208,7 @@ import * as t from "io-ts"
 
 // Fixed-size arrays up to 8 to model inputs statically
 
-export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18
+export type FixedArraySize = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19
 export type FixedArraySizeNonZero = Exclude<FixedArraySize, 0>
 export type FixedArraySizeSeveral = Exclude<FixedArraySizeNonZero, 1>
 
@@ -232,7 +232,8 @@ export type FixedArray<T, N extends FixedArraySize> =
     : N extends 16 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
     : N extends 17 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
     : N extends 18 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
-    :/*N >= 19 12*/ Array<T>
+    : N extends 19 ? [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    :/*N >= 20 12*/ Array<T>
 
 export type FixedReadonlyArray<T, N extends FixedArraySize> =
     N extends 0 ? readonly []
@@ -254,7 +255,8 @@ export type FixedReadonlyArray<T, N extends FixedArraySize> =
     : N extends 16 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
     : N extends 17 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
     : N extends 18 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
-    :/*N >= 19 12*/ ReadonlyArray<T>
+    : N extends 19 ? readonly [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T]
+    :/*N >= 20 12*/ ReadonlyArray<T>
 
 // type HashSize1 = { readonly HasSize1: unique symbol }
 // type H<N extends number, T> = { [K in `HasSize${N}`]: T }

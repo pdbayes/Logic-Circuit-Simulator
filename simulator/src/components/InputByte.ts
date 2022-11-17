@@ -1,4 +1,4 @@
-import { isDefined, isNotNull, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown } from "../utils"
+import { isDefined, isNotNull, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown, typeOrUndefined, isUndefined, isUnknown, isHighImpedance, HighImpedance, toLogicValueFromChar } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
@@ -9,38 +9,54 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 
 const GRID_WIDTH = 2
-const GRID_HEIGHT = 8
+const GRID_UPPER_HEIGHT = 4.5
+const GRID_LOWER_HEIGHT = 3.5
 
-export const InputNibbleDef =
-    defineComponent(0, 4, t.type({
-        type: t.literal("nibble"),
-        val: t.tuple([LogicValueRepr, LogicValueRepr, LogicValueRepr, LogicValueRepr]),
+export const InputByteDef =
+    defineComponent(0, 8, t.type({
+        type: t.literal("byte"),
+        val: typeOrUndefined(t.string),
         name: ComponentNameRepr,
         // radix: typeOrUndefined(t.number),
-    }, "InputNibble"))
+    }, "InputByte"))
 
-type InputNibbleRepr = typeof InputNibbleDef.reprType
+type InputByteRepr = typeof InputByteDef.reprType
 
-export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray<LogicValue, 4>> {
+// TODO merge with InputNibble
+export class InputByte extends ComponentBase<0, 8, InputByteRepr, FixedArray<LogicValue, 8>> {
 
-    private static savedStateFrom(savedData: { val: FixedArray<LogicValueRepr, 4> } | null): FixedArray<LogicValue, 4> {
-        if (isNull(savedData)) {
-            return [false, false, false, false]
+    private static savedStateFrom(savedData: { val: string | undefined } | null): FixedArray<LogicValue, 8> {
+        const inputs = FixedArrayFill(false as LogicValue, 8)
+        if (isNull(savedData) || isUndefined(savedData.val)) {
+            return inputs
         }
-        return savedData.val.map(v => toLogicValue(v)) as unknown as FixedArray<LogicValue, 4>
+        const rep = savedData.val
+        const lastIndex = rep.length - 1
+        for (let i = 0; i < 8; i++) {
+            const index = lastIndex - i
+            if (index < 0) {
+                break
+            }
+            inputs[i] = toLogicValueFromChar(rep[index])
+        }
+        return inputs
     }
 
 
     private _name: ComponentName = undefined
     // private _radix = DEFAULT_RADIX
 
-    public constructor(editor: LogicEditor, savedData: InputNibbleRepr | null) {
-        super(editor, InputNibble.savedStateFrom(savedData), savedData, {
+    public constructor(editor: LogicEditor, savedData: InputByteRepr | null) {
+        super(editor, InputByte.savedStateFrom(savedData), savedData, {
             outs: [
+                [undefined, 2, -4, "e", "Out"],
                 [undefined, 2, -3, "e", "Out"],
+                [undefined, 2, -2, "e", "Out"],
                 [undefined, 2, -1, "e", "Out"],
-                [undefined, 2, +1, "e", "Out"],
-                [undefined, 2, +3, "e", "Out"],
+                [undefined, 2, 0, "e", "Out"],
+                [undefined, 2, 1, "e", "Out"],
+                [undefined, 2, 2, "e", "Out"],
+                [undefined, 2, 3, "e", "Out"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -50,12 +66,29 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
 
     toJSON() {
         return {
-            type: "nibble" as const,
+            type: "byte" as const,
             ...this.toJSONBase(),
-            val: this.value.map(v => toLogicValueRepr(v)) as unknown as FixedArray<LogicValueRepr, 4>,
+            val: this.contentRepr(),
             name: this._name,
         }
     }
+
+    private contentRepr(): string | undefined {
+        const value = this.value
+        let nontrivial = false
+        for (let i = 0; i < 8; i++) {
+            if (value[i] !== false) {
+                nontrivial = true
+                break
+            }
+        }
+        if (!nontrivial) {
+            return undefined
+        }
+
+        return this.value.map(toLogicValueRepr).reverse().join("")
+    }
+
 
     public get componentType() {
         return "in" as const
@@ -70,7 +103,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return (GRID_UPPER_HEIGHT + GRID_UPPER_HEIGHT) * GRID_STEP
     }
 
     override isOver(x: number, y: number) {
@@ -81,13 +114,13 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         return tooltipContent(undefined, mods(S.Components.InputNibble.tooltip))
     }
 
-    protected doRecalcValue(): FixedArray<LogicValue, 4> {
+    protected doRecalcValue(): FixedArray<LogicValue, 8> {
         // this never changes on its own, just upon user interaction
         return this.value
     }
 
-    protected override propagateValue(newValue: FixedArray<LogicValue, 4>) {
-        for (let i = 0; i < 4; i++) {
+    protected override propagateValue(newValue: FixedArray<LogicValue, 8>) {
+        for (let i = 0; i < 8; i++) {
             this.outputs[i].value = newValue[i]
         }
     }
@@ -100,21 +133,22 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
         const left = this.posX - width / 2
         const right = left + width
-        const top = this.posY - height / 2
+        const top = this.posY - GRID_UPPER_HEIGHT * GRID_STEP
+        const bottom = this.posY + GRID_LOWER_HEIGHT * GRID_STEP
+        const height = bottom - top
 
         g.beginPath()
         g.rect(left, top, width, height)
         g.fill()
         g.stroke()
 
-        const displayValues = this.editor.options.hideInputColors ? FixedArrayFill(Unknown, 4) : this.value
+        const displayValues = this.editor.options.hideInputColors ? FixedArrayFill(Unknown, 8) : this.value
 
         g.lineWidth = 1
-        const cellHeight = height / 4
-        for (let i = 0; i < 4; i++) {
+        const cellHeight = GRID_STEP
+        for (let i = 0; i < 8; i++) {
             const y = top + i * cellHeight
             g.fillStyle = colorForBoolean(displayValues[i])
             g.beginPath()
@@ -133,9 +167,9 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
                 drawComponentName(g, ctx, this._name, valueString, this, false)
             }
 
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 8; i++) {
                 const y = top + cellHeight / 2 + i * cellHeight
-                drawRoundValue(g, displayValues[i], ...ctx.rotatePoint(this.posX, y))
+                drawRoundValue(g, displayValues[i], ...ctx.rotatePoint(this.posX, y), { small: true })
             }
         })
     }
@@ -146,7 +180,6 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
         return [
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
@@ -169,14 +202,16 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         if (editor.mode === Mode.STATIC) {
             return false
         }
-        const h = this.unrotatedHeight
-        const y = editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
-        const i = Math.floor(y * 4 / h)
+        const y = editor.offsetXYForComponent(e, this)[1] - this.posY + GRID_UPPER_HEIGHT * GRID_STEP
+        console.log({ y })
+        const i = Math.floor(y / GRID_STEP)
 
-        const newValues = [...this.value]
-        newValues[i] = InputBit.nextValue(newValues[i], editor.mode, e.altKey)
+        if (i >= 0 && i < 8) {
+            const newValues = [...this.value]
+            newValues[i] = InputBit.nextValue(newValues[i], editor.mode, e.altKey)
+            this.doSetValue(newValues as unknown as FixedArray<LogicValue, 8>)
+        }
 
-        this.doSetValue(newValues as unknown as FixedArray<LogicValue, 4>)
         return true
     }
 

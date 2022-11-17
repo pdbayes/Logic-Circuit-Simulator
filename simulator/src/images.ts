@@ -60,6 +60,7 @@ import FlipflopT from '../img/FlipflopT.svg' // @ts-ignore
 import HalfAdder from '../img/HalfAdder.svg' // @ts-ignore
 import IMPLY from '../img/IMPLY.svg' // @ts-ignore
 import InputBit from '../img/InputBit.svg' // @ts-ignore
+import InputByte from '../img/InputByte.svg' // @ts-ignore
 import InputNibble from '../img/InputNibble.svg' // @ts-ignore
 import InputRandom from '../img/InputRandom.svg' // @ts-ignore
 import LabelRectangle from '../img/LabelRectangle.svg' // @ts-ignore
@@ -87,6 +88,7 @@ import OutputShiftBuffer from '../img/OutputShiftBuffer.svg' // @ts-ignore
 import QuadGate from '../img/QuadGate.svg' // @ts-ignore
 import QuadTriState from '../img/QuadTriState.svg' // @ts-ignore
 import RAM from '../img/RAM.svg' // @ts-ignore
+import RAM8 from '../img/RAM8.svg' // @ts-ignore
 import Register from '../img/Register.svg' // @ts-ignore
 import SwitchedInverter from '../img/SwitchedInverter.svg' // @ts-ignore
 import TRI from '../img/TRI.svg' // @ts-ignore
@@ -158,6 +160,7 @@ const images = {
     HalfAdder,
     IMPLY,
     InputBit,
+    InputByte,
     InputNibble,
     InputRandom,
     LabelRectangle,
@@ -185,6 +188,7 @@ const images = {
     QuadGate,
     QuadTriState,
     RAM,
+    RAM8,
     Register,
     SwitchedInverter,
     TRI,

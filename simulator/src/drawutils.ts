@@ -458,32 +458,38 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, fillStyle?: string) {
-    drawRoundValue(g, value, comp.posX, comp.posY, fillStyle)
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: {fillStyle?: string, small?: boolean}) {
+    drawRoundValue(g, value, comp.posX, comp.posY, opts)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, fillStyle?: string) {
+export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: {fillStyle?: string, small?: boolean}) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
     let spec = ""
     let label = ""
 
+    const small = opts?.small ?? false
+    const fillStyle = opts?.fillStyle
+
+    const sizeStrBig = small ? "12" : "18"
+    const sizeStrSmall = small ? "10" : "16"
+
     if (isUnknown(value)) {
         g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
-        spec = "bold 18"
+        spec = "bold " + sizeStrBig
         label = '?'
     } else if (isHighImpedance(value)) {
         g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
-        spec = "16"
+        spec = sizeStrSmall
         label = 'Z'
     } else if (value) {
         g.fillStyle = fillStyle ?? COLOR_LABEL_ON
-        spec = "bold 18"
+        spec = "bold " + sizeStrBig
         label = '1'
     } else {
         g.fillStyle = fillStyle ?? COLOR_LABEL_OFF
-        spec = "18"
+        spec = sizeStrBig
         label = '0'
     }
     g.font = `${spec}px sans-serif`

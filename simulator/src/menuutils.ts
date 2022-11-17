@@ -68,6 +68,11 @@ const componentsMenu: Array<Section> = [
                 strings: "InputNibble", img: "InputNibble", width: 32,
             },
             {
+                type: "in", subtype: "byte",
+                strings: "InputByte", img: "InputByte", width: 32,
+                normallyHidden: true,
+            },
+            {
                 type: "in", subtype: "random",
                 strings: "InputRandom", img: "InputRandom", width: 32,
                 normallyHidden: true,
@@ -344,6 +349,11 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "ram-16x4",
                 strings: "RAM", img: "RAM", width: 50,
+            },
+            {
+                type: "component", subtype: "ram-16x8",
+                strings: "RAM8", img: "RAM8", width: 50,
+                normallyHidden: true,
             },
             {
                 type: "component", subtype: "counter",
