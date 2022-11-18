@@ -257,14 +257,14 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         drawWireLineToComponent(g, this.inputs[INPUT.WriteEnable], this.inputs[INPUT.WriteEnable].posXInParentTransform, bottom + 2, false)
         drawWireLineToComponent(g, this.inputs[INPUT.Clear], this.inputs[INPUT.Clear].posXInParentTransform, bottom + 2, false)
         for (const i of INPUT.Data) {
-            drawWireLineToComponent(g, this.inputs[i], left - 2, this.inputs[i].posYInParentTransform, false)
+            drawWireLineToComponent(g, this.inputs[i], left - 1, this.inputs[i].posYInParentTransform, false)
         }
         for (const i of INPUT.Address) {
             drawWireLineToComponent(g, this.inputs[i], this.inputs[i].posXInParentTransform, top, false)
         }
 
         for (const output of this.outputs) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform, false)
+            drawWireLineToComponent(g, output, right + 1, output.posYInParentTransform, false)
         }
 
 

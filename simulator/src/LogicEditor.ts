@@ -1349,14 +1349,24 @@ export class LogicEditor extends HTMLElement {
             const mainCanvas = this.html.mainCanvas
             if ("offsetX" in e) {
                 // MouseEvent
+                const canvasRect = mainCanvas.getBoundingClientRect()
+                let offsetX = e.offsetX
+                let offsetY = e.offsetY
+
+                // fix for firefox having always 0 offsetX,Y
+                if (offsetX === 0 && offsetY === 0 && "layerX" in e) {
+                    const _e = e as any
+                    offsetX = _e.layerX + canvasRect.x
+                    offsetY = _e.layerY + canvasRect.y
+                }
+                
                 if (e.target === mainCanvas) {
-                    return [e.offsetX, e.offsetY]
+                    return [offsetX, offsetY]
                 } else {
-                    const canvasRect = mainCanvas.getBoundingClientRect()
                     const elemRect = (e.target as HTMLElement).getBoundingClientRect()
                     return [
-                        Math.max(GRID_STEP * 2, e.offsetX + elemRect.x - canvasRect.x),
-                        Math.max(GRID_STEP * 2, e.offsetY + elemRect.y - canvasRect.y),
+                        Math.max(GRID_STEP * 2, offsetX + elemRect.x - canvasRect.x),
+                        Math.max(GRID_STEP * 2, offsetY + elemRect.y - canvasRect.y),
                     ]
                 }
             } else {
