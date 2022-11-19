@@ -1227,4 +1227,4 @@ export function setLang(l: Lang) {
     S = langs[l]
 }
 
-export let S: Strings = Strings_en
+export let S: Strings = Strings_fr
