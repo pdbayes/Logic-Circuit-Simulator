@@ -548,7 +548,7 @@ abstract class ToolHandlers {
 
 class EditHandlers extends ToolHandlers {
 
-    private _contextMenuOpen = false
+    private _openedContextMenu: HTMLElement | null = null
 
     constructor(editor: LogicEditor) {
         super(editor)
@@ -586,6 +586,7 @@ class EditHandlers extends ToolHandlers {
         this.editor.wireMgr.tryCancelWire()
     }
     override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+        // console.log("mouseClickedOn %o", comp)
         comp.mouseClicked(e)
     }
     override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
@@ -593,9 +594,16 @@ class EditHandlers extends ToolHandlers {
     }
     override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("contextMenuOn: %o", comp)
-        if (this._contextMenuOpen) {
-            return true // already handled
+        
+        const hideMenu = () => {
+            if (this._openedContextMenu !== null) {
+                this._openedContextMenu.classList.remove('show-menu')
+                this._openedContextMenu.innerHTML = ""
+                this._openedContextMenu = null
+            }
         }
+
+        hideMenu()
 
         const contextMenuData = comp.makeContextMenu()
         // console.log("asking for menu: %o got: %o", comp, contextMenuData)
@@ -649,13 +657,7 @@ class EditHandlers extends ToolHandlers {
             mainContextMenu.style.left = em.pageX + 'px'
             mainContextMenu.style.top = em.pageY + 'px'
             mainContextMenu.classList.add("show-menu")
-            this._contextMenuOpen = true
-
-            const hideMenu = () => {
-                mainContextMenu.classList.remove('show-menu')
-                mainContextMenu.innerHTML = ""
-                this._contextMenuOpen = false
-            }
+            this._openedContextMenu = mainContextMenu
 
             const clickHandler = () => {
                 hideMenu()
