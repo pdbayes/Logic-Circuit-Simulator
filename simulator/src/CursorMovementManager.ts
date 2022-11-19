@@ -43,8 +43,13 @@ export class EditorSelection {
                 }
             }
 
-            // TODO go through some other elements than components to show as selected?
-            // e.g. wires?
+            for (const wire of editor.wireMgr.wires) {
+                for (const point of wire.waypoints) {
+                    if (point.isInRect(rect)) {
+                        this.toggle(point)
+                    }
+                }
+            }
 
             this.currentlyDrawnRect = undefined
         }
