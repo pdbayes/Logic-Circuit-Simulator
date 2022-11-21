@@ -232,6 +232,11 @@ export class CursorMovementManager {
         for (const comp of this.editor.components.all()) {
             sel.previouslySelectedElements.add(comp)
         }
+        for (const wire of this.editor.wireMgr.wires) {
+            for (const waypoint of wire.waypoints) {
+                sel.previouslySelectedElements.add(waypoint)
+            }
+        }
         this.editor.redrawMgr.addReason("selected all", null)
     }
 
