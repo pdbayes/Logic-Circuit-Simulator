@@ -18,7 +18,7 @@ See <https://jp.pellet.name/hep/logiga/>
  * `npm run compile-watch` to run the TypeScript compiler (without output) to check for errors
  * `npm run lint-watch` to run `eslint` to check for linting errors
  * `npm run bundle-watch` to build the bundle with `esbuild` (can be done on every save because `esbuild` is so fast)
- * `npm run server` to serve locally for testing on port 8080
+ * `npm run server` to serve locally for testing on port 8088
 
 
 ## Differences with Original Version
