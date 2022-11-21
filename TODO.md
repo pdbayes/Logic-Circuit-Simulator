@@ -4,6 +4,7 @@
 ## High priority
 
  * Separate V and Cout output for ALU
+ * 4-bit and 8-bit display without interpretation
  * Adder orientation
  * Add waypoint by dragging; add wire by alt-dragging from existing wire
  * Undo/redo
@@ -24,6 +25,7 @@
  * High-Z bus logic
  * Copy-paste
  * Component creation
+ * (Address) decoder: 2, 3, 4 bit versions
 
 
 ## Low priority

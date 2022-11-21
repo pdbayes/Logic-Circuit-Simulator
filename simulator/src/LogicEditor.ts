@@ -1347,6 +1347,7 @@ export class LogicEditor extends HTMLElement {
     offsetXY(e: MouseEvent | TouchEvent): [number, number] {
         const [unscaledX, unscaledY] = (() => {
             const mainCanvas = this.html.mainCanvas
+            let target = e.target 
             if ("offsetX" in e) {
                 // MouseEvent
                 const canvasRect = mainCanvas.getBoundingClientRect()
@@ -1354,29 +1355,36 @@ export class LogicEditor extends HTMLElement {
                 let offsetY = e.offsetY
 
                 // fix for firefox having always 0 offsetX,Y
-                if (offsetX === 0 && offsetY === 0 && "layerX" in e) {
+                if (offsetX === 0 && offsetY === 0) {
                     const _e = e as any
-                    offsetX = _e.layerX + canvasRect.x
-                    offsetY = _e.layerY + canvasRect.y
+                    if ("_savedOffsetX" in _e) {
+                        offsetX = _e._savedOffsetX
+                        offsetY = _e._savedOffsetY
+                        target = _e._savedTarget
+                    } else if ("layerX" in e) {
+                        // This should never happen and is actually wrong, because we assume 
+                        offsetX = _e.layerX + canvasRect.x
+                        offsetY = _e.layerY + canvasRect.y
+                    }
                 }
-                
-                if (e.target === mainCanvas) {
+
+                if (target === mainCanvas) {
                     return [offsetX, offsetY]
                 } else {
-                    const elemRect = (e.target as HTMLElement).getBoundingClientRect()
+                    const elemRect = (target as HTMLElement).getBoundingClientRect()
                     return [
                         Math.max(GRID_STEP * 2, offsetX + elemRect.x - canvasRect.x),
                         Math.max(GRID_STEP * 2, offsetY + elemRect.y - canvasRect.y),
                     ]
                 }
             } else {
-                const elemRect = (e.target as HTMLElement).getBoundingClientRect()
+                const elemRect = (target as HTMLElement).getBoundingClientRect()
                 const bodyRect = document.body.getBoundingClientRect()
                 const touch = e.changedTouches[0]
                 const offsetX = touch.pageX - (elemRect.left - bodyRect.left)
                 const offsetY = touch.pageY - (elemRect.top - bodyRect.top)
 
-                if (e.target === mainCanvas) {
+                if (target === mainCanvas) {
                     return [offsetX, offsetY]
                 } else {
                     const canvasRect = mainCanvas.getBoundingClientRect()

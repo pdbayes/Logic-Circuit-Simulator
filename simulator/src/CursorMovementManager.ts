@@ -101,6 +101,11 @@ export class CursorMovementManager {
     }
 
     setStartDragTimeout(startMouseDownData: MouseDownData, e: MouseEvent | TouchEvent) {
+        // we do this because firefox otherwise sets back offsetX/Y to 0
+        const _e = e as any
+        _e._savedOffsetX = _e.offsetX
+        _e._savedOffsetY = _e.offsetY
+        _e._savedTarget = _e.target
         this._startDragTimeoutHandle = setTimeout(
             this.editor.wrapHandler(() => {
                 let fireDrag = true
