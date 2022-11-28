@@ -149,12 +149,12 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
                         offset = -offset
                     }
                     for (const part of probTextParts) {
-                        drawLabel(ctx, this.orient, part, "n", this.posX - currentOffset, top - 1)
+                        drawLabel(ctx, this.orient, part, "n", this.posX - currentOffset, top - 1, undefined)
                         currentOffset += offset
                     }
                 } else {
                     const probText = probTextParts.join(" ")
-                    drawLabel(ctx, this.orient, probText, "n", this.posX, top)
+                    drawLabel(ctx, this.orient, probText, "n", this.posX, top, undefined)
                 }
             }
 

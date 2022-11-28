@@ -201,8 +201,8 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
             drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
 
             g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Q", "e", right, this.posY)
-            drawLabel(ctx, this.orient, "D", "w", left, this.posY)
+            drawLabel(ctx, this.orient, "Q", "e", right, this.posY, this.outputs[OUTPUT.Q[0]])
+            drawLabel(ctx, this.orient, "D", "w", left, this.posY, this.inputs[INPUT.Data[0]])
         })
 
     }

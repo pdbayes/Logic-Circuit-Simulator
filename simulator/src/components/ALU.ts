@@ -341,22 +341,22 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
             // bottom outputs
             const carryHOffsetF = Orientation.isVertical(this.orient) ? 0 : 1
             drawLabel(ctx, this.orient, "Z", "s", this.outputs[OUTPUT.Z], bottom - 17)
-            drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V].posXInParentTransform + carryHOffsetF * 2, bottom - 11)
-            drawLabel(ctx, this.orient, "Cout", "s", this.outputs[OUTPUT.Cout].posXInParentTransform + carryHOffsetF * 4, bottom - 8)
+            drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V].posXInParentTransform + carryHOffsetF * 2, bottom - 11, this.outputs[OUTPUT.V])
+            drawLabel(ctx, this.orient, "Cout", "s", this.outputs[OUTPUT.Cout].posXInParentTransform + carryHOffsetF * 4, bottom - 8, this.outputs[OUTPUT.Cout])
 
             // top inputs
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs[INPUT.Cin].posXInParentTransform + carryHOffsetF * 2, top + 5)
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs[INPUT.Cin].posXInParentTransform + carryHOffsetF * 2, top + 5, this.inputs[INPUT.Cin])
 
             g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op[0]].posXInParentTransform - GRID_STEP, top + 15)
+            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op[0]].posXInParentTransform - GRID_STEP, top + 15, this.inputs[INPUT.Op[0]])
 
             // left inputs
             g.font = "bold 14px sans-serif"
-            drawLabel(ctx, this.orient, "A", "w", left, top + 4 * GRID_STEP + 6)
-            drawLabel(ctx, this.orient, "B", "w", left, bottom - 4 * GRID_STEP - 6)
+            drawLabel(ctx, this.orient, "A", "w", left, top + 4 * GRID_STEP + 6, this.inputs[INPUT.A[0]])
+            drawLabel(ctx, this.orient, "B", "w", left, bottom - 4 * GRID_STEP - 6, this.inputs[INPUT.B[0]])
 
             // right outputs
-            drawLabel(ctx, this.orient, "S", "e", right, this.posY)
+            drawLabel(ctx, this.orient, "S", "e", right, this.posY, this.outputs[OUTPUT.S[0]])
 
             if (this._showOp) {
                 const opName = isUnknown(this.op) ? "??" : ALUOp.shortName(this.op)

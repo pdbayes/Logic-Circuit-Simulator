@@ -334,9 +334,9 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
             drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
 
             g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Addr", "n", this.posX, top)
-            drawLabel(ctx, this.orient, "D", "w", left, this.posY)
-            drawLabel(ctx, this.orient, "Q", "e", right, this.posY)
+            drawLabel(ctx, this.orient, "Addr", "n", this.posX, top, this.inputs[INPUT.Address[0]])
+            drawLabel(ctx, this.orient, "D", "w", left, this.posY, this.inputs[INPUT.Data[0]])
+            drawLabel(ctx, this.orient, "Q", "e", right, this.posY, this.outputs[OUTPUT.Q[0]])
         })
 
     }

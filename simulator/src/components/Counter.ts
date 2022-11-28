@@ -193,7 +193,7 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
             g.font = "bold 12px sans-serif"
 
             const offsetY = (this.outputs[OUTPUT.Q[1]].posYInParentTransform + this.outputs[OUTPUT.Q[2]].posYInParentTransform) / 2
-            drawLabel(ctx, this.orient, "Q", "e", right, offsetY)
+            drawLabel(ctx, this.orient, "Q", "e", right, offsetY, this.outputs[OUTPUT.Q[0]])
 
             if (isDefined(this._displayRadix)) {
                 g.font = "bold 20px sans-serif"

@@ -140,7 +140,7 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "bold 12px sans-serif"
 
-            drawLabel(ctx, this.orient, "C", "w", left, this.posY)
+            drawLabel(ctx, this.orient, "C", "w", left, this.posY, this.inputs[0])
 
             g.font = "7px sans-serif"
             this.outputs.forEach(output => {

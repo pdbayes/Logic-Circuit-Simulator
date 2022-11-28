@@ -1,5 +1,5 @@
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 import { Node, WireColor } from "./components/Node"
 import { Component, ComponentName } from "./components/Component"
 import { LogicEditor } from "./LogicEditor"
@@ -301,14 +301,19 @@ export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number
     g.stroke()
 }
 
-export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
+export function shouldShowNode(node: Node): boolean {
     const editor = node.editor
-    const mode = editor.mode
-    const options = editor.options
-    if (mode <= Mode.TRYOUT && !options.showDisconnectedPins && node.isDisconnected) {
+    if (editor.mode <= Mode.TRYOUT && !editor.options.showDisconnectedPins && node.isDisconnected) {
+        return false
+    }
+    return true
+}
+
+export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
+    if (!shouldShowNode(node)) {
         return
     }
-    const neutral = options.hideWireColors
+    const neutral = node.editor.options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
     drawStraightWireLine(g, x0, y0, x1, y1, node.value, node.color, neutral)
@@ -429,8 +434,27 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node, y: number | Node) {
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: Node): void
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: Node, y: number): void
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: number, referenceNode: Node | undefined): void
+
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node, y: number | Node, referenceNode?: Node) {
     if (isUndefined(text)) {
+        return
+    }
+
+    let nodeHidden = false
+    if (isUndefined(referenceNode)) {
+        if (!isNumber(x)) {
+            referenceNode = x
+        } else if (!isNumber(y)) {
+            referenceNode = y
+        }
+    }
+    if (isDefined(referenceNode)) {
+        nodeHidden = !shouldShowNode(referenceNode)
+    }
+    if (nodeHidden) {
         return
     }
 
@@ -458,11 +482,11 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: {fillStyle?: string, small?: boolean}) {
+export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {
     drawRoundValue(g, value, comp.posX, comp.posY, opts)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: {fillStyle?: string, small?: boolean}) {
+export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: { fillStyle?: string, small?: boolean }) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
