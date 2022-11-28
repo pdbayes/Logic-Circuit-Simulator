@@ -158,7 +158,7 @@ export class InputByte extends ComponentBase<0, 8, InputByteRepr, FixedArray<Log
         }
 
         for (const output of this.outputs) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
+            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform, true)
         }
 
         ctx.inNonTransformedFrame(ctx => {
@@ -203,7 +203,6 @@ export class InputByte extends ComponentBase<0, 8, InputByteRepr, FixedArray<Log
             return false
         }
         const y = editor.offsetXYForComponent(e, this)[1] - this.posY + GRID_UPPER_HEIGHT * GRID_STEP
-        console.log({ y })
         const i = Math.floor(y / GRID_STEP)
 
         if (i >= 0 && i < 8) {

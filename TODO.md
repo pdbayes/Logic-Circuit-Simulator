@@ -3,17 +3,13 @@
 
 ## High priority
 
- * Separate V and Cout output for ALU
- * 4-bit and 8-bit display without interpretation
  * Adder orientation
  * Add waypoint by dragging; add wire by alt-dragging from existing wire
  * Undo/redo
  * Lock position
  * Prevent click event if right-click
  * 4-bit adder with carry in and out
- * Show value on dip switch and register
  * More consistently set things dirty
- * Custom display for 4-bit input
  * Replace input with clock and conversely
  * 8-bit adder, ALU, register, ROM, display, counter
 
@@ -43,6 +39,8 @@
 
 ### DONE
 
+ * 4-bit and 8-bit display without interpretation
+ * Separate V and Cout output for ALU
  * 8-bit input, 8-bit RAM
  * Add label, rectangle
  * Demux

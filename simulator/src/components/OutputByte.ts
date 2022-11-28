@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawComponentName, drawRoundValue, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { tooltipContent, mods } from "../htmlgen"
+import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { FixedArray, FixedArrayFill, isDefined, isNotNull, LogicValue, Mode, toLogicValueRepr, Unknown } from "../utils"
@@ -8,27 +8,33 @@ import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 const GRID_WIDTH = 2
-const GRID_HEIGHT = 8
+const GRID_UPPER_HEIGHT = 4.5
+const GRID_LOWER_HEIGHT = 3.5
 
-export const OutputNibbleDef =
-    defineComponent(4, 0, t.type({
-        type: t.literal("nibble"),
+export const OutputByteDef =
+    defineComponent(8, 0, t.type({
+        type: t.literal("byte"),
         name: ComponentNameRepr,
-    }, "OutputNibble"))
+    }, "OutputByte"))
 
-type OutputNibbleRepr = typeof OutputNibbleDef.reprType
+type OutputByteRepr = typeof OutputByteDef.reprType
 
-export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArray<LogicValue, 4>> {
+export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<LogicValue, 8>> {
 
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, savedData: OutputNibbleRepr | null) {
-        super(editor, FixedArrayFill(false, 4), savedData, {
+    public constructor(editor: LogicEditor, savedData: OutputByteRepr | null) {
+        super(editor, FixedArrayFill(false, 8), savedData, {
             ins: [
+                [undefined, -2, -4, "w", "In"],
                 [undefined, -2, -3, "w", "In"],
+                [undefined, -2, -2, "w", "In"],
                 [undefined, -2, -1, "w", "In"],
-                [undefined, -2, +1, "w", "In"],
-                [undefined, -2, +3, "w", "In"],
+                [undefined, -2, 0, "w", "In"],
+                [undefined, -2, 1, "w", "In"],
+                [undefined, -2, 2, "w", "In"],
+                [undefined, -2, 3, "w", "In"],
+
             ],
         })
         if (isNotNull(savedData)) {
@@ -38,7 +44,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
 
     toJSON() {
         return {
-            type: "nibble" as const,
+            type: "byte" as const,
             ...this.toJSONBase(),
             name: this._name,
         }
@@ -53,16 +59,16 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
     }
 
     get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return (GRID_UPPER_HEIGHT + GRID_UPPER_HEIGHT) * GRID_STEP
     }
 
     public override makeTooltip() {
-        return tooltipContent(undefined, mods(S.Components.OutputNibble.tooltip))
+        return tooltipContent(undefined, mods(S.Components.OutputByte.tooltip))
     }
-    
-    protected doRecalcValue(): FixedArray<LogicValue, 4> {
+
+    protected doRecalcValue(): FixedArray<LogicValue, 8> {
         // this never changes on its own, just upon user interaction
-        return this.inputValues<4>([0, 1, 2, 3])
+        return this.inputValues<8>([0, 1, 2, 3, 4, 5, 6, 7])
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -73,21 +79,21 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
         g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
         const left = this.posX - width / 2
-        // const right = left + width
-        const top = this.posY - height / 2
+        const top = this.posY - GRID_UPPER_HEIGHT * GRID_STEP
+        const bottom = this.posY + GRID_LOWER_HEIGHT * GRID_STEP
+        const height = bottom - top
 
         g.beginPath()
         g.rect(left, top, width, height)
         g.fill()
         g.stroke()
 
-        const displayValues = this.editor.options.hideOutputColors ? FixedArrayFill(Unknown, 4) : this.value
+        const displayValues = this.editor.options.hideOutputColors ? FixedArrayFill(Unknown, 8) : this.value
 
         g.lineWidth = 1
-        const cellHeight = height / 4
-        for (let i = 0; i < 4; i++) {
+        const cellHeight = GRID_STEP
+        for (let i = 0; i < 8; i++) {
             const y = top + i * cellHeight
             g.fillStyle = colorForBoolean(displayValues[i])
             g.beginPath()
@@ -106,9 +112,9 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
                 drawComponentName(g, ctx, this._name, valueString, this, true)
             }
 
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 8; i++) {
                 const y = top + cellHeight / 2 + i * cellHeight
-                drawRoundValue(g, displayValues[i], ...ctx.rotatePoint(this.posX, y))
+                drawRoundValue(g, displayValues[i], ...ctx.rotatePoint(this.posX, y), { small: true })
             }
         })
     }

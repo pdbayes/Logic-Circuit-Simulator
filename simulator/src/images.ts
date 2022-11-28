@@ -83,7 +83,9 @@ import Output16Seg from '../img/Output16Seg.svg' // @ts-ignore
 import OutputAscii from '../img/OutputAscii.svg' // @ts-ignore
 import OutputBar from '../img/OutputBar.svg' // @ts-ignore
 import OutputBit from '../img/OutputBit.svg' // @ts-ignore
+import OutputByte from '../img/OutputByte.svg' // @ts-ignore
 import OutputNibble from '../img/OutputNibble.svg' // @ts-ignore
+import OutputNibbleDisplay from '../img/OutputNibbleDisplay.svg' // @ts-ignore
 import OutputShiftBuffer from '../img/OutputShiftBuffer.svg' // @ts-ignore
 import QuadGate from '../img/QuadGate.svg' // @ts-ignore
 import QuadTriState from '../img/QuadTriState.svg' // @ts-ignore
@@ -183,7 +185,9 @@ const images = {
     OutputAscii,
     OutputBar,
     OutputBit,
+    OutputByte,
     OutputNibble,
+    OutputNibbleDisplay,
     OutputShiftBuffer,
     QuadGate,
     QuadTriState,

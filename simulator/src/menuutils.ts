@@ -5,7 +5,6 @@ import { isDefined, isString, isUndefined } from "./utils"
 
 type ComponentKey = Strings["ComponentBar"]["Components"]["type"]
 
-// type ComponentStrings = Strings["ComponentBar"]["Components"][ComponentKey]
 
 type ComponentItem = {
     type: string // TODO better types for this
@@ -36,8 +35,35 @@ const componentsMenu: Array<Section> = [
                 strings: "OutputBit", img: "OutputBit", width: 32,
             },
             {
+                type: "out", subtype: "bar",
+                strings: "OutputBar", img: "OutputBar", width: 32,
+                normallyHidden: true,
+            },
+            {
+                type: "in", subtype: "clock",
+                strings: "Clock", img: "Clock", width: 50,
+            },
+            {
+                type: "in", subtype: "nibble",
+                strings: "InputNibble", img: "InputNibble", width: 32,
+            },
+            {
                 type: "out", subtype: "nibble",
                 strings: "OutputNibble", img: "OutputNibble", width: 32,
+            },
+            {
+                type: "out", subtype: "nibble-display",
+                strings: "OutputNibbleDisplay", img: "OutputNibbleDisplay", width: 32,
+            },
+            {
+                type: "in", subtype: "byte",
+                strings: "InputByte", img: "InputByte", width: 32,
+                normallyHidden: true,
+            },
+            {
+                type: "out", subtype: "byte",
+                strings: "OutputByte", img: "OutputByte", width: 32,
+                normallyHidden: true,
             },
             {
                 type: "out", subtype: "7seg",
@@ -52,24 +78,6 @@ const componentsMenu: Array<Section> = [
             {
                 type: "out", subtype: "ascii",
                 strings: "OutputAscii", img: "OutputAscii", width: 32,
-                normallyHidden: true,
-            },
-            {
-                type: "out", subtype: "bar",
-                strings: "OutputBar", img: "OutputBar", width: 32,
-                normallyHidden: true,
-            },
-            {
-                type: "in", subtype: "clock",
-                strings: "Clock", img: "Clock", width: 50,
-            },
-            {
-                type: "in", subtype: "nibble",
-                strings: "InputNibble", img: "InputNibble", width: 32,
-            },
-            {
-                type: "in", subtype: "byte",
-                strings: "InputByte", img: "InputByte", width: 32,
                 normallyHidden: true,
             },
             {
@@ -199,7 +207,7 @@ const componentsMenu: Array<Section> = [
             },
             {
                 type: "gate", subtype: "XOR4",
-                strings: "XNOR4", img: "XNOR4", width: 50,
+                strings: "XOR4", img: "XOR4", width: 50,
                 normallyHidden: true,
             },
             {

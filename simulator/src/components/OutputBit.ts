@@ -103,6 +103,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         if (newLinks.length !== 1) {
             return
         }
+
         const [inNode, comp, outNode] = newLinks[0]
         if (outNode instanceof NodeOut) {
             if (isUndefined(this._name) && isDefined(outNode.name)) {

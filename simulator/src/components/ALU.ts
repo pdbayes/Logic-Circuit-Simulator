@@ -2,7 +2,7 @@ import { FixedArray, HighImpedance, isDefined, isHighImpedance, isNotNull, isUnd
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -21,11 +21,12 @@ const OUTPUT = {
     S: [0, 1, 2, 3] as const,
     V: 4,
     Z: 5,
+    Cout: 6,
 }
 
 
 export const ALUDef =
-    defineComponent(11, 6, t.type({
+    defineComponent(11, 7, t.type({
         type: t.literal("alu"),
         showOp: typeOrUndefined(t.boolean),
     }, "ALU"))
@@ -46,12 +47,12 @@ const ALUDefaults = {
     showOp: true,
 }
 
-export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4>, LogicValue, LogicValue]> {
+export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4>, LogicValue, LogicValue, LogicValue]> {
 
     private _showOp = ALUDefaults.showOp
 
     public constructor(editor: LogicEditor, savedData: ALURepr | null) {
-        super(editor, [[false, false, false, false], false, true], savedData, {
+        super(editor, [[false, false, false, false], false, true, false], savedData, {
             ins: [
                 // A
                 ["A0", -4, -8, "w", "A"],
@@ -63,16 +64,18 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                 ["B1", -4, 4, "w", "B"],
                 ["B2", -4, 6, "w", "B"],
                 ["B3", -4, 8, "w", "B"],
-                ["Op0", 0, -10, "n", "Op"], ["Op1", -2, -10, "n", "Op"],
-                [`Cin (${S.Components.ALU.InputCinDesc})`, 2, -10, "n"],
+                ["Op0", 2, -10, "n", "Op"],
+                ["Op1", 0, -10, "n", "Op"],
+                [`Cin (${S.Components.ALU.InputCinDesc})`, -2, -10, "n"],
             ],
             outs: [
                 ["S0", 4, -3, "e", "S"],
                 ["S1", 4, -1, "e", "S"],
                 ["S2", 4, 1, "e", "S"],
                 ["S3", 4, 3, "e", "S"],
-                ["V (oVerflow)", -1, 10, "s"],
-                ["Z (Zero)", 1, 10, "s"],
+                ["V (oVerflow)", 0, 10, "s"],
+                ["Z (Zero)", 2, 10, "s"],
+                [`Cout (${S.Components.ALU.OutputCoutDesc})`, -2, 10, "s"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -141,11 +144,11 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
         }
     }
 
-    protected doRecalcValue(): [FixedArray<LogicValue, 4>, LogicValue, LogicValue] {
+    protected doRecalcValue(): [FixedArray<LogicValue, 4>, LogicValue, LogicValue, LogicValue] {
         const op = this.op
 
         if (isUnknown(op)) {
-            return [[Unknown, Unknown, Unknown, Unknown], Unknown, Unknown]
+            return [[Unknown, Unknown, Unknown, Unknown], Unknown, Unknown, Unknown]
         }
 
         const a = this.inputValues<4>(INPUT.A)
@@ -166,7 +169,8 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
         }
 
         const y: LogicValue[] = [Unknown, Unknown, Unknown, Unknown]
-        let v: LogicValue = Unknown
+        const v: LogicValue = Unknown // TODO set oVerflow!!
+        let cout: LogicValue = Unknown
 
         switch (op) {
             case "add": {
@@ -193,7 +197,7 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                     y[i] = s
                     prevCin = cout
                 }
-                v = prevCin
+                cout = prevCin
                 break
             }
 
@@ -228,7 +232,7 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                     for (let i = 0; i < 4; i++) {
                         y[i] = yBinStr[3 - i] === '1'
                     }
-                    v = bInt > aInt
+                    cout = bInt > aInt
                 }
                 break
             }
@@ -245,7 +249,7 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                         y[i] = Unknown
                     }
                 }
-                v = false
+                cout = false
                 break
             }
 
@@ -259,21 +263,22 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
                         y[i] = Unknown
                     }
                 }
-                v = false
+                cout = false
                 break
             }
         }
 
         const z = allZeros(y)
-        return [y as any as FixedArray<LogicValue, 4>, v, z]
+        return [y as any as FixedArray<LogicValue, 4>, v, z, cout]
     }
 
-    protected override propagateValue(newValue: [FixedArray<LogicValue, 4>, LogicValue, LogicValue]) {
+    protected override propagateValue(newValue: [FixedArray<LogicValue, 4>, LogicValue, LogicValue, LogicValue]) {
         for (let i = 0; i < OUTPUT.S.length; i++) {
             this.outputs[OUTPUT.S[i]].value = newValue[0][i]
         }
         this.outputs[OUTPUT.V].value = newValue[1]
         this.outputs[OUTPUT.Z].value = newValue[2]
+        this.outputs[OUTPUT.Cout].value = newValue[3]
     }
 
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -294,17 +299,18 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
             const inputi = this.inputs[INPUT.B[i]]
             drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.inputs[INPUT.Op[1]], this.inputs[INPUT.Op[1]].posXInParentTransform, top + 3)
-        drawWireLineToComponent(g, this.inputs[INPUT.Op[0]], this.inputs[INPUT.Op[0]].posXInParentTransform, top + 9)
-        drawWireLineToComponent(g, this.inputs[INPUT.Cin], this.inputs[INPUT.Cin].posXInParentTransform, top + 17)
+        drawWireLineToComponent(g, this.inputs[INPUT.Op[1]], this.inputs[INPUT.Op[1]].posXInParentTransform, top + 9)
+        drawWireLineToComponent(g, this.inputs[INPUT.Op[0]], this.inputs[INPUT.Op[0]].posXInParentTransform, top + 17)
+        drawWireLineToComponent(g, this.inputs[INPUT.Cin], this.inputs[INPUT.Cin].posXInParentTransform, top + 3)
 
         // outputs
         for (let i = 0; i < OUTPUT.S.length; i++) {
             const outputi = this.outputs[OUTPUT.S[i]]
             drawWireLineToComponent(g, outputi, right, outputi.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.outputs[OUTPUT.V], this.outputs[OUTPUT.V].posXInParentTransform, bottom - 6)
-        drawWireLineToComponent(g, this.outputs[OUTPUT.Z], this.outputs[OUTPUT.Z].posXInParentTransform, bottom - 13)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.Z], this.outputs[OUTPUT.Z].posXInParentTransform, bottom - 17)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.V], this.outputs[OUTPUT.V].posXInParentTransform, bottom - 9)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.Cout], this.outputs[OUTPUT.Cout].posXInParentTransform, bottom - 3)
 
 
         // outline
@@ -332,17 +338,24 @@ export class ALU extends ComponentBase<11, 6, ALURepr, [FixedArray<LogicValue, 4
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V], bottom - 7)
-            drawLabel(ctx, this.orient, "Z", "s", this.outputs[OUTPUT.Z], bottom - 14)
+            // bottom outputs
+            const carryHOffsetF = Orientation.isVertical(this.orient) ? 0 : 1
+            drawLabel(ctx, this.orient, "Z", "s", this.outputs[OUTPUT.Z], bottom - 17)
+            drawLabel(ctx, this.orient, "V", "s", this.outputs[OUTPUT.V].posXInParentTransform + carryHOffsetF * 2, bottom - 11)
+            drawLabel(ctx, this.orient, "Cout", "s", this.outputs[OUTPUT.Cout].posXInParentTransform + carryHOffsetF * 4, bottom - 8)
 
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs[INPUT.Cin], top + 17)
+            // top inputs
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs[INPUT.Cin].posXInParentTransform + carryHOffsetF * 2, top + 5)
 
             g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op[0]].posXInParentTransform - GRID_STEP, top + 8)
+            drawLabel(ctx, this.orient, "Op", "n", this.inputs[INPUT.Op[0]].posXInParentTransform - GRID_STEP, top + 15)
 
+            // left inputs
             g.font = "bold 14px sans-serif"
             drawLabel(ctx, this.orient, "A", "w", left, top + 4 * GRID_STEP + 6)
             drawLabel(ctx, this.orient, "B", "w", left, bottom - 4 * GRID_STEP - 6)
+
+            // right outputs
             drawLabel(ctx, this.orient, "S", "e", right, this.posY)
 
             if (this._showOp) {

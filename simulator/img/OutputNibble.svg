@@ -4,15 +4,13 @@
 	 viewBox="0 0 1792 1792" style="enable-background:new 0 0 1792 1792;" xml:space="preserve">
 <style type="text/css">
 	.st0{fill:none;}
-	.st1{fill:#0000F4;}
-	.st2{font-family:'Helvetica-Bold';}
-	.st3{font-size:666.667px;}
-	.st4{stroke:#000000;stroke-width:5.449;}
-	.st5{fill:none;stroke:#000000;stroke-width:180;}
+	.st1{stroke:#000000;stroke-width:5.449;}
+	.st2{fill:none;stroke:#000000;stroke-width:180;}
 </style>
-<path class="st0" d="M-1-1h582v402H-1V-1z"/>
-<text transform="matrix(1 0 0 1 857.7659 1154.467)" class="st1 st2 st3">0</text>
-<path class="st4" d="M2.7,288.2h430.4v114.6H2.7V288.2z M2.7,662.1h430.4v114.6H2.7V662.1z M2.7,1397h430.4v114.6H2.7V1397z
-	 M2.7,1025.3h430.4v114.6H2.7V1025.3z"/>
-<rect x="504.2" y="208" class="st5" width="1054.8" height="1399"/>
+<path class="st0" d="M1787.2,1794.9h-582v-402h582V1794.9z"/>
+<path class="st1" d="M429.1,1505.7H-1.3v-114.6h430.4V1505.7z M429.1,1131.8H-1.3v-114.6h430.4V1131.8z M429.1,396.9H-1.3V282.3
+	h430.4V396.9z M429.1,768.6H-1.3V654h430.4V768.6z"/>
+<path class="st1" d="M1210.7,1272.7h-609V1204h609V1272.7z M1193.7,947.3h-609v-63.7h609V947.3z M1196.1,627.8h-609v-71.9h609V627.8
+	z"/>
+<rect x="509.9" y="205.9" class="st2" width="763.3" height="1399"/>
 </svg>

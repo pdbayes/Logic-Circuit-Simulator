@@ -124,7 +124,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         }
 
         for (const output of this.outputs) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
+            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform, true)
         }
 
         ctx.inNonTransformedFrame(ctx => {

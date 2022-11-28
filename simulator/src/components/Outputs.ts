@@ -2,18 +2,22 @@ import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
 import { OutputAscii, OutputAsciiDef } from "./OutputAscii"
 import { OutputBar, OutputBarDef } from "./OutputBar"
-import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
+import { OutputNibbleDisplay, OutputNibbleDisplayDef } from "./OutputNibbleDisplay"
 import { OutputBit, OutputBitDef } from "./OutputBit"
 import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
 import { isUndefined, isString } from "../utils"
 import { Output7Seg, Output7SegDef } from "./Output7Seg"
 import { Output16Seg, Output16SegDef } from "./Output16Seg"
+import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
+import { OutputByte, OutputByteDef } from "./OutputByte"
 
-export type Output = OutputBit | OutputNibble | OutputAscii | OutputBar | OutputShiftBuffer
+export type Output = OutputBit | OutputNibbleDisplay | OutputAscii | OutputBar | OutputShiftBuffer
 
 export const OutputDef = t.union([
     OutputBitDef.repr,
     OutputNibbleDef.repr,
+    OutputNibbleDisplayDef.repr,
+    OutputByteDef.repr,
     Output7SegDef.repr,
     Output16SegDef.repr,
     OutputAsciiDef.repr,
@@ -49,6 +53,10 @@ export const OutputFactory = {
         switch (savedData.type) {
             case "nibble":
                 return new OutputNibble(editor, blank ? null : savedData)
+            case "nibble-display":
+                return new OutputNibbleDisplay(editor, blank ? null : savedData)
+            case "byte":
+                return new OutputByte(editor, blank ? null : savedData)
             case "7seg":
                 return new Output7Seg(editor, blank ? null : savedData)
             case "16seg":

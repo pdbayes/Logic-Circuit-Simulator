@@ -34,7 +34,9 @@ const Strings_fr = {
         Components: RichStringEnum.withProps<ComponentStrings>()({
             InputBit: "Entrée",
             OutputBit: "Sortie",
-            OutputNibble: ["Affichage de 4 bits", "Aff. 4 bits"],
+            OutputByte: ["Sortie octet (8 bits)", "Out 8 bits"],
+            OutputNibble: ["Sortie semioctet (4 bits)", "Out 4 bits"],
+            OutputNibbleDisplay: ["Affichage de 4 bits", "Aff. 4 bits"],
             Output7Seg: ["Afficheur à 7 segments", "7 segments"],
             Output16Seg: ["Afficheur à 16 segments", "16 segments"],
             OutputAscii: ["Affichage d’un caractère ASCII (sur 7 bits)", "Caractère"],
@@ -212,6 +214,7 @@ const Strings_fr = {
             and: tuple("ET", "ET"),
             or: tuple("OU", "OU"),
             InputCinDesc: "retenue d’entrée",
+            OutputCoutDesc: "retenue de sortie",
             tooltip: {
                 title: "Unité arithmétique et logique (ALU)",
                 CurrentlyCarriesOut: "Effectue actuellement",
@@ -483,7 +486,13 @@ const Strings_fr = {
                 WhoseValueIsUndefined: "dont la valeur n’est pas déterminée",
             },
         },
+        OutputByte: {
+            tooltip: "Sortie octet (8 bits)",
+        },
         OutputNibble: {
+            tooltip: "Sortie semioctet (4 bits)",
+        },
+        OutputNibbleDisplay: {
             tooltip: {
                 title: "Afficheur de semioctet",
 
@@ -628,7 +637,9 @@ const Strings_en: Strings = {
         Components: RichStringEnum.withProps<ComponentStrings>()({
             InputBit: "Input",
             OutputBit: "Output",
-            OutputNibble: ["Nibble Display", "4-Bit Displ."],
+            OutputByte: ["Byte (8-Bit) Output", "8-Bit Out"],
+            OutputNibble: ["Nibble (4-Bit) Output", "4-Bit Out"],
+            OutputNibbleDisplay: ["Nibble Display", "4-Bit Displ."],
             Output7Seg: ["7-Segment Display", "7-Segment"],
             Output16Seg: ["16-Segment Display", "16-Segment"],
             OutputAscii: ["ASCII Character (7-Bit) Display", "Character"],
@@ -806,6 +817,7 @@ const Strings_en: Strings = {
             and: tuple("AND", "AND"),
             or: tuple("OR", "OR"),
             InputCinDesc: "input carry",
+            OutputCoutDesc: "output carry",
             tooltip: {
                 title: "Arithmetic and Logic Unit (ALU)",
                 CurrentlyCarriesOut: "Currently carries out",
@@ -1077,7 +1089,13 @@ const Strings_en: Strings = {
                 WhoseValueIsUndefined: "whose value is undefined",
             },
         },
+        OutputByte: {
+            tooltip: "Byte (8-Bit) Output",
+        },
         OutputNibble: {
+            tooltip: "Nibble (4-Bit) Output",
+        },
+        OutputNibbleDisplay: {
             tooltip: {
                 title: "Nibble (4-Bit) Display",
 

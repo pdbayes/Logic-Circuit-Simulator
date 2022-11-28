@@ -62,6 +62,10 @@ class _PersistenceManager {
             migrate2To3(parsedContents)
             jsonVersion = 3
         }
+        if (jsonVersion === 3) {
+            migrate3To4(parsedContents)
+            jsonVersion = 3
+        }
         if (jsonVersion !== savedVersion) {
             console.log(`Migrated data format from v${savedVersion} to v${jsonVersion}, consider upgrading the source`)
         }
@@ -181,7 +185,7 @@ class _PersistenceManager {
 
     buildWorkspaceJSON(editor: LogicEditor) {
         const workspace: any = {
-            "v": 3,
+            "v": 4,
             "opts": editor.nonDefaultOptions(),
         }
 
@@ -308,3 +312,36 @@ function migrate2To3(parsedContents: any) {
         }
     }
 }
+
+function migrate3To4(parsedContents: any) {
+    let nextNewId = 1000 // TODO be smarter about this
+
+    if ("out" in parsedContents) {
+        const outs = parsedContents.out
+        if (Array.isArray(outs)) {
+            for (const out of outs) {
+                if ("type" in out && out.type === "nibble") {
+                    out.type = "nibble-display"
+                }
+            }
+        }
+    }
+    if ("components" in parsedContents) {
+        const components = parsedContents.components
+        if (Array.isArray(components)) {
+            for (const comp of components) {
+                if ("type" in comp && comp.type === "alu") {
+                    if (Array.isArray(comp.out)) {
+                        comp.out.push(nextNewId++) // add a new oVerflow output
+                        // replace carry output with overflow output as it was wrongly used before
+                        const t = comp.out[4]
+                        comp.out[4] = comp.out[6]
+                        comp.out[6] = t
+                    }
+                }
+            }
+        }
+    }
+
+}
+
