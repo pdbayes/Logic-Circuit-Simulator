@@ -338,6 +338,7 @@ export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: Fix
 
         case "sub": {
             // TODO set oVerflow for subtraction!
+            // TODO use Cin as borrow in!
             const toInt = (vs: readonly LogicValue[]): number | undefined => {
                 let s = 0
                 let col = 1
@@ -353,9 +354,9 @@ export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: Fix
 
             const aInt = toInt(a)
             const bInt = toInt(b)
-            if (!isUndefined(aInt) && !isUndefined(bInt)) {
+            if (!isUndefined(aInt) && !isUndefined(bInt) && isBoolean(cin)) {
                 // otherwise, stick with default Unset values everywhere
-                let yInt = aInt - bInt
+                let yInt = aInt - bInt - (cin ? 1 : 0)
                 // console.log(`${aInt} - ${bInt} = ${yInt}`)
                 // we can get anything from (max - (-min)) = 7 - (-8) = 15
                 // to (min - max) = -8 - 7 = -15
@@ -367,7 +368,18 @@ export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: Fix
                 for (let i = 0; i < 4; i++) {
                     y[i] = yBinStr[3 - i] === '1'
                 }
-                cout = bInt > aInt
+
+                cout = bInt > (aInt - (cin ? 1 : 0))
+
+                const aNeg = a[3] === true // NOT redundant comparison
+                const bNeg = b[3] === true
+                const yNeg = y[3] === true
+
+                // see https://stackoverflow.com/a/34547815/390581
+                // Signed integer overflow of the expression x-y-c (where c is again 0 or 1)
+                // occurs if and only if x and y have opposite signs, and the sign of the 
+                // result is opposite to that of x (or, equivalently, the same as that of y).
+                v = aNeg !== bNeg && aNeg !== yNeg
             }
             break
         }
