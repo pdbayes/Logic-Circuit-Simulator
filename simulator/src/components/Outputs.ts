@@ -10,6 +10,7 @@ import { Output7Seg, Output7SegDef } from "./Output7Seg"
 import { Output16Seg, Output16SegDef } from "./Output16Seg"
 import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
 import { OutputByte, OutputByteDef } from "./OutputByte"
+import { OutputByteDisplay, OutputByteDisplayDef } from "./OutputByteDisplay"
 
 export type Output = OutputBit | OutputNibbleDisplay | OutputAscii | OutputBar | OutputShiftBuffer
 
@@ -18,6 +19,7 @@ export const OutputDef = t.union([
     OutputNibbleDef.repr,
     OutputNibbleDisplayDef.repr,
     OutputByteDef.repr,
+    OutputByteDisplayDef.repr,
     Output7SegDef.repr,
     Output16SegDef.repr,
     OutputAsciiDef.repr,
@@ -57,6 +59,8 @@ export const OutputFactory = {
                 return new OutputNibbleDisplay(editor, blank ? null : savedData)
             case "byte":
                 return new OutputByte(editor, blank ? null : savedData)
+            case "byte-display":
+                return new OutputByteDisplay(editor, blank ? null : savedData)
             case "7seg":
                 return new Output7Seg(editor, blank ? null : savedData)
             case "16seg":

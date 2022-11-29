@@ -66,6 +66,11 @@ const componentsMenu: Array<Section> = [
                 normallyHidden: true,
             },
             {
+                type: "out", subtype: "byte-display",
+                strings: "OutputByteDisplay", img: "OutputByteDisplay", width: 32,
+                normallyHidden: true,
+            },
+            {
                 type: "out", subtype: "7seg",
                 strings: "Output7Seg", img: "Output7Seg", width: 32,
                 normallyHidden: true,

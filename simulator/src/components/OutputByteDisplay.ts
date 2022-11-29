@@ -7,33 +7,39 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 
-const GRID_WIDTH = 4
-const GRID_HEIGHT = 8
+const GRID_WIDTH = 6
+const GRID_UPPER_HEIGHT = 4.5
+const GRID_LOWER_HEIGHT = 3.5
 const DEFAULT_RADIX = 10
 
-export const OutputNibbleDisplayDef =
-    defineComponent(4, 0, t.type({
-        type: t.literal("nibble-display"),
+export const OutputByteDisplayDef =
+    defineComponent(8, 0, t.type({
+        type: t.literal("byte-display"),
         name: ComponentNameRepr,
         radix: typeOrUndefined(t.number),
         showAsUnknown: typeOrUndefined(t.boolean),
-    }, "OutputNibbleDisplay"))
+    }, "OutputByteDisplay"))
 
-type OutputNibbleDisplayRepr = typeof OutputNibbleDisplayDef.reprType
+type OutputByteDisplayRepr = typeof OutputByteDisplayDef.reprType
 
-export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplayRepr, [string, number | Unknown]> {
+// TODO this should be an easy merge with OutputNibbleDisplay
+export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr, [string, number | Unknown]> {
 
     private _name: ComponentName = undefined
     private _radix = DEFAULT_RADIX
     private _showAsUnknown = false
 
-    public constructor(editor: LogicEditor, savedData: OutputNibbleDisplayRepr | null) {
-        super(editor, ["0000", 0], savedData, {
+    public constructor(editor: LogicEditor, savedData: OutputByteDisplayRepr | null) {
+        super(editor, ["0000000", 0], savedData, {
             ins: [
-                ["I0", -3, -3, "w", "I"],
-                ["I1", -3, -1, "w", "I"],
-                ["I2", -3, +1, "w", "I"],
-                ["I3", -3, +3, "w", "I"],
+                ["I0", -4, -4, "w", "In"],
+                ["I1", -4, -3, "w", "In"],
+                ["I2", -4, -2, "w", "In"],
+                ["I3", -4, -1, "w", "In"],
+                ["I4", -4, 0, "w", "In"],
+                ["I5", -4, 1, "w", "In"],
+                ["I6", -4, 2, "w", "In"],
+                ["I7", -4, 3, "w", "In"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -45,7 +51,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
 
     toJSON() {
         return {
-            type: "nibble-display" as const,
+            type: "byte-display" as const,
             ...this.toJSONBase(),
             name: this._name,
             radix: this._radix === DEFAULT_RADIX ? undefined : this._radix,
@@ -62,7 +68,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
     }
 
     get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return (GRID_UPPER_HEIGHT + GRID_UPPER_HEIGHT) * GRID_STEP
     }
 
     private get showAsUnknown() {
@@ -71,7 +77,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
 
     public override makeTooltip() {
         const ss = S.Components.OutputDisplayShared.tooltip
-        const s = S.Components.OutputNibbleDisplay.tooltip
+        const s = S.Components.OutputByteDisplay.tooltip
         const radixStr = (() => {
             switch (this._radix) {
                 case 2: return ss.RadixBinary
@@ -91,7 +97,6 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         ))
     }
 
-
     protected doRecalcValue() {
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
@@ -107,9 +112,11 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         g.lineWidth = 4
 
         const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const top = this.posY - GRID_UPPER_HEIGHT * GRID_STEP
+        const bottom = this.posY + GRID_LOWER_HEIGHT * GRID_STEP
+        const height = bottom - top
         g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
+        g.rect(this.posX - width / 2, top, width, height)
         g.fill()
         g.stroke()
 
@@ -145,7 +152,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
                 //     g.fillStyle = COLOR_UNSET
                 // }
             } else {
-                stringRep = formatWithRadix(value, this._radix, 4)
+                stringRep = formatWithRadix(value, this._radix, 8)
             }
             g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })

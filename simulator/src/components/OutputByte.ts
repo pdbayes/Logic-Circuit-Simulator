@@ -34,7 +34,6 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
                 [undefined, -2, 1, "w", "In"],
                 [undefined, -2, 2, "w", "In"],
                 [undefined, -2, 3, "w", "In"],
-
             ],
         })
         if (isNotNull(savedData)) {

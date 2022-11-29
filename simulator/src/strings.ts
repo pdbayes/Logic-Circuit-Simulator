@@ -35,6 +35,7 @@ const Strings_fr = {
             InputBit: "Entrée",
             OutputBit: "Sortie",
             OutputByte: ["Sortie octet (8 bits)", "Out 8 bits"],
+            OutputByteDisplay: ["Affichage de 8 bits", "Aff. 8 bits"],
             OutputNibble: ["Sortie semioctet (4 bits)", "Out 4 bits"],
             OutputNibbleDisplay: ["Affichage de 4 bits", "Aff. 4 bits"],
             Output7Seg: ["Afficheur à 7 segments", "7 segments"],
@@ -489,14 +490,15 @@ const Strings_fr = {
         OutputByte: {
             tooltip: "Sortie octet (8 bits)",
         },
-        OutputNibble: {
-            tooltip: "Sortie semioctet (4 bits)",
-        },
-        OutputNibbleDisplay: {
+        OutputByteDisplay: {
             tooltip: {
-                title: "Afficheur de semioctet",
+                title: "Afficheur d’octet",
 
-                desc: tuple(template("Affiche la valeur ${radixStr} de ses 4 entrées, actuellement ", "radixStr"), "."),
+                desc: tuple(template("Affiche la valeur ${radixStr} de ses 8 entrées, actuellement ", "radixStr"), "."),
+            },
+        },
+        OutputDisplayShared: {
+            tooltip: {
                 RadixBinary: "binaire",
                 RadixDecimal: "décimale",
                 RadixSignedDecimal: "décimale signée",
@@ -511,6 +513,16 @@ const Strings_fr = {
                 DisplayAsSignedDecimal: "en décimal signé",
                 DisplayAsHexadecimal: "en hexadécimal",
                 DisplayAsUnknown: "comme inconnu",
+            },
+        },
+        OutputNibble: {
+            tooltip: "Sortie semioctet (4 bits)",
+        },
+        OutputNibbleDisplay: {
+            tooltip: {
+                title: "Afficheur de semioctet",
+
+                desc: tuple(template("Affiche la valeur ${radixStr} de ses 4 entrées, actuellement ", "radixStr"), "."),
             },
         },
         OutputShiftBuffer: {
@@ -638,8 +650,9 @@ const Strings_en: Strings = {
             InputBit: "Input",
             OutputBit: "Output",
             OutputByte: ["Byte (8-Bit) Output", "8-Bit Out"],
+            OutputByteDisplay: ["Byte (8-Bit) Display", "8-Bit Displ."],
             OutputNibble: ["Nibble (4-Bit) Output", "4-Bit Out"],
-            OutputNibbleDisplay: ["Nibble Display", "4-Bit Displ."],
+            OutputNibbleDisplay: ["Nibble (4-Bit) Display", "4-Bit Displ."],
             Output7Seg: ["7-Segment Display", "7-Segment"],
             Output16Seg: ["16-Segment Display", "16-Segment"],
             OutputAscii: ["ASCII Character (7-Bit) Display", "Character"],
@@ -1092,14 +1105,15 @@ const Strings_en: Strings = {
         OutputByte: {
             tooltip: "Byte (8-Bit) Output",
         },
-        OutputNibble: {
-            tooltip: "Nibble (4-Bit) Output",
-        },
-        OutputNibbleDisplay: {
+        OutputByteDisplay: {
             tooltip: {
-                title: "Nibble (4-Bit) Display",
+                title: "Byte (8-Bit) Display",
 
-                desc: tuple(template("Displays the ${radixStr} value of its 4 inputs, which is currently ", "radixStr"), "."),
+                desc: tuple(template("Displays the ${radixStr} value of its 8 inputs, which is currently ", "radixStr"), "."),
+            },
+        },
+        OutputDisplayShared: {
+            tooltip: {
                 RadixBinary: "binary",
                 RadixDecimal: "decimal",
                 RadixSignedDecimal: "signed decimal",
@@ -1114,6 +1128,16 @@ const Strings_en: Strings = {
                 DisplayAsSignedDecimal: "Signed Decimal",
                 DisplayAsHexadecimal: "Hexadecimal",
                 DisplayAsUnknown: "Unkown",
+            },
+        },
+        OutputNibble: {
+            tooltip: "Nibble (4-Bit) Output",
+        },
+        OutputNibbleDisplay: {
+            tooltip: {
+                title: "Nibble (4-Bit) Display",
+
+                desc: tuple(template("Displays the ${radixStr} value of its 4 inputs, which is currently ", "radixStr"), "."),
             },
         },
         OutputShiftBuffer: {

@@ -246,12 +246,12 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
 
             if (this._showOp) {
                 const opName = isUnknown(this.op) ? "??" : ALUOp.shortName(this.op)
-                const size = 25 - 13 * (opName.length - 1)
+                const size = opName.length === 1 ? 25 : 13
                 g.font = `bold ${size}px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
                 g.textBaseline = "middle"
-                g.fillText(opName, this.posX, this.posY)
+                g.fillText(opName, ...ctx.rotatePoint(this.posX + 4, this.posY))
             }
         })
     }
@@ -397,6 +397,7 @@ export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: Fix
                 }
             }
             cout = false
+            v = false
             break
         }
 
@@ -411,6 +412,7 @@ export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: Fix
                 }
             }
             cout = false
+            v = false
             break
         }
     }
