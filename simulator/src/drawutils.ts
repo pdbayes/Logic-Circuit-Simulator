@@ -587,7 +587,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.textBaseline = "middle" // restore
 }
 
-export function displayValuesFromArray(values: LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {
+export function displayValuesFromArray(values: readonly LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {
     // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false

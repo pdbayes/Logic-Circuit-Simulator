@@ -1,4 +1,4 @@
-import { FixedArray, HighImpedance, isDefined, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { FixedArray, FixedReadonlyArray, HighImpedance, isBoolean, isDefined, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
@@ -155,121 +155,7 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         const b = this.inputValues<4>(INPUT.B)
         const cin = this.inputs[INPUT.Cin].value
 
-
-        function allZeros(vals: LogicValue[]): LogicValue {
-            for (const v of vals) {
-                if (isUnknown(v) || isHighImpedance(v)) {
-                    return Unknown
-                }
-                if (v === true) {
-                    return false
-                }
-            }
-            return true
-        }
-
-        const y: LogicValue[] = [Unknown, Unknown, Unknown, Unknown]
-        const v: LogicValue = Unknown // TODO set oVerflow!!
-        let cout: LogicValue = Unknown
-
-        switch (op) {
-            case "add": {
-                const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
-                    const asNumber = (v: LogicValue) => v === true ? 1 : 0
-                    const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
-                    const sum = asNumber(a) + asNumber(b) + asNumber(c)
-
-                    if (numUnset === 0) {
-                        // we know exactly
-                        return [sum % 2 === 1, sum >= 2]
-                    }
-                    if (numUnset === 1 && sum >= 2) {
-                        // carry will always be set
-                        return [Unknown, true]
-                    }
-                    // At this point, could be anything
-                    return [Unknown, Unknown]
-
-                }
-                let prevCin: LogicValue = cin
-                for (let i = 0; i < a.length; i++) {
-                    const [s, cout] = sum3bits(prevCin, a[i], b[i])
-                    y[i] = s
-                    prevCin = cout
-                }
-                cout = prevCin
-                break
-            }
-
-            case "sub": {
-                // TODO check how to handle carry, negative numbers, borrow, etc.
-                const toInt = (vs: readonly LogicValue[]): number | undefined => {
-                    let s = 0
-                    let col = 1
-                    for (const v of vs) {
-                        if (isUnknown(v)) {
-                            return undefined
-                        }
-                        s += Number(v) * col
-                        col *= 2
-                    }
-                    return s
-                }
-
-                const aInt = toInt(a)
-                const bInt = toInt(b)
-                if (!isUndefined(aInt) && !isUndefined(bInt)) {
-                    // otherwise, stick with default Unset values everywhere
-                    let yInt = aInt - bInt
-                    // console.log(`${aInt} - ${bInt} = ${yInt}`)
-                    // we can get anything from (max - (-min)) = 7 - (-8) = 15
-                    // to (min - max) = -8 - 7 = -15
-                    if (yInt < 0) {
-                        yInt += 16
-                    }
-                    // now we have everything between 0 and 15
-                    const yBinStr = (yInt >>> 0).toString(2).padStart(4, '0')
-                    for (let i = 0; i < 4; i++) {
-                        y[i] = yBinStr[3 - i] === '1'
-                    }
-                    cout = bInt > aInt
-                }
-                break
-            }
-
-            // below, we need the '=== true' and '=== false' parts
-            // to distinguish also the Unset case
-            case "and": {
-                for (let i = 0; i < a.length; i++) {
-                    if (a[i] === false || b[i] === false) {
-                        y[i] = false
-                    } else if (a[i] === true && b[i] === true) {
-                        y[i] = true
-                    } else {
-                        y[i] = Unknown
-                    }
-                }
-                cout = false
-                break
-            }
-
-            case "or": {
-                for (let i = 0; i < a.length; i++) {
-                    if (a[i] === true || b[i] === true) {
-                        y[i] = true
-                    } else if (a[i] === false && b[i] === false) {
-                        y[i] = false
-                    } else {
-                        y[i] = Unknown
-                    }
-                }
-                cout = false
-                break
-            }
-        }
-
-        const z = allZeros(y)
-        return [y as any as FixedArray<LogicValue, 4>, v, z, cout]
+        return doALUOp(op, a, b, cin)
     }
 
     protected override propagateValue(newValue: [FixedArray<LogicValue, 4>, LogicValue, LogicValue, LogicValue]) {
@@ -397,5 +283,127 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         return items
     }
 
-
 }
+
+
+export function doALUOp(op: string, a: FixedReadonlyArray<LogicValue, 4>, b: FixedReadonlyArray<LogicValue, 4>, cin: LogicValue): [FixedArray<LogicValue, 4>, LogicValue, LogicValue, LogicValue] {
+
+    function allZeros(vals: LogicValue[]): LogicValue {
+        for (const v of vals) {
+            if (isUnknown(v) || isHighImpedance(v)) {
+                return Unknown
+            }
+            if (v === true) {
+                return false
+            }
+        }
+        return true
+    }
+
+    const y: LogicValue[] = [Unknown, Unknown, Unknown, Unknown]
+    let v: LogicValue = Unknown
+    let cout: LogicValue = Unknown
+
+    switch (op) {
+        case "add": {
+            const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
+                const asNumber = (v: LogicValue) => v === true ? 1 : 0
+                const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
+                const sum = asNumber(a) + asNumber(b) + asNumber(c)
+
+                if (numUnset === 0) {
+                    // we know exactly
+                    return [sum % 2 === 1, sum >= 2]
+                }
+                if (numUnset === 1 && sum >= 2) {
+                    // carry will always be set
+                    return [Unknown, true]
+                }
+                // At this point, could be anything
+                return [Unknown, Unknown]
+
+            }
+            const cins: FixedArray<LogicValue, 5> = [cin, Unknown, Unknown, Unknown, Unknown]
+            for (let i = 0; i < a.length; i++) {
+                const [s, cout] = sum3bits(cins[i], a[i], b[i])
+                y[i] = s
+                cins[i + 1] = cout
+            }
+            cout = cins[4]
+            if (isBoolean(cout) && isBoolean(cins[2])) {
+                v = cout !== cins[3]
+            }
+            break
+        }
+
+        case "sub": {
+            // TODO set oVerflow for subtraction!
+            const toInt = (vs: readonly LogicValue[]): number | undefined => {
+                let s = 0
+                let col = 1
+                for (const v of vs) {
+                    if (isUnknown(v)) {
+                        return undefined
+                    }
+                    s += Number(v) * col
+                    col *= 2
+                }
+                return s
+            }
+
+            const aInt = toInt(a)
+            const bInt = toInt(b)
+            if (!isUndefined(aInt) && !isUndefined(bInt)) {
+                // otherwise, stick with default Unset values everywhere
+                let yInt = aInt - bInt
+                // console.log(`${aInt} - ${bInt} = ${yInt}`)
+                // we can get anything from (max - (-min)) = 7 - (-8) = 15
+                // to (min - max) = -8 - 7 = -15
+                if (yInt < 0) {
+                    yInt += 16
+                }
+                // now we have everything between 0 and 15
+                const yBinStr = (yInt >>> 0).toString(2).padStart(4, '0')
+                for (let i = 0; i < 4; i++) {
+                    y[i] = yBinStr[3 - i] === '1'
+                }
+                cout = bInt > aInt
+            }
+            break
+        }
+
+        // below, we need the '=== true' and '=== false' parts
+        // to distinguish also the Unset case
+        case "and": {
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] === false || b[i] === false) {
+                    y[i] = false
+                } else if (a[i] === true && b[i] === true) {
+                    y[i] = true
+                } else {
+                    y[i] = Unknown
+                }
+            }
+            cout = false
+            break
+        }
+
+        case "or": {
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] === true || b[i] === true) {
+                    y[i] = true
+                } else if (a[i] === false && b[i] === false) {
+                    y[i] = false
+                } else {
+                    y[i] = Unknown
+                }
+            }
+            cout = false
+            break
+        }
+    }
+
+    const z = allZeros(y)
+    return [y as any as FixedArray<LogicValue, 4>, v, z, cout]
+}
+

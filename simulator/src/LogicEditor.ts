@@ -36,6 +36,7 @@ import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./
 import { ComponentFactory } from "./ComponentFactory"
 import { LabelRect } from "./components/LabelRect"
 import { DefaultLang, isLang, S, setLang } from "./strings"
+import { Tests } from "./Tests"
 
 
 enum Mode {
@@ -1347,7 +1348,7 @@ export class LogicEditor extends HTMLElement {
     offsetXY(e: MouseEvent | TouchEvent): [number, number] {
         const [unscaledX, unscaledY] = (() => {
             const mainCanvas = this.html.mainCanvas
-            let target = e.target 
+            let target = e.target
             if ("offsetX" in e) {
                 // MouseEvent
                 const canvasRect = mainCanvas.getBoundingClientRect()
@@ -1897,6 +1898,8 @@ export class LogicStatic {
             diagram.highlight(componentRefs)
         }
     }
+
+    tests = new Tests()
 
 }
 
