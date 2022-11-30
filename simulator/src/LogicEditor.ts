@@ -236,6 +236,10 @@ export class LogicEditor extends HTMLElement {
 
     setPartialOptions(opts: Partial<EditorOptions>) {
         const newOptions = { ...DEFAULT_EDITOR_OPTIONS, ...opts }
+        if (this._isSingleton) {
+            // restore showOnly
+            newOptions.showOnly = this._options.showOnly
+        }
         this._options = newOptions
         let optionsHtml
 
@@ -1450,9 +1454,9 @@ export class LogicEditor extends HTMLElement {
             this._mode = MAX_MODE_WHEN_EMBEDDED
         }
         const modeStr = Mode[mode].toLowerCase()
-        const [json, compressedUriSafeJson] = this.jsonStateAndCompressed()
+        const [fullJson, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
 
-        console.log("JSON:\n" + json)
+        console.log("JSON:\n" + fullJson)
 
         const fullUrl = this.fullUrlForMode(mode, compressedUriSafeJson)
         this.html.embedUrl.value = fullUrl
@@ -1460,13 +1464,13 @@ export class LogicEditor extends HTMLElement {
         const modeParam = mode === MAX_MODE_WHEN_EMBEDDED ? "" : `:mode: ${modeStr}\n`
         const embedHeight = this.guessAdequateCanvasSize()[1]
 
-        const markdownBlock = `\`\`\`{logic}\n:height: ${embedHeight}\n${modeParam}\n${json}\n\`\`\``
+        const markdownBlock = `\`\`\`{logic}\n:height: ${embedHeight}\n${modeParam}\n${fullJson}\n\`\`\``
         this.html.embedMarkdown.value = markdownBlock
 
         const iframeEmbed = `<iframe style="width: 100%; height: ${embedHeight}px; border: 0" src="${fullUrl}"></iframe>`
         this.html.embedIframe.value = iframeEmbed
 
-        const webcompEmbed = `<div style="width: 100%; height: ${embedHeight}px">\n  <logic-editor mode="${Mode[mode].toLowerCase()}">\n    <script type="application/json">\n      ${json.replace(/\n/g, "\n      ")}\n    </script>\n  </logic-editor>\n</div>`
+        const webcompEmbed = `<div style="width: 100%; height: ${embedHeight}px">\n  <logic-editor mode="${Mode[mode].toLowerCase()}">\n    <script type="application/json">\n      ${fullJson.replace(/\n/g, "\n      ")}\n    </script>\n  </logic-editor>\n</div>`
         this.html.embedWebcomp.value = webcompEmbed
 
 
@@ -1490,13 +1494,13 @@ export class LogicEditor extends HTMLElement {
     }
 
     saveCurrentStateToUrl() {
-        const [json, compressedUriSafeJson] = this.jsonStateAndCompressed()
-        console.log(json)
+        const [fullJson, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
+        console.log(fullJson)
         this.saveToUrl(compressedUriSafeJson)
     }
 
     save(): Record<string, unknown> {
-        return PersistenceManager.buildWorkspaceAsObject(this)
+        return PersistenceManager.buildWorkspace(this)
     }
 
     saveToUrl(compressedUriSafeJson: string) {
@@ -1506,20 +1510,24 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    private jsonStateAndCompressed(): [string, string] {
-        const json = PersistenceManager.buildWorkspaceJSON(this)
+    private fullJsonStateAndCompressedForUri(): [string, string] {
+        const jsonObj = PersistenceManager.buildWorkspace(this)
+        const jsonFull = PersistenceManager.stringifyWorkspace(jsonObj)
+        PersistenceManager.removeShowOnlyFrom(jsonObj)
+        const jsonForUri = PersistenceManager.stringifyWorkspace(jsonObj)
 
         // We did this in the past, but now we're compressing things a bit
         // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
 
         // this can compress to like 40-50% of the original size
-        const compressedUriSafeJson = LZString.compressToEncodedURIComponent(json)
-        return [json, compressedUriSafeJson]
+        const compressedUriSafeJson = LZString.compressToEncodedURIComponent(jsonForUri)
+        return [jsonFull, compressedUriSafeJson]
     }
 
     private fullUrlForMode(mode: Mode, compressedUriSafeJson: string): string {
         const loc = window.location
-        return loc.protocol + "//" + loc.host + loc.pathname + "?mode=" + Mode[mode].toLowerCase() + "&data=" + compressedUriSafeJson
+        const showOnlyParam = isUndefined(this._options.showOnly) ? "" : `&${ATTRIBUTE_NAMES.showonly}=${this._options.showOnly.join(",")}`
+        return `${loc.protocol}//${loc.host}${loc.pathname}?${ATTRIBUTE_NAMES.mode}=${Mode[mode].toLowerCase()}${showOnlyParam}&${ATTRIBUTE_NAMES.data}=${compressedUriSafeJson}`
     }
 
     private async toPNG(heightHint?: number) {
@@ -1575,7 +1583,7 @@ export class LogicEditor extends HTMLElement {
         if (pngBareBlob === null) {
             return
         }
-        const [__, compressedUriSafeJson] = this.jsonStateAndCompressed()
+        const [__, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
 
         const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
         const pngChunks = pngMeta.extractChunks(pngBareData)

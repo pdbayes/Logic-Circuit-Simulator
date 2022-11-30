@@ -179,12 +179,8 @@ class _PersistenceManager {
         return undefined // meaning no error
     }
 
-    buildWorkspaceAsObject(editor: LogicEditor): Record<string, unknown> {
-        return JSON.parse(this.buildWorkspaceJSON(editor))
-    }
-
-    buildWorkspaceJSON(editor: LogicEditor) {
-        const workspace: any = {
+    buildWorkspace(editor: LogicEditor): Record<string, unknown> {
+        const workspace: Record<string, unknown> = {
             "v": 4,
             "opts": editor.nonDefaultOptions(),
         }
@@ -195,11 +191,12 @@ class _PersistenceManager {
 
         for (const comp of editor.components.all()) {
             const fieldName = ComponentTypes.propsOf(comp.componentType).jsonFieldName
-            let arr: Component[] = workspace[fieldName]
+            let arr = workspace[fieldName]
             if (isUndefined(arr)) {
                 workspace[fieldName] = (arr = [])
+            } else if (Array.isArray(arr)) {
+                arr.push(comp)
             }
-            arr.push(comp)
         }
 
         const wireMgr = editor.wireMgr
@@ -207,11 +204,22 @@ class _PersistenceManager {
             workspace.wires = wireMgr.wires
         }
 
+        return workspace
+    }
+
+    removeShowOnlyFrom(workspace: Record<string, unknown>): void {
+        const opts = workspace.opts as any
+        if (typeof opts === "object" && opts !== null && Object.prototype.hasOwnProperty.call(opts, "showOnly")) {
+            delete opts.showOnly
+        }
+    }
+
+    stringifyWorkspace(workspace: Record<string, unknown>): string {
         return stringifySmart(workspace, { maxLength: 150 })
     }
 
     saveToFile(editor: LogicEditor) {
-        const workspaceJsonStr = this.buildWorkspaceJSON(editor)
+        const workspaceJsonStr = this.stringifyWorkspace(this.buildWorkspace(editor))
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
         const filename = (editor.options.name ?? "circuit") + ".json"
 
