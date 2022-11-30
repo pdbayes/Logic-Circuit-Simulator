@@ -1,16 +1,16 @@
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
+import { isString, isUndefined } from "../utils"
+import { Output16Seg, Output16SegDef } from "./Output16Seg"
+import { Output7Seg, Output7SegDef } from "./Output7Seg"
 import { OutputAscii, OutputAsciiDef } from "./OutputAscii"
 import { OutputBar, OutputBarDef } from "./OutputBar"
-import { OutputNibbleDisplay, OutputNibbleDisplayDef } from "./OutputNibbleDisplay"
 import { OutputBit, OutputBitDef } from "./OutputBit"
-import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
-import { isUndefined, isString } from "../utils"
-import { Output7Seg, Output7SegDef } from "./Output7Seg"
-import { Output16Seg, Output16SegDef } from "./Output16Seg"
-import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
 import { OutputByte, OutputByteDef } from "./OutputByte"
 import { OutputByteDisplay, OutputByteDisplayDef } from "./OutputByteDisplay"
+import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
+import { OutputNibbleDisplay, OutputNibbleDisplayDef } from "./OutputNibbleDisplay"
+import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
 
 export type Output = OutputBit | OutputNibbleDisplay | OutputAscii | OutputBar | OutputShiftBuffer
 

@@ -1,12 +1,12 @@
-import { isDefined, isNotNull, Mode, FixedArray, LogicValue, LogicValueRepr, isNull, toLogicValue, toLogicValueRepr, FixedArrayFill, Unknown, typeOrUndefined, isUndefined, isUnknown, isHighImpedance, HighImpedance, toLogicValueFromChar } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, COLOR_COMPONENT_BORDER, drawComponentName, COLOR_BACKGROUND, colorForBoolean, drawRoundValue, inRect } from "../drawutils"
-import { tooltipContent, mods } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { InputBit } from "./InputBit"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawComponentName, drawRoundValue, drawWireLineToComponent, GRID_STEP, inRect } from "../drawutils"
+import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArray, FixedArrayFill, isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { InputBit } from "./InputBit"
 
 const GRID_WIDTH = 2
 const GRID_UPPER_HEIGHT = 4.5

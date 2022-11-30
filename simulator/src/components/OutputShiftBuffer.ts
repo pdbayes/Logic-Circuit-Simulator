@@ -1,13 +1,13 @@
-import { isNotNull, isNull, isUndefined, isUnknown, repeatString, RichStringEnum, toLogicValueRepr, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
-import { OutputAscii } from "./OutputAscii"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isNotNull, isNull, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
+import { OutputAscii } from "./OutputAscii"
 
 const GRID_WIDTH = 25
 const GRID_HEIGHT = 5

@@ -1,6 +1,6 @@
 import { Component } from "./components/Component"
 import { Drawable } from "./components/Drawable"
-import { Dict, isUndefined, isDefined, isNotNull } from "./utils"
+import { Dict, isDefined, isNotNull, isUndefined } from "./utils"
 
 export class RedrawManager {
 

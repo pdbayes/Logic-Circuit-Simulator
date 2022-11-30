@@ -1,11 +1,11 @@
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
+import { isString, isUndefined } from "../utils"
 import { Clock, ClockDef } from "./Clock"
-import { InputNibble, InputNibbleDef } from "./InputNibble"
 import { InputBit, InputBitDef } from "./InputBit"
-import { isUndefined, isString } from "../utils"
-import { InputRandom, InputRandomDef } from "./InputRandom"
 import { InputByte, InputByteDef } from "./InputByte"
+import { InputNibble, InputNibbleDef } from "./InputNibble"
+import { InputRandom, InputRandomDef } from "./InputRandom"
 
 export type Input = InputBit | Clock | InputNibble
 

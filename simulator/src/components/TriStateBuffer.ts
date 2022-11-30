@@ -1,11 +1,11 @@
-import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
+import { DrawContext } from "./Drawable"
 
 export const TriStateBufferDef =
     defineComponent(2, 1, t.type({

@@ -1,12 +1,12 @@
+import * as t from "io-ts"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP, strokeAsWireLine } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
+import { IconName } from "../images"
+import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, HighImpedance, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeVisual, NodeVisuals } from "./Component"
-import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, strokeAsWireLine, displayValuesFromArray } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
-import { IconName } from "../images"
-import { S } from "../strings"
 import { WireStyles } from "./Wire"
 
 

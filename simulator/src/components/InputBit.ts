@@ -1,12 +1,12 @@
-import { isDefined, isNotNull, isUnknown, Mode, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, typeOrUndefined, isUndefined, HighImpedance } from "../utils"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent, extendComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
+import { circle, colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawRoundValueCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
-import { Node, NodeIn } from "./Node"
 import { S } from "../strings"
+import { HighImpedance, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent, extendComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Node, NodeIn } from "./Node"
 
 export const InputBitBaseDef =
     defineComponent(0, 1, t.type({

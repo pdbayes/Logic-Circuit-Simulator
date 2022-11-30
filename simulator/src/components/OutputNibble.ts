@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawComponentName, drawRoundValue, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { tooltipContent, mods } from "../htmlgen"
+import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { FixedArray, FixedArrayFill, isDefined, isNotNull, LogicValue, Mode, toLogicValueRepr, Unknown } from "../utils"

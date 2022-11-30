@@ -1,11 +1,11 @@
-import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_UNKNOWN, drawWireLineToComponent, COLOR_MOUSE_OVER, GRID_STEP, pxToGrid, COLOR_COMPONENT_BORDER, COLOR_WIRE_BORDER, COLOR_LED_ON, drawComponentName, COLOR_HIGH_IMPEDANCE } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE_BORDER, drawComponentName, drawWireLineToComponent, GRID_STEP, pxToGrid } from "../drawutils"
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 
 export const OutputBarTypes = {

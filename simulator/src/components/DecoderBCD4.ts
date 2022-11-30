@@ -1,11 +1,11 @@
-import { FixedArrayFill, FixedReadonlyArray, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArrayFill, FixedReadonlyArray, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const DecoderBCD4Def =
     defineComponent(4, 5, t.type({

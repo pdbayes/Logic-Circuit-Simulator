@@ -1,9 +1,9 @@
-import { isDefined, isUnknown, Mode, LogicValue, Unknown, toLogicValue, isNull, HighImpedance } from "../utils"
+import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
+import { LogicEditor } from "../LogicEditor"
+import { HighImpedance, isDefined, isNull, isUnknown, LogicValue, Mode, toLogicValue, Unknown } from "../utils"
 import { ComponentState, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
-import { drawWaypoint, GRID_STEP, isOverWaypoint, WAYPOINT_DIAMETER } from "../drawutils"
 import { Wire } from "./Wire"
-import { LogicEditor } from "../LogicEditor"
 
 
 

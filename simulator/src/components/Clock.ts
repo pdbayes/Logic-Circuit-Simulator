@@ -1,12 +1,12 @@
-import { InputBitBase, InputBitBaseDef } from "./InputBit"
 import * as t from "io-ts"
-import { ComponentState, extendComponent } from "./Component"
-import { isDefined, isNotNull, LogicValue, typeOrUndefined } from "../utils"
-import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
+import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isDefined, isNotNull, LogicValue, typeOrUndefined } from "../utils"
+import { ComponentState, extendComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { InputBitBase, InputBitBaseDef } from "./InputBit"
 
 
 export const ClockDef =

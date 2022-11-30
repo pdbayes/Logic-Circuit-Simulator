@@ -1,11 +1,11 @@
-import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { COLOR_MOUSE_OVER, GRID_STEP, drawWireLineToComponent, formatWithRadix, displayValuesFromArray, COLOR_UNKNOWN, COLOR_COMPONENT_BORDER, COLOR_BACKGROUND, drawComponentName } from "../drawutils"
-import { tooltipContent, mods, div, b, emptyMod } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, GRID_STEP } from "../drawutils"
+import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 
 const GRID_WIDTH = 4
 const GRID_HEIGHT = 8

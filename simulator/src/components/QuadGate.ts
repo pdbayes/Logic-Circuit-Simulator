@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { GRID_STEP, COLOR_MOUSE_OVER, COLOR_BACKGROUND, drawWireLineToComponent, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, COLOR_FULL, circle } from "../drawutils"
+import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"

@@ -1,14 +1,14 @@
-import { Mode, isNull, isNotNull, isDefined, isUndefined, LogicValue, typeOrUndefined } from "../utils"
-import { Node, NodeIn, NodeOut, WireColor } from "./Node"
-import * as t from "io-ts"
-import { NodeGroup, NodeID } from "./Component"
-import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
-import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
-import { DrawParams, LogicEditor } from "../LogicEditor"
-import { Timestamp } from "../Timeline"
-import { span, style, title } from "../htmlgen"
 import { Bezier, Offset } from "bezier-js"
+import * as t from "io-ts"
+import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
+import { span, style, title } from "../htmlgen"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { Timestamp } from "../Timeline"
+import { isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
+import { NodeGroup, NodeID } from "./Component"
+import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
+import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 

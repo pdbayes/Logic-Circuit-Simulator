@@ -1,10 +1,10 @@
-import { LogicValue } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
-import { DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { defineFlipflop, Flipflop } from "./FlipflopOrLatch"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { LogicValue } from "../utils"
+import { DrawContext } from "./Drawable"
+import { defineFlipflop, Flipflop } from "./FlipflopOrLatch"
 
 
 const enum INPUT {

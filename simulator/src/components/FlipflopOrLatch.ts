@@ -1,11 +1,11 @@
-import { FixedArraySize, FixedArraySizeNonZero, isNotNull, isNull, Plus3, toLogicValue, toLogicValueRepr, LogicValue, LogicValueRepr, typeOrUndefined, Unknown, isDefined } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawRoundValue, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { NodeIn } from "./Node"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArraySize, FixedArraySizeNonZero, isDefined, isNotNull, isNull, LogicValue, LogicValueRepr, Plus3, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { NodeIn } from "./Node"
 
 const GRID_WIDTH = 5
 const GRID_HEIGHT = 7

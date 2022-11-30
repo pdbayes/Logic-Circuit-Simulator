@@ -1,11 +1,11 @@
-import { FixedArrayFill, FixedReadonlyArray, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArrayFill, FixedReadonlyArray, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
+import { DrawContext } from "./Drawable"
 
 export const SwitchedInverterDef =
     defineComponent(5, 4, t.type({

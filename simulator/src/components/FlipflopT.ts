@@ -1,10 +1,10 @@
-import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
-import { DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { defineFlipflop, Flipflop, OUTPUT } from "./FlipflopOrLatch"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
+import { DrawContext } from "./Drawable"
+import { defineFlipflop, Flipflop, OUTPUT } from "./FlipflopOrLatch"
 
 
 const enum INPUT {

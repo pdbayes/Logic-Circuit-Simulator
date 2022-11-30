@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { OutputDef } from "./components/Outputs"
 import { GateDef } from "./components/Gate"
-import { Wire } from "./components/Wire"
-import { PartialWhereUndefinedRecursively } from "./utils"
-import { InputDef } from "./components/Inputs"
 import { ICDef } from "./components/IC"
+import { InputDef } from "./components/Inputs"
+import { OutputDef } from "./components/Outputs"
+import { Wire } from "./components/Wire"
 import { EditorOptions } from "./LogicEditor"
+import { PartialWhereUndefinedRecursively } from "./utils"
 
 const Circuit = t.partial({
     in: t.array(InputDef),

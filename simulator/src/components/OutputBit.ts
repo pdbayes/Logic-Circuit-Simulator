@@ -1,12 +1,12 @@
-import { isDefined, isNotNull, isUndefined, isUnknown, Mode, LogicValue as LogicValue, Unknown, toLogicValueRepr } from "../utils"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, dist, triangle, circle, colorForBoolean, INPUT_OUTPUT_DIAMETER, drawComponentName, drawRoundValueCentered, GRID_STEP } from "../drawutils"
+import { circle, colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawRoundValueCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle } from "../drawutils"
 import { emptyMod, mods, tooltipContent } from "../htmlgen"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
-import { Node, NodeOut } from "./Node"
 import { S } from "../strings"
+import { isDefined, isNotNull, isUndefined, isUnknown, LogicValue, Mode, toLogicValueRepr, Unknown } from "../utils"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Node, NodeOut } from "./Node"
 
 export const OutputBitDef =
     defineComponent(1, 0, t.type({

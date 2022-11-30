@@ -1,12 +1,12 @@
+import * as t from "io-ts"
+import { DrawZIndex } from "../ComponentList"
+import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
+import { span, style, title } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 import { isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
-import * as t from "io-ts"
-import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
-import { LogicEditor } from "../LogicEditor"
-import { DrawZIndex } from "../ComponentList"
-import { span, style, title } from "../htmlgen"
-import { S } from "../strings"
 
 export const RectangleColor = {
     grey: "grey",

@@ -1,12 +1,12 @@
-import { FixedArraySizeNonZero, isDefined, isString, isUndefined, isUnknown, Mode, RichStringEnum, LogicValue, Unknown, isHighImpedance } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import * as t from "io-ts"
-import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNKNOWN, GRID_STEP, drawWireLineToComponent, PATTERN_STRIPED_GRAY, strokeSingleLine } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, PATTERN_STRIPED_GRAY } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LogicEditor } from "../LogicEditor"
-import { TriStateBuffer, TriStateBufferDef } from "./TriStateBuffer"
 import { S } from "../strings"
+import { FixedArraySizeNonZero, isDefined, isHighImpedance, isString, isUndefined, isUnknown, LogicValue, Mode, RichStringEnum, Unknown } from "../utils"
+import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { TriStateBuffer, TriStateBufferDef } from "./TriStateBuffer"
 
 
 export type GateProps = {

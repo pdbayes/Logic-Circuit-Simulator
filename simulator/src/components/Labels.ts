@@ -1,8 +1,8 @@
 import * as t from "io-ts"
-import { isString, isUndefined } from "../utils"
 import { LogicEditor } from "../LogicEditor"
-import { LabelString, LabelStringDef } from "./LabelString"
+import { isString, isUndefined } from "../utils"
 import { LabelRect, LabelRectDef } from "./LabelRect"
+import { LabelString, LabelStringDef } from "./LabelString"
 
 export type Label = LabelString
 

@@ -1,9 +1,9 @@
-import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, isArray, isNotNull, isNumber, isUndefined, Mode, RichStringEnum, toLogicValueRepr, LogicValue, LogicValueRepr, Unknown, HighImpedance, isDefined, typeOrUndefined, isString } from "../utils"
-import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { asArray, deepEquals, Expand, FixedArray, FixedArraySize, FixedArraySizeNonZero, FixedReadonlyArray, forceTypeOf, HighImpedance, isArray, isDefined, isNotNull, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
+import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 
 
 // Node IDs are just represented by a non-negative number

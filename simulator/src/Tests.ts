@@ -1,6 +1,6 @@
-import { ALUOp, doALUOp } from "./components/ALU"
+import { doALUOp } from "./components/ALU"
 import { displayValuesFromArray } from "./drawutils"
-import { FixedArray, FixedArrayFill, FixedReadonlyArray, isUnknown, LogicValue } from "./utils"
+import { FixedArray, FixedReadonlyArray, LogicValue } from "./utils"
 
 export class Tests {
 
@@ -39,8 +39,8 @@ export class Tests {
 
                     a.reverse()
                     b.reverse()
-                    const [sum, v_sum, __, c_sum] = doALUOp("add", a, b, cin)
-                    const [diff, v_diff, ___, c_diff] = doALUOp("sub", a, b, cin)
+                    const [sum, v_sum, /*z*/, c_sum] = doALUOp("add", a, b, cin)
+                    const [diff, v_diff, /*z*/, c_diff] = doALUOp("sub", a, b, cin)
                     a.reverse()
                     b.reverse()
                     sum.reverse()

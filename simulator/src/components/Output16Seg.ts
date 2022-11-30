@@ -1,12 +1,12 @@
-import { FixedArrayFill, FixedReadonlyArray, isDefined, isNotNull, LogicValue as LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_OFF_BACKGROUND, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div, span, title, style } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import * as t from "io-ts"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
-import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_OFF_BACKGROUND, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { div, mods, span, style, title, tooltipContent } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArrayFill, FixedReadonlyArray, isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
 export const Output16SegDef =

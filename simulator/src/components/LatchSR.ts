@@ -1,10 +1,10 @@
-import { isDefined, LogicValue } from "../utils"
 import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isDefined, LogicValue } from "../utils"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
 
 const enum INPUT {
     Set,

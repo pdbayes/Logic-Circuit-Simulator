@@ -1,12 +1,12 @@
-import { isDefined, isNotNull, LogicValue, Unknown, typeOrUndefined, toLogicValueRepr } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
 import * as t from "io-ts"
-import { drawWireLineToComponent, COLOR_MOUSE_OVER, COLOR_COMPONENT_BORDER, drawComponentName, GRID_STEP, COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, drawLabel } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-import { LogicEditor } from "../LogicEditor"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 
 export const InputRandomDef =
     defineComponent(1, 1, t.type({

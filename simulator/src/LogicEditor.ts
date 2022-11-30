@@ -1,22 +1,21 @@
+import dialogPolyfill from 'dialog-polyfill'
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Waypoint, Wire, WireManager, WireStyle } from "./components/Wire"
+import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
-import { div, cls, style, title, attrBuilder, applyModifierTo, button, emptyMod, mods, raw, input, type, label, span, attr, a, href, target, select, option } from "./htmlgen"
+import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
+import { makeComponentMenuInto } from "./menuutils"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Timeline, TimelineState } from "./Timeline"
 import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
-import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
-import { makeComponentMenuInto } from "./menuutils"
-import { WireStyles } from "./components/Wire"
-import dialogPolyfill from 'dialog-polyfill'
 
-import * as pngMeta from 'png-metadata-writer'
 import * as LZString from "lz-string"
+import * as pngMeta from 'png-metadata-writer'
 // import * as QRCode from "qrcode"
 // import * as C2S from "canvas2svg"
 
@@ -31,10 +30,10 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
-import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
-import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
 import { ComponentFactory } from "./ComponentFactory"
+import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
 import { LabelRect } from "./components/LabelRect"
+import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, isLang, S, setLang } from "./strings"
 import { Tests } from "./Tests"
 

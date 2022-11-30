@@ -1,11 +1,11 @@
-import { GateFactory } from "./components/Gate"
-import { isUndefined, RichStringEnum } from "./utils"
 import { Component } from "./components/Component"
-import { LogicEditor } from "./LogicEditor"
+import { GateFactory } from "./components/Gate"
 import { ICFactory } from "./components/IC"
 import { InputFactory } from "./components/Inputs"
-import { OutputFactory } from "./components/Outputs"
 import { LabelFactory } from "./components/Labels"
+import { OutputFactory } from "./components/Outputs"
+import { LogicEditor } from "./LogicEditor"
+import { isUndefined, RichStringEnum } from "./utils"
 
 type Factory = { make(editor: LogicEditor, type: string | undefined): Component | undefined }
 

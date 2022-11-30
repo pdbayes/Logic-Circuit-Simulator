@@ -1,12 +1,12 @@
-import { FixedArray, isNotNull, LogicValue, typeOrUndefined, Unknown, isNull, isUnknown, FixedReadonlyArray, FixedArraySize, toLogicValueRepr, isUndefined, FixedArrayFill, toLogicValueFromChar, isDefined } from "../utils"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { tooltipContent, mods, div } from "../htmlgen"
-import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import * as t from "io-ts"
-import { ComponentBase, defineComponent } from "./Component"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, defineComponent } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 const GRID_WIDTH = 11
 const GRID_HEIGHT = 15

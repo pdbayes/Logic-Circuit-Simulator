@@ -1,11 +1,11 @@
+import * as t from "io-ts"
+import { DrawZIndex } from "../ComponentList"
+import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
+import { LogicEditor } from "../LogicEditor"
+import { S } from "../strings"
 import { isNotNull, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
-import * as t from "io-ts"
-import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { LogicEditor } from "../LogicEditor"
-import { DrawZIndex } from "../ComponentList"
-import { S } from "../strings"
 
 export const LabelStringDef =
     defineComponent(0, 0, t.type({

@@ -1,11 +1,11 @@
-import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import * as t from "io-ts"
+import { DrawZIndex } from "../ComponentList"
 import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
-import { DrawParams, LogicEditor } from "../LogicEditor"
 import { IconName } from "../images"
-import { DrawZIndex } from "../ComponentList"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
+import { Expand, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D

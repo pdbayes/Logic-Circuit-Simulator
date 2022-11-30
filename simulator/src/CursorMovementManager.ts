@@ -1,14 +1,14 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
+import { ComponentFactory } from './ComponentFactory'
+import { ZIndexBackground, ZIndexNormal, ZIndexOverlay } from './ComponentList'
+import { ComponentBase, ComponentState } from './components/Component'
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
+import { Node } from "./components/Node"
+import { dist, setColorMouseOverIsDanger } from './drawutils'
+import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
+import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
 import { isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
-import { Node } from "./components/Node"
-import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
-import { ComponentFactory } from './ComponentFactory'
-import { dist, setColorMouseOverIsDanger } from './drawutils'
-import { IconName, makeIcon } from './images'
-import { ComponentBase, ComponentState } from './components/Component'
-import { ZIndexBackground, ZIndexNormal, ZIndexOverlay } from './ComponentList'
 
 type MouseDownData = {
     mainComp: Drawable | Element

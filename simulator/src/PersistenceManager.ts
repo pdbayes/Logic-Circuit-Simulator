@@ -1,15 +1,15 @@
-import { GateDef, GateFactory } from "./components/Gate"
-import { stringifySmart } from "./stringifySmart"
-import { Wire } from "./components/Wire"
-import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
 import { Component, ComponentTypes, MainJsonFieldName } from "./components/Component"
+import { GateDef, GateFactory } from "./components/Gate"
 import { ICDef, ICFactory } from "./components/IC"
-import { LogicEditor } from "./LogicEditor"
 import { InputDef, InputFactory } from "./components/Inputs"
-import { OutputDef, OutputFactory } from "./components/Outputs"
 import { LabelDef, LabelFactory } from "./components/Labels"
+import { OutputDef, OutputFactory } from "./components/Outputs"
+import { Wire } from "./components/Wire"
+import { LogicEditor } from "./LogicEditor"
+import { stringifySmart } from "./stringifySmart"
+import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 
 class _PersistenceManager {
 

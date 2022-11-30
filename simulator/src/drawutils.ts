@@ -1,10 +1,10 @@
-import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
-import { isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
-import { Node, WireColor } from "./components/Node"
 import { Component, ComponentName } from "./components/Component"
-import { LogicEditor } from "./LogicEditor"
-import { LedColor } from "./components/OutputBar"
+import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { RectangleColor } from "./components/LabelRect"
+import { Node, WireColor } from "./components/Node"
+import { LedColor } from "./components/OutputBar"
+import { LogicEditor } from "./LogicEditor"
+import { isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 
 
 //
