@@ -172,7 +172,11 @@ export enum ComponentState {
 // Simplified, generics-free representation of a component
 export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>, unknown>
 
-
+export const JsonFieldsComponents = ["in", "out", "gates", "components", "labels"] as const
+export type JsonFieldComponent = typeof JsonFieldsComponents[number]
+export const JsonFieldsAux = ["v", "opts", "userdata"] as const
+export type JsonFieldAux = typeof JsonFieldsAux[number]
+export type JsonField = JsonFieldComponent | JsonFieldAux
 
 const ComponentTypes_ = {
     in: { jsonFieldName: "in" },
@@ -183,7 +187,7 @@ const ComponentTypes_ = {
 } as const
 
 export const ComponentTypes = RichStringEnum.withProps<{
-    jsonFieldName: string
+    jsonFieldName: JsonFieldComponent
 }>()(ComponentTypes_)
 
 export type ComponentType = typeof ComponentTypes.type

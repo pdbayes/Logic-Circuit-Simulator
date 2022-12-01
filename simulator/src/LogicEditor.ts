@@ -426,11 +426,11 @@ export class LogicEditor extends HTMLElement {
             return localStorage.getItem(ATTRIBUTE_NAMES.lang)
         }
 
-        const langStr = getURLParameter(ATTRIBUTE_NAMES.lang)
+        const langStr = (getURLParameter(ATTRIBUTE_NAMES.lang)
             ?? this.getAttribute(ATTRIBUTE_NAMES.lang)
             ?? getSavedLang()
             ?? getNavigatorLanguage()
-            ?? DefaultLang
+            ?? DefaultLang).toLowerCase()
         const lang = isLang(langStr) ? langStr : DefaultLang
         setLang(lang)
     }
@@ -1512,9 +1512,9 @@ export class LogicEditor extends HTMLElement {
 
     private fullJsonStateAndCompressedForUri(): [string, string] {
         const jsonObj = PersistenceManager.buildWorkspace(this)
-        const jsonFull = PersistenceManager.stringifyWorkspace(jsonObj)
+        const jsonFull = PersistenceManager.stringifyWorkspace(jsonObj, false)
         PersistenceManager.removeShowOnlyFrom(jsonObj)
-        const jsonForUri = PersistenceManager.stringifyWorkspace(jsonObj)
+        const jsonForUri = PersistenceManager.stringifyWorkspace(jsonObj, true)
 
         // We did this in the past, but now we're compressing things a bit
         // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")

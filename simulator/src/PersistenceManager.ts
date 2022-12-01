@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
-import { Component, ComponentTypes, MainJsonFieldName } from "./components/Component"
+import { Component, ComponentTypes, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { GateDef, GateFactory } from "./components/Gate"
 import { ICDef, ICFactory } from "./components/IC"
 import { InputDef, InputFactory } from "./components/Inputs"
@@ -193,7 +193,7 @@ class _PersistenceManager {
             const fieldName = ComponentTypes.propsOf(comp.componentType).jsonFieldName
             let arr = workspace[fieldName]
             if (isUndefined(arr)) {
-                workspace[fieldName] = (arr = [])
+                workspace[fieldName] = (arr = [comp])
             } else if (Array.isArray(arr)) {
                 arr.push(comp)
             }
@@ -214,12 +214,59 @@ class _PersistenceManager {
         }
     }
 
-    stringifyWorkspace(workspace: Record<string, unknown>): string {
-        return stringifySmart(workspace, { maxLength: 150 })
+    stringifyWorkspace(_workspace: Record<string, unknown>, compact: boolean): string {
+        if (compact) {
+            return JSON.stringify(_workspace)
+        }
+
+        // Custom stringifier to have always one component per line and
+        // spaces after commas
+
+        const workspace = { ..._workspace }
+
+        const parts = [`{\n  "v": ${workspace.v}`]
+        delete workspace.v
+
+        const pushCompact = (key: string) => {
+            const value = workspace[key]
+            if (isDefined(value)) {
+                parts.push(`"${key}": ${stringifySmart(value, { maxLength: Infinity })}`)
+            }
+            delete workspace[key]
+        }
+
+        pushCompact("opts")
+        pushCompact("userdata")
+
+        const pushComponents = (jsonField: JsonFieldComponent) => {
+            const arr = workspace[jsonField]
+            if (isDefined(arr) && Array.isArray(arr)) {
+                const subparts: string[] = []
+                for (const comp of arr) {
+                    subparts.push(stringifySmart(comp, { maxLength: Infinity }))
+                }
+                parts.push(`"${jsonField}": [\n    ` + subparts.join(",\n    ") + "\n  ]")
+                delete workspace[jsonField]
+            }
+        }
+
+        for (const jsonField of JsonFieldsComponents) {
+            pushComponents(jsonField)
+        }
+
+        pushCompact("wires")
+
+        // loop though the remaining fields
+        const unprocessedFields = keysOf(workspace)
+        if (unprocessedFields.length !== 0) {
+            console.log("ERROR: unprocessed fields in stringified JSON: " + unprocessedFields.join(", "))
+        }
+
+        return parts.join(",\n  ") + "\n}"
     }
 
     saveToFile(editor: LogicEditor) {
-        const workspaceJsonStr = this.stringifyWorkspace(this.buildWorkspace(editor))
+        const workspaceJsonStr = this.stringifyWorkspace(this.buildWorkspace(editor), false)
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
         const filename = (editor.options.name ?? "circuit") + ".json"
 
@@ -243,6 +290,45 @@ class _PersistenceManager {
 
 export const PersistenceManager = new _PersistenceManager()
 
+
+function findFirstFreeId(parsedContents: any): number {
+    // this finds the maximum id of all components on raw (but parsed) JSON;
+    // it is useful for migration code that needs to generate new ids
+
+    let maxId = -1
+
+    function inspectComponentDef(compDef: any) {
+        for (const fieldName of ["id", "in", "out"]) {
+            inspectValue(compDef[fieldName])
+        }
+    }
+
+    function inspectValue(value: any) {
+        if (isUndefined(value)) {
+            return
+        }
+        if (typeof value === "number") {
+            maxId = Math.max(maxId, value)
+        } else if (Array.isArray(value)) {
+            for (const item of value) {
+                inspectValue(item)
+            }
+        } else if (typeof value === "object" && value !== null) {
+            inspectValue(value.id)
+        }
+    }
+
+    for (const jsonField of JsonFieldsComponents) {
+        const arr = parsedContents[jsonField]
+        if (isDefined(arr) && Array.isArray(arr)) {
+            for (const comp of arr) {
+                inspectComponentDef(comp)
+            }
+        }
+    }
+
+    return maxId + 1
+}
 
 function migrate0To1(workspace: any) {
     // all displays are now out
@@ -305,8 +391,8 @@ function migrate1To2(workspace: any) {
 }
 
 function migrate2To3(parsedContents: any) {
-    // add new input to ALU
-    let nextNewId = 1000 // TODO be smarter about this
+    let nextNewId = findFirstFreeId(parsedContents)
+
     if ("components" in parsedContents) {
         const components = parsedContents.components
         if (Array.isArray(components)) {
@@ -322,7 +408,7 @@ function migrate2To3(parsedContents: any) {
 }
 
 function migrate3To4(parsedContents: any) {
-    let nextNewId = 1000 // TODO be smarter about this
+    let nextNewId = findFirstFreeId(parsedContents) 
 
     if ("out" in parsedContents) {
         const outs = parsedContents.out
