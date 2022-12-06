@@ -107,6 +107,8 @@ const Strings_fr = {
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
             Decoder16Seg: ["Décodeur ASCII vers 16 segments", "Déc. 16 seg."],
             DecoderBCD4: ["Décodeur 4 bits vers BCD sur 5 bits", "Déc. BCD"],
+
+            Comparator: ["Comparateur", "Comp."],
         }),
     },
     Modes: {
@@ -232,6 +234,10 @@ const Strings_fr = {
             contextMenu: {
                 Period: "Période",
             },
+        },
+        Comparator: {
+            caption: "Comparateur",
+            tooltip: "Comparateur entre deux bits A et B, activé par une entrée E.",
         },
         Counter: {
             tooltip: {
@@ -701,6 +707,8 @@ const Strings_en: Strings = {
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
             Decoder16Seg: ["ASCII-to-16-Segment Decoder", "16-Seg. Dec."],
             DecoderBCD4: ["4-Bit-to-BCD Decoder", "BCD Dec."],
+
+            Comparator: ["Comparator", "Comp."],
         }),
     },
     Modes: {
@@ -826,6 +834,10 @@ const Strings_en: Strings = {
             contextMenu: {
                 Period: "Period",
             },
+        },
+        Comparator: {
+            caption: "Comparator",
+            tooltip: "Comparator between two bits A and B, enabled by an input E.",
         },
         Counter: {
             tooltip: {
