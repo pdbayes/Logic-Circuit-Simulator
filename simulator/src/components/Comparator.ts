@@ -7,8 +7,8 @@ import { tooltipContent, mods, div } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 
-const GRID_WIDTH = 7
-const GRID_HEIGHT = 5
+const GRID_WIDTH = 5
+const GRID_HEIGHT = 7
 
 const enum INPUT {
     A, B, E
@@ -30,13 +30,13 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
     public constructor(editor: LogicEditor, savedData: ComparatorRepr | null) {
         super(editor, [false, false], savedData, {
             ins: [
-                ["A", -2, -4, "n"],
-                ["B", 2, -4, "n"],
-                ["E", -5, 0, "w"],
+                ["A", -4, 2, "w"],
+                ["B", -4, -2, "w"],
+                ["E", 0, 5, "s"],
             ],
             outs: [
-                ["G", 0, 4, "s"],
-                ["Eq", 5, 0, "e"],
+                ["G", 4, 0, "e"],
+                ["Eq", 0, -5, "n"],
             ],
         })
     }
@@ -108,13 +108,13 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
         g.fill()
         g.stroke()
 
-        drawWireLineToComponent(g, this.inputs[INPUT.A], this.inputs[INPUT.A].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT.B], this.inputs[INPUT.B].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT.E], this.posX - width / 2 - 2, this.inputs[INPUT.E].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.A], this.posX - width / 2 - 2, this.inputs[INPUT.A].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.B], this.posX - width / 2 - 2, this.inputs[INPUT.B].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.inputs[INPUT.E], this.inputs[INPUT.E].posXInParentTransform, this.posY + height / 2 + 6, true)
 
 
-        drawWireLineToComponent(g, this.outputs[OUTPUT.G], this.outputs[OUTPUT.G].posXInParentTransform, this.posY + height / 2 + 2, true)
-        drawWireLineToComponent(g, this.outputs[OUTPUT.Eq], this.posX + width / 2 + 2, this.outputs[OUTPUT.Eq].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.G], this.posX + width / 2 + 2, this.outputs[OUTPUT.G].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.outputs[OUTPUT.Eq], this.outputs[OUTPUT.Eq].posXInParentTransform, this.posY - height / 2 - 2, true)
 
 
         ctx.inNonTransformedFrame(ctx => {
@@ -127,12 +127,12 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
             const right = this.posX + width / 2
             const left = this.posX - width / 2
 
-            drawLabel(ctx, this.orient, "A", "n", this.inputs[INPUT.A], top)
-            drawLabel(ctx, this.orient, "B", "n", this.inputs[INPUT.B], top)
-            drawLabel(ctx, this.orient, "E", "w", left, this.inputs[INPUT.E])
+            drawLabel(ctx, this.orient, "A", "w", left, this.inputs[INPUT.A])
+            drawLabel(ctx, this.orient, "B", "w", left, this.inputs[INPUT.B])
+            drawLabel(ctx, this.orient, "E", "s", this.inputs[INPUT.E], bottom)
 
-            drawLabel(ctx, this.orient, ">", "s", this.outputs[OUTPUT.G], bottom)
-            drawLabel(ctx, this.orient, "=", "e", right, this.outputs[OUTPUT.Eq])
+            drawLabel(ctx, this.orient, ">", "e", right, this.outputs[OUTPUT.G])
+            drawLabel(ctx, this.orient, "=", "n", this.outputs[OUTPUT.Eq], top)
 
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 11px sans-serif"
