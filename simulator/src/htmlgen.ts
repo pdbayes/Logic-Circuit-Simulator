@@ -151,6 +151,7 @@ export const br = raw('<br>')
 
 export const dataComponent = attrBuilder("data-component")
 export const dataType = attrBuilder("data-type")
+export const dataClassId = attrBuilder("data-classid")
 
 
 

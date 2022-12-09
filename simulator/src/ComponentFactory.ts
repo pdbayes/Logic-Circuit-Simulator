@@ -5,17 +5,32 @@ import { InputFactory } from "./components/Inputs"
 import { LabelFactory } from "./components/Labels"
 import { OutputFactory } from "./components/Outputs"
 import { LogicEditor } from "./LogicEditor"
-import { isUndefined, RichStringEnum } from "./utils"
+import { isDefined, isUndefined, RichStringEnum } from "./utils"
 
 type Factory = { make(editor: LogicEditor, type: string | undefined): Component | undefined }
 
 function makeFactory(compType: string, factory: Factory) {
     return {
         make: (editor: LogicEditor, elem: HTMLElement) => {
-            const type = elem.dataset["type"]
+            const compDataset = elem.dataset
+            const type = compDataset["type"]
             const newComp = factory.make(editor, type === null ? undefined : type)
             if (isUndefined(newComp)) {
                 throw new Error(`undefined '${compType}' type - elem: ` + elem.outerHTML)
+            }
+
+            // further general component customisation based on editor options
+            const classId = compDataset["classid"]
+            if (isUndefined(classId)) {
+                console.log("WARN No class ID linked to elem " + elem.outerHTML)
+            } else {
+                const compConfig = editor.options.initParams?.[classId]
+                if (isDefined(compConfig)) {
+                    let val
+                    if (isDefined(val = compConfig.orient)) {
+                        newComp.doSetOrient(val)
+                    }
+                }
             }
             return newComp
         },

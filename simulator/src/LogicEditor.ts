@@ -66,9 +66,14 @@ const ATTRIBUTE_NAMES = {
     data: "data",
 } as const
 
+export type InitParams = {
+    orient: Orientation
+}
+
 const DEFAULT_EDITOR_OPTIONS = {
     name: undefined as string | undefined,
     showOnly: undefined as undefined | Array<string>,
+    initParams: undefined as undefined | Record<string, Partial<InitParams>>,
     showGateTypes: false,
     showDisconnectedPins: false,
     wireStyle: WireStyles.auto as WireStyle,

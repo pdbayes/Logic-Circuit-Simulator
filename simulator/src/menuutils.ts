@@ -1,4 +1,4 @@
-import { a, button, cls, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
+import { a, button, cls, dataClassId, dataComponent, dataType, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
 import { S, Strings } from "./strings"
 import { isDefined, isString, isUndefined } from "./utils"
@@ -441,12 +441,13 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
             const compStrings = S.ComponentBar.Components.propsOf(item.strings)
             const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
             const caption = isUndefined(captionStr) ? emptyMod : span(cls("gate-label"), captionStr)
-            const componentId = componentIdFor(item)
-            const buttonTitle = title(isUndefined(titleStr) ? "" : (titleStr + " \n") + `(“${componentId}”)`)
+            const classId = componentIdFor(item)
+            const buttonTitle = title(isUndefined(titleStr) ? "" : (titleStr + " \n") + `(“${classId}”)`)
             const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
             const compButton =
                 button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
                     dataComponent(item.type), dataTypeOpt,
+                    dataClassId(classId),
                     makeImage(item.img, item.width),
                     caption, buttonTitle
                 ).render()
