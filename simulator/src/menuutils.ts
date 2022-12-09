@@ -386,7 +386,11 @@ const componentsMenu: Array<Section> = [
                 strings: "DecoderBCD4", img: "DecoderBCD4", width: 50,
                 normallyHidden: true,
             },
-
+            {
+                type: "component", subtype: "comparator",
+                strings: "Comparator", img: "Comparator", width: 50,
+                normallyHidden: true,
+            },
 
         ],
     },
