@@ -3,6 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { isString, isUndefined } from "../utils"
 import { Adder, AdderDef } from "./Adder"
 import { ALU, ALUDef } from "./ALU"
+import { Comparator, ComparatorDef } from "./Comparator"
 import { Counter, CounterDef } from "./Counter"
 import { Decoder16Seg, Decoder16SegDef } from "./Decoder16Seg"
 import { Decoder7Seg, Decoder7SegDef } from "./Decoder7Seg"
@@ -53,6 +54,7 @@ export const ICDef = t.union([
     Decoder7SegDef.repr,
     Decoder16SegDef.repr,
     DecoderBCD4Def.repr,
+    ComparatorDef.repr,
 ], "IC")
 
 type ICRepr = t.TypeOf<typeof ICDef>
@@ -132,6 +134,8 @@ export const ICFactory = {
                 return new Decoder16Seg(editor, blank ? null : savedData)
             case "decoder-bcd4":
                 return new DecoderBCD4(editor, blank ? null : savedData)
+            case "comparator":
+                return new Comparator(editor, blank ? null : savedData)
         }
     },
 
