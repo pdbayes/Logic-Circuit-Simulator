@@ -54,6 +54,7 @@ const ATTRIBUTE_NAMES = {
     lang: "lang",
     singleton: "singleton", // whether this is the only editor in the page
     mode: "mode",
+    hidereset: "hidereset",
 
     // these are mirrored in the display options
     name: "name",
@@ -135,6 +136,7 @@ export class LogicEditor extends HTMLElement {
     private _mode: Mode = DEFAULT_MODE
     private _initialData: InitialData | undefined = undefined
     private _options: EditorOptions = { ...DEFAULT_EDITOR_OPTIONS }
+    private _hideResetButton = false
 
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
@@ -445,6 +447,7 @@ export class LogicEditor extends HTMLElement {
         const singletonAttr = this.getAttribute(ATTRIBUTE_NAMES.singleton)
         this._isSingleton = !this._isEmbedded && singletonAttr !== null && !isFalsyString(singletonAttr)
         this._maxInstanceMode = this._isSingleton && !this._isEmbedded ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
+        this._hideResetButton = this.getAttribute(ATTRIBUTE_NAMES.hidereset) !== null && !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.hidereset))
 
         // Transfer from URL param to attributes if we are in singleton mode
         if (this._isSingleton || this._isEmbedded) {
@@ -463,6 +466,7 @@ export class LogicEditor extends HTMLElement {
                 ATTRIBUTE_NAMES.showtooltips,
                 ATTRIBUTE_NAMES.data,
                 ATTRIBUTE_NAMES.src,
+                ATTRIBUTE_NAMES.hidereset,
             ]) {
                 transferUrlParamToAttribute(attr)
             }
@@ -1130,7 +1134,7 @@ export class LogicEditor extends HTMLElement {
                 setVisible(but, showRightEditControls)
             }
 
-            const showReset = mode >= Mode.TRYOUT
+            const showReset = mode >= Mode.TRYOUT && !this._hideResetButton
             const showRightMenu = showReset || showRightEditControls
             const showOnlyReset = showReset && !showRightEditControls
             const hideSettings = mode < Mode.FULL
