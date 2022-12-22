@@ -447,7 +447,6 @@ export class LogicEditor extends HTMLElement {
         const singletonAttr = this.getAttribute(ATTRIBUTE_NAMES.singleton)
         this._isSingleton = !this._isEmbedded && singletonAttr !== null && !isFalsyString(singletonAttr)
         this._maxInstanceMode = this._isSingleton && !this._isEmbedded ? MAX_MODE_WHEN_SINGLETON : MAX_MODE_WHEN_EMBEDDED
-        this._hideResetButton = this.getAttribute(ATTRIBUTE_NAMES.hidereset) !== null && !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.hidereset))
 
         // Transfer from URL param to attributes if we are in singleton mode
         if (this._isSingleton || this._isEmbedded) {
@@ -695,6 +694,9 @@ export class LogicEditor extends HTMLElement {
         if (showtooltipsAttr !== null) {
             this._options.hideTooltips = !isFalsyString(showtooltipsAttr)
         }
+
+        // TODO move this to options so that it is correctly persisted, too
+        this._hideResetButton = this.getAttribute(ATTRIBUTE_NAMES.hidereset) !== null && !isFalsyString(this.getAttribute(ATTRIBUTE_NAMES.hidereset))
 
         let dataOrSrcRef
         if ((dataOrSrcRef = this.getAttribute(ATTRIBUTE_NAMES.data)) !== null) {
