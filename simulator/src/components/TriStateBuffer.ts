@@ -31,7 +31,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         super(editor, HighImpedance, savedData, {
             ins: [
                 ["In", -4, 0, "w"],
-                ["E (Enable)", 0, +3, "s"],
+                ["E (Enable)", 0, -3, "n"],
             ],
             outs: [["Out", +4, 0, "e"]],
         })
@@ -123,7 +123,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         g.stroke()
 
         drawWireLineToComponent(g, this.inputs[INPUT.In], gateLeft - 1, this.inputs[INPUT.In].posYInParentTransform)
-        drawWireLineToComponent(g, this.inputs[INPUT.Enable], this.inputs[INPUT.Enable].posXInParentTransform, this.posY + height / 4 + 1)
+        drawWireLineToComponent(g, this.inputs[INPUT.Enable], this.inputs[INPUT.Enable].posXInParentTransform, this.posY - height / 4 - 1)
         drawWireLineToComponent(g, this.outputs[OUTPUT.Out], gateRight + 1, this.posY)
     }
 

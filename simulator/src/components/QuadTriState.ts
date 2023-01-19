@@ -31,7 +31,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
                 ["I1", -3, -1, "w", "In"],
                 ["I2", -3, +1, "w", "In"],
                 ["I3", -3, +3, "w", "In"],
-                ["E (Enable)", 0, +5, "s"],
+                ["E (Enable)", 0, -5, "n"],
             ],
             outs: [
                 ["O0", +3, -3, "e", "Out"],
@@ -96,7 +96,8 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         const height = GRID_HEIGHT * GRID_STEP
         const left = this.posX - width / 2
         const right = left + width
-        const bottom = this.posY + height / 2
+        const top = this.posY - height / 2
+        const bottom = top + height
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
@@ -110,8 +111,8 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         g.lineWidth = 2
         g.strokeStyle = colorForBoolean(enable)
         g.beginPath()
-        g.moveTo(this.posX, bottom - 3)
-        g.lineTo(this.posX, this.posY + 4)
+        g.moveTo(this.posX, top + 3)
+        g.lineTo(this.posX, this.posY - 4)
         g.stroke()
 
         g.strokeStyle = COLOR_COMPONENT_BORDER
@@ -128,7 +129,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        drawWireLineToComponent(g, this.inputs[INPUT.E], this.inputs[INPUT.E].posXInParentTransform, bottom + 2)
+        drawWireLineToComponent(g, this.inputs[INPUT.E], this.inputs[INPUT.E].posXInParentTransform, top - 2)
 
 
         for (const output of this.outputs) {

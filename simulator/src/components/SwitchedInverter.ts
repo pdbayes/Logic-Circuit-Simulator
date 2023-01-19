@@ -31,7 +31,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
                 ["I1", -3, -1, "w", "In"],
                 ["I2", -3, +1, "w", "In"],
                 ["I3", -3, +3, "w", "In"],
-                ["S", 0, +5, "s"],
+                ["S", 0, -5, "n"],
             ],
             outs: [
                 ["O0", +3, -3, "e", "Out"],
@@ -97,7 +97,8 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         const height = GRID_HEIGHT * GRID_STEP
         const left = this.posX - width / 2
         const right = left + width
-        const bottom = this.posY + height / 2
+        const top = this.posY - height / 2
+        const bottom = top + height
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
@@ -111,8 +112,8 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         g.lineWidth = 2
         g.strokeStyle = colorForBoolean(invert)
         g.beginPath()
-        g.moveTo(this.posX, bottom - 3)
-        g.lineTo(this.posX, this.posY + 4)
+        g.moveTo(this.posX, top + 3)
+        g.lineTo(this.posX, this.posY - 4)
         g.stroke()
 
         g.strokeStyle = invert === true ? COLOR_COMPONENT_BORDER : COLOR_UNKNOWN
@@ -132,7 +133,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        drawWireLineToComponent(g, this.inputs[INPUT.S], this.inputs[INPUT.S].posXInParentTransform, bottom + 2)
+        drawWireLineToComponent(g, this.inputs[INPUT.S], this.inputs[INPUT.S].posXInParentTransform, top - 2)
 
 
         for (const output of this.outputs) {
