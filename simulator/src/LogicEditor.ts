@@ -704,9 +704,8 @@ export class LogicEditor extends HTMLElement {
         } else if ((dataOrSrcRef = this.getAttribute(ATTRIBUTE_NAMES.src)) !== null) {
             this._initialData = { _type: "url", url: dataOrSrcRef }
         } else {
-            // try to load from the children of the light DOM,
-            // but this has to be done later as it hasn't been parsed yet
-            setTimeout(() => {
+
+            const tryLoadFromLightDOM = () => {
                 const innerScriptElem = this.findLightDOMChild("script")
                 if (innerScriptElem !== null) {
                     this._initialData = { _type: "json", json: innerScriptElem.innerHTML }
@@ -714,6 +713,22 @@ export class LogicEditor extends HTMLElement {
                     // do this manually
                     this.tryLoadFromData()
                     this.doRedraw()
+                    return true
+                } else {
+                    return false
+                }
+            }
+
+            // try to load from the children of the light DOM,
+            // but this has to be done later as it hasn't been parsed yet
+            setTimeout(() => {
+                const loaded = tryLoadFromLightDOM()
+
+                // sometimes the light DOM is not parsed yet, so try again a bit later
+                if (!loaded) {
+                    setTimeout(() => {
+                        tryLoadFromLightDOM()
+                    }, 100)
                 }
             })
         }
