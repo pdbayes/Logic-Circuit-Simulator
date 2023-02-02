@@ -6,7 +6,7 @@ import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { Timestamp } from "../Timeline"
 import { isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
-import { NodeGroup, NodeID } from "./Component"
+import { Component, NodeGroup, NodeID } from "./Component"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -263,8 +263,12 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
-    public addWaypoint(e: MouseEvent | TouchEvent) {
+    public addWaypointFrom(e: MouseEvent | TouchEvent) {
         const [x, y] = this.editor.offsetXYForContextMenu(e)
+        this.addWaypointWith(x, y)
+    }
+
+    public addWaypointWith(x: number, y: number) {
         let coordData = this.indexOfNextWaypointIfMouseover(x, y)
         if (isUndefined(coordData)) {
             // shouldn't happen since we're calling this form a context menu
@@ -280,6 +284,7 @@ export class Wire extends Drawable {
         const [i, [startX, startY], [endX, endY]] = coordData
         const deltaX = endX - startX
         const deltaY = endY - startY
+
         let orient: Orientation
         if (Math.abs(deltaX) >= Math.abs(deltaY)) {
             // initial orientation will be horizontal
@@ -514,7 +519,7 @@ export class Wire extends Drawable {
 
         return [
             ContextMenuData.item("add", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
-                this.addWaypoint(contextEvent)
+                this.addWaypointFrom(contextEvent)
             }),
             ...setWireOptionsItems,
             ...setRefItems,
@@ -829,6 +834,7 @@ export class WireManager {
                 this._wires.length--
             } else {
                 completedWire = currentWire
+                this.offsetWireIfNecessary(completedWire)
                 this.tryMergeWire(completedWire)
                 this.editor.setDirty("added wire")
             }
@@ -838,6 +844,38 @@ export class WireManager {
         }
         this.editor.redrawMgr.addReason("started or stopped wire", null)
         return completedWire
+    }
+
+    private offsetWireIfNecessary(wire: Wire) {
+        const startNode = wire.startNode
+        const endNode = wire.endNode
+        if (endNode === null) {
+            return
+        }
+        const comp = startNode.parent as Component
+        if (comp !== endNode.parent) {
+            return
+        }
+        const dx2 = (endNode.posX - startNode.posX) / 2
+        const dy2 = (endNode.posY - startNode.posY) / 2
+        const midpointX = startNode.posX + dx2
+        const midpointY = startNode.posY + dy2
+        if (!comp.isOver(midpointX, midpointY)) {
+            return
+        }
+
+        const addToX = dx2 > dy2
+
+        const dir = addToX
+            ? (startNode.posX < endNode.posX ? 1 : -1)
+            : (startNode.posY < endNode.posY ? 1 : -1)
+        const roundOffset = (dim: number) => {
+            return Math.ceil(dim / 20) * 10 + 10
+        }
+
+        const waypointX = midpointX + (addToX ? dir * roundOffset(comp.unrotatedWidth) : 0)
+        const waypointY = midpointY + (addToX ? 0 : dir * roundOffset(comp.unrotatedHeight))
+        wire.addWaypointWith(waypointX, waypointY)
     }
 
     private tryMergeWire(wire: Wire) {
