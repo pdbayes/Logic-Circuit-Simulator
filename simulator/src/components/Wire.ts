@@ -869,12 +869,14 @@ export class WireManager {
         const dir = addToX
             ? (startNode.posX < endNode.posX ? 1 : -1)
             : (startNode.posY < endNode.posY ? 1 : -1)
-        const roundOffset = (dim: number) => {
-            return Math.ceil(dim / 20) * 10 + 10
+        const calcOffsetFromDim = (dim: number) => {
+            return dir * Math.ceil(dim / 20) * 10 + 10
         }
 
-        const waypointX = midpointX + (addToX ? dir * roundOffset(comp.unrotatedWidth) : 0)
-        const waypointY = midpointY + (addToX ? 0 : dir * roundOffset(comp.unrotatedHeight))
+        const isVertical = Orientation.isVertical(comp.orient)
+
+        const waypointX = midpointX + (addToX ? calcOffsetFromDim(isVertical ? comp.unrotatedHeight : comp.unrotatedWidth) : 0)
+        const waypointY = midpointY + (addToX ? 0 : calcOffsetFromDim(isVertical ? comp.unrotatedWidth : comp.unrotatedHeight))
         wire.addWaypointWith(waypointX, waypointY)
     }
 

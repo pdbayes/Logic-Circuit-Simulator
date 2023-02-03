@@ -3,9 +3,13 @@
 
 ## High priority
 
+ * Copy-paste
+ * Hide mouseover when mouse leaves web component boundaries
+ * Undo/redo
+ * High-Z bus logic
+ * prevent clock "backlog" from running like crazy
  * Adder orientation
  * Add waypoint by dragging; add wire by alt-dragging from existing wire
- * Undo/redo
  * Lock position
  * Prevent click event if right-click
  * 4-bit adder with carry in and out
@@ -18,8 +22,6 @@
 
  * Add contextual menu to clock
  * Edge detector
- * High-Z bus logic
- * Copy-paste
  * Component creation
  * (Address) decoder: 2, 3, 4 bit versions
 
