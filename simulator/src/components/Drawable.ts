@@ -356,10 +356,9 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     public trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
-        if (snapToGrid) {
-            posX = Math.round(posX / GRID_STEP) * GRID_STEP
-            posY = Math.round(posY / GRID_STEP) * GRID_STEP
-        }
+        const roundTo = snapToGrid ? GRID_STEP : (GRID_STEP / 2)
+        posX = Math.round(posX / roundTo) * roundTo
+        posY = Math.round(posY / roundTo) * roundTo
         if (posX !== this._posX || posY !== this.posY) {
             this._posX = posX
             this._posY = posY
