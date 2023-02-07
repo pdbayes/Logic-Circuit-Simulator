@@ -51,11 +51,9 @@ abstract class PassthroughBase<N extends FixedArraySize, Repr extends ComponentR
         super.destroy()
 
         if (savedWireEnds.length > 0) {
-            console.log("restoring wires", savedWireEnds.length)
             const wireMgr = this.editor.wireMgr
             for (const [nodeOut, nodeIns] of savedWireEnds) {
                 for (const [nodeIn, style] of nodeIns) {
-                    console.log("adding back wire", nodeOut.parent, nodeIn.parent)
                     wireMgr.addNode(nodeOut)
                     const wire = wireMgr.addNode(nodeIn)
                     if (isUndefined(wire)) {

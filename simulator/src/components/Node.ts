@@ -319,7 +319,8 @@ export class NodeOut extends NodeBase<NodeOut> {
     }
 
     protected preDestroy() {
-        for (const wire of this._outgoingWires) {
+        // we need to make a copy of the array because the wires will remove themselves from the array
+        for (const wire of [... this._outgoingWires]) {
             this.editor.wireMgr.deleteWire(wire)
         }
     }
