@@ -234,7 +234,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         this.setNeedsRedraw("trigger changed")
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

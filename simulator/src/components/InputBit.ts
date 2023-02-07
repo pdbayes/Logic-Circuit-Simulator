@@ -61,7 +61,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return true
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         drawWireLineToComponent(g, this.outputs[0], this.posX + 8, this.posY)
 
         const displayValue = this.editor.options.hideInputColors ? Unknown : this.value

@@ -90,7 +90,7 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
         this.outputs[OUTPUT.C].value = newValue[OUTPUT.C]
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

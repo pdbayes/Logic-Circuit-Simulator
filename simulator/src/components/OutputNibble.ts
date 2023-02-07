@@ -65,7 +65,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
         return this.inputValues<4>([0, 1, 2, 3])
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC

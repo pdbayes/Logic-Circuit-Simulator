@@ -101,7 +101,7 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const [binaryStringRep, value] = this.value
 

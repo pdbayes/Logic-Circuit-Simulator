@@ -167,7 +167,7 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         this.outputs[OUTPUT.Cout].value = newValue[3]
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

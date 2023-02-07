@@ -116,7 +116,7 @@ export class Decoder7Seg extends ComponentBase<4, 7, Decoder7SegRepr, FixedReado
         this.outputs[OUTPUT.g].value = newValue[6]
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER

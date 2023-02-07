@@ -181,7 +181,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         this.setNeedsRedraw("trigger changed")
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

@@ -110,7 +110,7 @@ export class DecoderBCD4 extends ComponentBase<4, 5, DecoderBCD4Repr, FixedReado
         })
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER

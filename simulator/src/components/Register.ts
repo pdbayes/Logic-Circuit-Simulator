@@ -150,7 +150,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         this.setNeedsRedraw("trigger changed")
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

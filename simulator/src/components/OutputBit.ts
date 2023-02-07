@@ -62,7 +62,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         return this.inputs[0].value
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const input = this.inputs[0]
         drawWireLineToComponent(g, input, this.posX, this.posY)

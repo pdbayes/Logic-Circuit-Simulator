@@ -81,7 +81,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         this.outputs[OUTPUT.Out].value = newValue
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
 
         const width = GRID_WIDTH * GRID_STEP

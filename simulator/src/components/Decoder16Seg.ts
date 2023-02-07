@@ -112,7 +112,7 @@ export class Decoder16Seg extends ComponentBase<7, 17, Decoder16SegRepr, FixedRe
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER

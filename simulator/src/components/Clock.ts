@@ -113,7 +113,7 @@ export class Clock extends InputBitBase<ClockRepr> {
         }
     }
 
-    public override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
         if (!this._showLabel) {

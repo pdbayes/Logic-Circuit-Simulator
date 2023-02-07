@@ -112,7 +112,7 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return false
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const mode = this.editor.mode
         if (mode < Mode.CONNECT && !this.forceDraw()) {
             return

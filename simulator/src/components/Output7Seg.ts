@@ -89,7 +89,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         return this.inputValues<8>([INPUT.a, INPUT.b, INPUT.c, INPUT.d, INPUT.e, INPUT.f, INPUT.g, INPUT.p])
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

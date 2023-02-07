@@ -122,7 +122,7 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

@@ -115,7 +115,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         return this.inputs[0].value
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const input = this.inputs[0]
         const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
 

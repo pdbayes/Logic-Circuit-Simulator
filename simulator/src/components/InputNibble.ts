@@ -92,7 +92,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC

@@ -98,7 +98,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
         return this.inputValues<17>([INPUT.a1, INPUT.a2, INPUT.b, INPUT.c, INPUT.d2, INPUT.d1, INPUT.e, INPUT.f, INPUT.g1, INPUT.g2, INPUT.h, INPUT.i, INPUT.j, INPUT.k, INPUT.l, INPUT.m, INPUT.p])
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

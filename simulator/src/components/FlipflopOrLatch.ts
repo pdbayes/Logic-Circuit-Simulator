@@ -92,7 +92,7 @@ export abstract class FlipflopOrLatch<
         this.setNeedsRedraw("show content changed")
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

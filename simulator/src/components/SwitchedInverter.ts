@@ -89,7 +89,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const invert = this.inputs[INPUT.S].value
 

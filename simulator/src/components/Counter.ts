@@ -156,7 +156,7 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
         this.setNeedsRedraw("trigger changed")
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

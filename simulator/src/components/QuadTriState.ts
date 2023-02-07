@@ -89,7 +89,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const enable = this.inputs[INPUT.E].value
 
         const width = GRID_WIDTH * GRID_STEP

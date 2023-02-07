@@ -70,7 +70,7 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         return 2
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         g.lineWidth = 3
         if (ctx.isMouseOver) {
             const width = this.unrotatedWidth

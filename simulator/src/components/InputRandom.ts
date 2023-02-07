@@ -105,7 +105,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
         this.outputs[OUTPUT.Out].value = newValue
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight
         const left = this.posX - width / 2

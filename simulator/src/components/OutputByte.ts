@@ -70,7 +70,7 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
         return this.inputValues<8>([0, 1, 2, 3, 4, 5, 6, 7])
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC

@@ -367,7 +367,7 @@ export class Wire extends Drawable {
         return this._propagatingValues[0][0]
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         // this has to be checked _before_ we prune the list,
         // otherwise we won't get a chance to have a next animation frame
         // and to run the pending updates created by possibly setting

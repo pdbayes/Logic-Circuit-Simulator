@@ -125,7 +125,7 @@ export class InputByte extends ComponentBase<0, 8, InputByteRepr, FixedArray<Log
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC

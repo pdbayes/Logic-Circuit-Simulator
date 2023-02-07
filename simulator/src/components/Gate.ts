@@ -356,7 +356,7 @@ export abstract class GateBase<
         this.outputs[0].value = newValue
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const gateType = this._showAsUnknown
             ? Unknown
             : this.poseAs ?? this.type

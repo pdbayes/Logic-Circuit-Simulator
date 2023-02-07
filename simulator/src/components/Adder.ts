@@ -92,7 +92,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
         this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

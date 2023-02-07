@@ -244,7 +244,7 @@ export abstract class Demux<
         }
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.gridWidth * GRID_STEP
         const height = this.gridHeight * GRID_STEP

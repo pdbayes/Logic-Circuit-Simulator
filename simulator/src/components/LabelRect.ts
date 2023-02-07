@@ -145,7 +145,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         return 0
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = this._w
         const height = this._h
         const left = this.posX - width / 2

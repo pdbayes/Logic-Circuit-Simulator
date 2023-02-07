@@ -94,7 +94,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
-    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
