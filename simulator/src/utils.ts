@@ -274,10 +274,10 @@ export const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, 
 export function FixedArrayFill<T, N extends FixedArraySize>(val: T, n: N): FixedArray<T, N> {
     return Array(n).fill(val) as FixedArray<T, N>
 }
-export function FixedArrayFillFactory<T, N extends FixedArraySize>(val: () => T, n: N): FixedArray<T, N> {
+export function FixedArrayFillFactory<T, N extends FixedArraySize>(val: (i: number) => T, n: N): FixedArray<T, N> {
     const arr = Array(n)
     for (let i = 0; i < n; i++) {
-        arr[i] = val()
+        arr[i] = val(i)
     }
     return arr as FixedArray<T, N>
 }

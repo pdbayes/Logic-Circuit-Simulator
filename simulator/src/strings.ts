@@ -28,6 +28,7 @@ const Strings_fr = {
         },
         SectionNames: {
             InputOutput: "Entrées/ sorties",
+            Layout: "Disposition",
             Gates: "Portes",
             Components: "Compo- sants",
         },
@@ -47,6 +48,10 @@ const Strings_fr = {
             InputNibble: ["Entrée semioctet", "In 4 bits"],
             InputRandom: ["Entrée aléatoire", "Aléatoire"],
             OutputShiftBuffer: ["Affichage avec buffer à décalage", "Affichage à décalage"],
+
+            Passthrough1: ["Broche", "Broche"],
+            Passthrough4: ["Broche à 4 entrées-sortes", "Broche (4)"],
+            Passthrough8: ["Broche à 8 entrées-sortes", "Broche (8)"],
             LabelString: ["Étiquette", "Label"],
             LabelRectangle: ["Rectangle de regroupement", "Groupe"],
 
@@ -554,6 +559,9 @@ const Strings_fr = {
             },
             EmptyCaption: "(vide)",
         },
+        Passthrough: {
+            tooltip: "Broche. Sert uniquement à arranger les connexions.",
+        },
         QuadGate: {
             tooltip: {
                 title: "Porte quadruple",
@@ -599,15 +607,18 @@ const Strings_fr = {
         },
         Wire: {
             contextMenu: {
+                AddMiddlePoint: "Ajouter un point intermédiaire",
+                AddPassthrough: "Ajouter une broche",
+
                 CustomPropagationDelay: template("Délai de propagation spécifique${current}…", "current"),
                 CustomPropagationDelayDesc: template("Délai de propagation personnalisé en millisecondes pour cette connexion (laisser vide pour utiliser la valeur par défaut du circuit, actuellement de ${current} ms):", "current"),
 
                 WireColor: "Couleur du fil",
                 WireColorBlack: "Noir (par défaut)",
                 WireColorRed: "Rouge",
-                WireColorGreen: "Vert",
                 WireColorBlue: "Bleu",
                 WireColorYellow: "Jaune",
+                WireColorGreen: "Vert",
                 WireColorWhite: "Blanc",
 
                 WireStyle: "Style",
@@ -646,6 +657,7 @@ const Strings_en: Strings = {
         SectionNames: {
             InputOutput: "Input/ Output",
             Gates: "Gates",
+            Layout: "Layout",
             Components: "Compo- nents",
         },
         Labels: {
@@ -668,6 +680,10 @@ const Strings_en: Strings = {
             InputNibble: ["Nibble (4-Bit) Input", "4-Bit In"],
             InputRandom: ["Random Input", "Random"],
             OutputShiftBuffer: ["Display with Shift Buffer", "Shift Displ."],
+
+            Passthrough1: ["Passthrough", "Passthrough"],
+            Passthrough4: ["Passthrough with 4 inputs-outputs", "Passthr. (4)"],
+            Passthrough8: ["Passthrough with 8 inputs-outputs", "Passthr. (8)"],
             LabelString: ["Label", "Label"],
             LabelRectangle: ["Grouping Rectangle", "Group"],
 
@@ -1175,6 +1191,9 @@ const Strings_en: Strings = {
             },
             EmptyCaption: "(empty)",
         },
+        Passthrough: {
+            tooltip: "Passthrough. Only used to arrange wires.",
+        },
         QuadGate: {
             tooltip: {
                 title: "Quadruple Gate",
@@ -1220,6 +1239,9 @@ const Strings_en: Strings = {
         },
         Wire: {
             contextMenu: {
+                AddMiddlePoint: "Add Middle Point",
+                AddPassthrough: "Add Passthrough",
+                
                 CustomPropagationDelay: template("Specific Propagation Delay${current}…", "current"),
                 CustomPropagationDelayDesc: template("Specific propagation delay in milliseconds for this connection (leave empty to use the default value for the circuit, which currently is ${current} ms):", "current"),
 

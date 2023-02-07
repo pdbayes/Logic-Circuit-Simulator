@@ -3,6 +3,7 @@ import { GateFactory } from "./components/Gate"
 import { ICFactory } from "./components/IC"
 import { InputFactory } from "./components/Inputs"
 import { LabelFactory } from "./components/Labels"
+import { LayoutFactory } from "./components/Layout"
 import { OutputFactory } from "./components/Outputs"
 import { LogicEditor } from "./LogicEditor"
 import { isDefined, isUndefined, RichStringEnum } from "./utils"
@@ -45,6 +46,7 @@ const ComponentFactoryTypes = RichStringEnum.withProps<{
     "gate": makeFactory("gate", GateFactory),
     "component": makeFactory("component", ICFactory),
     "label": makeFactory("label", LabelFactory),
+    "layout": makeFactory("layout", LayoutFactory),
 })
 // type ComponentFactoryType = typeof ComponentFactoryTypes.type
 

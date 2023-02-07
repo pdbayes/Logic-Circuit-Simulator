@@ -9,7 +9,7 @@ import { Wire } from "./Wire"
 
 // This should just be Component, but it then has some cyclic 
 // type definition issue which causes problems
-type NodeParent = DrawableWithPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean }
+type NodeParent = DrawableWithPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean, alwaysDrawMultiOutNodes: boolean }
 
 export type Node = NodeIn | NodeOut
 
@@ -105,9 +105,13 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         this.editor.nodeMgr.removeLiveNode(this.asNode)
     }
 
+    protected forceDraw() {
+        return false
+    }
+
     doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const mode = this.editor.mode
-        if (mode < Mode.CONNECT) {
+        if (mode < Mode.CONNECT && !this.forceDraw()) {
             return
         }
 
@@ -335,6 +339,10 @@ export class NodeOut extends NodeBase<NodeOut> {
         for (const wire of this._outgoingWires) {
             wire.propageNewValue(newValue, now)
         }
+    }
+
+    protected override forceDraw() {
+        return this._outgoingWires.length > 1 && this.parent.alwaysDrawMultiOutNodes
     }
 
     override mouseDoubleClicked(e: MouseEvent | TouchEvent) {

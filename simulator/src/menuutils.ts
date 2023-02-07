@@ -95,18 +95,6 @@ const componentsMenu: Array<Section> = [
                 strings: "OutputShiftBuffer", img: "OutputShiftBuffer", width: 50,
                 normallyHidden: true,
             },
-
-            // TODO move to new category once ironed out?
-            {
-                type: "label", subtype: undefined,
-                strings: "LabelString", img: "LabelString", width: 32,
-                normallyHidden: true,
-            },
-            {
-                type: "label", subtype: "rect",
-                strings: "LabelRectangle", img: "LabelRectangle", width: 32,
-                normallyHidden: true,
-            },
         ],
     },
 
@@ -252,11 +240,32 @@ const componentsMenu: Array<Section> = [
         ],
     },
 
-    // { // TODO category for annotations
-    //     nameKey: "Annota- tions",
-    //     items: [
-    //     ],
-    // },
+    {
+        nameKey: "Layout",
+        items: [
+            {
+                type: "label", subtype: undefined,
+                strings: "LabelString", img: "LabelString", width: 32,
+            },
+            {
+                type: "label", subtype: "rect",
+                strings: "LabelRectangle", img: "LabelRectangle", width: 32,
+            },
+            {
+                type: "layout", subtype: "pass",
+                strings: "Passthrough1", img: "Passthrough1", width: 32,
+            },
+            {
+                type: "layout", subtype: "pass-4",
+                strings: "Passthrough4", img: "Passthrough4", width: 32,
+            },
+            {
+                type: "layout", subtype: "pass-8",
+                strings: "Passthrough8", img: "Passthrough8", width: 32,
+                normallyHidden: true,
+            },
+        ],
+    },
 
 
     {

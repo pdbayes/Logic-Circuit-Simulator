@@ -10,7 +10,7 @@ export type DrawZIndex = typeof ZIndexBackground | typeof ZIndexNormal | typeof 
 export class ComponentList {
 
     // eslint-disable-next-line @typescript-eslint/semi
-    private _componentsByZIndex = FixedArrayFillFactory(() => [] as Component[], 3);
+    private _componentsByZIndex = FixedArrayFillFactory((__i) => [] as Component[], 3);
 
     *all() {
         for (const compList of this._componentsByZIndex) {

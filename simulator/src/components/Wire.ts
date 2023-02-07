@@ -263,8 +263,13 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
+    public addPassthroughFrom(e: MouseEvent | TouchEvent) {
+        const [x, y] = this.editor.offsetXYForContextMenu(e, true)
+        this.addWaypointWith(x, y) // TODO add passthrough instead!
+    }
+
     public addWaypointFrom(e: MouseEvent | TouchEvent) {
-        const [x, y] = this.editor.offsetXYForContextMenu(e)
+        const [x, y] = this.editor.offsetXYForContextMenu(e, true)
         this.addWaypointWith(x, y)
     }
 
@@ -494,20 +499,20 @@ export class Wire extends Drawable {
                         }
                     }
                 }),
-                ContextMenuData.submenu("palette", "Couleur du fil", [
-                    makeItemUseColor("Noir (standard)", WireColor.black),
-                    makeItemUseColor("Rouge", WireColor.red),
-                    makeItemUseColor("Bleu", WireColor.blue),
-                    makeItemUseColor("Jaune", WireColor.yellow),
-                    makeItemUseColor("Vert", WireColor.green),
-                    makeItemUseColor("Blanc", WireColor.white),
+                ContextMenuData.submenu("palette", s.WireColor, [
+                    makeItemUseColor(s.WireColorBlack, WireColor.black),
+                    makeItemUseColor(s.WireColorRed, WireColor.red),
+                    makeItemUseColor(s.WireColorBlue, WireColor.blue),
+                    makeItemUseColor(s.WireColorYellow, WireColor.yellow),
+                    makeItemUseColor(s.WireColorGreen, WireColor.green),
+                    makeItemUseColor(s.WireColorWhite, WireColor.white),
                 ]),
-                ContextMenuData.submenu("wirestyle", "Style", [
-                    makeItemDisplayStyle("Par défaut", undefined),
+                ContextMenuData.submenu("wirestyle", s.WireStyle, [
+                    makeItemDisplayStyle(s.WireStyleDefault, undefined),
                     ContextMenuData.sep(),
-                    makeItemDisplayStyle("Automatique", WireStyles.auto),
-                    makeItemDisplayStyle("Ligne droite", WireStyles.straight),
-                    makeItemDisplayStyle("Courbe", WireStyles.bezier),
+                    makeItemDisplayStyle(s.WireStyleAuto, WireStyles.auto),
+                    makeItemDisplayStyle(s.WireStyleStraight, WireStyles.straight),
+                    makeItemDisplayStyle(s.WireStyleCurved, WireStyles.bezier),
                 ]),
             ]
 
@@ -518,13 +523,16 @@ export class Wire extends Drawable {
             ]
 
         return [
-            ContextMenuData.item("add", "Ajouter point intermédiaire", (__itemEvent, contextEvent) => {
+            ContextMenuData.item("add", s.AddMiddlePoint, (__itemEvent, contextEvent) => {
                 this.addWaypointFrom(contextEvent)
             }),
+            // ContextMenuData.item("add", s.AddPassthrough, (__itemEvent, contextEvent) => {
+            //     this.addPassthroughFrom(contextEvent)
+            // }),
             ...setWireOptionsItems,
             ...setRefItems,
             ContextMenuData.sep(),
-            ContextMenuData.item("trash", "Supprimer", () => {
+            ContextMenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
                 this.editor.wireMgr.deleteWire(this)
             }, true),
         ]

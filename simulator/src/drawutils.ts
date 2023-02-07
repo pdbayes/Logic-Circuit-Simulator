@@ -60,6 +60,7 @@ export let COLOR_WIRE_BORDER: ColorString
 export let COLOR_MOUSE_OVER: ColorString
 export let COLOR_MOUSE_OVER_NORMAL: ColorString
 export let COLOR_MOUSE_OVER_DANGER: ColorString
+export let COLOR_NODE_MOUSE_OVER: ColorString
 export let COLORCOMPS_FULL: ColorComponentsRGB
 export let COLOR_FULL: ColorString
 export let COLOR_DARK_RED: ColorString
@@ -105,6 +106,7 @@ function doSetColors(darkMode: boolean) {
         COLOR_WIRE_BORDER = ColorString(80)
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
+        COLOR_NODE_MOUSE_OVER = ColorString([128, 128, 128, 0.5])
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [52, 58, 64]
@@ -142,6 +144,7 @@ function doSetColors(darkMode: boolean) {
         COLOR_WIRE_BORDER = ColorString(175)
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
+        COLOR_NODE_MOUSE_OVER = ColorString([128, 128, 128, 0.5])
         COLORCOMPS_FULL = [255, 193, 7]
         COLOR_DARK_RED = ColorString([180, 0, 0])
         COLORCOMPS_EMPTY = [80, 89, 99]
@@ -341,7 +344,7 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
             }
         } else if (y0 === y1) {
             // horizontal line
-                const shift = node.isOutput ? 2 : -1
+            const shift = node.isOutput ? 2 : -1
             const pointsRight = (node.isOutput && x1 <= x0) || (!node.isOutput && x0 <= x1)
             if (pointsRight) {
                 triangle(g,
@@ -414,7 +417,7 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     g.stroke()
 
     if (isMouseOver) {
-        g.fillStyle = "rgba(128,128,128,0.5)"
+        g.fillStyle = COLOR_NODE_MOUSE_OVER
         g.beginPath()
         circle(g, x, y, WAYPOINT_DIAMETER * 2)
         g.fill()

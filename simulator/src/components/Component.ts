@@ -172,7 +172,7 @@ export enum ComponentState {
 // Simplified, generics-free representation of a component
 export type Component = ComponentBase<FixedArraySize, FixedArraySize, ComponentRepr<FixedArraySize, FixedArraySize>, unknown>
 
-export const JsonFieldsComponents = ["in", "out", "gates", "components", "labels"] as const
+export const JsonFieldsComponents = ["in", "out", "gates", "components", "labels", "layout"] as const
 export type JsonFieldComponent = typeof JsonFieldsComponents[number]
 export const JsonFieldsAux = ["v", "opts", "userdata"] as const
 export type JsonFieldAux = typeof JsonFieldsAux[number]
@@ -184,6 +184,7 @@ const ComponentTypes_ = {
     gate: { jsonFieldName: "gates" },
     ic: { jsonFieldName: "components" },
     label: { jsonFieldName: "labels" },
+    layout: { jsonFieldName: "layout" },
 } as const
 
 export const ComponentTypes = RichStringEnum.withProps<{
@@ -509,6 +510,10 @@ export abstract class ComponentBase<
 
     public get allowsForcedOutputs() {
         return true
+    }
+
+    public get alwaysDrawMultiOutNodes() {
+        return false
     }
 
     public forEachNode(f: (node: Node) => boolean): void {

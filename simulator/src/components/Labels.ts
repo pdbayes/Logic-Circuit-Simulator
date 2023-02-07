@@ -4,7 +4,7 @@ import { isString, isUndefined } from "../utils"
 import { LabelRect, LabelRectDef } from "./LabelRect"
 import { LabelString, LabelStringDef } from "./LabelString"
 
-export type Label = LabelString
+export type Label = LabelString | LabelRect
 
 export const LabelDef = t.union([
     LabelStringDef.repr,

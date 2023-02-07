@@ -5,6 +5,7 @@ import { GateDef, GateFactory } from "./components/Gate"
 import { ICDef, ICFactory } from "./components/IC"
 import { InputDef, InputFactory } from "./components/Inputs"
 import { LabelDef, LabelFactory } from "./components/Labels"
+import { LayoutDef, LayoutFactory } from "./components/Layout"
 import { OutputDef, OutputFactory } from "./components/Outputs"
 import { Wire } from "./components/Wire"
 import { LogicEditor } from "./LogicEditor"
@@ -123,6 +124,7 @@ class _PersistenceManager {
         loadComponentField("gates", GateDef, GateFactory as any)
         loadComponentField("components", ICDef, ICFactory)
         loadComponentField("labels", LabelDef, LabelFactory)
+        loadComponentField("layout", LayoutDef, LayoutFactory)
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right

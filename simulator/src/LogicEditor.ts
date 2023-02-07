@@ -172,7 +172,7 @@ export class LogicEditor extends HTMLElement {
         hideOutputColorsCheckbox: HTMLInputElement,
         hideMemoryContentCheckbox: HTMLInputElement,
         hideTooltipsCheckbox: HTMLInputElement,
-        // groupParallelWiresCheckbox: HTMLInputElement,
+        groupParallelWiresCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
@@ -261,7 +261,7 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.wireStylePopup.value = newOptions.wireStyle
             optionsHtml.showDisconnectedPinsCheckbox.checked = newOptions.showDisconnectedPins
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
-            // optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
+            optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
 
             optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
@@ -920,7 +920,7 @@ export class LogicEditor extends HTMLElement {
             setVisible(optionsZone, false)
         })
 
-        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, [title, mouseover]: [string, string]) => {
+        const makeCheckbox = <K extends KeysOfByType<EditorOptions, boolean>>(optionName: K, [title, mouseover]: [string, string], hide = false) => {
             const checkbox = input(type("checkbox")).render()
             if (this.options[optionName] === true) {
                 checkbox.checked = true
@@ -929,12 +929,14 @@ export class LogicEditor extends HTMLElement {
                 this._options[optionName] = checkbox.checked
                 this.redrawMgr.addReason("option changed: " + optionName, null)
             }))
-            optionsZone.appendChild(
-                div(
-                    style("height: 20px"),
-                    label(checkbox, span(style("margin-left: 4px"), attr("title", mouseover), title))
-                ).render()
-            )
+            const section = div(
+                style("height: 20px"),
+                label(checkbox, span(style("margin-left: 4px"), attr("title", mouseover), title))
+            ).render()
+            optionsZone.appendChild(section)
+            if (hide) {
+                setVisible(section, false)
+            }
             return checkbox
         }
 
@@ -963,7 +965,8 @@ export class LogicEditor extends HTMLElement {
         const showGateTypesCheckbox = makeCheckbox("showGateTypes", S.Settings.showGateTypes)
         const showDisconnectedPinsCheckbox = makeCheckbox("showDisconnectedPins", S.Settings.showDisconnectedPins)
         const hideTooltipsCheckbox = makeCheckbox("hideTooltips", S.Settings.hideTooltips)
-
+        const groupParallelWiresCheckbox = makeCheckbox("groupParallelWires", S.Settings.groupParallelWires, true)
+        // 
         const wireStylePopup = select(
             option(attr("value", WireStyles.auto), S.Settings.WireStyleAuto),
             option(attr("value", WireStyles.straight), S.Settings.WireStyleLine),
@@ -1016,7 +1019,7 @@ export class LogicEditor extends HTMLElement {
             showGateTypesCheckbox,
             showDisconnectedPinsCheckbox,
             hideTooltipsCheckbox,
-            // groupParallelWiresCheckbox,
+            groupParallelWiresCheckbox,
             propagationDelayField,
             showUserDataLinkContainer,
         }
@@ -1364,14 +1367,23 @@ export class LogicEditor extends HTMLElement {
         return length
     }
 
-    offsetXYForContextMenu(e: MouseEvent | TouchEvent): [number, number] {
+    offsetXYForContextMenu(e: MouseEvent | TouchEvent, snapToGrid = false): [number, number] {
         const mainCanvas = this.html.mainCanvas
+        let x, y
+
         if ("offsetX" in e && e.offsetX === 0 && e.offsetY === 0 && e.target === mainCanvas) {
             const canvasRect = mainCanvas.getBoundingClientRect()
-            return [e.clientX - canvasRect.x, e.clientY - canvasRect.y]
+            x = e.clientX - canvasRect.x
+            y = e.clientY - canvasRect.y
         } else {
-            return this.offsetXY(e)
+            [x, y] = this.offsetXY(e)
         }
+
+        if (snapToGrid) {
+            x = Math.round(x / GRID_STEP) * GRID_STEP
+            y = Math.round(y / GRID_STEP) * GRID_STEP
+        }
+        return [x, y]
     }
 
     offsetXY(e: MouseEvent | TouchEvent): [number, number] {

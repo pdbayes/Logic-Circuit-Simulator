@@ -62,11 +62,12 @@ type ICRepr = t.TypeOf<typeof ICDef>
 export const ICFactory = {
 
     make: (editor: LogicEditor, savedDataOrType: ICRepr | string | undefined) => {
-        let blank
-        let savedData: ICRepr
         if (isUndefined(savedDataOrType)) {
             return undefined
         }
+
+        let blank
+        let savedData: ICRepr
         if (isString(savedDataOrType)) {
             blank = true
             savedData = { type: savedDataOrType } as ICRepr
