@@ -222,9 +222,9 @@ export abstract class ComponentBase<
     > extends DrawableWithDraggablePosition {
 
     private _state: ComponentState
-    protected readonly inputs: FixedArray<NodeIn, NumInputs>
+    private readonly _inputs: FixedArray<NodeIn, NumInputs>
     private readonly _inputGroups: Map<string, NodeGroup<NodeIn>> | undefined
-    protected readonly outputs: FixedArray<NodeOut, NumOutputs>
+    private readonly _outputs: FixedArray<NodeOut, NumOutputs>
     private readonly _outputGroups: Map<string, NodeGroup<NodeOut>> | undefined
 
     protected constructor(
@@ -272,8 +272,8 @@ export abstract class ComponentBase<
         // to set all of them.
 
         // generate the input and output nodes
-        [this.inputs, this._inputGroups] = this.makeNodes<NodeIn, NumInputs>(inOffsets, inputSpecs, NodeIn);
-        [this.outputs, this._outputGroups] = this.makeNodes<NodeOut, NumOutputs>(outOffsets, outputSpecs, NodeOut)
+        [this._inputs, this._inputGroups] = this.makeNodes<NodeIn, NumInputs>(inOffsets, inputSpecs, NodeIn);
+        [this._outputs, this._outputGroups] = this.makeNodes<NodeOut, NumOutputs>(outOffsets, outputSpecs, NodeOut)
 
         // setNeedsRecalc with a force propadation is needed:
         // * the forced propagation allows the current value (e.g. for InputBits)
@@ -498,7 +498,7 @@ export abstract class ComponentBase<
 
     protected setInputsPreferSpike(...inputs: number[]) {
         for (const i of inputs) {
-            this.inputs[i]._prefersSpike = true
+            this._inputs[i]._prefersSpike = true
         }
     }
 
@@ -514,6 +514,14 @@ export abstract class ComponentBase<
 
     public get alwaysDrawMultiOutNodes() {
         return false
+    }
+
+    public get inputs(): FixedReadonlyArray<NodeIn, NumInputs> {
+        return this._inputs
+    }
+
+    public get outputs(): FixedReadonlyArray<NodeOut, NumOutputs> {
+        return this._outputs
     }
 
     public forEachNode(f: (node: Node) => boolean): void {
@@ -765,13 +773,13 @@ export abstract class ComponentBase<
 
         if (numOutputs === 1) {
             return ContextMenuData.submenu("force", s.ForceOutputSingle, [
-                ...makeOutputItems(this.outputs[0]!),
+                ...makeOutputItems(this._outputs[0]!),
                 ...footerItems,
             ])
 
         } else {
             return ContextMenuData.submenu("force", s.ForceOutputMultiple, [
-                ...asArray(this.outputs).map((out) => {
+                ...asArray(this._outputs).map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
                     return ContextMenuData.submenu(icon, s.Output + " " + out.name,
                         makeOutputItems(out)

@@ -9,6 +9,7 @@ import { isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, typeOrUnde
 import { Component, NodeGroup, NodeID } from "./Component"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
+import { Passthrough1 } from "./Passthrough"
 
 export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -207,9 +208,16 @@ export class Wire extends Drawable {
         // not the same as setting endNode; this may change startNode as well
         // if we need to reverse input and output
 
-        if (!secondNode) {
+        if (secondNode === null) {
             return
         }
+
+        if (this._endNode !== null) {
+            // clear old connection
+            this._endNode.incomingWire = null
+        }
+
+
         if (!Node.isOutput(secondNode)) {
             if (!Node.isOutput(this._startNode)) {
                 console.log("WARN connecting two input nodes")
@@ -264,8 +272,30 @@ export class Wire extends Drawable {
     }
 
     public addPassthroughFrom(e: MouseEvent | TouchEvent) {
-        const [x, y] = this.editor.offsetXYForContextMenu(e, true)
-        this.addWaypointWith(x, y) // TODO add passthrough instead!
+        const editor = this.editor
+        const [x, y] = editor.offsetXYForContextMenu(e, true)
+        const endNode = this.endNode
+        if (isNull(endNode)) {
+            return
+        }
+
+        const passthrough = new Passthrough1(editor, null)
+        editor.components.add(passthrough)
+        const newPos = passthrough.setPosition(x, y)
+        console.log("new pos", newPos)
+
+        // modify this wire to go to the passthrough
+        this.setSecondNode(passthrough.inputs[0])
+
+        // create a new wire from the passthrough to the end node
+        const wireMgr = editor.wireMgr
+        wireMgr.addNode(passthrough.outputs[0])
+        const newWire = wireMgr.addNode(endNode)
+        if (isUndefined(newWire)) {
+            console.log("WARN: couldn't create new wire")
+            return
+        }
+        newWire.doSetStyle(this.style)
     }
 
     public addWaypointFrom(e: MouseEvent | TouchEvent) {
@@ -526,9 +556,9 @@ export class Wire extends Drawable {
             ContextMenuData.item("add", s.AddMiddlePoint, (__itemEvent, contextEvent) => {
                 this.addWaypointFrom(contextEvent)
             }),
-            // ContextMenuData.item("add", s.AddPassthrough, (__itemEvent, contextEvent) => {
-            //     this.addPassthroughFrom(contextEvent)
-            // }),
+            ContextMenuData.item("add", s.AddPassthrough, (__itemEvent, contextEvent) => {
+                this.addPassthroughFrom(contextEvent)
+            }),
             ...setWireOptionsItems,
             ...setRefItems,
             ContextMenuData.sep(),

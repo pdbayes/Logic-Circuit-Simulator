@@ -28,7 +28,7 @@ const Strings_fr = {
         },
         SectionNames: {
             InputOutput: "Entrées/ sorties",
-            Layout: "Disposition",
+            Layout: "Dispo- sition",
             Gates: "Portes",
             Components: "Compo- sants",
         },

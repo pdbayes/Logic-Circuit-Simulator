@@ -101,9 +101,12 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     destroy() {
+        this.preDestroy()
         this._isAlive = false
         this.editor.nodeMgr.removeLiveNode(this.asNode)
     }
+
+    protected abstract preDestroy(): void
 
     protected forceDraw() {
         return false
@@ -261,6 +264,12 @@ export class NodeIn extends NodeBase<NodeIn> {
         }
     }
 
+    protected preDestroy() {
+        if (this._incomingWire !== null) {
+            this.editor.wireMgr.deleteWire(this._incomingWire)
+        }
+    }
+
     get acceptsMoreConnections() {
         return isNull(this._incomingWire)
     }
@@ -285,19 +294,33 @@ export class NodeIn extends NodeBase<NodeIn> {
 
 
 export class NodeOut extends NodeBase<NodeOut> {
-    
+
     public readonly _tag = "_nodeout"
 
     private readonly _outgoingWires: Wire[] = []
 
     addOutgoingWire(wire: Wire) {
-        this._outgoingWires.push(wire)
+        // don't add the same wire twice
+        const i = this._outgoingWires.indexOf(wire)
+        if (i === -1) {
+            this._outgoingWires.push(wire)
+        }
     }
 
     removeOutgoingWire(wire: Wire) {
         const i = this._outgoingWires.indexOf(wire)
         if (i !== -1) {
             this._outgoingWires.splice(i, 1)
+        }
+    }
+
+    get outgoingWires(): readonly Wire[] {
+        return this._outgoingWires
+    }
+
+    protected preDestroy() {
+        for (const wire of this._outgoingWires) {
+            this.editor.wireMgr.deleteWire(wire)
         }
     }
 
@@ -308,7 +331,7 @@ export class NodeOut extends NodeBase<NodeOut> {
     get isDisconnected() {
         return this._outgoingWires.length === 0
     }
-    
+
     findWireTo(node: NodeIn): Wire | undefined {
         return this._outgoingWires.find(wire => wire.endNode === node)
     }

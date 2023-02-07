@@ -3,9 +3,11 @@ import { COLOR_COMPONENT_BORDER, COLOR_NODE_MOUSE_OVER, COLOR_UNKNOWN, drawWireL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { FixedArrayFill, FixedArrayFillFactory, FixedArraySize, FixedReadonlyArray, LogicValue, Mode } from "../utils"
+import { FixedArrayFill, FixedArrayFillFactory, FixedArraySize, FixedReadonlyArray, isDefined, isUndefined, LogicValue, Mode } from "../utils"
 import { ComponentBase, ComponentRepr, defineComponent, NodeVisuals } from "./Component"
 import { DrawContext } from "./Drawable"
+import { NodeIn, NodeOut } from "./Node"
+import { WireStyle } from "./Wire"
 
 
 const GRID_WIDTH = 1
@@ -22,6 +24,51 @@ abstract class PassthroughBase<N extends FixedArraySize, Repr extends ComponentR
     protected constructor(editor: LogicEditor, n: N, savedData: Repr | null, nodeOffsets: NodeVisuals<N, N>) {
         super(editor, FixedArrayFill(false, n), savedData, nodeOffsets)
         this.n = n
+    }
+
+    public override destroy(): void {
+        type SavedNodeProps = WireStyle | undefined
+        type EndNodes = [NodeIn, SavedNodeProps][]
+
+        const savedWireEnds: [NodeOut, EndNodes][] = []
+        for (let i = 0; i < this.n; i++) {
+            const nodeOut = this.inputs[i].incomingWire?.startNode
+            if (isUndefined(nodeOut) || !(nodeOut instanceof NodeOut)) {
+                continue
+            }
+            const nodeIns: EndNodes = []
+            for (const wire of this.outputs[i].outgoingWires) {
+                const endNode = wire.endNode
+                if (endNode !== null) {
+                    nodeIns.push([endNode, wire.style])
+                }
+            }
+            if (nodeIns.length > 0) {
+                savedWireEnds.push([nodeOut, nodeIns])
+            }
+        }
+
+        super.destroy()
+
+        if (savedWireEnds.length > 0) {
+            console.log("restoring wires", savedWireEnds.length)
+            const wireMgr = this.editor.wireMgr
+            for (const [nodeOut, nodeIns] of savedWireEnds) {
+                for (const [nodeIn, style] of nodeIns) {
+                    console.log("adding back wire", nodeOut.parent, nodeIn.parent)
+                    wireMgr.addNode(nodeOut)
+                    const wire = wireMgr.addNode(nodeIn)
+                    if (isUndefined(wire)) {
+                        console.error("Failed to add wire back")
+                        continue
+                    }
+                    // restore wire properties
+                    if (isDefined(style)) {
+                        wire.doSetStyle(style)
+                    }
+                }
+            }
+        }
     }
 
     public override get alwaysDrawMultiOutNodes() {
