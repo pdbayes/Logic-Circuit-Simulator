@@ -34,7 +34,7 @@ export class Clock extends InputBitBase<ClockRepr> {
     private _phase: number = ClockDefaults.phase
     private _showLabel: boolean = ClockDefaults.showLabel
 
-    constructor(editor: LogicEditor, savedData: ClockRepr | null) {
+    public constructor(editor: LogicEditor, savedData: ClockRepr | null) {
         super(editor, false, savedData)
         if (isNotNull(savedData)) {
             this._period = savedData.period
@@ -50,7 +50,7 @@ export class Clock extends InputBitBase<ClockRepr> {
         this.tickCallback(editor.timeline.adjustedTime())
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "clock" as const,
             ...this.toJSONBase(),
@@ -113,7 +113,7 @@ export class Clock extends InputBitBase<ClockRepr> {
         }
     }
 
-    override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
         if (!this._showLabel) {

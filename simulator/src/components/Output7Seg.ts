@@ -57,7 +57,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "7seg" as const,
             ...this.toJSONBase(),
@@ -71,11 +71,11 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -89,7 +89,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
         return this.inputValues<8>([INPUT.a, INPUT.b, INPUT.c, INPUT.d, INPUT.e, INPUT.f, INPUT.g, INPUT.p])
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
@@ -231,7 +231,7 @@ export class Output7Seg extends ComponentBase<8, 0, Output7SegRepr, FixedReadonl
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

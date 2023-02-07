@@ -585,20 +585,20 @@ export abstract class ComponentBase<
         })
     }
 
-    override mouseDown(e: MouseEvent | TouchEvent) {
+    public override mouseDown(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
         return { lockMouseOver: true }
     }
 
-    override mouseDragged(e: MouseEvent | TouchEvent) {
+    public override mouseDragged(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT) {
             this.updateWhileMoving(e)
         }
     }
 
-    override mouseUp(__: MouseEvent | TouchEvent) {
+    public override mouseUp(__: MouseEvent | TouchEvent) {
         let wasSpawning = false
         if (this._state === ComponentState.SPAWNING) {
             this._state = ComponentState.SPAWNED
@@ -629,7 +629,7 @@ export abstract class ComponentBase<
         this.updateNodePositions()
     }
 
-    override mouseClicked(e: MouseEvent | TouchEvent) {
+    public override mouseClicked(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT && e.shiftKey) {
             this.editor.cursorMovementMgr.toggleSelect(this)
             return true
@@ -637,7 +637,7 @@ export abstract class ComponentBase<
         return false
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
         if (this.editor.mode >= Mode.CONNECT && e.metaKey && this.canRotate()) {
             this.doSetOrient((() => {
                 switch (this.orient) {
@@ -657,7 +657,7 @@ export abstract class ComponentBase<
         this.updateNodePositions()
     }
 
-    destroy() {
+    public destroy() {
         this._state = ComponentState.DEAD
         this.forEachNode((node) => {
             node.destroy()
@@ -665,7 +665,7 @@ export abstract class ComponentBase<
         })
     }
 
-    override get cursorWhenMouseover(): string | undefined {
+    public override get cursorWhenMouseover(): string | undefined {
         return "grab"
     }
 

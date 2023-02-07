@@ -15,14 +15,14 @@ export type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
 export class Waypoint extends DrawableWithDraggablePosition {
 
-    static get Repr() {
+    public static get Repr() {
         return t.union([
             t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
             t.tuple([t.number, t.number]),
         ], "Wire")
     }
 
-    static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
+    public static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
         if (isNull(saved)) {
             return null
         }
@@ -33,7 +33,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         }
     }
 
-    constructor(
+    public constructor(
         editor: LogicEditor,
         savedData: WaypointRepr | null,
         public readonly parent: Wire,
@@ -41,7 +41,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         super(editor, Waypoint.toSuperRepr(savedData))
     }
 
-    toJSON(): WaypointRepr {
+    public toJSON(): WaypointRepr {
         if (this.orient === Orientation.default) {
             return [this.posX, this.posY]
         } else {
@@ -49,11 +49,11 @@ export class Waypoint extends DrawableWithDraggablePosition {
         }
     }
 
-    get unrotatedWidth(): number {
+    public get unrotatedWidth(): number {
         return WAYPOINT_DIAMETER
     }
 
-    get unrotatedHeight(): number {
+    public get unrotatedHeight(): number {
         return WAYPOINT_DIAMETER
     }
 
@@ -61,7 +61,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return this.editor.mode >= Mode.CONNECT && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
-    override get cursorWhenMouseover() {
+    public override get cursorWhenMouseover() {
         return "grab"
     }
 
@@ -86,20 +86,20 @@ export class Waypoint extends DrawableWithDraggablePosition {
         drawWaypoint(g, ctx, this.posX, this.posY, this.parent.startNode.value, ctx.isMouseOver, neutral, false, false, false)
     }
 
-    override mouseDown(e: MouseEvent | TouchEvent) {
+    public override mouseDown(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
         return { lockMouseOver: true }
     }
 
-    override mouseDragged(e: MouseEvent | TouchEvent) {
+    public override mouseDragged(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT) {
             this.updateWhileMoving(e)
         }
     }
 
-    override mouseUp(__: MouseEvent | TouchEvent) {
+    public override mouseUp(__: MouseEvent | TouchEvent) {
         this.tryStopMoving()
     }
 
@@ -126,7 +126,7 @@ export type WireRepr = t.TypeOf<typeof Wire.Repr>
 
 export class Wire extends Drawable {
 
-    static get Repr() {
+    public static get Repr() {
         return t.union([
             t.tuple([
                 NodeID, NodeID,
@@ -148,7 +148,7 @@ export class Wire extends Drawable {
     public customPropagationDelay: number | undefined = undefined
     public ribbon: Ribbon | undefined = undefined
 
-    constructor(
+    public constructor(
         private _startNode: Node // not NodeOut since we can start from the end
     ) {
         super(_startNode.editor)
@@ -157,7 +157,7 @@ export class Wire extends Drawable {
         this._propagatingValues.push([_startNode.value, longAgo])
     }
 
-    toJSON(): WireRepr {
+    public toJSON(): WireRepr {
         const endID = this._endNode?.id ?? -1
         if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay) && isUndefined(this.ref) && isUndefined(this.style)) {
             // no need for node options
@@ -245,13 +245,13 @@ export class Wire extends Drawable {
         this._endNode.doSetColor(this._startNode.color)
     }
 
-    propageNewValue(newValue: LogicValue, now: Timestamp) {
+    public propageNewValue(newValue: LogicValue, now: Timestamp) {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
             this._propagatingValues.push([newValue, now])
         }
     }
 
-    destroy() {
+    public destroy() {
         if (Node.isOutput(this._startNode)) {
             this._startNode.removeOutgoingWire(this)
         }
@@ -263,7 +263,7 @@ export class Wire extends Drawable {
         // }
     }
 
-    get isAlive() {
+    public get isAlive() {
         // the start node should be alive and the end node
         // should either be null (wire being drawn) or alive
         // (wire set) for the wire to be alive
@@ -367,7 +367,7 @@ export class Wire extends Drawable {
         return this._propagatingValues[0][0]
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         // this has to be checked _before_ we prune the list,
         // otherwise we won't get a chance to have a next animation frame
         // and to run the pending updates created by possibly setting
@@ -460,7 +460,7 @@ export class Wire extends Drawable {
         }
     }
 
-    isOver(x: number, y: number): boolean {
+    public isOver(x: number, y: number): boolean {
         if (this.editor.mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode || !this.endNode.isAlive) {
             return false
         }
@@ -593,23 +593,23 @@ export class Ribbon extends Drawable {
     // private _startNodes: NodeOut[] = []
     // private _endNodes: NodeIn[] = []
 
-    constructor(editor: LogicEditor,
+    public constructor(editor: LogicEditor,
         public readonly startNodeGroup: NodeGroup<NodeOut>,
         public readonly endNodeGroup: NodeGroup<NodeIn>,
     ) {
         super(editor)
     }
 
-    isEmpty() {
+    public isEmpty() {
         return this._coveredWires.length === 0
     }
 
-    addCoveredWire(wire: Wire, newNodeGroupStartIndex: number, newNodeGroupEndIndex: number) {
+    public addCoveredWire(wire: Wire, newNodeGroupStartIndex: number, newNodeGroupEndIndex: number) {
         this._coveredWires.push(wire)
         this.updateIndices(newNodeGroupStartIndex, newNodeGroupEndIndex)
     }
 
-    wireWasDeleted(wire: Wire) {
+    public wireWasDeleted(wire: Wire) {
         // TODO check ribbons here
         // const index = this._coveredWires.indexOf(wire)
         // if (index >= 0) {
@@ -787,7 +787,7 @@ export class WireManager {
     private readonly _ribbons: Ribbon[] = []
     private _wireBeingAdded: Wire | undefined = undefined
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         this.editor = editor
     }
 
@@ -803,7 +803,7 @@ export class WireManager {
         return isDefined(this._wireBeingAdded)
     }
 
-    draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
+    public draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
         this.removeDeadWires()
         const useRibbons = this.editor.options.groupParallelWires
         if (useRibbons) {
@@ -836,7 +836,7 @@ export class WireManager {
         }
     }
 
-    addNode(newNode: Node): Wire | undefined {
+    public addNode(newNode: Node): Wire | undefined {
         let completedWire = undefined
         if (!this.isAddingWire) {
             // start drawing a new wire
@@ -964,7 +964,7 @@ export class WireManager {
         // const wireAfter = findWire(startGroup, indexStart + 1, endGroup, indexEnd + 1)
     }
 
-    deleteWire(wire: Wire) {
+    public deleteWire(wire: Wire) {
         // TODO check in ribbon
         wire.destroy()
         const ribbon = wire.ribbon
@@ -979,7 +979,7 @@ export class WireManager {
         this.editor.redrawMgr.addReason("deleted wire", null)
     }
 
-    clearAllWires() {
+    public clearAllWires() {
         // TODO clear ribbons
         for (const wire of this._wires) {
             wire.destroy()
@@ -988,7 +988,7 @@ export class WireManager {
         this.editor.redrawMgr.addReason("deleted wires", null)
     }
 
-    tryCancelWire() {
+    public tryCancelWire() {
         const wireBeingAdded = this._wireBeingAdded
         if (isDefined(wireBeingAdded)) {
             // adding the start node as end node to trigger deletion

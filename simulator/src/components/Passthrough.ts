@@ -79,7 +79,7 @@ abstract class PassthroughBase<N extends FixedArraySize, Repr extends ComponentR
         return "layout" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP * 2
     }
 
@@ -164,14 +164,14 @@ export class Passthrough1 extends PassthroughBase<1, Passthrough1Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "pass" as const,
             ...this.toJSONBase(),
         }
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT_1 * GRID_STEP
     }
 
@@ -213,14 +213,14 @@ export class Passthrough4 extends PassthroughBase<4, Passthrough4Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "pass-4" as const,
             ...this.toJSONBase(),
         }
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT_4 * GRID_STEP
     }
 
@@ -267,14 +267,14 @@ export class Passthrough8 extends PassthroughBase<8, Passthrough8Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "pass-8" as const,
             ...this.toJSONBase(),
         }
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return (GRID_UPPER_HEIGHT_8 + GRID_UPPER_HEIGHT_8) * GRID_STEP
     }
 

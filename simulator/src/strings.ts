@@ -7,8 +7,8 @@ export type Strings = typeof Strings_fr
 type ComponentStrings = string | [string, string]
 
 class Template<K extends string[]> {
-    constructor(public readonly templateString: string, __keys: [...K]) { }
-    expand(values: { [key in K[number]]: any }) {
+    public constructor(public readonly templateString: string, __keys: [...K]) { }
+    public expand(values: { [key in K[number]]: any }) {
         return this.templateString.replace(/\$\{(?:\w+)\}/g, (placeholder) => {
             const key = placeholder.slice(2, -1)
             return String((values as any)[key] ?? "<<" + key + ">>")

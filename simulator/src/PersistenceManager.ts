@@ -14,7 +14,7 @@ import { isArray, isDefined, isString, isUndefined, keysOf } from "./utils"
 
 class _PersistenceManager {
 
-    loadFile(editor: LogicEditor, e: Event) {
+    public loadFile(editor: LogicEditor, e: Event) {
         const sourceElem = e.target as HTMLInputElement
         const file = sourceElem.files?.item(0)
         if (!file) {
@@ -33,7 +33,7 @@ class _PersistenceManager {
         reader.readAsText(file)
     }
 
-    doLoadFromJson(editor: LogicEditor, content: string | Record<string, unknown>): undefined | string { // string is an error
+    public doLoadFromJson(editor: LogicEditor, content: string | Record<string, unknown>): undefined | string { // string is an error
         const nodeMgr = editor.nodeMgr
         const wireMgr = editor.wireMgr
         const components = editor.components
@@ -181,7 +181,7 @@ class _PersistenceManager {
         return undefined // meaning no error
     }
 
-    buildWorkspace(editor: LogicEditor): Record<string, unknown> {
+    public buildWorkspace(editor: LogicEditor): Record<string, unknown> {
         const workspace: Record<string, unknown> = {
             "v": 4,
             "opts": editor.nonDefaultOptions(),
@@ -209,14 +209,14 @@ class _PersistenceManager {
         return workspace
     }
 
-    removeShowOnlyFrom(workspace: Record<string, unknown>): void {
+    public removeShowOnlyFrom(workspace: Record<string, unknown>): void {
         const opts = workspace.opts as any
         if (typeof opts === "object" && opts !== null && Object.prototype.hasOwnProperty.call(opts, "showOnly")) {
             delete opts.showOnly
         }
     }
 
-    stringifyWorkspace(_workspace: Record<string, unknown>, compact: boolean): string {
+    public stringifyWorkspace(_workspace: Record<string, unknown>, compact: boolean): string {
         if (compact) {
             return JSON.stringify(_workspace)
         }
@@ -267,7 +267,7 @@ class _PersistenceManager {
         return parts.join(",\n  ") + "\n}"
     }
 
-    saveToFile(editor: LogicEditor) {
+    public saveToFile(editor: LogicEditor) {
         const workspaceJsonStr = this.stringifyWorkspace(this.buildWorkspace(editor), false)
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
         const filename = (editor.options.name ?? "circuit") + ".json"

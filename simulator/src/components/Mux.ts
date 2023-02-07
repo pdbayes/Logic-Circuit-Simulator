@@ -141,7 +141,7 @@ export abstract class Mux<
         }
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             ...super.toJSONBase(),
             showWiring: (this._showWiring !== MuxDefaults.showWiring) ? this._showWiring : undefined,
@@ -180,11 +180,11 @@ export abstract class Mux<
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return this.gridWidth * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return this.gridHeight * GRID_STEP
     }
 
@@ -211,7 +211,7 @@ export abstract class Mux<
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.gridWidth * GRID_STEP
         const height = this.gridHeight * GRID_STEP
@@ -335,7 +335,7 @@ export class Mux2To1 extends Mux<3, 1, Mux2To1Repr> {
         super(editor, savedData, 2, 1, 1)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-2to1" as const,
             ...this.toJSONBase(),
@@ -354,7 +354,7 @@ export class Mux4To1 extends Mux<6, 1, Mux4To1Repr> {
         super(editor, savedData, 4, 2, 1)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-4to1" as const,
             ...this.toJSONBase(),
@@ -373,7 +373,7 @@ export class Mux8To1 extends Mux<11, 1, Mux8To1Repr> {
         super(editor, savedData, 8, 3, 1)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-8to1" as const,
             ...this.toJSONBase(),
@@ -392,7 +392,7 @@ export class Mux4To2 extends Mux<5, 2, Mux4To2Repr> {
         super(editor, savedData, 4, 1, 2)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-4to2" as const,
             ...this.toJSONBase(),
@@ -411,7 +411,7 @@ export class Mux8To2 extends Mux<10, 2, Mux8To2Repr> {
         super(editor, savedData, 8, 2, 2)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-8to2" as const,
             ...this.toJSONBase(),
@@ -430,7 +430,7 @@ export class Mux8To4 extends Mux<9, 4, Mux8To4Repr> {
         super(editor, savedData, 8, 1, 4)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "mux-8to4" as const,
             ...this.toJSONBase(),

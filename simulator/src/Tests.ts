@@ -4,7 +4,7 @@ import { FixedArray, FixedReadonlyArray, LogicValue } from "./utils"
 
 export class Tests {
 
-    aluOps() {
+    public aluOps() {
         function* nibbles(): Generator<FixedArray<boolean, 4>, void, unknown> {
             for (const a of [false, true]) {
                 for (const b of [false, true]) {

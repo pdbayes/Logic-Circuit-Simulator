@@ -42,7 +42,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "quad-tristate" as const,
             ...this.toJSONBase(),
@@ -53,11 +53,11 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -89,7 +89,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const enable = this.inputs[INPUT.E].value
 
         const width = GRID_WIDTH * GRID_STEP
@@ -97,7 +97,7 @@ export class QuadTriState extends ComponentBase<5, 4, QuadTriStateRepr, FixedRea
         const left = this.posX - width / 2
         const right = left + width
         const top = this.posY - height / 2
-        const bottom = top + height
+        // const bottom = top + height
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER

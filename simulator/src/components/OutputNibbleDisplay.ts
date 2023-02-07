@@ -43,7 +43,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "nibble-display" as const,
             ...this.toJSONBase(),
@@ -57,11 +57,11 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -96,7 +96,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const [binaryStringRep, value] = this.value
 
@@ -151,7 +151,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
         })
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -211,7 +211,7 @@ export class OutputNibbleDisplay extends ComponentBase<4, 0, OutputNibbleDisplay
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

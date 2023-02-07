@@ -49,7 +49,7 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "byte-display" as const,
             ...this.toJSONBase(),
@@ -63,11 +63,11 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return (GRID_UPPER_HEIGHT + GRID_UPPER_HEIGHT) * GRID_STEP
     }
 
@@ -101,7 +101,7 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const [binaryStringRep, value] = this.value
 
@@ -158,7 +158,7 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
         })
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -218,7 +218,7 @@ export class OutputByteDisplay extends ComponentBase<8, 0, OutputByteDisplayRepr
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

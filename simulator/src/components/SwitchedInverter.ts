@@ -42,7 +42,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "switched-inverter" as const,
             ...this.toJSONBase(),
@@ -53,11 +53,11 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -89,7 +89,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const invert = this.inputs[INPUT.S].value
 
@@ -98,7 +98,7 @@ export class SwitchedInverter extends ComponentBase<5, 4, SwitchedInverterRepr, 
         const left = this.posX - width / 2
         const right = left + width
         const top = this.posY - height / 2
-        const bottom = top + height
+        // const bottom = top + height
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER

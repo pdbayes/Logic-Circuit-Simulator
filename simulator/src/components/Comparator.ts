@@ -41,7 +41,7 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "comparator" as const,
             ...this.toJSONBase(),
@@ -52,11 +52,11 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -90,7 +90,7 @@ export class Comparator extends ComponentBase<3, 2, ComparatorRepr, [LogicValue,
         this.outputs[OUTPUT.Eq].value = newValue[OUTPUT.Eq]
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

@@ -12,7 +12,7 @@ export class ComponentList {
     // eslint-disable-next-line @typescript-eslint/semi
     private _componentsByZIndex = FixedArrayFillFactory((__i) => [] as Component[], 3);
 
-    *all() {
+    public *all() {
         for (const compList of this._componentsByZIndex) {
             for (const comp of compList) {
                 yield comp
@@ -20,7 +20,7 @@ export class ComponentList {
         }
     }
 
-    *allInReversedZIndexOrder() {
+    public *allInReversedZIndexOrder() {
         for (let i = this._componentsByZIndex.length - 1; i >= 0; i--) {
             const compList = this._componentsByZIndex[i]
             for (const comp of compList) {
@@ -29,7 +29,7 @@ export class ComponentList {
         }
     }
 
-    *withZIndex(zIndex: DrawZIndex) {
+    public *withZIndex(zIndex: DrawZIndex) {
         for (const comp of this._componentsByZIndex[zIndex]) {
             yield comp
         }

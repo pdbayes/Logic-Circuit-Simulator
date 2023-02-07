@@ -41,7 +41,7 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "byte" as const,
             ...this.toJSONBase(),
@@ -53,11 +53,11 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return (GRID_UPPER_HEIGHT + GRID_UPPER_HEIGHT) * GRID_STEP
     }
 
@@ -70,7 +70,7 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
         return this.inputValues<8>([0, 1, 2, 3, 4, 5, 6, 7])
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
@@ -131,7 +131,7 @@ export class OutputByte extends ComponentBase<8, 0, OutputByteRepr, FixedArray<L
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

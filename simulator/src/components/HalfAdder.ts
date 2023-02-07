@@ -40,7 +40,7 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "halfadder" as const,
             ...this.toJSONBase(),
@@ -51,11 +51,11 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -90,7 +90,7 @@ export class HalfAdder extends ComponentBase<2, 2, HalfAdderRepr, [LogicValue, L
         this.outputs[OUTPUT.C].value = newValue[OUTPUT.C]
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

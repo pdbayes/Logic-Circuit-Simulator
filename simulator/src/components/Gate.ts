@@ -297,7 +297,7 @@ export abstract class GateBase<
         }
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             type: this._type,
             ...super.toJSONBase(),
@@ -344,11 +344,11 @@ export abstract class GateBase<
         return this.type
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH_1_2 * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT_1_2 * GRID_STEP
     }
 
@@ -356,14 +356,14 @@ export abstract class GateBase<
         this.outputs[0].value = newValue
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const gateType = this._showAsUnknown
             ? Unknown
             : this.poseAs ?? this.type
         this.drawGate(g, gateType, gateType !== this.type && !this._showAsUnknown, ctx)
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return true
@@ -707,14 +707,14 @@ export abstract class GateBase<
 type Gate1Repr = GateRepr<1, Gate1Type>
 export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 
-    constructor(editor: LogicEditor, savedData: Gate1Repr | Gate1MandatoryParams) {
+    public constructor(editor: LogicEditor, savedData: Gate1Repr | Gate1MandatoryParams) {
         super(editor, savedData, {
             ins: [[undefined, -4, 0, "w"]],
             outs: [[undefined, +4, 0, "e"]],
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return super.toJSONBase()
     }
 
@@ -777,7 +777,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
         )
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -793,7 +793,7 @@ export class Gate1 extends GateBase<Gate1Type, 1, Gate1Repr> {
 type Gate2Repr = GateRepr<2, Gate2Type>
 export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 
-    constructor(editor: LogicEditor, savedData: Gate2Repr | Gate2MandatoryParams) {
+    public constructor(editor: LogicEditor, savedData: Gate2Repr | Gate2MandatoryParams) {
         super(editor, savedData, {
             ins: [
                 [undefined, -4, -1, "w", "In"],
@@ -803,7 +803,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return super.toJSONBase()
     }
 
@@ -864,7 +864,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
         return gateProps.out(in1, in2)
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -901,7 +901,7 @@ export class Gate2 extends GateBase<Gate2Type, 2, Gate2Repr> {
 type Gate3Repr = GateRepr<3, Gate3Type>
 export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 
-    constructor(editor: LogicEditor, savedData: Gate3Repr | Gate3MandatoryParams) {
+    public constructor(editor: LogicEditor, savedData: Gate3Repr | Gate3MandatoryParams) {
         super(editor, savedData, {
             ins: [
                 [undefined, -5, -2, "w", "In"],
@@ -912,7 +912,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return super.toJSONBase()
     }
 
@@ -920,11 +920,11 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
         return Gate3Types
     }
 
-    override get unrotatedWidth() {
+    public override get unrotatedWidth() {
         return GRID_WIDTH_3 * GRID_STEP
     }
 
-    override get unrotatedHeight() {
+    public override get unrotatedHeight() {
         return GRID_HEIGHT_3 * GRID_STEP
     }
 
@@ -993,7 +993,7 @@ export class Gate3 extends GateBase<Gate3Type, 3, Gate3Repr> {
 type Gate4Repr = GateRepr<4, Gate4Type>
 export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
 
-    constructor(editor: LogicEditor, savedData: Gate4Repr | Gate4MandatoryParams) {
+    public constructor(editor: LogicEditor, savedData: Gate4Repr | Gate4MandatoryParams) {
         super(editor, savedData, {
             ins: [
                 [undefined, -6, -3, "w", "In"],
@@ -1005,7 +1005,7 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return super.toJSONBase()
     }
 
@@ -1013,11 +1013,11 @@ export class Gate4 extends GateBase<Gate4Type, 4, Gate4Repr> {
         return Gate4Types
     }
 
-    override get unrotatedWidth() {
+    public override get unrotatedWidth() {
         return GRID_WIDTH_4 * GRID_STEP
     }
 
-    override get unrotatedHeight() {
+    public override get unrotatedHeight() {
         return GRID_HEIGHT_4 * GRID_STEP
     }
 

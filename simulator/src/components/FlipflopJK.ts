@@ -31,7 +31,7 @@ export class FlipflopJK extends Flipflop<2, FlipflopJKRepr> {
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "flipflop-jk" as const,
             ...this.toJSONBase(),

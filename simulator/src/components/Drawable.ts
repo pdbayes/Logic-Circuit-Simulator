@@ -48,7 +48,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
     private readonly entranceTransformInv: DOMMatrix
     private readonly componentTransform: DOMMatrix
 
-    constructor(
+    public constructor(
         private comp: Drawable,
         public readonly g: CanvasRenderingContext2D,
         public readonly drawParams: DrawParams,
@@ -60,17 +60,17 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
         this.componentTransform = g.getTransform()
     }
 
-    exit() {
+    public exit() {
         this.g.setTransform(this.entranceTransform)
     }
 
-    inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown) {
+    public inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown) {
         this.g.setTransform(this.entranceTransform)
         f(this)
         this.g.setTransform(this.componentTransform)
     }
 
-    rotatePoint(x: number, y: number): readonly [x: number, y: number] {
+    public rotatePoint(x: number, y: number): readonly [x: number, y: number] {
         return mult(this.entranceTransformInv, ...mult(this.componentTransform, x, y))
     }
 
@@ -122,7 +122,7 @@ export abstract class Drawable {
         return undefined
     }
 
-    toString(): string {
+    public toString(): string {
         return `${this.constructor.name}(${this.toStringDetails()})`
     }
 

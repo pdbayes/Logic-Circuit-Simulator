@@ -158,7 +158,7 @@ export abstract class Demux<
         }
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             ...super.toJSONBase(),
             showWiring: (this._showWiring !== DemuxDefaults.showWiring) ? this._showWiring : undefined,
@@ -198,11 +198,11 @@ export abstract class Demux<
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return this.gridWidth * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return this.gridHeight * GRID_STEP
     }
 
@@ -244,7 +244,7 @@ export abstract class Demux<
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.gridWidth * GRID_STEP
         const height = this.gridHeight * GRID_STEP
@@ -382,7 +382,7 @@ export class Demux1To2 extends Demux<2, 2, Demux1To2Repr> {
         super(editor, savedData, 1, 1, 2)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-1to2" as const,
             ...this.toJSONBase(),
@@ -401,7 +401,7 @@ export class Demux1To4 extends Demux<3, 4, Demux1To4Repr> {
         super(editor, savedData, 1, 2, 4)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-1to4" as const,
             ...this.toJSONBase(),
@@ -420,7 +420,7 @@ export class Demux1To8 extends Demux<4, 8, Demux1To8Repr> {
         super(editor, savedData, 1, 3, 8)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-1to8" as const,
             ...this.toJSONBase(),
@@ -439,7 +439,7 @@ export class Demux2To4 extends Demux<3, 4, Demux2To4Repr> {
         super(editor, savedData, 2, 1, 4)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-2to4" as const,
             ...this.toJSONBase(),
@@ -458,7 +458,7 @@ export class Demux2To8 extends Demux<4, 8, Demux2To8Repr> {
         super(editor, savedData, 2, 2, 8)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-2to8" as const,
             ...this.toJSONBase(),
@@ -477,7 +477,7 @@ export class Demux4To8 extends Demux<5, 8, Demux4To8Repr> {
         super(editor, savedData, 4, 1, 8)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "demux-4to8" as const,
             ...this.toJSONBase(),

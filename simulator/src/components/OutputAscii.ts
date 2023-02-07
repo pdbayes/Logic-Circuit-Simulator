@@ -46,7 +46,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "ascii" as const,
             ...this.toJSONBase(),
@@ -60,11 +60,11 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -94,7 +94,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return displayValuesFromArray(this.inputs.map(i => i.value), false)
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
@@ -182,7 +182,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
         return String.fromCharCode(n)
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -251,7 +251,7 @@ export class OutputAscii extends ComponentBase<7, 0, OutputAsciiRepr, [string, n
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

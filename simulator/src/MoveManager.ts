@@ -7,7 +7,7 @@ export class MoveManager {
     public readonly editor: LogicEditor
     private _movingDrawables = new Set<DrawableWithPosition>()
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         this.editor = editor
     }
 
@@ -35,12 +35,13 @@ export class MoveManager {
         return undefined
     }
 
-    setDrawableMoving(comp: DrawableWithPosition) {
+    public setDrawableMoving(comp: DrawableWithPosition) {
         this.changeMovingDrawables(() => {
             this._movingDrawables.add(comp)
         })
     }
-    setDrawableStoppedMoving(comp: DrawableWithPosition) {
+    
+    public setDrawableStoppedMoving(comp: DrawableWithPosition) {
         this.changeMovingDrawables(() => {
             this._movingDrawables.delete(comp)
         })

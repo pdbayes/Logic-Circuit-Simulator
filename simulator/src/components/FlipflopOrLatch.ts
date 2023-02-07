@@ -62,7 +62,7 @@ export abstract class FlipflopOrLatch<
         }
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             ...super.toJSONBase(),
             state: toLogicValueRepr(this.value[0]),
@@ -74,11 +74,11 @@ export abstract class FlipflopOrLatch<
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -92,7 +92,7 @@ export abstract class FlipflopOrLatch<
         this.setNeedsRedraw("show content changed")
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight
@@ -234,14 +234,14 @@ export abstract class Flipflop<
         this.setInputsPreferSpike(INPUT.Clock, INPUT.Preset, INPUT.Clear)
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             ...super.toJSONBase(),
             trigger: (this._trigger !== FlipflopDefaults.trigger) ? this._trigger : undefined,
         }
     }
 
-    get trigger() {
+    public get trigger() {
         return this._trigger
     }
 
@@ -284,15 +284,15 @@ export abstract class Flipflop<
         return newState
     }
 
-    makeInvalidState(): [LogicValue, LogicValue] {
+    public makeInvalidState(): [LogicValue, LogicValue] {
         return [false, false]
     }
 
-    makeStateFromMainValue(val: LogicValue): [LogicValue, LogicValue] {
+    public makeStateFromMainValue(val: LogicValue): [LogicValue, LogicValue] {
         return [val, LogicValue.invert(val)]
     }
 
-    makeStateAfterClock(): [LogicValue, LogicValue] {
+    public makeStateAfterClock(): [LogicValue, LogicValue] {
         return this.makeStateFromMainValue(this.doRecalcValueAfterClock())
     }
 

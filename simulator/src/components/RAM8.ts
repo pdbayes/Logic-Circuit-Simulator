@@ -128,7 +128,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
         this.setInputsPreferSpike(INPUT.Clock, INPUT.Clear)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "ram-16x8" as const,
             ...this.toJSONBase(),
@@ -138,19 +138,19 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
         }
     }
 
-    get componentType() {
+    public get componentType() {
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    get trigger() {
+    public get trigger() {
         return this._trigger
     }
 
@@ -217,7 +217,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
         return { mem: newState, out: newData }
     }
 
-    makeStateAfterClock(): FixedArray<LogicValue, 4> {
+    public makeStateAfterClock(): FixedArray<LogicValue, 4> {
         return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicValue, 4>
     }
 
@@ -243,7 +243,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
         this.setNeedsRedraw("trigger changed")
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

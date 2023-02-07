@@ -48,7 +48,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "nibble" as const,
             ...this.toJSONBase(),
@@ -61,19 +61,19 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         return "in" as const
     }
 
-    override get cursorWhenMouseover() {
+    public override get cursorWhenMouseover() {
         return this.editor.mode === Mode.STATIC ? "not-allowed" : "pointer"
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    override isOver(x: number, y: number) {
+    public override isOver(x: number, y: number) {
         return inRect(this.posX, this.posY, this.width, this.height, x, y)
     }
 
@@ -92,7 +92,7 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
@@ -153,13 +153,13 @@ export class InputNibble extends ComponentBase<0, 4, InputNibbleRepr, FixedArray
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }
     }
 
-    override mouseClicked(e: MouseEvent | TouchEvent) {
+    public override mouseClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseClicked(e)) {
             return true
         }

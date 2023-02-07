@@ -28,7 +28,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
         this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "latch-sr" as const,
             ...this.toJSONBase(),
@@ -69,7 +69,7 @@ export class LatchSR extends FlipflopOrLatch<2, LatchSRRepr> {
         return [q, LogicValue.invert(q)]
     }
 
-    doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
+    public doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
 
         drawWireLineToComponent(g, this.inputs[INPUT.Set], left - 2, this.inputs[INPUT.Set].posYInParentTransform, false)
         drawWireLineToComponent(g, this.inputs[INPUT.Reset], left - 2, this.inputs[INPUT.Reset].posYInParentTransform, false)

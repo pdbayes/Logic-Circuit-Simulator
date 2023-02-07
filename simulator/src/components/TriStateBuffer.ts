@@ -37,7 +37,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "TRI" as const,
             ...this.toJSONBase(),
@@ -48,11 +48,11 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         return "gate" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -81,7 +81,7 @@ export class TriStateBuffer extends ComponentBase<2, 1, TriStateBufferRepr, Logi
         this.outputs[OUTPUT.Out].value = newValue
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
 
         const width = GRID_WIDTH * GRID_STEP

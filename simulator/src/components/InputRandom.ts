@@ -56,7 +56,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
         this.setInputsPreferSpike(INPUT.Clock)
     }
 
-    override toJSON() {
+    public override toJSON() {
         return {
             type: "random" as const,
             ...super.toJSONBase(),
@@ -71,15 +71,15 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
         return "in" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    override get allowsForcedOutputs() {
+    public override get allowsForcedOutputs() {
         return false
     }
 
@@ -105,7 +105,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
         this.outputs[OUTPUT.Out].value = newValue
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight
         const left = this.posX - width / 2
@@ -189,7 +189,7 @@ export class InputRandom extends ComponentBase<1, 1, InputRandomRepr, LogicValue
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

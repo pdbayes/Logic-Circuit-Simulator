@@ -109,7 +109,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         this.redecodeAll()
     }
 
-    toJSON() {
+    public toJSON() {
         const stateArray = allBitsOf(this.value).map(b => toLogicValueRepr(b))
         return {
             type: "shiftbuffer" as const,
@@ -122,19 +122,19 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         }
     }
 
-    get componentType() {
+    public get componentType() {
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    get trigger() {
+    public get trigger() {
         return this._trigger
     }
 
@@ -181,7 +181,7 @@ export class OutputShiftBuffer extends ComponentBase<3, 0, OutputShiftBufferRepr
         this.setNeedsRedraw("trigger changed")
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

@@ -104,7 +104,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "rect" as const,
             ...this.toJSONBase(),
@@ -129,11 +129,11 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         return false
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return this._w
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return this._h
     }
 
@@ -145,7 +145,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         return 0
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = this._w
         const height = this._h
         const left = this.posX - width / 2
@@ -431,7 +431,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
         }
     }
 
-    override mouseDoubleClicked(__e: MouseEvent | TouchEvent): boolean {
+    public override mouseDoubleClicked(__e: MouseEvent | TouchEvent): boolean {
         // TODO: implement dragging for resizing the rectangle
         // don't call super, which would rotate the rectangle, this is useless here
         this.runSetSizeDialog(this.makeCurrentSizeString())
@@ -439,7 +439,7 @@ export class LabelRect extends ComponentBase<0, 0, LabelRectRepr, undefined> {
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetCaptionDialog()
         }

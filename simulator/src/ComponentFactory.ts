@@ -51,7 +51,7 @@ const ComponentFactoryTypes = RichStringEnum.withProps<{
 // type ComponentFactoryType = typeof ComponentFactoryTypes.type
 
 class _ComponentFactory {
-    makeFactoryForButton(elem: HTMLElement): (editor: LogicEditor) => Component {
+    public makeFactoryForButton(elem: HTMLElement): (editor: LogicEditor) => Component {
         const compType = elem.dataset["component"]
         if (!ComponentFactoryTypes.isValue(compType)) {
             throw new Error(`bad component category: '${compType}'; expected one of: ` + ComponentFactoryTypes.values.join(", "))

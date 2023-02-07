@@ -81,7 +81,7 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
         this.setInputsPreferSpike(INPUT.Clock, INPUT.Clear)
     }
 
-    toJSON() {
+    public toJSON() {
         const [__, currentCountOrUnknown] = displayValuesFromArray(this.value[0], false)
         const currentCount = isUnknown(currentCountOrUnknown) ? 0 : currentCountOrUnknown
         const displayRadix = isUndefined(this._displayRadix) ? null : this._displayRadix
@@ -94,19 +94,19 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
         }
     }
 
-    get componentType() {
+    public get componentType() {
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    get trigger() {
+    public get trigger() {
         return this._trigger
     }
 
@@ -156,7 +156,7 @@ export class Counter extends ComponentBase<2, 5, CounterRepr, [FixedArray<LogicV
         this.setNeedsRedraw("trigger changed")
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

@@ -83,7 +83,7 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "alu" as const,
             ...this.toJSONBase(),
@@ -95,11 +95,11 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -167,7 +167,7 @@ export class ALU extends ComponentBase<11, 7, ALURepr, [FixedArray<LogicValue, 4
         this.outputs[OUTPUT.Cout].value = newValue[3]
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

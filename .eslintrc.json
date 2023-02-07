@@ -47,6 +47,7 @@
         "prefer-named-capture-group": "warn",
         // "no-unexpected-multiline": "error",
         // "i18n-text/no-en": 2,
-        "@typescript-eslint/strict-boolean-expressions": "error"
+        "@typescript-eslint/strict-boolean-expressions": "error",
+        "@typescript-eslint/explicit-member-accessibility": "error"
     }
 }

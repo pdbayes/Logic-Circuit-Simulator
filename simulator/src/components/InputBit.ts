@@ -26,7 +26,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         }
     }
 
-    override toJSONBase() {
+    public override toJSONBase() {
         return {
             ...super.toJSONBase(),
             name: this._name,
@@ -37,19 +37,19 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return "" + this.value
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return INPUT_OUTPUT_DIAMETER
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return INPUT_OUTPUT_DIAMETER
     }
 
-    override isOver(x: number, y: number) {
+    public override isOver(x: number, y: number) {
         return dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
-    override get allowsForcedOutputs() {
+    public override get allowsForcedOutputs() {
         return false
     }
 
@@ -61,7 +61,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
         return true
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         drawWireLineToComponent(g, this.outputs[0], this.posX + 8, this.posY)
 
         const displayValue = this.editor.options.hideInputColors ? Unknown : this.value
@@ -151,7 +151,7 @@ export abstract class InputBitBase<Repr extends InputBitBaseRepr> extends Compon
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }
@@ -177,7 +177,7 @@ const InputBitDefaults = {
 
 export class InputBit extends InputBitBase<InputBitRepr> {
 
-    static nextValue(value: LogicValue, mode: Mode, altKey: boolean): LogicValue {
+    public static nextValue(value: LogicValue, mode: Mode, altKey: boolean): LogicValue {
         switch (value) {
             case true: return (mode >= Mode.FULL && altKey) ? Unknown : false
             case false: return (mode >= Mode.FULL && altKey) ? Unknown : true
@@ -203,7 +203,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
 
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             ...super.toJSONBase(),
             val: toLogicValueRepr(this.value),
@@ -216,7 +216,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return "in" as const
     }
 
-    override get cursorWhenMouseover() {
+    public override get cursorWhenMouseover() {
         const mode = this.editor.mode
         if (mode === Mode.STATIC) {
             // signal we can't switch it here
@@ -249,7 +249,7 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return !this._isConstant
     }
 
-    override mouseClicked(e: MouseEvent | TouchEvent) {
+    public override mouseClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseClicked(e)) {
             return true
         }
@@ -262,14 +262,14 @@ export class InputBit extends InputBitBase<InputBitRepr> {
         return true
     }
 
-    override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+    public override mouseDown(e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
         if (this.editor.mode !== Mode.STATIC && this._isPushButton && !this._isConstant) {
             this.doSetValue(true)
         }
         return super.mouseDown(e)
     }
 
-    override mouseUp(e: MouseEvent | TouchEvent) {
+    public override mouseUp(e: MouseEvent | TouchEvent) {
         const result = super.mouseUp(e)
         if (this.editor.mode !== Mode.STATIC && this._isPushButton && !this._isConstant) {
             this.doSetValue(false)

@@ -40,7 +40,7 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             ...this.toJSONBase(),
             text: this._text,
@@ -53,12 +53,12 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         return "label" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         // TODO measure text width
         return GRID_STEP * this._text.length
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return 2 * GRID_STEP
     }
 
@@ -70,7 +70,7 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         return 2
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         g.lineWidth = 3
         if (ctx.isMouseOver) {
             const width = this.unrotatedWidth
@@ -121,13 +121,13 @@ export class LabelString extends ComponentBase<0, 0, LabelStringRepr, undefined>
         }
     }
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetTextDialog()
         }
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

@@ -78,7 +78,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         this.setInputsPreferSpike(INPUT.Clock, INPUT.Preset, INPUT.Clear)
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "register" as const,
             ...this.toJSONBase(),
@@ -88,19 +88,19 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         }
     }
 
-    get componentType() {
+    public get componentType() {
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
-    get trigger() {
+    public get trigger() {
         return this._trigger
     }
 
@@ -122,15 +122,15 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         return newState
     }
 
-    makeInvalidState(): FixedArray<LogicValue, 4> {
+    public makeInvalidState(): FixedArray<LogicValue, 4> {
         return [false, false, false, false]
     }
 
-    makeStateFromMainValue(val: LogicValue): FixedArray<LogicValue, 4> {
+    public makeStateFromMainValue(val: LogicValue): FixedArray<LogicValue, 4> {
         return [val, val, val, val]
     }
 
-    makeStateAfterClock(): FixedArray<LogicValue, 4> {
+    public makeStateAfterClock(): FixedArray<LogicValue, 4> {
         return INPUT.Data.map(i => this.inputs[i].value) as FixedArray<LogicValue, 4>
     }
 
@@ -150,7 +150,7 @@ export class Register extends ComponentBase<7, 4, RegisterRepr, FixedArray<Logic
         this.setNeedsRedraw("trigger changed")
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

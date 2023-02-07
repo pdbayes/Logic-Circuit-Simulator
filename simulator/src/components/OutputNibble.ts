@@ -36,7 +36,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "nibble" as const,
             ...this.toJSONBase(),
@@ -48,11 +48,11 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -65,7 +65,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
         return this.inputValues<4>([0, 1, 2, 3])
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.fillStyle = COLOR_BACKGROUND
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
@@ -126,7 +126,7 @@ export class OutputNibble extends ComponentBase<4, 0, OutputNibbleRepr, FixedArr
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

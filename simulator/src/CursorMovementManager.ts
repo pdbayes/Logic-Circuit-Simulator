@@ -22,7 +22,7 @@ export class EditorSelection {
 
     public previouslySelectedElements = new Set<Drawable>()
 
-    constructor(
+    public constructor(
         public currentlyDrawnRect: DOMRect | undefined,
     ) { }
 
@@ -81,7 +81,7 @@ export class CursorMovementManager {
     private _lastTouchEnd: [Drawable, number] | undefined = undefined
     public currentSelection: EditorSelection | undefined = undefined
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         this.editor = editor
         this._currentHandlers = new EditHandlers(editor)
     }
@@ -94,7 +94,7 @@ export class CursorMovementManager {
         return this._currentMouseDownData
     }
 
-    setHandlersFor(action: MouseAction) {
+    public setHandlersFor(action: MouseAction) {
         this._currentHandlers = (() => {
             switch (action) {
                 case "edit": return new EditHandlers(this.editor)
@@ -105,7 +105,7 @@ export class CursorMovementManager {
         setColorMouseOverIsDanger(action === "delete")
     }
 
-    setStartDragTimeout(startMouseDownData: MouseDownData, e: MouseEvent | TouchEvent) {
+    public setStartDragTimeout(startMouseDownData: MouseDownData, e: MouseEvent | TouchEvent) {
         // we do this because firefox otherwise sets back offsetX/Y to 0
         const _e = e as any
         _e._savedOffsetX = _e.offsetX
@@ -134,21 +134,21 @@ export class CursorMovementManager {
         )
     }
 
-    clearStartDragTimeout() {
+    public clearStartDragTimeout() {
         if (isNotNull(this._startDragTimeoutHandle)) {
             clearTimeout(this._startDragTimeoutHandle)
             this._startDragTimeoutHandle = null
         }
     }
 
-    clearHoverTimeoutHandle() {
+    public clearHoverTimeoutHandle() {
         if (isNotNull(this._startHoverTimeoutHandle)) {
             clearTimeout(this._startHoverTimeoutHandle)
             this._startHoverTimeoutHandle = null
         }
     }
 
-    setCurrentMouseOverComp(comp: Drawable | null) {
+    public setCurrentMouseOverComp(comp: Drawable | null) {
         if (comp !== this._currentMouseOverComp) {
             this.clearPopperIfNecessary()
             this.clearHoverTimeoutHandle()
@@ -165,7 +165,7 @@ export class CursorMovementManager {
         }
     }
 
-    updateMouseOver([x, y]: [number, number]) {
+    public updateMouseOver([x, y]: [number, number]) {
         const findMouseOver: () => Drawable | null = () => {
             // easy optimization: maybe we're still over the
             // same component as before, so quickly check this
@@ -226,7 +226,7 @@ export class CursorMovementManager {
         this.setCurrentMouseOverComp(findMouseOver())
     }
 
-    selectAll() {
+    public selectAll() {
         const sel = new EditorSelection(undefined)
         this.currentSelection = sel
         for (const comp of this.editor.components.all()) {
@@ -240,7 +240,7 @@ export class CursorMovementManager {
         this.editor.redrawMgr.addReason("selected all", null)
     }
 
-    toggleSelect(comp: Drawable) {
+    public toggleSelect(comp: Drawable) {
         let sel
         if (isUndefined(sel = this.currentSelection)) {
             sel = new EditorSelection(undefined)
@@ -251,7 +251,7 @@ export class CursorMovementManager {
     }
 
 
-    clearPopperIfNecessary() {
+    public clearPopperIfNecessary() {
         if (isNotNull(this._currentMouseOverPopper)) {
             this._currentMouseOverPopper.destroy()
             this._currentMouseOverPopper = null
@@ -259,7 +259,7 @@ export class CursorMovementManager {
         }
     }
 
-    makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
+    public makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
         const tooltipContents = this.editor.html.tooltipContents
         const tooltipElem = this.editor.html.tooltipElem
         tooltipContents.innerHTML = ""
@@ -277,7 +277,7 @@ export class CursorMovementManager {
         this._currentMouseOverPopper.update()
     }
 
-    registerCanvasListenersOn(canvas: HTMLCanvasElement) {
+    public registerCanvasListenersOn(canvas: HTMLCanvasElement) {
         const editor = this.editor
         canvas.addEventListener("touchstart", editor.wrapHandler((e) => {
             // console.log("canvas touchstart %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
@@ -472,7 +472,7 @@ export class CursorMovementManager {
         }
     }
 
-    registerButtonListenersOn(componentButtons: NodeListOf<HTMLElement>) {
+    public registerButtonListenersOn(componentButtons: NodeListOf<HTMLElement>) {
         const editor = this.editor
         for (let i = 0; i < componentButtons.length; i++) {
             const compButton = componentButtons[i]
@@ -525,38 +525,38 @@ abstract class ToolHandlers {
 
     public readonly editor: LogicEditor
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         this.editor = editor
     }
 
-    mouseHoverOn(__comp: Drawable) {
+    public mouseHoverOn(__comp: Drawable) {
         // empty
     }
-    mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+    public mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         return { lockMouseOver: true }
     }
-    mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+    public mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+    public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
+    public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
+    public mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means unhandled
     }
-    contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
+    public contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means unhandled
     }
-    mouseDownOnBackground(__e: MouseEvent | TouchEvent) {
+    public mouseDownOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseDraggedOnBackground(__e: MouseEvent | TouchEvent) {
+    public mouseDraggedOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
-    mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
+    public mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
     }
 }
@@ -565,11 +565,11 @@ class EditHandlers extends ToolHandlers {
 
     private _openedContextMenu: HTMLElement | null = null
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         super(editor)
     }
 
-    override mouseHoverOn(comp: Drawable) {
+    public override mouseHoverOn(comp: Drawable) {
         const editor = this.editor
         editor.cursorMovementMgr.clearPopperIfNecessary()
         if (editor.options.hideTooltips) {
@@ -590,24 +590,24 @@ class EditHandlers extends ToolHandlers {
             editor.cursorMovementMgr.makePopper(tooltip, rect)
         }
     }
-    override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+    public override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
         return comp.mouseDown(e)
     }
-    override mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    public override mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseDragged(e)
     }
-    override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    public override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         comp.mouseUp(e)
         this.editor.wireMgr.tryCancelWire()
     }
-    override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    public override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("mouseClickedOn %o", comp)
         comp.mouseClicked(e)
     }
-    override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         return comp.mouseDoubleClicked(e)
     }
-    override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
+    public override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("contextMenuOn: %o", comp)
         
         const hideMenu = () => {
@@ -689,7 +689,7 @@ class EditHandlers extends ToolHandlers {
     }
 
 
-    override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
+    public override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
         const editor = this.editor
         const cursorMovementMgr = editor.cursorMovementMgr
         const currentSelection = cursorMovementMgr.currentSelection
@@ -710,7 +710,7 @@ class EditHandlers extends ToolHandlers {
             editor.redrawMgr.addReason("selection rect changed", null)
         }
     }
-    override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
+    public override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
         // TODO smarter selection handling:
         // - if shift key is pressed, add to selection, also individual component
         // - shift-click or drag inverses selection state
@@ -736,7 +736,7 @@ class EditHandlers extends ToolHandlers {
         }
     }
 
-    override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
+    public override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
         const editor = this.editor
         editor.wireMgr.tryCancelWire()
 
@@ -751,22 +751,22 @@ class EditHandlers extends ToolHandlers {
 
 class DeleteHandlers extends ToolHandlers {
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         super(editor)
     }
 
-    override mouseClickedOn(comp: Drawable, __: MouseEvent) {
+    public override mouseClickedOn(comp: Drawable, __: MouseEvent) {
         this.editor.tryDeleteDrawable(comp)
     }
 }
 
 class MoveHandlers extends ToolHandlers {
 
-    constructor(editor: LogicEditor) {
+    public constructor(editor: LogicEditor) {
         super(editor)
     }
 
-    override mouseDownOnBackground(e: MouseEvent) {
+    public override mouseDownOnBackground(e: MouseEvent) {
         for (const comp of this.editor.components.all()) {
             comp.mouseDown(e)
         }
@@ -776,7 +776,7 @@ class MoveHandlers extends ToolHandlers {
             }
         }
     }
-    override mouseDraggedOnBackground(e: MouseEvent) {
+    public override mouseDraggedOnBackground(e: MouseEvent) {
         for (const comp of this.editor.components.all()) {
             comp.mouseDragged(e)
         }
@@ -786,7 +786,7 @@ class MoveHandlers extends ToolHandlers {
             }
         }
     }
-    override mouseUpOnBackground(e: MouseEvent) {
+    public override mouseUpOnBackground(e: MouseEvent) {
         for (const comp of this.editor.components.all()) {
             comp.mouseUp(e)
         }

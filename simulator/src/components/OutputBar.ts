@@ -71,7 +71,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "bar" as const,
             ...super.toJSONBase(),
@@ -86,11 +86,11 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return this.getWidthAndHeight()[0]
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return this.getWidthAndHeight()[1]
     }
 
@@ -115,7 +115,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         return this.inputs[0].value
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const input = this.inputs[0]
         const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
 
@@ -148,7 +148,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         this.setNeedsRedraw("name changed")
     }
 
-    getWidthAndHeight() {
+    public getWidthAndHeight() {
         switch (this._display) {
             case "h":
                 return [GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP] as const
@@ -161,7 +161,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
         }
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
@@ -246,7 +246,7 @@ export class OutputBar extends ComponentBase<1, 0, OutputBarRepr, LogicValue> {
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

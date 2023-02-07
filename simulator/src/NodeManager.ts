@@ -10,7 +10,7 @@ export class NodeManager {
     private usedIDs = new Set<number>()
     private allLiveNodes: Node[] = []
 
-    newID(): number {
+    public newID(): number {
         while (this.usedIDs.has(++this.lastGivenNodeID)) {
             // empty block, condition does the increment
         }
@@ -19,36 +19,36 @@ export class NodeManager {
         return this.lastGivenNodeID
     }
 
-    markIDUsed(id: number): void {
+    public markIDUsed(id: number): void {
         if (this.usedIDs.has(id)) {
             console.warn(`WARN: loaded node with id ${id}, which is already taken`)
         }
         this.usedIDs.add(id)
     }
 
-    addLiveNode(node: Node) {
+    public addLiveNode(node: Node) {
         if (!this.usedIDs.has(node.id)) {
             console.warn(`WARN inserting live node with unreserved id ${node.id}`)
         }
         this.allLiveNodes[node.id] = node
     }
 
-    removeLiveNode(node: Node) {
+    public removeLiveNode(node: Node) {
         delete this.allLiveNodes[node.id]
         this.usedIDs.delete(node.id)
     }
 
-    clearAllLiveNodes() {
+    public clearAllLiveNodes() {
         this.allLiveNodes.splice(0, this.allLiveNodes.length)
         this.usedIDs.clear()
         this.lastGivenNodeID = -1
     }
 
-    findNode(nodeID: number): Node | undefined {
+    public findNode(nodeID: number): Node | undefined {
         return this.allLiveNodes[nodeID]
     }
 
-    tryConnectNodesOf(comp: Component) {
+    public tryConnectNodesOf(comp: Component) {
         const wireMgr = comp.editor.wireMgr
         const addedConnections: [Node, Component, Node][] = []
         comp.forEachNode(node => {

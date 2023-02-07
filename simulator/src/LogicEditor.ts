@@ -112,22 +112,22 @@ export type DrawParams = {
 }
 export class LogicEditor extends HTMLElement {
 
-    static _globalListenersInstalled = false
+    public static _globalListenersInstalled = false
 
-    static _allConnectedEditors: Array<LogicEditor> = []
-    static get allConnectedEditors(): ReadonlyArray<LogicEditor> {
+    public static _allConnectedEditors: Array<LogicEditor> = []
+    public static get allConnectedEditors(): ReadonlyArray<LogicEditor> {
         return LogicEditor._allConnectedEditors
     }
 
-    readonly wireMgr = new WireManager(this)
-    readonly nodeMgr = new NodeManager()
-    readonly timeline = new Timeline(this)
-    readonly redrawMgr = new RedrawManager()
-    readonly recalcMgr = new RecalcManager()
-    readonly moveMgr = new MoveManager(this)
-    readonly cursorMovementMgr = new CursorMovementManager(this)
-
-    readonly components = new ComponentList()
+    public readonly wireMgr = new WireManager(this)
+    public readonly nodeMgr = new NodeManager()
+    public readonly timeline = new Timeline(this)
+    public readonly redrawMgr = new RedrawManager()
+    public readonly recalcMgr = new RecalcManager()
+    public readonly moveMgr = new MoveManager(this)
+    public readonly cursorMovementMgr = new CursorMovementManager(this)
+ 
+    public readonly components = new ComponentList()
 
     private _isEmbedded = false
     private _isSingleton = false
@@ -183,7 +183,7 @@ export class LogicEditor extends HTMLElement {
     public mouseX = -1000 // offscreen at start
     public mouseY = -1000
 
-    constructor() {
+    public constructor() {
         super()
 
         this.root = this.attachShadow({ mode: 'open' })
@@ -228,20 +228,20 @@ export class LogicEditor extends HTMLElement {
         return elem as E
     }
 
-    static get observedAttributes() {
+    public static get observedAttributes() {
         return []
     }
 
 
-    get mode() {
+    public get mode() {
         return this._mode
     }
 
-    get options(): Readonly<EditorOptions> {
+    public get options(): Readonly<EditorOptions> {
         return this._options
     }
 
-    setPartialOptions(opts: Partial<EditorOptions>) {
+    public setPartialOptions(opts: Partial<EditorOptions>) {
         const newOptions = { ...DEFAULT_EDITOR_OPTIONS, ...opts }
         if (this._isSingleton) {
             // restore showOnly
@@ -282,7 +282,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    nonDefaultOptions(): undefined | Partial<EditorOptions> {
+    public nonDefaultOptions(): undefined | Partial<EditorOptions> {
         const nonDefaultOpts: Partial<EditorOptions> = {}
         let set = false
         for (const [_k, v] of Object.entries(this._options)) {
@@ -296,7 +296,7 @@ export class LogicEditor extends HTMLElement {
     }
 
 
-    setActiveTool(toolElement: HTMLElement) {
+    public setActiveTool(toolElement: HTMLElement) {
         const tool = toolElement.getAttribute("tool")
         if (isNullOrUndefined(tool)) {
             return
@@ -334,7 +334,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    setToolCursor(cursor: string | null) {
+    public setToolCursor(cursor: string | null) {
         this._toolCursor = cursor
     }
 
@@ -352,7 +352,7 @@ export class LogicEditor extends HTMLElement {
         this._baseTransform = new DOMMatrix(`scale(${f})`)
     }
 
-    connectedCallback() {
+    public connectedCallback() {
         const { rootDiv, mainCanvas } = this.html
 
         const parentStyles = this.getAttribute("style")
@@ -409,7 +409,8 @@ export class LogicEditor extends HTMLElement {
         LogicEditor._allConnectedEditors.push(this)
         this.setup()
     }
-    disconnectedCallback() {
+
+    public disconnectedCallback() {
         const insts = LogicEditor._allConnectedEditors
         insts.splice(insts.indexOf(this), 1)
 
@@ -1049,7 +1050,7 @@ export class LogicEditor extends HTMLElement {
         return null
     }
 
-    static installGlobalListeners() {
+    public static installGlobalListeners() {
         if (LogicEditor._globalListenersInstalled) {
             return
         }
@@ -1113,7 +1114,7 @@ export class LogicEditor extends HTMLElement {
         LogicEditor._globalListenersInstalled = true
     }
 
-    setMode(mode: Mode) {
+    public setMode(mode: Mode) {
         this.wrapHandler(() => {
             let wantedModeStr = Mode[mode]
             if (mode > this._maxInstanceMode) {
@@ -1192,7 +1193,7 @@ export class LogicEditor extends HTMLElement {
         })()
     }
 
-    setModeFromString(modeStr: string | null) {
+    public setModeFromString(modeStr: string | null) {
         let mode: Mode = this._maxInstanceMode
         if (modeStr !== null && (modeStr = modeStr.toUpperCase()) in Mode) {
             mode = (Mode as any)[modeStr]
@@ -1200,7 +1201,7 @@ export class LogicEditor extends HTMLElement {
         this.setMode(mode)
     }
 
-    tryLoadFromFile(file: File) {
+    public tryLoadFromFile(file: File) {
         if (file.type === "application/json" || file.type === "text/plain") {
             const reader = new FileReader()
             reader.onload = e => {
@@ -1230,7 +1231,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    tryLoadFromData() {
+    public tryLoadFromData() {
         if (isUndefined(this._initialData)) {
             return
         }
@@ -1291,21 +1292,21 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    load(jsonStringOrObject: string | Record<string, unknown>) {
+    public load(jsonStringOrObject: string | Record<string, unknown>) {
         this.wrapHandler(
             (jsonStringOrObject: string | Record<string, unknown>) =>
                 PersistenceManager.doLoadFromJson(this, jsonStringOrObject)
         )(jsonStringOrObject)
     }
 
-    setDirty(__reason: string) {
+    public setDirty(__reason: string) {
         if (this.mode >= Mode.CONNECT) {
             // other modes can't be dirty
             this._isDirty = true
         }
     }
 
-    tryDeleteDrawable(comp: Drawable) {
+    public tryDeleteDrawable(comp: Drawable) {
         if (comp instanceof ComponentBase) {
             this.tryDeleteComponentsWhere(c => c === comp)
         } else if (comp instanceof Wire) {
@@ -1315,7 +1316,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
+    public trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition && currentMouseOverComp.canRotate()) {
             currentMouseOverComp.doSetOrient(orient)
@@ -1324,7 +1325,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
+    public tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
         const compDeleted = this.components.tryDeleteWhere(cond)
         if (compDeleted) {
             this.redrawMgr.addReason("component(s) deleted", null)
@@ -1350,7 +1351,7 @@ export class LogicEditor extends HTMLElement {
         this.redrawMgr.addReason("mouse action changed", null)
     }
 
-    updateCursor() {
+    public updateCursor() {
         this.html.canvasContainer.style.cursor =
             this.moveMgr.areDrawablesMoving()
                 ? "grabbing"
@@ -1359,7 +1360,7 @@ export class LogicEditor extends HTMLElement {
                 ?? "default"
     }
 
-    lengthOfPath(svgPathDesc: string): number {
+    public lengthOfPath(svgPathDesc: string): number {
         const p = this.html.hiddenPath
         p.setAttribute("d", svgPathDesc)
         const length = p.getTotalLength()
@@ -1367,7 +1368,7 @@ export class LogicEditor extends HTMLElement {
         return length
     }
 
-    offsetXYForContextMenu(e: MouseEvent | TouchEvent, snapToGrid = false): [number, number] {
+    public offsetXYForContextMenu(e: MouseEvent | TouchEvent, snapToGrid = false): [number, number] {
         const mainCanvas = this.html.mainCanvas
         let x, y
 
@@ -1386,7 +1387,7 @@ export class LogicEditor extends HTMLElement {
         return [x, y]
     }
 
-    offsetXY(e: MouseEvent | TouchEvent): [number, number] {
+    public offsetXY(e: MouseEvent | TouchEvent): [number, number] {
         const [unscaledX, unscaledY] = (() => {
             const mainCanvas = this.html.mainCanvas
             let target = e.target
@@ -1441,7 +1442,7 @@ export class LogicEditor extends HTMLElement {
         return [unscaledX / currentScale, unscaledY / currentScale]
     }
 
-    offsetXYForComponent(e: MouseEvent | TouchEvent, comp: Component): [number, number] {
+    public offsetXYForComponent(e: MouseEvent | TouchEvent, comp: Component): [number, number] {
         const offset = this.offsetXY(e)
         if (comp.orient === Orientation.default) {
             return offset
@@ -1487,7 +1488,7 @@ export class LogicEditor extends HTMLElement {
         return [w, h]
     }
 
-    async shareSheetForMode(mode: Mode) {
+    public async shareSheetForMode(mode: Mode) {
         if (this._mode > MAX_MODE_WHEN_EMBEDDED) {
             this._mode = MAX_MODE_WHEN_EMBEDDED
         }
@@ -1531,17 +1532,17 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    saveCurrentStateToUrl() {
+    public saveCurrentStateToUrl() {
         const [fullJson, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
         console.log(fullJson)
         this.saveToUrl(compressedUriSafeJson)
     }
 
-    save(): Record<string, unknown> {
+    public save(): Record<string, unknown> {
         return PersistenceManager.buildWorkspace(this)
     }
 
-    saveToUrl(compressedUriSafeJson: string) {
+    public saveToUrl(compressedUriSafeJson: string) {
         if (this._isSingleton) {
             history.pushState(null, "", this.fullUrlForMode(MAX_MODE_WHEN_SINGLETON, compressedUriSafeJson))
             this._isDirty = false
@@ -1597,7 +1598,7 @@ export class LogicEditor extends HTMLElement {
         })
     }
 
-    async toPNGBase64(heightHint?: number) {
+    public async toPNGBase64(heightHint?: number) {
         const blob = await this.toPNG(heightHint)
         if (blob === null) {
             return null
@@ -1616,7 +1617,7 @@ export class LogicEditor extends HTMLElement {
         })
     }
 
-    async downloadSnapshotImage() {
+    public async downloadSnapshotImage() {
         const pngBareBlob = await this.toPNG()
         if (pngBareBlob === null) {
             return
@@ -1634,7 +1635,7 @@ export class LogicEditor extends HTMLElement {
     }
 
 
-    recalcPropagateAndDrawIfNeeded() {
+    public recalcPropagateAndDrawIfNeeded() {
         if (this._nextAnimationFrameHandle !== null) {
             // an animation frame will be played soon anyway
             return
@@ -1664,7 +1665,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    highlight(refs: string | string[] | undefined) {
+    public highlight(refs: string | string[] | undefined) {
         if (isUndefined(refs)) {
             this._highlightedItems = undefined
             return
@@ -1700,7 +1701,7 @@ export class LogicEditor extends HTMLElement {
         this.recalcPropagateAndDrawIfNeeded()
     }
 
-    redraw() {
+    public redraw() {
         this.setCanvasSize()
         this.redrawMgr.addReason("explicit redraw call", null)
         this.recalcPropagateAndDrawIfNeeded()
@@ -1882,22 +1883,22 @@ export class LogicEditor extends HTMLElement {
     }
 
 
-    undo() {
+    public undo() {
         // TODO stubs
         console.log("undo")
     }
 
-    redo() {
+    public redo() {
         // TODO stubs
         console.log("redo")
     }
 
-    cut() {
+    public cut() {
         // TODO stubs
         console.log("cut")
     }
 
-    copy() {
+    public copy() {
         if (isUndefined(this.cursorMovementMgr.currentSelection)) {
             // copy URL
             copyToClipboard(window.location.href)
@@ -1907,13 +1908,13 @@ export class LogicEditor extends HTMLElement {
         console.log("copy")
     }
 
-    paste() {
+    public paste() {
         // TODO stubs
         console.log("paste")
     }
 
 
-    wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
+    public wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
         return (...params: T) => {
             const result = f(...params)
             this.recalcPropagateAndDrawIfNeeded()
@@ -1924,9 +1925,9 @@ export class LogicEditor extends HTMLElement {
 
 export class LogicStatic {
 
-    singleton: LogicEditor | undefined
+    public singleton: LogicEditor | undefined
 
-    highlight(diagramRefs: string | string[], componentRefs: string | string[]) {
+    public highlight(diagramRefs: string | string[], componentRefs: string | string[]) {
         if (isString(diagramRefs)) {
             diagramRefs = [diagramRefs]
         }
@@ -1944,7 +1945,7 @@ export class LogicStatic {
         }
     }
 
-    tests = new Tests()
+    public tests = new Tests()
 
 }
 

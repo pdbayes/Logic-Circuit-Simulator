@@ -41,7 +41,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
         })
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "adder" as const,
             ...this.toJSONBase(),
@@ -52,11 +52,11 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -92,7 +92,7 @@ export class Adder extends ComponentBase<3, 2, AdderRepr, [LogicValue, LogicValu
         this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

@@ -40,7 +40,7 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
     private _subtype: Gate2Type
     private _showAsUnknown: boolean
 
-    constructor(editor: LogicEditor, savedData: QuadGateRepr | null) {
+    public constructor(editor: LogicEditor, savedData: QuadGateRepr | null) {
         super(editor, FixedArrayFill(false, 4), savedData, {
             ins: [
                 // A
@@ -70,7 +70,7 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "quad-gate" as const,
             subtype: this._subtype,
@@ -83,11 +83,11 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         return "ic" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -122,7 +122,7 @@ export class QuadGate extends ComponentBase<8, 4, QuadGateRepr, FixedArray<Logic
         }
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP

@@ -36,7 +36,7 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     protected _forceValue: LogicValue | undefined
     protected _color: WireColor = DEFAULT_WIRE_COLOR
 
-    constructor(
+    public constructor(
         editor: LogicEditor,
         nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
@@ -68,19 +68,19 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return this as unknown as Node
     }
 
-    get isOutput(): boolean {
+    public get isOutput(): boolean {
         return Node.isOutput(this.asNode)
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return WAYPOINT_DIAMETER
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return WAYPOINT_DIAMETER
     }
 
-    get color(): WireColor {
+    public get color(): WireColor {
         return this._color
     }
 
@@ -94,13 +94,13 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         // nothing by default; overridden in NodeOut
     }
 
-    override isOver(x: number, y: number) {
+    public override isOver(x: number, y: number) {
         return this.editor.mode >= Mode.CONNECT
             && this.acceptsMoreConnections
             && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
-    destroy() {
+    public destroy() {
         this.preDestroy()
         this._isAlive = false
         this.editor.nodeMgr.removeLiveNode(this.asNode)
@@ -112,7 +112,7 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return false
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const mode = this.editor.mode
         if (mode < Mode.CONNECT && !this.forceDraw()) {
             return
@@ -184,7 +184,7 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return this.parent.posY + this._gridOffsetY * GRID_STEP
     }
 
-    updatePositionFromParent() {
+    public updatePositionFromParent() {
         const [appliedGridOffsetX, appliedGridOffsetY] = (() => {
             switch (this.parent.orient) {
                 case "e": return [+this._gridOffsetX, +this._gridOffsetY]
@@ -229,16 +229,16 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         }
     }
 
-    override get cursorWhenMouseover() {
+    public override get cursorWhenMouseover() {
         return "crosshair"
     }
 
-    override mouseDown(__: MouseEvent | TouchEvent) {
+    public override mouseDown(__: MouseEvent | TouchEvent) {
         this.editor.wireMgr.addNode(this.asNode)
         return { lockMouseOver: false }
     }
 
-    override mouseUp(__: MouseEvent | TouchEvent) {
+    public override mouseUp(__: MouseEvent | TouchEvent) {
         this.editor.wireMgr.addNode(this.asNode)
     }
 
@@ -251,11 +251,11 @@ export class NodeIn extends NodeBase<NodeIn> {
     private _incomingWire: Wire | null = null
     public _prefersSpike = false
 
-    get incomingWire() {
+    public get incomingWire() {
         return this._incomingWire
     }
 
-    set incomingWire(wire: Wire | null) {
+    public set incomingWire(wire: Wire | null) {
         this._incomingWire = wire
         if (isNull(wire)) {
             this.value = false
@@ -270,19 +270,19 @@ export class NodeIn extends NodeBase<NodeIn> {
         }
     }
 
-    get acceptsMoreConnections() {
+    public get acceptsMoreConnections() {
         return isNull(this._incomingWire)
     }
 
-    get isDisconnected() {
+    public get isDisconnected() {
         return isNull(this._incomingWire)
     }
 
-    get forceValue() {
+    public get forceValue() {
         return undefined
     }
 
-    get initialValue() {
+    public get initialValue() {
         return undefined
     }
 
@@ -299,7 +299,7 @@ export class NodeOut extends NodeBase<NodeOut> {
 
     private readonly _outgoingWires: Wire[] = []
 
-    addOutgoingWire(wire: Wire) {
+    public addOutgoingWire(wire: Wire) {
         // don't add the same wire twice
         const i = this._outgoingWires.indexOf(wire)
         if (i === -1) {
@@ -307,14 +307,14 @@ export class NodeOut extends NodeBase<NodeOut> {
         }
     }
 
-    removeOutgoingWire(wire: Wire) {
+    public removeOutgoingWire(wire: Wire) {
         const i = this._outgoingWires.indexOf(wire)
         if (i !== -1) {
             this._outgoingWires.splice(i, 1)
         }
     }
 
-    get outgoingWires(): readonly Wire[] {
+    public get outgoingWires(): readonly Wire[] {
         return this._outgoingWires
     }
 
@@ -324,30 +324,30 @@ export class NodeOut extends NodeBase<NodeOut> {
         }
     }
 
-    get acceptsMoreConnections() {
+    public get acceptsMoreConnections() {
         return true
     }
 
-    get isDisconnected() {
+    public get isDisconnected() {
         return this._outgoingWires.length === 0
     }
 
-    findWireTo(node: NodeIn): Wire | undefined {
+    public findWireTo(node: NodeIn): Wire | undefined {
         return this._outgoingWires.find(wire => wire.endNode === node)
     }
 
-    get forceValue() {
+    public get forceValue() {
         return this._forceValue
     }
 
-    set forceValue(newForceValue: LogicValue | undefined) {
+    public set forceValue(newForceValue: LogicValue | undefined) {
         const oldVisibleValue = this.value
         this._forceValue = newForceValue
         this.propagateNewValueIfNecessary(oldVisibleValue)
         this.setNeedsRedraw("changed forced output value")
     }
 
-    get initialValue() {
+    public get initialValue() {
         return this._initialValue
     }
 
@@ -368,7 +368,7 @@ export class NodeOut extends NodeBase<NodeOut> {
         return this._outgoingWires.length > 1 && this.parent.alwaysDrawMultiOutNodes
     }
 
-    override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }

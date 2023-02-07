@@ -66,7 +66,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             type: "16seg" as const,
             ...this.toJSONBase(),
@@ -80,11 +80,11 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
         return "out" as const
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return GRID_WIDTH * GRID_STEP
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return GRID_HEIGHT * GRID_STEP
     }
 
@@ -98,7 +98,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
         return this.inputValues<17>([INPUT.a1, INPUT.a2, INPUT.b, INPUT.c, INPUT.d2, INPUT.d1, INPUT.e, INPUT.f, INPUT.g1, INPUT.g2, INPUT.h, INPUT.i, INPUT.j, INPUT.k, INPUT.l, INPUT.m, INPUT.p])
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = GRID_WIDTH * GRID_STEP
         const height = GRID_HEIGHT * GRID_STEP
@@ -281,7 +281,7 @@ export class Output16Seg extends ComponentBase<17, 0, Output16SegRepr, FixedRead
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }

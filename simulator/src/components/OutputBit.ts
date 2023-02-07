@@ -26,7 +26,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         }
     }
 
-    toJSON() {
+    public toJSON() {
         return {
             ...this.toJSONBase(),
             name: this._name,
@@ -41,15 +41,15 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         return "" + this.value
     }
 
-    get unrotatedWidth() {
+    public get unrotatedWidth() {
         return INPUT_OUTPUT_DIAMETER
     }
 
-    get unrotatedHeight() {
+    public get unrotatedHeight() {
         return INPUT_OUTPUT_DIAMETER
     }
 
-    override isOver(x: number, y: number) {
+    public override isOver(x: number, y: number) {
         return this.editor.mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
     }
 
@@ -62,7 +62,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
         return this.inputs[0].value
     }
 
-    doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    public doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const input = this.inputs[0]
         drawWireLineToComponent(g, input, this.posX, this.posY)
@@ -145,7 +145,7 @@ export class OutputBit extends ComponentBase<1, 0, OutputBitRepr, LogicValue> {
     }
 
 
-    override keyDown(e: KeyboardEvent): void {
+    public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }
