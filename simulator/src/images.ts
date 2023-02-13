@@ -34,6 +34,7 @@ import replace from '../img/icons/replace.icon.svg'; // @ts-ignore
 import reset from '../img/icons/reset.icon.svg'; // @ts-ignore
 import screenshot from '../img/icons/screenshot.icon.svg'; // @ts-ignore
 import settings from '../img/icons/settings.icon.svg'; // @ts-ignore
+import slanted from '../img/icons/slanted.icon.svg'; // @ts-ignore
 import step from '../img/icons/step.icon.svg'; // @ts-ignore
 import strokewidth from '../img/icons/strokewidth.icon.svg'; // @ts-ignore
 import timer from '../img/icons/timer.icon.svg'; // @ts-ignore
@@ -141,6 +142,7 @@ const icons = {
     reset,
     screenshot,
     settings,
+    slanted,
     step,
     strokewidth,
     timer,

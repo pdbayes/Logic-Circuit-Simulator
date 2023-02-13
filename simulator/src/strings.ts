@@ -561,6 +561,12 @@ const Strings_fr = {
         },
         Passthrough: {
             tooltip: "Broche. Sert uniquement à arranger les connexions.",
+            contextMenu: {
+                Slant: "Inclinaison",
+                SlantNone: "Aucune",
+                SlantRight: "De 45° vers la droite",
+                SlantLeft: "De 45° vers la gauche haut",
+            },
         },
         QuadGate: {
             tooltip: {
@@ -1193,6 +1199,12 @@ const Strings_en: Strings = {
         },
         Passthrough: {
             tooltip: "Passthrough. Only used to arrange wires.",
+            contextMenu: {
+                Slant: "Slant",
+                SlantNone: "None",
+                SlantRight: "Rightward By 45°",
+                SlantLeft: "Leftward By 45°",
+            },
         },
         QuadGate: {
             tooltip: {

@@ -28,8 +28,8 @@ export class UndoManager {
 
     public takeSnapshot() {
         const now = Date.now()
-        const nowStr = new Date(now).toISOString()
-        console.log("Taking snapshot at " + nowStr)
+        // const nowStr = new Date(now).toISOString()
+        // console.log("Taking snapshot at " + nowStr)
 
         const workspace = this.editor.save()
         const workspaceStr = PersistenceManager.stringifyWorkspace(workspace, true)
