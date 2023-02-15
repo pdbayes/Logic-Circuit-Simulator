@@ -530,12 +530,14 @@ export class LogicEditor extends HTMLElement {
                     case "Backspace":
                     case "Delete": {
                         let selComp
-                        if (isDefined(selComp = this.cursorMovementMgr.currentSelection?.previouslySelectedElements)) {
+                        if (isDefined(selComp = this.cursorMovementMgr.currentSelection?.previouslySelectedElements) && selComp.size !== 0) {
                             for (const comp of selComp) {
                                 this.tryDeleteDrawable(comp)
                             }
+                            this.undoMgr.takeSnapshot()
                         } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
                             this.tryDeleteDrawable(selComp)
+                            this.undoMgr.takeSnapshot()
                         }
                         e.preventDefault()
                         return

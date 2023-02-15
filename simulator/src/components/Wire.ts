@@ -143,8 +143,9 @@ export class Wire extends Drawable {
 
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
-    private _propagatingValues: [LogicValue, Timestamp][] = []
     private _style: WireStyle | undefined = undefined
+    private _propagatingValues: [LogicValue, Timestamp][] = []
+    private _waypointBeingDragged: Waypoint | undefined = undefined
     public customPropagationDelay: number | undefined = undefined
     public ribbon: Ribbon | undefined = undefined
 
@@ -298,12 +299,12 @@ export class Wire extends Drawable {
         newWire.doSetStyle(this.style)
     }
 
-    public addWaypointFrom(e: MouseEvent | TouchEvent) {
+    public addWaypointFrom(e: MouseEvent | TouchEvent): Waypoint {
         const [x, y] = this.editor.offsetXYForContextMenu(e, true)
-        this.addWaypointWith(x, y)
+        return this.addWaypointWith(x, y)
     }
 
-    public addWaypointWith(x: number, y: number) {
+    public addWaypointWith(x: number, y: number): Waypoint {
         let coordData = this.indexOfNextWaypointIfMouseover(x, y)
         if (isUndefined(coordData)) {
             // shouldn't happen since we're calling this form a context menu
@@ -315,7 +316,7 @@ export class Wire extends Drawable {
             ]
         }
 
-        // determine inial direction
+        // determine initial direction
         const [i, [startX, startY], [endX, endY]] = coordData
         const deltaX = endX - startX
         const deltaY = endY - startY
@@ -339,6 +340,7 @@ export class Wire extends Drawable {
 
         const waypoint = new Waypoint(this.editor, [x, y, orient], this)
         this._waypoints.splice(i, 0, waypoint)
+        return waypoint
     }
 
     public removeWaypoint(waypoint: Waypoint) {
@@ -486,6 +488,28 @@ export class Wire extends Drawable {
             }
         }
         return undefined
+    }
+
+    public override mouseDragged(e: MouseEvent | TouchEvent) {
+        if (isDefined(this._waypointBeingDragged)) {
+            this._waypointBeingDragged.mouseDragged(e)
+        } else {
+            const selectionSize = this.editor.cursorMovementMgr.currentSelection?.previouslySelectedElements.size ?? 0
+            if (selectionSize === 0) {
+                const waypoint = this.addWaypointFrom(e)
+                this._waypointBeingDragged = waypoint
+                waypoint.mouseDown(e)
+                waypoint.mouseDragged(e)
+            }
+        }
+    }
+
+    public override mouseUp(e: MouseEvent | TouchEvent) {
+        if (isDefined(this._waypointBeingDragged)) {
+            this._waypointBeingDragged.mouseUp(e)
+            this._waypointBeingDragged = undefined
+            this.editor.undoMgr.takeSnapshot()
+        }
     }
 
     public override makeContextMenu(): ContextMenuData {
