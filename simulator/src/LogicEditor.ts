@@ -1310,14 +1310,17 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    public tryDeleteDrawable(comp: Drawable) {
+    public tryDeleteDrawable(comp: Drawable): boolean {
         if (comp instanceof ComponentBase) {
-            this.tryDeleteComponentsWhere(c => c === comp)
+            return this.tryDeleteComponentsWhere(c => c === comp)
         } else if (comp instanceof Wire) {
             this.wireMgr.deleteWire(comp)
+            return true
         } else if (comp instanceof Waypoint) {
             comp.removeFromParent()
+            return true
         }
+        return false
     }
 
     public trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
@@ -1334,6 +1337,7 @@ export class LogicEditor extends HTMLElement {
         if (compDeleted) {
             this.redrawMgr.addReason("component(s) deleted", null)
         }
+        return compDeleted
     }
 
     public setCurrentMouseAction(action: MouseAction) {

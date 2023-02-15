@@ -245,7 +245,7 @@ export class CursorMovementManager {
         if (isUndefined(sel = this.currentSelection)) {
             sel = new EditorSelection(undefined)
             this.currentSelection = sel
-        } 
+        }
         sel.toggle(comp)
         this.editor.redrawMgr.addReason("toggled selection", null)
     }
@@ -425,10 +425,10 @@ export class CursorMovementManager {
                 clearTimeout(this._startDragTimeoutHandle)
                 this._startDragTimeoutHandle = null
             }
-            this._currentHandlers.mouseUpOn(mouseUpTarget, e)
+            let shouldTakeSnapshot = this._currentHandlers.mouseUpOn(mouseUpTarget, e)
             for (const comp of this._currentMouseDownData?.selectionComps ?? []) {
                 if (comp !== mouseUpTarget) {
-                    this._currentHandlers.mouseUpOn(comp, e)
+                    shouldTakeSnapshot = this._currentHandlers.mouseUpOn(comp, e) || shouldTakeSnapshot
                 }
             }
 
@@ -437,11 +437,17 @@ export class CursorMovementManager {
                     const handled = this._currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
                     if (!handled) {
                         // no double click handler, so we trigger a normal click
-                        this._currentHandlers.mouseClickedOn(mouseUpTarget, e)
+                        shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e) || shouldTakeSnapshot
+                    } else {
+                        shouldTakeSnapshot = true
                     }
                 } else {
-                    this._currentHandlers.mouseClickedOn(mouseUpTarget, e)
+                    shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e) || shouldTakeSnapshot
                 }
+            }
+
+            if (shouldTakeSnapshot) {
+                this.editor.undoMgr.takeSnapshot()
             }
 
         } else {
@@ -538,14 +544,14 @@ abstract class ToolHandlers {
     public mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
-        // empty
+    public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
+        return false // false means no change in model
     }
     public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
-        // empty
+        return false // false means no change in model
     }
     public mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
-        return false // false means unhandled
+        return false // false means no change in model
     }
     public contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means unhandled
@@ -597,19 +603,20 @@ class EditHandlers extends ToolHandlers {
         comp.mouseDragged(e)
     }
     public override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
-        comp.mouseUp(e)
+        const shouldTakeSnapshot = comp.mouseUp(e)
         this.editor.wireMgr.tryCancelWire()
+        return shouldTakeSnapshot
     }
     public override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("mouseClickedOn %o", comp)
-        comp.mouseClicked(e)
+        return comp.mouseClicked(e)
     }
     public override mouseDoubleClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         return comp.mouseDoubleClicked(e)
     }
     public override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("contextMenuOn: %o", comp)
-        
+
         const hideMenu = () => {
             if (this._openedContextMenu !== null) {
                 this._openedContextMenu.classList.remove('show-menu')
@@ -756,7 +763,7 @@ class DeleteHandlers extends ToolHandlers {
     }
 
     public override mouseClickedOn(comp: Drawable, __: MouseEvent) {
-        this.editor.tryDeleteDrawable(comp)
+        return this.editor.tryDeleteDrawable(comp)
     }
 }
 

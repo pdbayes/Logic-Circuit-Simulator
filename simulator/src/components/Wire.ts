@@ -100,7 +100,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
-        this.tryStopMoving()
+        return this.tryStopMoving()
     }
 
     public override makeContextMenu(): ContextMenuData {
@@ -519,8 +519,9 @@ export class Wire extends Drawable {
         if (isDefined(this._waypointBeingDragged)) {
             this._waypointBeingDragged.mouseUp(e)
             this._waypointBeingDragged = undefined
-            this.editor.undoMgr.takeSnapshot()
+            return true
         }
+        return false
     }
 
     public override makeContextMenu(): ContextMenuData {

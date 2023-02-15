@@ -241,7 +241,9 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
-        this.editor.wireMgr.addNode(this.asNode)
+        const newWire = this.editor.wireMgr.addNode(this.asNode)
+        const shouldTakeSnapshot = isDefined(newWire)
+        return shouldTakeSnapshot
     }
 
 }

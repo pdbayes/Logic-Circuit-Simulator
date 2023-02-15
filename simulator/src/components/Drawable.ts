@@ -166,8 +166,11 @@ export abstract class Drawable {
         // empty default implementation
     }
 
-    public mouseUp(__: MouseEvent | TouchEvent) {
+    // Return true to indicate it was handled and had an effect, in which
+    // case a snapshot should be taken for undo/redo
+    public mouseUp(__: MouseEvent | TouchEvent): boolean {
         // empty default implementation
+        return false
     }
 
     // Return true to indicate it was handled and had an effect
