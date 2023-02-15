@@ -589,7 +589,7 @@ export abstract class ComponentBase<
         if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
-        return { lockMouseOver: true }
+        return { wantsDragEvents: true }
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {

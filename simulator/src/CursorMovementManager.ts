@@ -344,8 +344,8 @@ export class CursorMovementManager {
             this.updateMouseOver(xy)
             if (isNotNull(this._currentMouseOverComp)) {
                 // mouse down on component
-                const { lockMouseOver } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
-                if (lockMouseOver) {
+                const { wantsDragEvents } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
+                if (wantsDragEvents) {
                     const selectedComps = isUndefined(this.currentSelection) ? [] : [...this.currentSelection.previouslySelectedElements]
                     for (const comp of selectedComps) {
                         if (comp !== this._currentMouseOverComp) {
@@ -484,8 +484,8 @@ export class CursorMovementManager {
                 this.editor.cursorMovementMgr.currentSelection = undefined
                 const newComponent = factory(editor)
                 this._currentMouseOverComp = newComponent
-                const { lockMouseOver } = this._currentHandlers.mouseDownOn(newComponent, e)
-                if (lockMouseOver) {
+                const { wantsDragEvents } = this._currentHandlers.mouseDownOn(newComponent, e)
+                if (wantsDragEvents) {
                     this._currentMouseDownData = {
                         mainComp: this._currentMouseOverComp,
                         selectionComps: [], // ignore selection when dragging new component
@@ -533,7 +533,7 @@ abstract class ToolHandlers {
         // empty
     }
     public mouseDownOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
-        return { lockMouseOver: true }
+        return { wantsDragEvents: true }
     }
     public mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
@@ -590,7 +590,7 @@ class EditHandlers extends ToolHandlers {
             editor.cursorMovementMgr.makePopper(tooltip, rect)
         }
     }
-    public override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent): { lockMouseOver: boolean } {
+    public override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         return comp.mouseDown(e)
     }
     public override mouseDraggedOn(comp: Drawable, e: MouseEvent | TouchEvent) {

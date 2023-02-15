@@ -90,7 +90,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
-        return { lockMouseOver: true }
+        return { wantsDragEvents: true }
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {
@@ -127,18 +127,18 @@ export type WireRepr = t.TypeOf<typeof Wire.Repr>
 export class Wire extends Drawable {
 
     public static get Repr() {
-        return t.union([
-            t.tuple([
-                NodeID, NodeID,
-                t.type({
-                    ref: typeOrUndefined(t.string),
-                    via: typeOrUndefined(t.array(Waypoint.Repr)),
-                    propagationDelay: typeOrUndefined(t.number),
-                    style: typeOrUndefined(t.keyof(WireStyles)),
-                }),
-            ]), // alternative with more fields first
-            t.tuple([NodeID, NodeID]),
-        ], "Wire")
+        const simpleRepr = t.tuple([NodeID, NodeID])
+        const fullRepr = t.tuple([
+            NodeID, NodeID,
+            // include an object specifying additional properties
+            t.type({
+                ref: typeOrUndefined(t.string),
+                via: typeOrUndefined(t.array(Waypoint.Repr)),
+                propagationDelay: typeOrUndefined(t.number),
+                style: typeOrUndefined(t.keyof(WireStyles)),
+            }),
+        ])
+        return t.union([fullRepr, simpleRepr], "Wire")
     }
 
     private _endNode: NodeIn | null = null
@@ -272,18 +272,18 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
-    public addPassthroughFrom(e: MouseEvent | TouchEvent) {
+    public addPassthroughFrom(e: MouseEvent | TouchEvent): Passthrough1 | undefined {
         const editor = this.editor
         const [x, y] = editor.offsetXYForContextMenu(e, true)
         const endNode = this.endNode
         if (isNull(endNode)) {
-            return
+            return undefined
         }
 
         const passthrough = new Passthrough1(editor, null)
         editor.components.add(passthrough)
-        const newPos = passthrough.setPosition(x, y)
-        console.log("new pos", newPos)
+        passthrough.setPosition(x, y)
+        editor.moveMgr.setDrawableStoppedMoving(passthrough)
 
         // modify this wire to go to the passthrough
         this.setSecondNode(passthrough.inputs[0])
@@ -297,6 +297,7 @@ export class Wire extends Drawable {
             return
         }
         newWire.doSetStyle(this.style)
+        return passthrough
     }
 
     public addWaypointFrom(e: MouseEvent | TouchEvent): Waypoint {
@@ -488,6 +489,16 @@ export class Wire extends Drawable {
             }
         }
         return undefined
+    }
+
+    public override mouseDown(e: MouseEvent | TouchEvent) {
+        if (e.altKey && this.editor.mode >= Mode.DESIGN) {
+            const passthrough = this.addPassthroughFrom(e)
+            if (isDefined(passthrough)) {
+                return passthrough.outputs[0].mouseDown(e)
+            }
+        }
+        return super.mouseDown(e)
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {
