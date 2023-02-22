@@ -3,7 +3,7 @@ import { Component, ComponentBase, ComponentState } from "./components/Component
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
+import { clampZoom, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from "./gallery"
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
 import { makeComponentMenuInto } from "./menuutils"
@@ -86,6 +86,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     hideTooltips: false,
     groupParallelWires: false,
     propagationDelay: 100,
+    zoom: 100,
 }
 
 export type EditorOptions = typeof DEFAULT_EDITOR_OPTIONS
@@ -176,12 +177,14 @@ export class LogicEditor extends HTMLElement {
         hideTooltipsCheckbox: HTMLInputElement,
         groupParallelWiresCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
+        zoomLevelField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
     public userdata: any = undefined
 
-    private _baseTransform: DOMMatrix
+    private _baseTransform: DOMMatrixReadOnly
     private _baseDrawingScale = 1
+    private _actualZoomFactor = 1
     public mouseX = -1000 // offscreen at start
     public mouseY = -1000
 
@@ -265,9 +268,12 @@ export class LogicEditor extends HTMLElement {
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
             optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
+            optionsHtml.zoomLevelField.valueAsNumber = newOptions.zoom
 
             optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
         }
+
+        this._actualZoomFactor = clampZoom(newOptions.zoom)
 
         this.redrawMgr.addReason("options changed", null)
     }
@@ -1004,6 +1010,25 @@ export class LogicEditor extends HTMLElement {
             ).render()
         )
 
+        const zoomLevelField = input(type("number"),
+            style("margin: 0 2px 0 5px; width: 4em"),
+            attr("min", "0"), attr("step", "10"),
+            attr("value", String(this.options.zoom)),
+            attr("title", S.Settings.zoomLevel),
+        ).render()
+        zoomLevelField.addEventListener("change", this.wrapHandler( () => {
+            const zoom = zoomLevelField.valueAsNumber
+            this._options.zoom = zoom
+            this._actualZoomFactor = clampZoom(zoom)
+            this.redrawMgr.addReason("zoom level changed", null)
+        }))
+        optionsZone.appendChild(
+            div(
+                style("height: 20px"),
+                S.Settings.zoomLevelField[0], zoomLevelField, S.Settings.zoomLevelField[1]
+            ).render()
+        )
+
         const showUserdataLink = a(S.Settings.showUserDataLink[1], style("text-decoration: underline; cursor: pointer")).render()
         showUserdataLink.addEventListener("click", () => {
             alert(S.Settings.userDataHeader + "\n\n" + JSON.stringify(this.userdata, undefined, 4))
@@ -1026,6 +1051,7 @@ export class LogicEditor extends HTMLElement {
             hideTooltipsCheckbox,
             groupParallelWiresCheckbox,
             propagationDelayField,
+            zoomLevelField,
             showUserDataLinkContainer,
         }
 
@@ -1446,7 +1472,7 @@ export class LogicEditor extends HTMLElement {
                 }
             }
         })()
-        const currentScale = 1 //this._currentScale
+        const currentScale = this._actualZoomFactor
         return [unscaledX / currentScale, unscaledY / currentScale]
     }
 
@@ -1594,7 +1620,7 @@ export class LogicEditor extends HTMLElement {
             tmpCanvas.height = height
 
             const g = tmpCanvas.getContext('2d')!
-            this.doDrawWithContext(g, width, height, transform, true, true)
+            this.doDrawWithContext(g, width, height, transform, transform, true, true)
             tmpCanvas.toBlob(resolve, 'image/png')
             tmpCanvas.remove()
 
@@ -1722,10 +1748,11 @@ export class LogicEditor extends HTMLElement {
 
         const width = mainCanvas.width / baseDrawingScale
         const height = mainCanvas.height / baseDrawingScale
-        this.doDrawWithContext(g, width, height, this._baseTransform, false, false)
+        const contentTransform = this._baseTransform.scale(this._actualZoomFactor)
+        this.doDrawWithContext(g, width, height, this._baseTransform, contentTransform, false, false)
     }
 
-    private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrix, skipBorder: boolean, transparentBackground: boolean) {
+    private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrixReadOnly, contentTransform: DOMMatrixReadOnly, skipBorder: boolean, transparentBackground: boolean) {
         g.setTransform(baseTransform)
         g.lineCap = "square"
         g.textBaseline = "middle"
@@ -1737,6 +1764,7 @@ export class LogicEditor extends HTMLElement {
         } else {
             g.fillRect(0, 0, width, height)
         }
+        g.setTransform(contentTransform)
 
         // draw highlight
         const highlightRectFor = (comp: Component) => {
@@ -1791,14 +1819,16 @@ export class LogicEditor extends HTMLElement {
         // draw grid if moving comps
         const isMovingComponent = this.moveMgr.areDrawablesMoving()
         if (isMovingComponent) {
+            const widthAdjusted = width / this._actualZoomFactor
+            const heightAdjusted = height / this._actualZoomFactor
             g.strokeStyle = COLOR_GRID_LINES
             g.lineWidth = 1
             g.beginPath()
-            for (let x = GRID_STEP; x < width; x += GRID_STEP) {
+            for (let x = GRID_STEP; x < widthAdjusted; x += GRID_STEP) {
                 g.moveTo(x, 0)
                 g.lineTo(x, height)
             }
-            for (let y = GRID_STEP; y < height; y += GRID_STEP) {
+            for (let y = GRID_STEP; y < heightAdjusted; y += GRID_STEP) {
                 g.moveTo(0, y)
                 g.lineTo(width, y)
             }
@@ -1823,6 +1853,7 @@ export class LogicEditor extends HTMLElement {
 
         // draw border according to mode
         if (!skipBorder && (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON)) {
+            g.setTransform(baseTransform)
             g.strokeStyle = COLOR_BORDER
             g.lineWidth = 2
             g.strokeRect(0, 0, width, height)
@@ -1833,6 +1864,7 @@ export class LogicEditor extends HTMLElement {
                 g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION
                 g.fillRect(0, h, width, height - h)
             }
+            g.setTransform(contentTransform)
         }
 
         // const currentScale = this._currentScale

@@ -146,6 +146,8 @@ const Strings_fr = {
         groupParallelWires: tuple("Grouper les fils parallèles", "Si coché, les fils parralèles allant d'un composant à un autre seront regroupés en un seul fil plus épais."),
         propagationDelay: "Un 1 ou un 0 imposé sur une connexion sera répercuté à l’autre bout de la connexion après ce délai de propagation.",
         propagationDelayField: tuple("Propagation en", "ms"),
+        zoomLevel: "Le niveau de zoom sur les composants du circuit.",
+        zoomLevelField: tuple("Zoom:", "%"),
         showUserDataLink: tuple("Voir les", "données liées"),
         userDataHeader: "Les données suivantes sont exportées avec le circuit:",
 
@@ -784,6 +786,8 @@ const Strings_en: Strings = {
         groupParallelWires: tuple("Group parallel wires", "If checked, parallel wires from one component to another will be grouped together as a thicker wire."),
         propagationDelay: "A 1 or 0 output on some wire will propagate to the other end of the wire after this propagation delay.",
         propagationDelayField: tuple("Propagation in", "ms"),
+        zoomLevel: "The zoom level on the circuit components.",
+        zoomLevelField: tuple("Zoom:", "%"),
         showUserDataLink: tuple("See", "linked data"),
         userDataHeader: "This data is exported with the circuit:",
 
