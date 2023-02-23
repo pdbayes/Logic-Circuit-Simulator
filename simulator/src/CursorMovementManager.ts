@@ -586,11 +586,12 @@ class EditHandlers extends ToolHandlers {
             return
         }
         const tooltip = comp.makeTooltip()
-        const containerRect = editor.html.canvasContainer.getBoundingClientRect()
         if (isDefined(tooltip)) {
+            const containerRect = editor.html.canvasContainer.getBoundingClientRect()
+            const f = editor.actualZoomFactor
             const [cx, cy, w, h] =
                 comp instanceof DrawableWithPosition
-                    ? [comp.posX, comp.posY, comp.width, comp.height]
+                    ? [comp.posX * f, comp.posY * f, comp.width * f, comp.height * f]
                     : [editor.mouseX, editor.mouseY, 4, 4]
             const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
             editor.cursorMovementMgr.makePopper(tooltip, rect)

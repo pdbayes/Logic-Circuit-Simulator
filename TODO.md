@@ -5,7 +5,6 @@
 
  * Copy-paste
  * Hide mouseover when mouse leaves web component boundaries
- * Undo/redo
  * High-Z bus logic
  * prevent clock "backlog" from running like crazy
  * Adder orientation
@@ -41,6 +40,8 @@
 
 ### DONE
 
+ * Zoom
+ * Undo/redo
  * 4-bit and 8-bit display without interpretation
  * Separate V and Cout output for ALU
  * 8-bit input, 8-bit RAM

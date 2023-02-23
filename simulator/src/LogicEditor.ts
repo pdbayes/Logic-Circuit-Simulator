@@ -182,7 +182,6 @@ export class LogicEditor extends HTMLElement {
     } | undefined = undefined
     public userdata: any = undefined
 
-    private _baseTransform: DOMMatrixReadOnly
     private _baseDrawingScale = 1
     private _actualZoomFactor = 1
     public mouseX = -1000 // offscreen at start
@@ -214,8 +213,6 @@ export class LogicEditor extends HTMLElement {
         }
         this.html = html
         dialogPolyfill.registerDialog(html.embedDialog)
-
-        this._baseTransform = new DOMMatrix()
     }
 
     private elemWithId<E extends Element>(id: string) {
@@ -240,6 +237,10 @@ export class LogicEditor extends HTMLElement {
 
     public get mode() {
         return this._mode
+    }
+
+    public get actualZoomFactor() {
+        return this._actualZoomFactor
     }
 
     public get options(): Readonly<EditorOptions> {
@@ -357,7 +358,6 @@ export class LogicEditor extends HTMLElement {
         mainCanvas.style.setProperty("width", w + "px")
         mainCanvas.style.setProperty("height", h + "px")
         this._baseDrawingScale = f
-        this._baseTransform = new DOMMatrix(`scale(${f})`)
     }
 
     public connectedCallback() {
@@ -1748,8 +1748,9 @@ export class LogicEditor extends HTMLElement {
 
         const width = mainCanvas.width / baseDrawingScale
         const height = mainCanvas.height / baseDrawingScale
-        const contentTransform = this._baseTransform.scale(this._actualZoomFactor)
-        this.doDrawWithContext(g, width, height, this._baseTransform, contentTransform, false, false)
+        const baseTransform = new DOMMatrix(`scale(${this._baseDrawingScale})`)
+        const contentTransform = baseTransform.scale(this._actualZoomFactor)
+        this.doDrawWithContext(g, width, height, baseTransform, contentTransform, false, false)
     }
 
     private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrixReadOnly, contentTransform: DOMMatrixReadOnly, skipBorder: boolean, transparentBackground: boolean) {
