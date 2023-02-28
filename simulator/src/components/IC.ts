@@ -17,8 +17,9 @@ import { LatchSR, LatchSRDef } from "./LatchSR"
 import { Mux2To1, Mux2To1Def, Mux4To1, Mux4To1Def, Mux4To2, Mux4To2Def, Mux8To1, Mux8To1Def, Mux8To2, Mux8To2Def, Mux8To4, Mux8To4Def } from "./Mux"
 import { QuadGate, QuadGateDef } from "./QuadGate"
 import { QuadTriState, QuadTriStateDef } from "./QuadTriState"
-import { RAM16by4, RAM16x4Def } from "./RAM"
-import { RAM16by8, RAM16x8Def } from "./RAM8"
+import { RAM16x4, RAM16x4Def } from "./RAM16x4"
+import { RAM16x8, RAM16x8Def } from "./RAM16x8"
+import { RAM64x8, RAM64x8Def } from "./RAM64x8"
 import { Register, RegisterDef } from "./Register"
 import { SwitchedInverter, SwitchedInverterDef } from "./SwitchedInverter"
 
@@ -50,6 +51,7 @@ export const ICDef = t.union([
     RegisterDef.repr,
     RAM16x4Def.repr,
     RAM16x8Def.repr,
+    RAM64x8Def.repr,
     CounterDef.repr,
     Decoder7SegDef.repr,
     Decoder16SegDef.repr,
@@ -124,9 +126,11 @@ export const ICFactory = {
             case "register":
                 return new Register(editor, blank ? null : savedData)
             case "ram-16x4":
-                return new RAM16by4(editor, blank ? null : savedData)
+                return new RAM16x4(editor, blank ? null : savedData)
             case "ram-16x8":
-                return new RAM16by8(editor, blank ? null : savedData)
+                return new RAM16x8(editor, blank ? null : savedData)
+            case "ram-64x8":
+                return new RAM64x8(editor, blank ? null : savedData)
             case "counter":
                 return new Counter(editor, blank ? null : savedData)
             case "decoder-7seg":

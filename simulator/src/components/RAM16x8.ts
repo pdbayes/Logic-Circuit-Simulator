@@ -32,7 +32,7 @@ export const RAM16x8Def =
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
         content: typeOrUndefined(t.array(t.string)),
-    }, "RAM8"))
+    }, "RAM16x8"))
 
 export type RAM16x8Repr = typeof RAM16x8Def.reprType
 
@@ -47,7 +47,7 @@ type RAMValue<BitWidth extends FixedArraySize> = {
 }
 
 // TODO merge with RAM16x4
-export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
+export class RAM16x8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
 
     protected _showContent: boolean = RAMDefaults.showContent
     protected _trigger: EdgeTrigger = RAMDefaults.trigger
@@ -64,7 +64,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
 
     private static savedStateFrom(savedData: RAM16x8Repr | null): RAMValue<8> {
         if (isNull(savedData) || isUndefined(savedData.content)) {
-            return RAM16by8.valueFilledWith(false)
+            return RAM16x8.valueFilledWith(false)
         }
         const mem: Array<FixedArray<LogicValue, 8>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
@@ -89,7 +89,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
 
 
     public constructor(editor: LogicEditor, savedData: RAM16x8Repr | null) {
-        super(editor, RAM16by8.savedStateFrom(savedData), savedData, {
+        super(editor, RAM16x8.savedStateFrom(savedData), savedData, {
             ins: [
                 [S.Components.Generic.InputClockDesc, -7, +6, "w"], // Clock
                 ["WE (Write Enable)", -2, +8, "s"], // WriteEnable
@@ -171,7 +171,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
     }
 
     public override makeTooltip() {
-        const s = S.Components.RAM8.tooltip
+        const s = S.Components.RAM16x8.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc) // TODO more info
         ))
@@ -181,7 +181,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
         const clear = this.inputs[INPUT.Clear].value
         if (clear === true) {
             // clear is true, preset is false, set output to 0
-            return RAM16by8.valueFilledWith(false)
+            return RAM16x8.valueFilledWith(false)
         }
 
         // first, determine output
@@ -201,7 +201,7 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
 
         // we write
         if (isUnknown(addr)) {
-            return RAM16by8.valueFilledWith(Unknown)
+            return RAM16x8.valueFilledWith(Unknown)
         }
 
         // build new state
@@ -279,11 +279,13 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
 
         ctx.inNonTransformedFrame(ctx => {
             if (!this._showContent || this.editor.options.hideMemoryContent) {
-                g.font = `bold 16px sans-serif`
+                g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
                 g.textBaseline = "middle"
-                g.fillText("RAM", this.posX, this.posY)
+                g.fillText("RAM", this.posX, this.posY - 6)
+                g.font = `11px sans-serif`
+                g.fillText("16 × 8 bits", this.posX, this.posY + 12)
             } else {
                 const mem = this.value.mem
                 const cellWidth = 8
@@ -317,8 +319,9 @@ export class RAM16by8 extends ComponentBase<15, 8, RAM16x8Repr, RAMValue<8>> {
                     const x = contentLeft + j * cellWidth
                     strokeSingleLine(g, x, contentTop, x, contentBottom)
                 }
-                g.lineWidth = 2
-                g.strokeRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
+                const borderLineWidth = 2
+                g.lineWidth = borderLineWidth
+                g.strokeRect(contentLeft - borderLineWidth / 2, contentTop - borderLineWidth / 2, contentRight - contentLeft + borderLineWidth, contentBottom - contentTop + borderLineWidth)
                 const addr = this.currentAddress()
                 if (!isUnknown(addr)) {
                     const arrowY = contentTop + addr * cellHeight + cellHeight / 2

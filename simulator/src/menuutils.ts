@@ -370,11 +370,16 @@ const componentsMenu: Array<Section> = [
             },
             {
                 type: "component", subtype: "ram-16x4",
-                strings: "RAM", img: "RAM", width: 50,
+                strings: "RAM16x4", img: "RAM16x4", width: 50,
             },
             {
                 type: "component", subtype: "ram-16x8",
-                strings: "RAM8", img: "RAM8", width: 50,
+                strings: "RAM16x8", img: "RAM16x8", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "ram-64x8",
+                strings: "RAM64x8", img: "RAM64x8", width: 50,
                 normallyHidden: true,
             },
             {

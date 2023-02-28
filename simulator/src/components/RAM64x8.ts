@@ -9,32 +9,32 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 const GRID_WIDTH = 11
-const GRID_HEIGHT = 15
+const GRID_HEIGHT = 21
 
 const INPUT = {
     Clock: 0,
     WriteEnable: 1,
     Clear: 2,
-    Data: [3, 4, 5, 6],
-    Address: [7, 8, 9, 10],
+    Data: [3, 4, 5, 6, 7, 8, 9, 10],
+    Address: [11, 12, 13, 14, 15, 16],
 } as const
 
 const OUTPUT = {
-    Q: [0, 1, 2, 3],
+    Q: [0, 1, 2, 3, 4, 5, 6, 7],
 }
 
 const WORD_WIDTH = INPUT.Data.length
 const NUM_CELLS = Math.pow(2, INPUT.Address.length)
 
-export const RAM16x4Def =
-    defineComponent(11, 4, t.type({
-        type: t.literal("ram-16x4"),
+export const RAM64x8Def =
+    defineComponent(17, 8, t.type({
+        type: t.literal("ram-64x8"),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
         content: typeOrUndefined(t.array(t.string)),
-    }, "RAM"))
+    }, "RAM64x8"))
 
-export type RAM16x4Repr = typeof RAM16x4Def.reprType
+export type RAM64x8Repr = typeof RAM64x8Def.reprType
 
 const RAMDefaults = {
     showContent: true,
@@ -46,14 +46,15 @@ type RAMValue<BitWidth extends FixedArraySize> = {
     out: FixedReadonlyArray<LogicValue, BitWidth>
 }
 
-export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
+// TODO merge with RAM16x4
+export class RAM64x8 extends ComponentBase<17, 8, RAM64x8Repr, RAMValue<8>> {
 
     protected _showContent: boolean = RAMDefaults.showContent
     protected _trigger: EdgeTrigger = RAMDefaults.trigger
     protected _lastClock: LogicValue = Unknown
 
-    private static valueFilledWith(v: LogicValue): RAMValue<4> {
-        const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
+    private static valueFilledWith(v: LogicValue): RAMValue<8> {
+        const mem: Array<FixedArray<LogicValue, 8>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             mem[i] = FixedArrayFill(v, WORD_WIDTH)
         }
@@ -61,13 +62,13 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         return { mem, out }
     }
 
-    private static savedStateFrom(savedData: RAM16x4Repr | null): RAMValue<4> {
+    private static savedStateFrom(savedData: RAM64x8Repr | null): RAMValue<8> {
         if (isNull(savedData) || isUndefined(savedData.content)) {
-            return RAM16by4.valueFilledWith(false)
+            return RAM64x8.valueFilledWith(false)
         }
-        const mem: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
+        const mem: Array<FixedArray<LogicValue, 8>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
-            const row = FixedArrayFill<LogicValue, 4>(false, WORD_WIDTH)
+            const row = FixedArrayFill<LogicValue, 8>(false, WORD_WIDTH)
             if (i < savedData.content.length) {
                 const savedBits = savedData.content[i].split("")
                 const len = savedBits.length
@@ -87,29 +88,39 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     }
 
 
-    public constructor(editor: LogicEditor, savedData: RAM16x4Repr | null) {
-        super(editor, RAM16by4.savedStateFrom(savedData), savedData, {
+    public constructor(editor: LogicEditor, savedData: RAM64x8Repr | null) {
+        super(editor, RAM64x8.savedStateFrom(savedData), savedData, {
             ins: [
-                [S.Components.Generic.InputClockDesc, -7, +6, "w"], // Clock
-                ["WE (Write Enable)", -2, +8, "s"], // WriteEnable
-                [S.Components.Generic.InputClearDesc, +2, +8, "s"], // Clear
+                [S.Components.Generic.InputClockDesc, -7, +9, "w"], // Clock
+                ["WE (Write Enable)", -2, +11, "s"], // WriteEnable
+                [S.Components.Generic.InputClearDesc, +2, +11, "s"], // Clear
                 // Data in
-                ["D0", -7, -3, "w", "D"],
-                ["D1", -7, -1, "w", "D"],
-                ["D2", -7, +1, "w", "D"],
-                ["D3", -7, 3, "w", "D"],
+                ["D0", -7, -4, "w", "D"],
+                ["D1", -7, -3, "w", "D"],
+                ["D2", -7, -2, "w", "D"],
+                ["D3", -7, -1, "w", "D"],
+                ["D4", -7, 0, "w", "D"],
+                ["D5", -7, 1, "w", "D"],
+                ["D6", -7, 2, "w", "D"],
+                ["D7", -7, 3, "w", "D"],
                 // Address
-                ["Addr0", +3, -8, "n", "Addr"],
-                ["Addr1", +1, -8, "n", "Addr"],
-                ["Addr2", -1, -8, "n", "Addr"],
-                ["Addr3", -3, -8, "n", "Addr"],
+                ["Addr0", +5, -11, "n", "Addr"],
+                ["Addr1", +3, -11, "n", "Addr"],
+                ["Addr2", +1, -11, "n", "Addr"],
+                ["Addr3", -1, -11, "n", "Addr"],
+                ["Addr3", -3, -11, "n", "Addr"],
+                ["Addr3", -5, -11, "n", "Addr"],
             ],
             outs: [
                 // Data out
-                ["Q0", +7, -3, "e", "Q"],
-                ["Q1", +7, -1, "e", "Q"],
-                ["Q2", +7, +1, "e", "Q"],
-                ["Q3", +7, 3, "e", "Q"],
+                ["Q0", +7, -4, "e", "Q"],
+                ["Q1", +7, -3, "e", "Q"],
+                ["Q2", +7, -2, "e", "Q"],
+                ["Q3", +7, -1, "e", "Q"],
+                ["Q4", +7, 0, "e", "Q"],
+                ["Q5", +7, 1, "e", "Q"],
+                ["Q6", +7, 2, "e", "Q"],
+                ["Q7", +7, 3, "e", "Q"],
             ],
         })
         if (isNotNull(savedData)) {
@@ -121,7 +132,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
     public toJSON() {
         return {
-            type: "ram-16x4" as const,
+            type: "ram-64x8" as const,
             ...this.toJSONBase(),
             showContent: (this._showContent !== RAMDefaults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RAMDefaults.trigger) ? this._trigger : undefined,
@@ -152,7 +163,7 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
             cells.push(cell)
         }
         for (let addr = NUM_CELLS - 1; addr >= 0; addr--) {
-            if (cells[addr] === "0000") {
+            if (cells[addr] === "00000000") {
                 cells.splice(addr, 1)
             } else {
                 break
@@ -162,17 +173,17 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     }
 
     public override makeTooltip() {
-        const s = S.Components.RAM.tooltip
+        const s = S.Components.RAM64x8.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc) // TODO more info
         ))
     }
 
-    protected doRecalcValue(): RAMValue<4> {
+    protected doRecalcValue(): RAMValue<8> {
         const clear = this.inputs[INPUT.Clear].value
         if (clear === true) {
             // clear is true, preset is false, set output to 0
-            return RAM16by4.valueFilledWith(false)
+            return RAM64x8.valueFilledWith(false)
         }
 
         // first, determine output
@@ -186,18 +197,18 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
         const we = this.inputs[INPUT.WriteEnable].value
         if (we !== true || !Flipflop.isClockTrigger(this.trigger, prevClock, clock)) {
             // nothing to write, just update output
-            const out = isUnknown(addr) ? [Unknown, Unknown, Unknown, Unknown] as const : oldState.mem[addr]
+            const out = isUnknown(addr) ? FixedArrayFill(Unknown, 8) : oldState.mem[addr]
             return { mem: oldState.mem, out }
         }
 
         // we write
         if (isUnknown(addr)) {
-            return RAM16by4.valueFilledWith(Unknown)
+            return RAM64x8.valueFilledWith(Unknown)
         }
 
         // build new state
-        const newData = this.inputValues<4>(INPUT.Data)
-        const newState: Array<FixedArray<LogicValue, 4>> = new Array(NUM_CELLS)
+        const newData = this.inputValues<8>(INPUT.Data)
+        const newState: Array<FixedArray<LogicValue, 8>> = new Array(NUM_CELLS)
         for (let i = 0; i < NUM_CELLS; i++) {
             if (i === addr) {
                 newState[i] = newData
@@ -213,12 +224,12 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
     }
 
     private currentAddress(): number | Unknown {
-        const addrBits = this.inputValues<4>(INPUT.Address)
+        const addrBits = this.inputValues<6>(INPUT.Address)
         const [__, addr] = displayValuesFromArray(addrBits, false)
         return addr
     }
 
-    protected override propagateValue(newValue: RAMValue<4>) {
+    protected override propagateValue(newValue: RAMValue<8>) {
         for (let i = 0; i < OUTPUT.Q.length; i++) {
             this.outputs[OUTPUT.Q[i]].value = newValue.out[i]
         }
@@ -269,18 +280,21 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
 
 
         ctx.inNonTransformedFrame(ctx => {
+            // TODO two-column layout when drawing horizontally
             if (!this._showContent || this.editor.options.hideMemoryContent) {
-                g.font = `bold 16px sans-serif`
+                g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
                 g.textBaseline = "middle"
-                g.fillText("RAM", this.posX, this.posY)
+                g.fillText("RAM", this.posX, this.posY - 6)
+                g.font = `11px sans-serif`
+                g.fillText("64 × 8 bits", this.posX, this.posY + 12)
             } else {
                 const mem = this.value.mem
-                const cellWidth = GRID_STEP
-                const cellHeight = 6
-                const contentTop = this.posY - 8 * cellHeight
-                const contentLeft = this.posX - 2 * GRID_STEP
+                const cellWidth = 8
+                const cellHeight = 2.5
+                const contentTop = this.posY - 32 * cellHeight
+                const contentLeft = this.posX - 28
                 const contentRight = contentLeft + WORD_WIDTH * cellWidth
                 const contentBottom = contentTop + NUM_CELLS * cellHeight
 
@@ -308,8 +322,9 @@ export class RAM16by4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                     const x = contentLeft + j * cellWidth
                     strokeSingleLine(g, x, contentTop, x, contentBottom)
                 }
-                g.lineWidth = 2
-                g.strokeRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
+                const borderLineWidth = 2
+                g.lineWidth = borderLineWidth
+                g.strokeRect(contentLeft - borderLineWidth / 2, contentTop - borderLineWidth / 2, contentRight - contentLeft + borderLineWidth, contentBottom - contentTop + borderLineWidth)
                 const addr = this.currentAddress()
                 if (!isUnknown(addr)) {
                     const arrowY = contentTop + addr * cellHeight + cellHeight / 2

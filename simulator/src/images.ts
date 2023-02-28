@@ -95,8 +95,9 @@ import Passthrough4 from '../img/Passthrough4.svg'; // @ts-ignore
 import Passthrough8 from '../img/Passthrough8.svg'; // @ts-ignore
 import QuadGate from '../img/QuadGate.svg'; // @ts-ignore
 import QuadTriState from '../img/QuadTriState.svg'; // @ts-ignore
-import RAM from '../img/RAM.svg'; // @ts-ignore
-import RAM8 from '../img/RAM8.svg'; // @ts-ignore
+import RAM16x4 from '../img/RAM16x4.svg'; // @ts-ignore
+import RAM16x8 from '../img/RAM16x8.svg'; // @ts-ignore
+import RAM64x8 from '../img/RAM64x8.svg'; // @ts-ignore
 import Register from '../img/Register.svg'; // @ts-ignore
 import SwitchedInverter from '../img/SwitchedInverter.svg'; // @ts-ignore
 import TRI from '../img/TRI.svg'; // @ts-ignore
@@ -203,8 +204,9 @@ const images = {
     Passthrough8,
     QuadGate,
     QuadTriState,
-    RAM,
-    RAM8,
+    RAM16x4,
+    RAM16x8,
+    RAM64x8,
     Register,
     SwitchedInverter,
     TRI,

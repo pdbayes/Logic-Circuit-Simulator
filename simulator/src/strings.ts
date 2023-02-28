@@ -108,8 +108,9 @@ const Strings_fr = {
             FlipflopT: ["Bascule T", "Basc. T"],
             FlipflopD: ["Bascule D", "Basc. D"],
             Register: ["Registre à 4 bits", "Registre"],
-            RAM: ["RAM, 16 × 4 bits", "RAM 16×4"],
-            RAM8: ["RAM, 16 × 8 bits", "RAM 16×8"],
+            RAM16x4: ["RAM, 16 × 4 bits", "RAM 16×4"],
+            RAM16x8: ["RAM, 16 × 8 bits", "RAM 16×8"],
+            RAM64x8: ["RAM, 64 × 8 bits", "RAM 64×8"],
 
             Counter: ["Compteur 4 bits", "Compteur"],
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
@@ -586,16 +587,22 @@ const Strings_fr = {
                 desc: "Représente quatre fois une sortie à trois états, pilotées par un bit de contrôle.",
             },
         },
-        RAM: {
+        RAM16x4: {
             tooltip: {
                 title: "RAM (mémoire vive)",
-                desc: "Stocke 16 fois quatre bits.",
+                desc: "Stocke 16 lignes de 4 bits.",
             },
         },
-        RAM8: {
+        RAM16x8: {
             tooltip: {
                 title: "RAM (mémoire vive)",
-                desc: "Stocke 16 fois huit bits.",
+                desc: "Stocke 16 lignes de 8 bits.",
+            },
+        },
+        RAM64x8: {
+            tooltip: {
+                title: "RAM (mémoire vive)",
+                desc: "Stocke 64 lignes de 8 bits.",
             },
         },
         Register: {
@@ -748,8 +755,9 @@ const Strings_en: Strings = {
             FlipflopT: ["T Flip-Flop", "FF-T"],
             FlipflopD: ["D Flip-Flop", "FF-D"],
             Register: ["4-Bit Register", "Register"],
-            RAM: ["RAM, 16 × 4 Bits", "RAM 16×4"],
-            RAM8: ["RAM, 16 × 8 Bits", "RAM 16×8"],
+            RAM16x4: ["RAM, 16 × 4 Bits", "RAM 16×4"],
+            RAM16x8: ["RAM, 16 × 8 Bits", "RAM 16×8"],
+            RAM64x8: ["RAM, 64 × 8 Bits", "RAM 64×8"],
 
             Counter: ["4-Bit Counter", "Counter"],
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
@@ -1226,16 +1234,22 @@ const Strings_en: Strings = {
                 desc: "Represents four tri-state buffers switched by a single control bit.",
             },
         },
-        RAM: {
+        RAM16x4: {
             tooltip: {
                 title: "RAM",
-                desc: "Stores 16 times four bits.",
+                desc: "Stores 16 rows of 4 bits.",
             },
         },
-        RAM8: {
+        RAM16x8: {
             tooltip: {
-                title: "RAM (mémoire vive)",
-                desc: "Stores 16 times eight bits.",
+                title: "RAM",
+                desc: "Stores 16 rows of 8 bits.",
+            },
+        },
+        RAM64x8: {
+            tooltip: {
+                title: "RAM",
+                desc: "Stores 64 rows of 8 bits.",
             },
         },
         Register: {
