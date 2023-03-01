@@ -27,6 +27,9 @@
 
 ## Low priority
 
+ * Highlight only nodes when dragging
+ * Get key events also when multiple editors are on the same pagex
+ * Don't store Z in memory cells, but unknown instead
  * Add rich HTML annotation
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Add mouseovers to new components
