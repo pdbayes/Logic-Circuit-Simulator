@@ -796,7 +796,7 @@ const Strings_en: Strings = {
         propagationDelayField: tuple("Propagation in", "ms"),
         zoomLevel: "The zoom level on the circuit components.",
         zoomLevelField: tuple("Zoom:", "%"),
-        showUserDataLink: tuple("See", "linked data"),
+        showUserDataLink: tuple("See ", "linked data"),
         userDataHeader: "This data is exported with the circuit:",
 
         wireStyle: "Wire style:",

@@ -1,12 +1,13 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
+import { drawMemoryCells } from "./RAM"
 
 const GRID_WIDTH = 11
 const GRID_HEIGHT = 15
@@ -279,55 +280,11 @@ export class RAM16x4 extends ComponentBase<11, 4, RAM16x4Repr, RAMValue<4>> {
                 g.fillText("16 × 4 bits", this.posX, this.posY + 12)
             } else {
                 const mem = this.value.mem
-                const cellWidth = GRID_STEP
-                const cellHeight = 6
-                const contentTop = this.posY - 8 * cellHeight
-                const contentLeft = this.posX - 2 * GRID_STEP
-                const contentRight = contentLeft + WORD_WIDTH * cellWidth
-                const contentBottom = contentTop + NUM_CELLS * cellHeight
-
-                // by default, paint everything as zero
-                g.fillStyle = COLOR_EMPTY
-                g.fillRect(contentLeft, contentTop, contentRight - contentLeft, contentBottom - contentTop)
-
-                for (let i = 0; i < NUM_CELLS; i++) {
-                    for (let j = 0; j < WORD_WIDTH; j++) {
-                        const v = mem[i][WORD_WIDTH - j - 1]
-                        if (v !== false) {
-                            g.fillStyle = colorForBoolean(v)
-                            g.fillRect(contentLeft + j * cellWidth, contentTop + i * cellHeight, cellWidth, cellHeight)
-                        }
-                    }
-                }
-
-                g.strokeStyle = COLOR_COMPONENT_BORDER
-                g.lineWidth = 0.5
-                for (let i = 1; i < NUM_CELLS; i++) {
-                    const y = contentTop + i * cellHeight
-                    strokeSingleLine(g, contentLeft, y, contentRight, y)
-                }
-                for (let j = 1; j < WORD_WIDTH; j++) {
-                    const x = contentLeft + j * cellWidth
-                    strokeSingleLine(g, x, contentTop, x, contentBottom)
-                }
-                const borderLineWidth = 2
-                g.lineWidth = borderLineWidth
-                g.strokeRect(contentLeft - borderLineWidth / 2, contentTop - borderLineWidth / 2, contentRight - contentLeft + borderLineWidth, contentBottom - contentTop + borderLineWidth)
+                const cellWidth = 10
+                const cellHeight = Orientation.isVertical(this.orient) ? 4.5 : 6
                 const addr = this.currentAddress()
-                if (!isUnknown(addr)) {
-                    const arrowY = contentTop + addr * cellHeight + cellHeight / 2
-                    const arrowRight = contentLeft - 3
-                    const arrowWidth = 8
-                    const arrowHalfHeight = 3
-                    g.beginPath()
-                    g.moveTo(arrowRight, arrowY)
-                    g.lineTo(arrowRight - arrowWidth, arrowY + arrowHalfHeight)
-                    g.lineTo(arrowRight - arrowWidth + 2, arrowY)
-                    g.lineTo(arrowRight - arrowWidth, arrowY - arrowHalfHeight)
-                    g.closePath()
-                    g.fillStyle = COLOR_COMPONENT_BORDER
-                    g.fill()
-                }
+                drawMemoryCells(g, mem, WORD_WIDTH, addr, 0, NUM_CELLS, this.posX, this.posY, cellWidth, cellHeight)
+
             }
 
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
