@@ -13,7 +13,7 @@ function defineRAM<NumInputs extends FixedArraySize, NumOutputs extends FixedArr
         type: t.literal(jsonName),
         showContent: typeOrUndefined(t.boolean),
         trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-        content: typeOrUndefined(t.array(t.string)),
+        content: typeOrUndefined(t.union([t.string, t.array(t.string)])),
     }, className))
 }
 
@@ -21,7 +21,7 @@ type RAMRepr<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize
     ComponentRepr<NumInputs, NumOutputs> & {
         showContent: boolean | undefined,
         trigger: EdgeTrigger | undefined,
-        content: string[] | undefined,
+        content: string | string[] | undefined,
     }
 
 
@@ -128,13 +128,19 @@ abstract class RAM<NumInputs extends FixedArraySize,
             return RAM.valueFilledWith(false, numWords, wordWidth)
         }
         const mem: Array<FixedArray<LogicValue, NumOutputs>> = new Array(numWords)
+        const savedContent = Array.isArray(savedData.content) ? savedData.content : savedData.content.split(" ")
         for (let i = 0; i < numWords; i++) {
             const row = FixedArrayFill<LogicValue, NumOutputs>(false, wordWidth)
-            if (i < savedData.content.length) {
-                const savedBits = savedData.content[i].split("")
-                const len = savedBits.length
+            if (i < savedContent.length) {
+                const savedWordRepr = savedContent[i]
+                const len = savedWordRepr.length
+                const isBinary = len === wordWidth
+                const savedBits = isBinary ? savedWordRepr : parseInt(savedWordRepr, 16).toString(2).padStart(wordWidth, "0")
+
+                console.log(savedBits)
+
                 for (let j = 0; j < wordWidth; j++) {
-                    const jj = len - j - 1
+                    const jj = wordWidth - j - 1
                     if (jj >= 0) {
                         row[j] = toLogicValueFromChar(savedBits[jj])
                     } else {
@@ -186,11 +192,16 @@ abstract class RAM<NumInputs extends FixedArraySize,
         return this._trigger
     }
 
-    private contentRepr(): string[] | undefined {
+    private contentRepr(): string | undefined {
         const cells: string[] = []
+        const useHex = this._wordWidth >= 8
+        const hexWidth = Math.ceil(this._wordWidth / 4)
         for (let addr = 0; addr < this._numWords; addr++) {
-            const cell = this.value.mem[addr].map(toLogicValueRepr).reverse().join("")
-            cells.push(cell)
+            let wordRepr = this.value.mem[addr].map(toLogicValueRepr).reverse().join("")
+            if (useHex) {
+                wordRepr = parseInt(wordRepr, 2).toString(16).toUpperCase().padStart(hexWidth, "0")
+            }
+            cells.push(wordRepr)
         }
         for (let addr = this._numWords - 1; addr >= 0; addr--) {
             if (isAllZeros(cells[addr])) {
@@ -199,7 +210,7 @@ abstract class RAM<NumInputs extends FixedArraySize,
                 break
             }
         }
-        return cells.length === 0 ? undefined : cells
+        return cells.length === 0 ? undefined : cells.join(" ")
     }
 
 
