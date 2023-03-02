@@ -666,7 +666,7 @@ export class LogicEditor extends HTMLElement {
                     ),
                     ", ",
                     a(style("color: inherit"),
-                        href("https://www.hepl.ch"), target("_blank"),
+                        href("https://www.hepl.ch/accueil/formation/unites-enseignement-et-recherche/medias-usages-numeriques-et-didactique-de-linformatique.html"), target("_blank"),
                         "HEP Vaud"
                     ),
                 ).render()
@@ -1016,7 +1016,7 @@ export class LogicEditor extends HTMLElement {
             attr("value", String(this.options.zoom)),
             attr("title", S.Settings.zoomLevel),
         ).render()
-        zoomLevelField.addEventListener("change", this.wrapHandler( () => {
+        zoomLevelField.addEventListener("change", this.wrapHandler(() => {
             const zoom = zoomLevelField.valueAsNumber
             this._options.zoom = zoom
             this._actualZoomFactor = clampZoom(zoom)
@@ -1496,25 +1496,34 @@ export class LogicEditor extends HTMLElement {
         let rightmostX = Number.NEGATIVE_INFINITY, leftmostX = Number.POSITIVE_INFINITY
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
         for (const comp of this.components.all()) {
-            const x = comp.posX
-            if (x > rightmostX) {
-                rightmostX = x
+            const cx = comp.posX
+            const width = comp.width
+            const left = cx - width / 2
+            const right = left + width
+            if (right > rightmostX) {
+                rightmostX = right
             }
-            if (x < leftmostX) {
-                leftmostX = x
+            if (left < leftmostX) {
+                leftmostX = left
             }
-            const y = comp.posY
-            if (y > lowestY) {
-                lowestY = y
+
+            const cy = comp.posY
+            const height = comp.height
+            const top = cy - height / 2
+            const bottom = top + height
+            if (bottom > lowestY) {
+                lowestY = bottom
             }
-            if (y < highestY) {
-                highestY = y
+            if (top < highestY) {
+                highestY = top
             }
         }
+        leftmostX = Math.max(0, leftmostX)
         let w = rightmostX + leftmostX // add right margin equal to left margin
         if (isNaN(w)) {
             w = 300
         }
+        highestY = Math.max(0, highestY)
         let h = highestY + lowestY // add lower margin equal to top margin
         if (isNaN(h)) {
             h = 150

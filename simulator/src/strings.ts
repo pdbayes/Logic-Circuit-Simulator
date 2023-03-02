@@ -207,7 +207,8 @@ const Strings_fr = {
             InputPresetDesc: "P (Preset, mise à 1)",
             InputSetDesc: "S (Set, mise à 1)",
             InputResetDesc: "R (Reset, mise à 0)",
-            InputData: "D (Données)",
+            InputDataDesc: "D (Données)",
+            InputWriteEnableDesc: "WE (écriture activée)",
 
             OutputSumDesc: "S (somme)",
             OutputCarryDesc: "C (retenue)",
@@ -587,22 +588,10 @@ const Strings_fr = {
                 desc: "Représente quatre fois une sortie à trois états, pilotées par un bit de contrôle.",
             },
         },
-        RAM16x4: {
+        RAM: {
             tooltip: {
                 title: "RAM (mémoire vive)",
-                desc: "Stocke 16 lignes de 4 bits.",
-            },
-        },
-        RAM16x8: {
-            tooltip: {
-                title: "RAM (mémoire vive)",
-                desc: "Stocke 16 lignes de 8 bits.",
-            },
-        },
-        RAM64x8: {
-            tooltip: {
-                title: "RAM (mémoire vive)",
-                desc: "Stocke 64 lignes de 8 bits.",
+                desc: template("Stocke ${numWords} lignes de ${wordWidth} bits.", "numWords", "wordWidth"),
             },
         },
         Register: {
@@ -854,7 +843,8 @@ const Strings_en: Strings = {
             InputPresetDesc: "P (Preset, set to 1)",
             InputSetDesc: "S (Set, set to 1)",
             InputResetDesc: "R (Reset, set to 0)",
-            InputData: "D (Data)",
+            InputDataDesc: "D (Data)",
+            InputWriteEnableDesc: "WE (Write Enable)",
 
             OutputSumDesc: "S (Sum)",
             OutputCarryDesc: "C (Carry)",
@@ -1234,22 +1224,10 @@ const Strings_en: Strings = {
                 desc: "Represents four tri-state buffers switched by a single control bit.",
             },
         },
-        RAM16x4: {
+        RAM: {
             tooltip: {
                 title: "RAM",
-                desc: "Stores 16 rows of 4 bits.",
-            },
-        },
-        RAM16x8: {
-            tooltip: {
-                title: "RAM",
-                desc: "Stores 16 rows of 8 bits.",
-            },
-        },
-        RAM64x8: {
-            tooltip: {
-                title: "RAM",
-                desc: "Stores 64 rows of 8 bits.",
+                desc: template("Stores ${numWords} rows of ${wordWidth} bits.", "numWords", "wordWidth"),
             },
         },
         Register: {
@@ -1271,7 +1249,7 @@ const Strings_en: Strings = {
             contextMenu: {
                 AddMiddlePoint: "Add Middle Point",
                 AddPassthrough: "Add Passthrough",
-                
+
                 CustomPropagationDelay: template("Specific Propagation Delay${current}…", "current"),
                 CustomPropagationDelayDesc: template("Specific propagation delay in milliseconds for this connection (leave empty to use the default value for the circuit, which currently is ${current} ms):", "current"),
 

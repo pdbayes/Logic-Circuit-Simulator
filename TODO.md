@@ -27,6 +27,7 @@
 
 ## Low priority
 
+ * Mux/Demux 16:8, 8:16
  * Highlight only nodes when dragging
  * Get key events also when multiple editors are on the same pagex
  * Don't store Z in memory cells, but unknown instead

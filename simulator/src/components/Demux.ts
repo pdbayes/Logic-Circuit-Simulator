@@ -158,7 +158,7 @@ export abstract class Demux<
         }
     }
 
-    public override toJSONBase() {
+    protected override toJSONBase() {
         return {
             ...super.toJSONBase(),
             showWiring: (this._showWiring !== DemuxDefaults.showWiring) ? this._showWiring : undefined,

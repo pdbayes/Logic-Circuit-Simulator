@@ -3,22 +3,13 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValu
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentRepr, defineComponent, NodeVisual, NodeVisuals } from "./Component"
+import { FixedArray, FixedArrayFill, FixedArraySize, FixedReadonlyArray, isDefined, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBaseWithSubclassDefinedNodes, ComponentRepr, defineComponent, NodeVisual, NodeVisuals } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
-type MuxInputIndices<NumInputs extends FixedArraySize> = {
-    I: ReadonlyArray<FixedReadonlyArray<number, NumInputs>>, // array of arrays of input indices
-    S: ReadonlyArray<number>, // array of indices of selectors
-}
-
-type MuxOutputIndices<NumOutputs extends FixedArraySize> = {
-    Z: FixedReadonlyArray<number, NumOutputs>, // array of output indices
-}
-
-export function defineMux<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, N extends string>(numInputs: NumInputs, numOutputs: NumOutputs, jsonName: N, className: string) {
+function defineMux<NumInputs extends FixedArraySize, NumOutputs extends FixedArraySize, N extends string>(numInputs: NumInputs, numOutputs: NumOutputs, jsonName: N, className: string) {
     return defineComponent(numInputs, numOutputs, t.type({
         type: t.literal(jsonName),
         showWiring: typeOrUndefined(t.boolean),
@@ -34,11 +25,25 @@ const MuxDefaults = {
     showWiring: true,
 }
 
-export abstract class Mux<
+type MuxInputIndices<NumInputs extends FixedArraySize> = {
+    I: ReadonlyArray<FixedReadonlyArray<number, NumInputs>>, // array of arrays of input indices
+    S: ReadonlyArray<number>, // array of indices of selectors
+}
+
+type MuxOutputIndices<NumOutputs extends FixedArraySize> = {
+    Z: FixedReadonlyArray<number, NumOutputs>, // array of output indices
+}
+
+abstract class Mux<
     NumInputs extends FixedArraySize,
     NumOutputs extends FixedArraySize,
-    Repr extends MuxRepr<NumInputs, NumOutputs>>
-    extends ComponentBase<NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>>{
+    Repr extends MuxRepr<NumInputs, NumOutputs>
+    >
+    extends ComponentBaseWithSubclassDefinedNodes<
+    MuxInputIndices<NumOutputs>,
+    MuxOutputIndices<NumOutputs>,
+    NumInputs, NumOutputs, Repr, FixedArray<LogicValue, NumOutputs>
+    > {
 
     private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
         const offsets: NodeVisual[] = []
@@ -118,11 +123,6 @@ export abstract class Mux<
         return 1 + 2 * numLeftSlots
     }
 
-    private readonly gridWidth: number
-    private readonly gridHeight: number
-    private __INPUT: MuxInputIndices<NumOutputs> | undefined
-    private __OUTPUT: MuxOutputIndices<NumOutputs> | undefined
-
     private _showWiring = MuxDefaults.showWiring
 
     protected constructor(editor: LogicEditor, savedData: Repr | null,
@@ -130,62 +130,24 @@ export abstract class Mux<
         public readonly numSel: number,
         public readonly numTo: NumOutputs,
     ) {
-        super(editor, FixedArrayFill(false as LogicValue, numTo), savedData, {
+        super(editor, Mux.gridWidth(numSel), Mux.gridHeight(numFrom, numTo), FixedArrayFill(false as LogicValue, numTo), savedData, {
             ins: Mux.generateInOffsets(numFrom, numSel, numTo),
             outs: Mux.generateOutOffsets(numSel, numTo),
         } as unknown as NodeVisuals<NumInputs, NumOutputs>)
-        this.gridWidth = Mux.gridWidth(numSel)
-        this.gridHeight = Mux.gridHeight(numFrom, numTo)
         if (isNotNull(savedData)) {
             this._showWiring = savedData.showWiring ?? MuxDefaults.showWiring
         }
     }
 
-    public override toJSONBase() {
+    protected override toJSONBase() {
         return {
             ...super.toJSONBase(),
             showWiring: (this._showWiring !== MuxDefaults.showWiring) ? this._showWiring : undefined,
         }
     }
 
-    // lazy loading from subclass because accessed by superclass constructor
-    private get INPUT(): MuxInputIndices<NumOutputs> {
-        let INPUT = this.__INPUT
-        if (isUndefined(INPUT)) {
-            INPUT = Object.getPrototypeOf(this).constructor.INPUT
-            if (isUndefined(INPUT)) {
-                console.log("ERROR: Undefined INPUT indices in Mux subclass")
-                throw new Error("INPUT is undefined")
-            }
-            this.__INPUT = INPUT
-        }
-        return INPUT
-    }
-
-    // lazy loading from subclass because accessed by superclass constructor
-    private get OUTPUT(): MuxOutputIndices<NumOutputs> {
-        let OUTPUT = this.__OUTPUT
-        if (isUndefined(OUTPUT)) {
-            OUTPUT = Object.getPrototypeOf(this).constructor.OUTPUT
-            if (isUndefined(OUTPUT)) {
-                console.log("ERROR: Undefined OUTPUT indices in Mux subclass")
-                throw new Error("OUTPUT is undefined")
-            }
-            this.__OUTPUT = OUTPUT
-        }
-        return OUTPUT
-    }
-
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return this.gridWidth * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return this.gridHeight * GRID_STEP
     }
 
     public override makeTooltip() {
