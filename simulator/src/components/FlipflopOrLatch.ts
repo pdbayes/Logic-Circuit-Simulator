@@ -305,7 +305,7 @@ export abstract class Flipflop<
 
     public static drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: NodeIn, trigger: EdgeTrigger) {
         const clockY = clockNode.posYInParentTransform
-        const clockLineOffset = 2
+        const clockLineOffset = 1
         g.strokeStyle = COLOR_COMPONENT_BORDER
         g.lineWidth = 2
 

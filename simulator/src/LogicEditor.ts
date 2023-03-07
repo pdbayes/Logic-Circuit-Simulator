@@ -1492,7 +1492,7 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    private guessAdequateCanvasSize(): [number, number] {
+    private guessAdequateCanvasSize(applyZoom: boolean): [number, number] {
         let rightmostX = Number.NEGATIVE_INFINITY, leftmostX = Number.POSITIVE_INFINITY
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
         for (const comp of this.components.all()) {
@@ -1528,7 +1528,8 @@ export class LogicEditor extends HTMLElement {
         if (isNaN(h)) {
             h = 150
         }
-        return [w, h]
+        const f = applyZoom ? this._actualZoomFactor : 1
+        return [f * w, f * h]
     }
 
     public async shareSheetForMode(mode: Mode) {
@@ -1544,7 +1545,7 @@ export class LogicEditor extends HTMLElement {
         this.html.embedUrl.value = fullUrl
 
         const modeParam = mode === MAX_MODE_WHEN_EMBEDDED ? "" : `:mode: ${modeStr}\n`
-        const embedHeight = this.guessAdequateCanvasSize()[1]
+        const embedHeight = this.guessAdequateCanvasSize(true)[1]
 
         const markdownBlock = `\`\`\`{logic}\n:height: ${embedHeight}\n${modeParam}\n${fullJson}\n\`\`\``
         this.html.embedMarkdown.value = markdownBlock
@@ -1615,7 +1616,7 @@ export class LogicEditor extends HTMLElement {
     private async toPNG(heightHint?: number) {
         return new Promise<Blob | null>((resolve) => {
             const drawingScale = 3 // super retina
-            let [width, height] = this.guessAdequateCanvasSize()
+            let [width, height] = this.guessAdequateCanvasSize(false)
             if (isDefined(heightHint)) {
                 height = heightHint
             }
@@ -1868,7 +1869,7 @@ export class LogicEditor extends HTMLElement {
             g.lineWidth = 2
             g.strokeRect(0, 0, width, height)
             if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
-                const h = this.guessAdequateCanvasSize()[1]
+                const h = this.guessAdequateCanvasSize(true)[1]
                 strokeSingleLine(g, 0, h, width, h)
 
                 g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION

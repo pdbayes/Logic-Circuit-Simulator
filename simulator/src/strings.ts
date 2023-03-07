@@ -569,7 +569,7 @@ const Strings_fr = {
                 Slant: "Inclinaison",
                 SlantNone: "Aucune",
                 SlantRight: "De 45° vers la droite",
-                SlantLeft: "De 45° vers la gauche haut",
+                SlantLeft: "De 45° vers la gauche",
             },
         },
         QuadGate: {

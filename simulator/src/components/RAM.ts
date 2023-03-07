@@ -71,7 +71,7 @@ abstract class RAM<NumInputs extends FixedArraySize,
         ]
 
         // Data in
-        const spacing = wordWidth >= 8 ? 1 : 2
+        const spacing = wordWidth >= 7 ? 1 : 2
         const topInOffset = spacing === 1 ? -Math.round(wordWidth / 2) : -(wordWidth - 1) / 2 * spacing
         for (let i = 0; i < wordWidth; i++) {
             ins.push([`D${i}`, -7, topInOffset + i * spacing, "w", "D"])
@@ -86,7 +86,7 @@ abstract class RAM<NumInputs extends FixedArraySize,
     }
 
     private static generateOutOffsets<NumOutputs extends FixedArraySize>(wordWidth: NumOutputs): FixedArray<NodeVisual, NumOutputs> {
-        const spacing = wordWidth >= 8 ? 1 : 2
+        const spacing = wordWidth >= 7 ? 1 : 2
         const topOffset = spacing === 1 ? -Math.round(wordWidth / 2) : -(wordWidth - 1) / 2 * spacing
         return FixedArrayFillFactory(i => [`Q${i}`, +7, topOffset + i * spacing, "e", "Q"], wordWidth)
     }
@@ -203,10 +203,14 @@ abstract class RAM<NumInputs extends FixedArraySize,
             }
             cells.push(wordRepr)
         }
+        let numToSkip = 0
         for (let addr = this._numWords - 1; addr >= 0; addr--) {
             if (isAllZeros(cells[addr])) {
-                cells.splice(addr, 1)
+                numToSkip++
             } else {
+                if (numToSkip > 0) {
+                    cells.splice(addr + 1, numToSkip)
+                }
                 break
             }
         }

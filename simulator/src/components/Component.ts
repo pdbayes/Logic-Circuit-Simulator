@@ -112,7 +112,7 @@ export function ExtendComponentRepr<NumInputs extends FixedArraySize, NumOutputs
 }
 
 export type NodeVisualNoGroup = readonly [name: string | undefined, xShift: number, yShift: number, orient: Orientation]
-export type NodeVisualWithGroup = readonly [name: string | undefined, xShift: number, yShift: number, orient: Orientation, gorupName: string]
+export type NodeVisualWithGroup = readonly [name: string | undefined, xShift: number, yShift: number, orient: Orientation, groupName: string]
 export type NodeVisual = NodeVisualNoGroup | NodeVisualWithGroup
 
 function hasGroup(nodeVisual: NodeVisual): nodeVisual is NodeVisualWithGroup {
