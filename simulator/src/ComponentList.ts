@@ -1,11 +1,13 @@
 import { Component } from "./components/Component"
 import { FixedArrayFillFactory } from "./utils"
 
-export const ZIndexBackground = 0
-export const ZIndexNormal = 1
-export const ZIndexOverlay = 2
+export const DrawZIndex = {
+    Background: 0,
+    Normal: 1,
+    Overlay: 2,
+} as const
 
-export type DrawZIndex = typeof ZIndexBackground | typeof ZIndexNormal | typeof ZIndexOverlay
+export type DrawZIndex = typeof DrawZIndex[keyof typeof DrawZIndex]
 
 export class ComponentList {
 

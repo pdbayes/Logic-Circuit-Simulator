@@ -1,6 +1,6 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 import { ComponentFactory } from './ComponentFactory'
-import { ZIndexBackground, ZIndexNormal, ZIndexOverlay } from './ComponentList'
+import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
 import { Node } from "./components/Node"
@@ -177,14 +177,14 @@ export class CursorMovementManager {
             }
 
             // overlays
-            for (const comp of this.editor.components.withZIndex(ZIndexOverlay)) {
+            for (const comp of this.editor.components.withZIndex(DrawZIndex.Overlay)) {
                 if (comp.isOver(x, y)) {
                     return comp
                 }
             }
 
             // normal components or their nodes
-            for (const comp of this.editor.components.withZIndex(ZIndexNormal)) {
+            for (const comp of this.editor.components.withZIndex(DrawZIndex.Normal)) {
                 let nodeOver: Node | null = null
                 comp.forEachNode((node) => {
                     if (node.isOver(x, y)) {
@@ -214,7 +214,7 @@ export class CursorMovementManager {
             }
 
             // background elems
-            for (const comp of this.editor.components.withZIndex(ZIndexBackground)) {
+            for (const comp of this.editor.components.withZIndex(DrawZIndex.Background)) {
                 if (comp.isOver(x, y)) {
                     return comp
                 }

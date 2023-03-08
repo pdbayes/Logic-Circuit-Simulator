@@ -3,6 +3,8 @@
 
 ## High priority
 
+ * Correct register display when horizontal
+ * 8-bit register
  * Copy-paste
  * Hide mouseover when mouse leaves web component boundaries
  * High-Z bus logic
@@ -23,6 +25,16 @@
  * Edge detector
  * Component creation
  * (Address) decoder: 2, 3, 4 bit versions
+ * Save/restore using browser's storage
+    * standalone
+      * no long term storage
+      * sessionstorage pour recharger la page et restaurer le contenu
+      * localstorage pour reproposer le contenu si rechargé plus tard, 1 seule entrée
+      * avec un bouton
+    * embedded
+      * with manually-defined id
+      * only with sessionstorage
+
 
 
 ## Low priority

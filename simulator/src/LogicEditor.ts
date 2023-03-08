@@ -31,7 +31,7 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
 import { ComponentFactory } from "./ComponentFactory"
-import { ComponentList, ZIndexBackground, ZIndexNormal, ZIndexOverlay } from "./ComponentList"
+import { ComponentList, DrawZIndex } from "./ComponentList"
 import { LabelRect } from "./components/LabelRect"
 import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, isLang, S, setLang } from "./strings"
@@ -1902,7 +1902,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         // draw background components
-        for (const comp of this.components.withZIndex(ZIndexBackground)) {
+        for (const comp of this.components.withZIndex(DrawZIndex.Background)) {
             drawComp(comp)
         }
 
@@ -1910,12 +1910,12 @@ export class LogicEditor extends HTMLElement {
         this.wireMgr.draw(g, drawParams) // never show wires as selected
 
         // draw normal components
-        for (const comp of this.components.withZIndex(ZIndexNormal)) {
+        for (const comp of this.components.withZIndex(DrawZIndex.Normal)) {
             drawComp(comp)
         }
 
         // draw overlays
-        for (const comp of this.components.withZIndex(ZIndexOverlay)) {
+        for (const comp of this.components.withZIndex(DrawZIndex.Overlay)) {
             drawComp(comp)
         }
 
