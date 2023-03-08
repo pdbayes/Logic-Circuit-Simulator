@@ -528,7 +528,7 @@ export class LogicEditor extends HTMLElement {
                 }
                 switch (e.key) {
                     case "Escape":
-                        this.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING)
+                        this.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING, false)
                         this.wireMgr.tryCancelWire()
                         e.preventDefault()
                         return
@@ -1338,7 +1338,7 @@ export class LogicEditor extends HTMLElement {
 
     public tryDeleteDrawable(comp: Drawable): boolean {
         if (comp instanceof ComponentBase) {
-            return this.tryDeleteComponentsWhere(c => c === comp)
+            return this.tryDeleteComponentsWhere(c => c === comp, true) !== 0
         } else if (comp instanceof Wire) {
             this.wireMgr.deleteWire(comp)
             return true
@@ -1358,12 +1358,12 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    public tryDeleteComponentsWhere(cond: (e: Component) => boolean) {
-        const compDeleted = this.components.tryDeleteWhere(cond)
-        if (compDeleted) {
+    public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
+        const numDeleted = this.components.tryDeleteWhere(cond, onlyOne)
+        if (numDeleted > 0) {
             this.redrawMgr.addReason("component(s) deleted", null)
         }
-        return compDeleted
+        return numDeleted
     }
 
     public setCurrentMouseAction(action: MouseAction) {

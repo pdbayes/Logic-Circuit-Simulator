@@ -732,7 +732,7 @@ export abstract class ComponentBase<
 
     protected makeDeleteContextMenuItem(): ContextMenuItem {
         return ContextMenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
-            this.editor.tryDeleteComponentsWhere(c => c === this)
+            this.editor.tryDeleteDrawable(this)
         }, true)
     }
 
