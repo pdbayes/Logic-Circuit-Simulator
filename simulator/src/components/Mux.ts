@@ -48,21 +48,24 @@ abstract class Mux<
     private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
         const offsets: NodeVisual[] = []
 
+        const compact = numTo >= 7
+        const spacing = compact ? 1 : 2
+
         // left inputs
         const numGroups = numFrom / numTo
         const addByGroupSep = numTo > 1 ? 1 : 0
-        const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
+        const numLeftSlots = (numFrom * spacing) / 2 + (numGroups - 1) * addByGroupSep
         let x = -2 - numSel
         let y = -(numLeftSlots - 1)
         const selY = y - 2
         let groupLetter = "A"
         for (let i = 0; i < numFrom; i++) {
             if (i !== 0 && i % numTo === 0) {
-                y += addByGroupSep * 2
+                y += addByGroupSep * spacing
                 groupLetter = String.fromCharCode(groupLetter.charCodeAt(0) + 1)
             }
             offsets.push([groupLetter + (i % numTo), x, y, "w", groupLetter])
-            y += 2
+            y += spacing
         }
 
         // top input selectors
@@ -77,10 +80,12 @@ abstract class Mux<
         const offsets: NodeVisual[] = []
 
         // right outputs
-        const from = -(numTo - 1)
+        const compact = numTo >= 7
+        const spacing = compact ? 1 : 2
+        const topOffset = spacing === 1 ? -Math.round(numTo / 2) : -(numTo - 1) / 2 * spacing
         const x = 2 + numSel
         for (let i = 0; i < numTo; i++) {
-            offsets.push([`Z${i}`, x, from + 2 * i, "e", "Z"])
+            offsets.push([`Z${i}`, x, topOffset + spacing * i, "e", "Z"])
         }
         return offsets as FixedArray<NodeVisual, NumOutputs>
     }
@@ -117,10 +122,12 @@ abstract class Mux<
     }
 
     private static gridHeight(numFrom: number, numTo: number): number {
+        const compact = numTo >= 7
+        const spacing = compact ? 1 : 2
         const numGroups = numFrom / numTo
         const addByGroupSep = numTo > 1 ? 1 : 0
         const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
-        return 1 + 2 * numLeftSlots
+        return 1 + spacing * numLeftSlots
     }
 
     private _showWiring = MuxDefaults.showWiring
@@ -395,6 +402,26 @@ export class Mux8To4 extends Mux<9, 4, Mux8To4Repr> {
     public toJSON() {
         return {
             type: "mux-8to4" as const,
+            ...this.toJSONBase(),
+        }
+    }
+}
+
+
+export const Mux16To8Def = defineMux(17, 8, "mux-16to8", "Mux16To8")
+export type Mux16To8Repr = typeof Mux16To8Def.reprType
+export class Mux16To8 extends Mux<17, 8, Mux16To8Repr> {
+
+    protected static INPUT = Mux.generateInputIndices(16, 1, 8)
+    protected static OUTPUT = Mux.generateOutputIndices(8)
+
+    public constructor(editor: LogicEditor, savedData: Mux16To8Repr | null) {
+        super(editor, savedData, 16, 1, 8)
+    }
+
+    public toJSON() {
+        return {
+            type: "mux-16to8" as const,
             ...this.toJSONBase(),
         }
     }

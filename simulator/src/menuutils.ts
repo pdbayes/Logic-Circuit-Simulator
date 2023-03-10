@@ -314,6 +314,11 @@ const componentsMenu: Array<Section> = [
                 strings: "Mux8to4", img: "Mux", width: 50,
                 normallyHidden: true,
             },
+            {
+                type: "component", subtype: "mux-16to8",
+                strings: "Mux16to8", img: "Mux", width: 50,
+                normallyHidden: true,
+            },
 
             {
                 type: "component", subtype: "demux-1to2",
@@ -343,6 +348,11 @@ const componentsMenu: Array<Section> = [
             {
                 type: "component", subtype: "demux-4to8",
                 strings: "Demux4to8", img: "Demux", width: 50,
+                normallyHidden: true,
+            },
+            {
+                type: "component", subtype: "demux-8to16",
+                strings: "Demux8to16", img: "Demux", width: 50,
                 normallyHidden: true,
             },
 
