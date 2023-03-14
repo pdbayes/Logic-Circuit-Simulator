@@ -38,14 +38,14 @@ const DemuxDefaults = {
     disconnectedAsHighZ: false,
 }
 
-export abstract class Demux< Repr extends DemuxRepr>
+export abstract class Demux<Repr extends DemuxRepr>
     extends ComponentBaseWithSubclassDefinedNodes<Repr, LogicValue[], DemuxInputIndices, DemuxOutputIndices, true, true> {
 
     private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
         const offsets: NodeVisual[] = []
 
         // left inputs
-        const compact = numTo >= 7
+        const compact = numFrom >= 7
         const spacing = compact ? 1 : 2
         const numGroups = numTo / numFrom
         const addByGroupSep = numFrom > 1 ? 1 : 0
@@ -69,7 +69,7 @@ export abstract class Demux< Repr extends DemuxRepr>
     private static generateOutOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
         const offsets: NodeVisual[] = []
 
-        const compact = numTo >= 7
+        const compact = numFrom >= 7
         const spacing = compact ? 1 : 2
         const numGroups = numTo / numFrom
         const addByGroupSep = numFrom > 1 ? 1 : 0
@@ -126,7 +126,7 @@ export abstract class Demux< Repr extends DemuxRepr>
     }
 
     private static gridHeight(numFrom: number, numTo: number): number {
-        const compact = numTo >= 7
+        const compact = numFrom >= 7
         const spacing = compact ? 1 : 2
         const numGroups = numTo / numFrom
         const addByGroupSep = numFrom > 1 ? 1 : 0
@@ -148,7 +148,8 @@ export abstract class Demux< Repr extends DemuxRepr>
             Demux.gridWidth(numSel), Demux.gridHeight(numFrom, numTo),
             Demux.generateInputIndices(numFrom, numSel),
             Demux.generateOutputIndices(numFrom, numTo),
-            ArrayFillWith(false as LogicValue, numTo), savedData, {
+            ArrayFillWith(false as LogicValue, numTo), savedData,
+            {
                 ins: Demux.generateInOffsets(numFrom, numSel, numTo),
                 outs: Demux.generateOutOffsets(numFrom, numSel, numTo),
             })
