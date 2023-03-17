@@ -1,81 +1,77 @@
+import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, LogicValue, Mode, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
+import { ArrayFillWith, isDefined, isNotNull, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { Gate2Type, Gate2Types_ } from "./Gate"
-
-const GRID_WIDTH = 4
-const GRID_HEIGHT = 19
-
-const INPUT = {
-    A: [0, 1, 2, 3] as const,
-    B: [4, 5, 6, 7] as const,
-}
-
-const OUTPUT = {
-    S: [0, 1, 2, 3] as const,
-}
+import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
-export const QuadGateDef =
-    defineComponent(true, true, t.type({
-        type: t.literal("quad-gate"),
-        subtype: t.keyof(Gate2Types_),
-        showAsUnknown: typeOrUndefined(t.boolean),
-    }, "QuadGate"))
+export const GateArrayDef =
+    defineParametrizedComponent("gate-array", true, true, {
+        variantName: ({ bits }) => `gate-array-${bits}`,
+        repr: {
+            bits: typeOrUndefined(t.number),
+            subtype: GateNTypeRepr,
+            showAsUnknown: typeOrUndefined(t.boolean),
+        },
+        valueDefaults: {
+            subtype: "AND" as GateNType,
+            showAsUnknown: false,
+        },
+        paramDefaults: {
+            bits: 4,
+        },
+        validateParams: ({ bits }, defaults) => {
+            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Gate array bits")
+            return { numBits }
+        },
+        makeNodes: ({ numBits }) => ({
+            ins: {
+                A: groupVertical("w", -3, -5, numBits),
+                B: groupVertical("w", -3, +5, numBits),
+            },
+            outs: {
+                S: groupVertical("e", 3, 0, numBits),
+            },
+        }),
+        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+    })
 
-type QuadGateRepr = Repr<typeof QuadGateDef>
 
-const QuadGateDefaults = {
-    subtype: "AND",
-    showAsUnknown: false,
-} as const
+export type GateArrayRepr = Repr<typeof GateArrayDef>
+export type GateArrayParams = Params<typeof GateArrayDef>
 
-export class QuadGate extends ComponentBase<QuadGateRepr, LogicValue[]> {
+export class GateArray extends ComponentBase<GateArrayRepr> {
 
-    private _subtype: Gate2Type
+    public readonly numBits: number
+    private _subtype: GateNType
     private _showAsUnknown: boolean
 
-    public constructor(editor: LogicEditor, savedData: QuadGateRepr | null) {
-        super(editor, ArrayFillWith(false, 4), savedData, {
-            ins: [
-                // A
-                ["A0", -3, -8, "w", "A"],
-                ["A1", -3, -6, "w", "A"],
-                ["A2", -3, -4, "w", "A"],
-                ["A3", -3, -2, "w", "A"],
-                // B
-                ["B0", -3, 2, "w", "B"],
-                ["B1", -3, 4, "w", "B"],
-                ["B2", -3, 6, "w", "B"],
-                ["B3", -3, 8, "w", "B"],
-            ],
-            outs: [
-                ["S0", 3, -3, "e", "S"],
-                ["S1", 3, -1, "e", "S"],
-                ["S2", 3, 1, "e", "S"],
-                ["S3", 3, 3, "e", "S"],
-            ],
-        })
+    public constructor(editor: LogicEditor, initData: Either<GateArrayParams, GateArrayRepr>) {
+        const [params, savedData] = GateArrayDef.validate(initData)
+        super(editor, GateArrayDef(params), savedData)
+
+        this.numBits = params.numBits
         if (isNotNull(savedData)) {
             this._subtype = savedData.subtype
-            this._showAsUnknown = savedData.showAsUnknown ?? QuadGateDefaults.showAsUnknown
+            this._showAsUnknown = savedData.showAsUnknown ?? GateArrayDef.aults.showAsUnknown
         } else {
-            this._subtype = QuadGateDefaults.subtype
-            this._showAsUnknown = QuadGateDefaults.showAsUnknown
+            this._subtype = GateArrayDef.aults.subtype
+            this._showAsUnknown = GateArrayDef.aults.showAsUnknown
         }
     }
 
     public toJSON() {
         return {
-            type: "quad-gate" as const,
+            type: "gate-array" as const,
             subtype: this._subtype,
+            bits: this.numBits === GateArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
-            showAsUnknown: this._showAsUnknown === QuadGateDefaults.showAsUnknown ? undefined : this._showAsUnknown,
+            showAsUnknown: this._showAsUnknown === GateArrayDef.aults.showAsUnknown ? undefined : this._showAsUnknown,
         }
     }
 
@@ -84,15 +80,15 @@ export class QuadGate extends ComponentBase<QuadGateRepr, LogicValue[]> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 4 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 19 * GRID_STEP
     }
 
     public override makeTooltip() {
-        const s = S.Components.QuadGate.tooltip
+        const s = S.Components.GateArray.tooltip
         const opDesc = S.Components.Gate[this._subtype][0]
         return tooltipContent(s.title, mods(
             div(s.desc.expand({ op: opDesc })),
@@ -100,50 +96,40 @@ export class QuadGate extends ComponentBase<QuadGateRepr, LogicValue[]> {
     }
 
     protected doRecalcValue(): LogicValue[] {
-        const out = Gate2Types_[this._subtype].out
+        const out = GateNTypes.props[this._subtype].out
 
-        const a = this.inputValues(INPUT.A)
-        const b = this.inputValues(INPUT.B)
+        const a = this.inputValues(this.inputs.A)
+        const b = this.inputValues(this.inputs.B)
 
-        const s = ArrayFillWith(Unknown as LogicValue, 4)
-        for (let i = 0; i < 4; i++) {
+        const s = ArrayFillWith(Unknown as LogicValue, this.numBits)
+        for (let i = 0; i < this.numBits; i++) {
             const ai = a[i]
             const bi = b[i]
-            if (typeof ai === "boolean" && typeof bi === "boolean") {
-                s[i] = out(ai, bi)
-            }
+            s[i] = out([ai, bi])
         }
         return s
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        for (let i = 0; i < OUTPUT.S.length; i++) {
-            this.outputs[OUTPUT.S[i]].value = newValue[i]
-        }
+        this.outputValues(this.outputs.S, newValue)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = this.posX + width / 2
         let top = this.posY - height / 2
         let bottom = this.posY + height / 2
 
         // inputs
-        for (let i = 0; i < INPUT.A.length; i++) {
-            const inputi = this.inputs[INPUT.A[i]]
-            drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
-        }
-        for (let i = 0; i < INPUT.B.length; i++) {
-            const inputi = this.inputs[INPUT.B[i]]
-            drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
+        for (const input of this.inputs._all) {
+            drawWireLineToComponent(g, input, left, input.posYInParentTransform)
         }
         // outputs
-        for (let i = 0; i < OUTPUT.S.length; i++) {
-            const outputi = this.outputs[OUTPUT.S[i]]
-            drawWireLineToComponent(g, outputi, right, outputi.posYInParentTransform)
+        for (const output of this.outputs._all) {
+            drawWireLineToComponent(g, output, right, output.posYInParentTransform)
         }
 
 
@@ -283,7 +269,7 @@ export class QuadGate extends ComponentBase<QuadGateRepr, LogicValue[]> {
 
     }
 
-    private doSetSubtype(newSubtype: Gate2Type) {
+    private doSetSubtype(newSubtype: GateNType) {
         this._subtype = newSubtype
         this.setNeedsRecalc()
         this.setNeedsRedraw("quad gate type changed")
@@ -294,9 +280,8 @@ export class QuadGate extends ComponentBase<QuadGateRepr, LogicValue[]> {
         this.setNeedsRedraw("display as unknown changed")
     }
 
-
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        const s = S.Components.QuadGate.contextMenu
+        const s = S.Components.GateArray.contextMenu
 
         const typeItems: ContextMenuData = []
         for (const subtype of ["AND", "OR", "XOR", "NAND", "NOR", "XNOR"] as const) {

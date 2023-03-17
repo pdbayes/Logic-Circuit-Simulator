@@ -1,17 +1,17 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
+import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
 import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
 import { DrawContext } from "./Drawable"
 
 
-export const SwitchedInverterDef =
-    defineParametrizedComponent("switched-inverter", true, true, {
-        variantName: ({ bits }) => `switched-inverter-${bits}`,
+export const TriStateBufferArrayDef =
+    defineParametrizedComponent("tristate-array", true, true, {
+        variantName: ({ bits }) => `tristate-array-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
         },
@@ -20,40 +20,39 @@ export const SwitchedInverterDef =
             bits: 4,
         },
         validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Switched inverter bits")
+            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Tri-state buffer array bits")
             return { numBits }
         },
         makeNodes: ({ numBits }) => ({
             ins: {
                 I: groupVertical("w", -3, 0, numBits),
-                S: [0, -5, "n"],
+                E: [0, -5, "n", "E (Enable)"],
             },
             outs: {
-                O: groupVertical("e", +3, 0, numBits),
+                O: groupVertical("e", 3, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(HighImpedance, numBits),
     })
 
 
-export type SwitchedInverterRepr = Repr<typeof SwitchedInverterDef>
-export type SwitchedInverterParams = Params<typeof SwitchedInverterDef>
+export type TriStateBufferArrayRepr = Repr<typeof TriStateBufferArrayDef>
+export type TriStateBufferArrayParams = Params<typeof TriStateBufferArrayDef>
 
-
-export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
+export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, initData: Either<SwitchedInverterParams, SwitchedInverterRepr>) {
-        const [params, savedData] = SwitchedInverterDef.validate(initData)
-        super(editor, SwitchedInverterDef(params), savedData)
+    public constructor(editor: LogicEditor, initData: Either<TriStateBufferArrayParams, TriStateBufferArrayRepr>) {
+        const [params, savedData] = TriStateBufferArrayDef.validate(initData)
+        super(editor, TriStateBufferArrayDef(params), savedData)
         this.numBits = params.numBits
     }
 
     public toJSON() {
         return {
-            type: "switched-inverter" as const,
-            bits: this.numBits === SwitchedInverterDef.aults.bits ? undefined : this.numBits,
+            type: "tristate-array" as const,
+            bits: this.numBits === TriStateBufferArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
         }
     }
@@ -71,25 +70,24 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
     }
 
     public override makeTooltip() {
-        const s = S.Components.SwitchedInverter.tooltip
+        const s = S.Components.TriStateBufferArray.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc)
         ))
     }
 
     protected doRecalcValue(): LogicValue[] {
-        const input = this.inputValues(this.inputs.I)
-        const switch_ = this.inputs.S.value
+        const enable = this.inputs.E.value
 
-        if (isUnknown(switch_) || isHighImpedance(switch_)) {
+        if (isUnknown(enable) || isHighImpedance(enable)) {
             return ArrayFillWith(Unknown, this.numBits)
         }
 
-        if (!switch_) {
-            return input
+        if (!enable) {
+            return ArrayFillWith(HighImpedance, this.numBits)
         }
 
-        return input.map(LogicValue.invert)
+        return this.inputValues(this.inputs.I)
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
@@ -97,8 +95,7 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const invert = this.inputs.S.value
+        const enable = this.inputs.E.value
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight
@@ -117,21 +114,18 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
         g.stroke()
 
         g.lineWidth = 2
-        g.strokeStyle = colorForBoolean(invert)
+        g.strokeStyle = colorForBoolean(enable)
         g.beginPath()
         g.moveTo(this.posX, top + 3)
         g.lineTo(this.posX, this.posY - 4)
         g.stroke()
 
-        g.strokeStyle = invert === true ? COLOR_COMPONENT_BORDER : COLOR_UNKNOWN
+        g.strokeStyle = COLOR_COMPONENT_BORDER
         g.beginPath()
         g.moveTo(left + 12, this.posY - 8)
         g.lineTo(right - 13, this.posY)
         g.lineTo(left + 12, this.posY + 8)
         g.closePath()
-        g.stroke()
-        g.beginPath()
-        circle(g, right - 10, this.posY, 5)
         g.stroke()
 
 
@@ -139,7 +133,7 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        drawWireLineToComponent(g, this.inputs.S, this.inputs.S.posXInParentTransform, top - 2)
+        drawWireLineToComponent(g, this.inputs.E, this.inputs.E.posXInParentTransform, top - 2)
 
 
         for (const output of this.outputs.O) {
@@ -147,4 +141,3 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
         }
     }
 }
-

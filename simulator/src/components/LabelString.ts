@@ -1,27 +1,30 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
+import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isNotNull, isUndefined, typeOrUndefined } from "../utils"
-import { ComponentBase, Repr, defineComponent } from "./Component"
+import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const LabelStringDef =
-    defineComponent(false, false, t.type({
-        text: t.string,
-        // align: typeOrUndefined(t.string), 
-        font: typeOrUndefined(t.string),
-    }, "Label"))
+    defineComponent(undefined, {
+        repr: {
+            text: t.string,
+            // align: typeOrUndefined(t.string), 
+            font: typeOrUndefined(t.string),
+        },
+        valueDefaults: {
+            text: "Label",
+            // align: "center" as const,
+            font: FONT_LABEL_DEFAULT,
+        },
+        makeNodes: () => ({}),
+    })
 
-type LabelStringRepr = Repr<typeof LabelStringDef>
+export type LabelStringRepr = Repr<typeof LabelStringDef>
 
-const LabelStringDefaults = {
-    text: "Label",
-    // align: "center" as const,
-    font: FONT_LABEL_DEFAULT,
-}
-export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
+export class LabelString extends ComponentBase<LabelStringRepr> {
 
     private _text: string
     // private _align: CanvasTextAlign // causes issues with mouseovers and stuff
@@ -29,15 +32,15 @@ export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
     private _cachedTextMetrics: TextMetrics | undefined = undefined
 
     public constructor(editor: LogicEditor, savedData: LabelStringRepr | null) {
-        super(editor, undefined, savedData, {})
+        super(editor, LabelStringDef, savedData)
         if (isNotNull(savedData)) {
             this._text = savedData.text
             // this._align = (savedData.align as CanvasTextAlign) ?? LabelStringDefaults.align
-            this._font = savedData.font ?? LabelStringDefaults.font
+            this._font = savedData.font ?? LabelStringDef.aults.font
         } else {
-            this._text = LabelStringDefaults.text
+            this._text = LabelStringDef.aults.text
             // this._align = LabelStringDefaults.align
-            this._font = LabelStringDefaults.font
+            this._font = LabelStringDef.aults.font
         }
     }
 
@@ -46,7 +49,7 @@ export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
             ...this.toJSONBase(),
             text: this._text,
             // align: this._align === LabelStringDefaults.align ? undefined : this._align,
-            font: this._font === LabelStringDefaults.font ? undefined : this._font,
+            font: this._font === LabelStringDef.aults.font ? undefined : this._font,
         }
     }
 
@@ -114,7 +117,7 @@ export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
         const setTextItem = ContextMenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
 
         const setFontItem = ContextMenuData.item("font", s.Font, () => {
-            this.runSetFontDialog(this._font, LabelStringDefaults.font, this.doSetFont.bind(this))
+            this.runSetFontDialog(this._font, LabelStringDef.aults.font, this.doSetFont.bind(this))
         })
 
         return [
@@ -127,7 +130,7 @@ export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
         const promptReturnValue = window.prompt(S.Components.LabelString.contextMenu.ChangeTextPrompt, this._text)
         if (promptReturnValue !== null) {
             // OK button pressed
-            const newText = promptReturnValue.length === 0 ? LabelStringDefaults.text : promptReturnValue
+            const newText = promptReturnValue.length === 0 ? LabelStringDef.aults.text : promptReturnValue
             this.doSetText(newText)
         }
     }
@@ -145,6 +148,5 @@ export class LabelString extends ComponentBase<LabelStringRepr, undefined> {
         this.runSetTextDialog()
         return true
     }
-
 
 }

@@ -4,41 +4,36 @@ import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, Repr } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, groupVertical, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
-
-const GRID_WIDTH = 4
-const GRID_HEIGHT = 8
 
 
 export const OutputAsciiDef =
-    defineComponent(true, false, t.type({
-        type: t.literal("ascii"),
-        name: ComponentNameRepr,
-        additionalReprRadix: typeOrUndefined(t.number),
-        showAsUnknown: typeOrUndefined(t.boolean),
-    }, "OutputAscii"))
+    defineComponent("ascii", {
+        repr: {
+            name: ComponentNameRepr,
+            additionalReprRadix: typeOrUndefined(t.number),
+            showAsUnknown: typeOrUndefined(t.boolean),
+        },
+        valueDefaults: {},
+        makeNodes: () => ({
+            ins: {
+                Z: groupVertical("w", -3, 0, 7),
+            },
+        }),
+        initialValue: (): [string, number | "?"] => ["0000000", 0],
+    })
 
 type OutputAsciiRepr = Repr<typeof OutputAsciiDef>
 
-export class OutputAscii extends ComponentBase<OutputAsciiRepr, [string, number | "?"]> {
+export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
     private _name: ComponentName = undefined
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
     public constructor(editor: LogicEditor, savedData: OutputAsciiRepr | null) {
-        super(editor, ["0000000", 0], savedData, {
-            ins: [
-                ["Z0", -3, -3, "w", "Z"],
-                ["Z1", -3, -2, "w", "Z"],
-                ["Z2", -3, -1, "w", "Z"],
-                ["Z3", -3, 0, "w", "Z"],
-                ["Z4", -3, +1, "w", "Z"],
-                ["Z5", -3, +2, "w", "Z"],
-                ["Z6", -3, +3, "w", "Z"],
-            ],
-        })
+        super(editor, OutputAsciiDef, savedData)
         if (isNotNull(savedData)) {
             this._name = savedData.name
             this._additionalReprRadix = savedData.additionalReprRadix
@@ -61,11 +56,11 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr, [string, number 
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 4 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 8 * GRID_STEP
     }
 
     private get showAsUnknown() {
@@ -91,13 +86,14 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr, [string, number 
     }
 
     protected doRecalcValue() {
-        return displayValuesFromArray(this.inputs.map(i => i.value), false)
+        const values = this.inputValues(this.inputs.Z)
+        return displayValuesFromArray(values, false)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
 
         g.fillStyle = COLOR_BACKGROUND
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
@@ -108,7 +104,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr, [string, number 
         g.fill()
         g.stroke()
 
-        for (const input of this.inputs) {
+        for (const input of this.inputs.Z) {
             drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
@@ -166,7 +162,6 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr, [string, number 
                 }
             }
             g.fillText(mainText, this.posX, mainTextPosY)
-
 
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, mainText, this, true)

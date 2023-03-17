@@ -1,15 +1,16 @@
 import { Bezier, Offset } from "bezier-js"
+import { left } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { DrawParams, LogicEditor } from "../LogicEditor"
-import { Timestamp } from "../Timeline"
-import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
+import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, NodeStyle, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { span, style, title } from "../htmlgen"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { LogicValue, Mode, isDefined, isNotNull, isNull, isUndefined, typeOrUndefined } from "../utils"
+import { Timestamp } from "../Timeline"
+import { InteractionResult, isArray, isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
-import { ContextMenuData, DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
+import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
-import { Passthrough1 } from "./Passthrough"
+import { Passthrough } from "./Passthrough"
 
 type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -100,7 +101,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
-        return this.tryStopMoving()
+        return InteractionResult.fromBoolean(this.tryStopMoving())
     }
 
     public override makeContextMenu(): ContextMenuData {
@@ -272,7 +273,7 @@ export class Wire extends Drawable {
             (isNull(this.endNode) || this.endNode.isAlive)
     }
 
-    public addPassthroughFrom(e: MouseEvent | TouchEvent): Passthrough1 | undefined {
+    public addPassthroughFrom(e: MouseEvent | TouchEvent): Passthrough | undefined {
         const editor = this.editor
         const [x, y] = editor.offsetXYForContextMenu(e, true)
         const endNode = this.endNode
@@ -280,17 +281,17 @@ export class Wire extends Drawable {
             return undefined
         }
 
-        const passthrough = new Passthrough1(editor, null)
+        const passthrough = new Passthrough(editor, left({ bits: 1 }))
         editor.components.add(passthrough)
         passthrough.setPosition(x, y)
         editor.moveMgr.setDrawableStoppedMoving(passthrough)
 
         // modify this wire to go to the passthrough
-        this.setSecondNode(passthrough.inputs[0])
+        this.setSecondNode(passthrough.inputs.I[0])
 
         // create a new wire from the passthrough to the end node
         const wireMgr = editor.wireMgr
-        wireMgr.addNode(passthrough.outputs[0])
+        wireMgr.addNode(passthrough.outputs.O[0])
         const newWire = wireMgr.addNode(endNode)
         if (isUndefined(newWire)) {
             console.log("WARN: couldn't create new wire")
@@ -495,7 +496,7 @@ export class Wire extends Drawable {
         if (e.altKey && this.editor.mode >= Mode.DESIGN) {
             const passthrough = this.addPassthroughFrom(e)
             if (isDefined(passthrough)) {
-                return passthrough.outputs[0].mouseDown(e)
+                return passthrough.outputs.O[0].mouseDown(e)
             }
         }
         return super.mouseDown(e)
@@ -519,9 +520,9 @@ export class Wire extends Drawable {
         if (isDefined(this._waypointBeingDragged)) {
             this._waypointBeingDragged.mouseUp(e)
             this._waypointBeingDragged = undefined
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     public override makeContextMenu(): ContextMenuData {
@@ -731,7 +732,7 @@ export class Ribbon extends Drawable {
         }
 
         const drawBeziers = (bs: Offset | Bezier[]) => {
-            if (Array.isArray(bs)) {
+            if (isArray(bs)) {
                 g.beginPath()
                 for (const bb of bs) {
                     addBezierToPath(bb)

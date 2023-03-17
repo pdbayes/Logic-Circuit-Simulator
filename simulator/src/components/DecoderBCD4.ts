@@ -1,48 +1,43 @@
-import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
+import { FixedArray, FixedArrayFillWith, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
+import { ComponentBase, defineComponent, group, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
+
 export const DecoderBCD4Def =
-    defineComponent(true, true, t.type({
-        type: t.literal("decoder-bcd4"),
-    }, "DecoderBCD4"))
-
-const INPUT = {
-    I: [0, 1, 2, 3] as const,
-}
-
-// const OUTPUT = {
-//     B: [0, 1, 2, 3, 5] as const,
-// }
-
-const GRID_WIDTH = 5
-const GRID_HEIGHT = 12
+    defineComponent("decoder-bcd4", {
+        valueDefaults: {},
+        makeNodes: () => ({
+            ins: {
+                I: group("w", [
+                    [-4, -3, "D"],
+                    [-4, -1, "C"],
+                    [-4, +1, "B"],
+                    [-4, +3, "A"],
+                ]),
+            },
+            outs: {
+                Z: group("e", [
+                    [+4, -5],
+                    [+4, -3],
+                    [+4, -1],
+                    [+4, +1],
+                    [+4, +5],
+                ]),
+            },
+        }),
+        initialValue: () => FixedArrayFillWith(false as LogicValue, 5),
+    })
 
 type DecoderBCD4Repr = Repr<typeof DecoderBCD4Def>
 
-export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
+export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
 
     public constructor(editor: LogicEditor, savedData: DecoderBCD4Repr | null) {
-        super(editor, ArrayFillWith(false, 5), savedData, {
-            ins: [
-                ["D", -4, -3, "w", "In"],
-                ["C", -4, -1, "w", "In"],
-                ["B", -4, +1, "w", "In"],
-                ["A", -4, +3, "w", "In"],
-            ],
-            outs: [
-                ["Z0", +4, -5, "e", "Z"],
-                ["Z1", +4, -3, "e", "Z"],
-                ["Z2", +4, -1, "e", "Z"],
-                ["Z3", +4, +1, "e", "Z"],
-                ["Z4", +4, +5, "e", "Z"],
-            ],
-        })
+        super(editor, DecoderBCD4Def, savedData)
     }
 
     public toJSON() {
@@ -57,11 +52,11 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 5 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 12 * GRID_STEP
     }
 
     public override makeTooltip() {
@@ -70,15 +65,15 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
         ))
     }
 
-    protected doRecalcValue(): LogicValue[] {
-        const input = this.inputValues(INPUT.I)
+    protected doRecalcValue(): FixedArray<LogicValue, 5> {
+        const input = this.inputValues(this.inputs.I)
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
         if (isUnknown(value)) {
-            output = ArrayFillWith(Unknown, 5)
+            output = FixedArrayFillWith(Unknown, 5)
         } else {
-            output = (() => {
+            output = ((): FixedArray<LogicValue, 5> => {
                 switch (value) {
                     case 0: return [false, false, false, false, false]
                     case 1: return [false, false, false, false, true]
@@ -96,7 +91,7 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
                     case 13: return [true, false, false, true, true]
                     case 14: return [true, false, true, false, false]
                     case 15: return [true, false, true, false, true]
-                    default: return ArrayFillWith(Unknown, 5)
+                    default: return FixedArrayFillWith(Unknown, 5)
                 }
             })()
         }
@@ -105,9 +100,7 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        this.outputs.forEach((output, i) => {
-            output.value = newValue[5 - i - 1]
-        })
+        this.outputValues(this.outputs.Z, newValue, true)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -116,8 +109,8 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = left + width
 
@@ -126,11 +119,11 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
         g.fill()
         g.stroke()
 
-        for (const input of this.inputs) {
+        for (const input of this.inputs._all) {
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        for (const output of this.outputs) {
+        for (const output of this.outputs._all) {
             drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
         }
 
@@ -138,10 +131,10 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr, LogicValue[]> {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            this.inputs.forEach(input => {
+            this.inputs._all.forEach(input => {
                 drawLabel(ctx, this.orient, input.name, "w", left, input)
             })
-            this.outputs.forEach(output => {
+            this.outputs._all.forEach(output => {
                 drawLabel(ctx, this.orient, output.name, "e", right, output)
             })
 

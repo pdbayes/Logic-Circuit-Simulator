@@ -4,52 +4,63 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ComponentBase, defineComponent, group, Repr } from "./Component"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
-const GRID_WIDTH = 5
-const GRID_HEIGHT = 11
-
-const enum INPUT { Clock, Clear }
-
-const OUTPUT = {
-    Q: [0, 1, 2, 3] as const,
-    V: 4,
-}
-
-const COUNTER_WIDTH = OUTPUT.Q.length
+const COUNTER_WIDTH = 4
 const COUNTER_RESET_VALUE = Math.pow(2, COUNTER_WIDTH)
 
 export const CounterDef =
-    defineComponent(true, true, t.type({
-        type: t.literal("counter"),
-        count: typeOrUndefined(t.number),
-        trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-        displayRadix: typeOrUndefined(typeOrNull(t.number)), // undefined means default, null means no display
-    }, "Counter"))
+    defineComponent("counter", {
+        repr: {
+            count: typeOrUndefined(t.number),
+            trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
+            displayRadix: typeOrUndefined(typeOrNull(t.number)), // undefined means default, null means no display
+        },
+        valueDefaults: {
+            trigger: EdgeTrigger.rising,
+            displayRadix: 10,
+        },
+        makeNodes: () => {
+            const s = S.Components.Generic
+            return {
+                ins: {
+                    Clock: [-4, +4, "w", () => s.InputClockDesc, true],
+                    Clear: [0, +6, "s", () => s.InputClearDesc, true],
+                },
+                outs: {
+                    Q: group("e", [
+                        [+4, -4],
+                        [+4, -2],
+                        [+4, 0],
+                        [+4, +2],
+                    ]),
+                    V: [+4, +4, "e", "V (oVerflow)"],
+                },
+            }
+        },
+        initialValue: (savedData) => {
+            if (isNull(savedData) || isUndefined(savedData.count)) {
+                return Counter.emptyValue(COUNTER_WIDTH)
+            }
+            return [Counter.decimalToNBits(savedData.count, COUNTER_WIDTH), false] as const
+        },
+    })
 
 type CounterRepr = Repr<typeof CounterDef>
 
-const CounterDefaults = {
-    trigger: EdgeTrigger.rising,
-    displayRadix: 10,
-}
+export class Counter extends ComponentBase<CounterRepr> {
 
-export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValue]> {
-
-    private _trigger: EdgeTrigger = CounterDefaults.trigger
+    private _trigger: EdgeTrigger = CounterDef.aults.trigger
     private _lastClock: LogicValue = Unknown
-    private _displayRadix: number | undefined = CounterDefaults.displayRadix
+    private _displayRadix: number | undefined = CounterDef.aults.displayRadix
 
-    private static savedStateFrom(savedData: { count: number | undefined } | null, width: number): [LogicValue[], LogicValue] {
-        if (isNull(savedData) || isUndefined(savedData.count)) {
-            return [[false, false, false, false], false]
-        }
-        return [Counter.decimalToNBits(savedData.count, width), false]
+    public static emptyValue(numBits: number) {
+        return [ArrayFillWith<LogicValue>(false, numBits), false as LogicValue] as const
     }
 
-    private static decimalToNBits(value: number, width: number): LogicValue[] {
+    public static decimalToNBits(value: number, width: number): LogicValue[] {
         value = value % COUNTER_RESET_VALUE
         const binStr = value.toString(2).padStart(width, "0")
         const asBits = ArrayFillWith(false, width)
@@ -60,25 +71,12 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
     }
 
     public constructor(editor: LogicEditor, savedData: CounterRepr | null) {
-        super(editor, Counter.savedStateFrom(savedData, COUNTER_WIDTH), savedData, {
-            ins: [
-                [S.Components.Generic.InputClockDesc, -4, +4, "w"],
-                [S.Components.Generic.InputClearDesc, 0, +6, "s"],
-            ],
-            outs: [
-                ["Q0", +4, -4, "e", "Q"],
-                ["Q1", +4, -2, "e", "Q"],
-                ["Q2", +4, 0, "e", "Q"],
-                ["Q3", +4, +2, "e", "Q"],
-                ["V (oVerflow)", +4, +4, "e"],
-            ],
-        })
+        super(editor, CounterDef, savedData)
         if (isNotNull(savedData)) {
-            this._trigger = savedData.trigger ?? CounterDefaults.trigger
-            this._displayRadix = isUndefined(savedData.displayRadix) ? CounterDefaults.displayRadix :
+            this._trigger = savedData.trigger ?? CounterDef.aults.trigger
+            this._displayRadix = isUndefined(savedData.displayRadix) ? CounterDef.aults.displayRadix :
                 (savedData.displayRadix === null ? undefined : savedData.displayRadix) // convert null in the repr to undefined
         }
-        this.setInputsPreferSpike(INPUT.Clock, INPUT.Clear)
     }
 
     public toJSON() {
@@ -89,8 +87,8 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
             type: "counter" as const,
             ...this.toJSONBase(),
             count: currentCount === 0 ? undefined : currentCount,
-            trigger: (this._trigger !== CounterDefaults.trigger) ? this._trigger : undefined,
-            displayRadix: (displayRadix !== CounterDefaults.displayRadix) ? displayRadix : undefined,
+            trigger: (this._trigger !== CounterDef.aults.trigger) ? this._trigger : undefined,
+            displayRadix: (displayRadix !== CounterDef.aults.displayRadix) ? displayRadix : undefined,
         }
     }
 
@@ -99,11 +97,11 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 5 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 11 * GRID_STEP
     }
 
     public get trigger() {
@@ -117,14 +115,14 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
         ))
     }
 
-    protected doRecalcValue(): [LogicValue[], LogicValue] {
-        const clear = this.inputs[INPUT.Clear].value
+    protected doRecalcValue(): readonly [LogicValue[], LogicValue] {
+        const clear = this.inputs.Clear.value
         if (clear === true) {
-            return [ArrayFillWith(false, COUNTER_WIDTH), false]
+            return Counter.emptyValue(COUNTER_WIDTH)
         }
 
         const prevClock = this._lastClock
-        const clock = this._lastClock = this.inputs[INPUT.Clock].value
+        const clock = this._lastClock = this.inputs.Clock.value
         const activeOverflowValue = this._trigger === EdgeTrigger.rising ? true : false
 
         if (Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
@@ -144,11 +142,10 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
         }
     }
 
-    protected override propagateValue(newValue: [LogicValue[], LogicValue]) {
-        for (let i = 0; i < newValue[0].length; i++) {
-            this.outputs[OUTPUT.Q[i]].value = newValue[0][i]
-        }
-        this.outputs[OUTPUT.V].value = newValue[1]
+    protected override propagateValue(newValue: readonly [LogicValue[], LogicValue]) {
+        const [counter, overflow] = newValue
+        this.outputValues(this.outputs.Q, counter)
+        this.outputs.V.value = overflow
     }
 
     protected doSetTrigger(trigger: EdgeTrigger) {
@@ -175,10 +172,10 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
         g.stroke()
         g.fillStyle = COLOR_BACKGROUND
 
-        Flipflop.drawClockInput(g, left, this.inputs[INPUT.Clock], this._trigger)
-        drawWireLineToComponent(g, this.inputs[INPUT.Clear], this.inputs[INPUT.Clear].posXInParentTransform, bottom + 2, false)
+        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
+        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom + 2, false)
 
-        for (const output of this.outputs) {
+        for (const output of this.outputs._all) {
             drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform, false)
         }
 
@@ -187,22 +184,21 @@ export class Counter extends ComponentBase<CounterRepr, [LogicValue[], LogicValu
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
+            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
 
-            drawLabel(ctx, this.orient, "V", "e", right, this.outputs[OUTPUT.V])
+            drawLabel(ctx, this.orient, "V", "e", right, this.outputs.V)
             g.font = "bold 12px sans-serif"
 
-            const offsetY = (this.outputs[OUTPUT.Q[1]].posYInParentTransform + this.outputs[OUTPUT.Q[2]].posYInParentTransform) / 2
-            drawLabel(ctx, this.orient, "Q", "e", right, offsetY, this.outputs[OUTPUT.Q[0]])
+            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs.Q)
 
             if (isDefined(this._displayRadix)) {
                 g.font = "bold 20px sans-serif"
                 const [__, currentCount] = displayValuesFromArray(this.value[0], false)
                 const stringRep = formatWithRadix(currentCount, this._displayRadix, 1, false)
-                const valueCenter = ctx.rotatePoint(this.posX - 5, offsetY)
+                const valueCenter = ctx.rotatePoint(this.posX - 5, this.outputs.Q.group.posYInParentTransform)
 
                 g.fillStyle = COLOR_EMPTY
-                FlipflopOrLatch.drawStoredValueFrame(g, ...valueCenter, 28, 28)
+                FlipflopOrLatch.drawStoredValueFrame(g, ...valueCenter, 28, 28, Orientation.isVertical(this.orient))
 
                 g.textAlign = "center"
                 g.textBaseline = "middle"

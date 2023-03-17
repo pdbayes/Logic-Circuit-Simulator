@@ -1,8 +1,9 @@
+import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { GRID_STEP } from "../drawutils"
+import { GRID_STEP, useCompact } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, deepEquals, HighImpedance, isArray, isDefined, isNotNull, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayOrDirect, deepEquals, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNotNull, isNullOrUndefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -105,24 +106,57 @@ function hasGroup(nodeVisual: NodeVisual): nodeVisual is NodeVisualWithGroup {
     return nodeVisual.length === 5
 }
 
-export class NodeGroup<N extends Node> {
+export function isNodeArray<TNode extends Node>(obj: undefined | number | Node | ReadonlyGroupedNodeArray<TNode>): obj is ReadonlyGroupedNodeArray<TNode> {
+    return isArray(obj)
+}
 
-    private _nodes: N[] = []
+export class NodeGroup<TNode extends Node> {
+
+    private _nodes: GroupedNodeArray<TNode>
+    private _avgGridOffets: [number, number] | undefined = undefined
 
     public constructor(
         public readonly parent: Component,
         public readonly name: string,
     ) {
+        this._nodes = [] as unknown as GroupedNodeArray<TNode>
+        this._nodes.group = this
     }
 
-    public get nodes(): readonly N[] {
+    public get nodes(): ReadonlyGroupedNodeArray<TNode> {
         return this._nodes
     }
 
-    public addNode(node: N) {
+    public addNode(node: TNode) {
+        if (isDefined(this._avgGridOffets)) {
+            console.warn("Adding nodes to a group after the group's position has been used")
+        }
         this._nodes.push(node)
     }
 
+    private get avgGridOffsets(): [number, number] {
+        if (!isDefined(this._avgGridOffets)) {
+            let x = 0
+            let y = 0
+            for (const node of this._nodes) {
+                x += node.gridOffsetX
+                y += node.gridOffsetY
+            }
+            const len = this._nodes.length
+            this._avgGridOffets = [x / len, y / len]
+        }
+        return this._avgGridOffets
+    }
+
+    public get posXInParentTransform() {
+        return this.parent.posX + this.avgGridOffsets[0] * GRID_STEP
+    }
+
+    public get posYInParentTransform() {
+        return this.parent.posY + this.avgGridOffsets[1] * GRID_STEP
+    }
+
+    // allows the Node type (rather than N for group.nodes.indexOf(...))
     public indexOf(node: Node): number {
         for (let i = 0; i < this._nodes.length; i++) {
             if (this._nodes[i] === node) {
@@ -156,7 +190,7 @@ export enum ComponentState {
 }
 
 // Simplified, generics-free representation of a component
-export type Component = ComponentBase<ComponentRepr<boolean, boolean>, unknown>
+export type Component = ComponentBase<ComponentRepr<boolean, boolean>, unknown, any, any, any, any>
 
 export const JsonFieldsComponents = ["in", "out", "gates", "components", "labels", "layout"] as const
 export type JsonFieldComponent = typeof JsonFieldsComponents[number]
@@ -200,46 +234,103 @@ export const ComponentNameRepr = typeOrUndefined(
     ])
 )
 
-type ExtractHasIn<Repr> = Repr extends { _META?: { hasIn: infer THasIn } } ? THasIn : boolean
-type ExtractHasOut<Repr> = Repr extends { _META?: { hasOut: infer THasOut } } ? THasOut : boolean
+export type NodeName = string | (() => string)
+export type NodeOutDesc = readonly [x: number, y: number, orient: Orientation, name?: NodeName]
+export type NodeInDesc = readonly [x: number, y: number, orient: Orientation, name?: NodeName, prefersSpike?: boolean]
+export type NodeDesc = NodeOutDesc | NodeInDesc
+export type NodeDescInGroup = readonly [x: number, y: number, name?: NodeName]
+export type NodeGroupDesc<D extends NodeDesc> = ReadonlyArray<D>
+export type NodeGroupMultiDesc<D extends NodeDesc> = ReadonlyArray<NodeGroupDesc<D>>
+export type NodeRec<D extends NodeDesc> = Record<string, D | NodeGroupDesc<D> | NodeGroupMultiDesc<D>>
 
+function isNodeDesc<D extends NodeDesc>(desc: D | NodeGroupDesc<D> | NodeGroupMultiDesc<D>): desc is D {
+    return isNumber(desc[0])
+}
+
+type GroupedNodeArray<TNode extends Node> = TNode[] & { group: NodeGroup<TNode> }
+export type ReadonlyGroupedNodeArray<TNode extends Node> = readonly TNode[] & { group: NodeGroup<TNode> }
+
+type MapDescToNode<TDesc, TNode extends Node>
+    = TDesc extends NodeDesc ? TNode
+    : TDesc extends Array<NodeDesc> ? GroupedNodeArray<TNode>
+    : TDesc extends Array<Array<NodeDesc>> ? GroupedNodeArray<TNode>[]
+    : never
+
+type MapRecToNodes<TRec, TNode extends Node> = {
+    [K in keyof TRec]: MapDescToNode<TRec[K], TNode>
+}
+
+
+// Named nodes according to the node description always have
+// an '_all' array of all nodes in addition to the names
+type NamedNodes<TNode> = { _all: readonly TNode[] }
+
+type ExtractNodes<TRepr, TField extends "ins" | "outs", TNode extends Node> = Expand<
+    (TRepr extends { _META?: { nodeRecs: { [K in TField]: infer TNodeRec } } }
+        ? MapRecToNodes<TNodeRec, TNode> : { _empty: true })
+    & NamedNodes<TNode>>
+
+export type NodesIn<TRepr> = ExtractNodes<TRepr, "ins", NodeIn>
+export type NodesOut<TRepr> = ExtractNodes<TRepr, "outs", NodeOut>
+
+export type IsNonEmpty<TNamedNodes> = TNamedNodes extends { _empty: true } ? false : true
+
+export type ExtractValue<TRepr> = TRepr extends { _META?: { value: infer TValue } } ? TValue : never
+
+export type InOutRecs = {
+    ins?: NodeRec<NodeInDesc>
+    outs?: NodeRec<NodeOutDesc>
+}
 
 export abstract class ComponentBase<
-    Repr extends ComponentRepr<THasIn, THasOut>, // JSON representation
-    Value, // internal value recomputed when inputs change
-    THasIn extends boolean = ExtractHasIn<Repr>,
-    THasOut extends boolean = ExtractHasOut<Repr>, // in-out node presence
+    TRepr extends ComponentRepr<THasIn, THasOut>, // JSON representation
+    TValue = ExtractValue<TRepr>, // internal value recomputed when inputs change
+    TInputNodes extends NamedNodes<NodeIn> = NodesIn<TRepr>,
+    TOutputNodes extends NamedNodes<NodeOut> = NodesOut<TRepr>,
+    THasIn extends boolean = IsNonEmpty<TInputNodes>,
+    THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
 > extends DrawableWithDraggablePosition {
 
     private _state: ComponentState
-    private readonly _inputs: Array<NodeIn>
-    private readonly _inputGroups: Map<string, NodeGroup<NodeIn>> | undefined
-    private readonly _outputs: Array<NodeOut>
-    private readonly _outputGroups: Map<string, NodeGroup<NodeOut>> | undefined
+    private _value: TValue
+    public readonly inputs: TInputNodes
+    public readonly outputs: TOutputNodes
 
     protected constructor(
         editor: LogicEditor,
-        private _value: Value,
-        savedData: Repr | null,
-        nodeOffsets: NodeVisuals<THasIn, THasOut>) {
+        componentDef: ComponentDef<t.Mixed, InOutRecs, TValue, any>, // TODO specify this better
+        savedData: TRepr | null
+    ) {
         super(editor, savedData)
 
-        // hack to get around the inOffsets and outOffsets properties
-        // being inferred as nonexistant (basically, the '"key" in savedData'
-        // check fails to provide enough info for type narrowing)
-        type NodeOffsetsKey = keyof NodeVisuals<true, false> | keyof NodeVisuals<false, true>
-        function get(key: NodeOffsetsKey): ReadonlyArray<NodeVisual> {
-            if (key in nodeOffsets) {
-                return (nodeOffsets as NodeVisuals<true, true>)[key]
-            } else {
-                return [] as const
+        this._value = componentDef.initialValue(savedData, componentDef.aults)
+
+        const ins = componentDef.nodeRecs.ins
+        const outs = componentDef.nodeRecs.outs
+
+        function countNodes(rec: NodeRec<NodeDesc> | undefined) {
+            if (isUndefined(rec)) {
+                return 0
             }
+            let count = 0
+            for (const desc of Object.values(rec)) {
+                if (isNodeDesc(desc)) {
+                    count++
+                } else {
+                    for (const innerDesc of desc) {
+                        if (isNodeDesc(innerDesc)) {
+                            count++
+                        } else {
+                            count += innerDesc.length
+                        }
+                    }
+                }
+            }
+            return count
         }
 
-        const inOffsets = get("ins")
-        const outOffsets = get("outs")
-        const numInputs = inOffsets.length
-        const numOutputs = outOffsets.length
+        const numInputs = countNodes(ins)
+        const numOutputs = countNodes(outs)
 
         if (isNotNull(savedData)) {
             // restoring
@@ -252,7 +343,7 @@ export abstract class ComponentBase<
 
         // build node specs either from scratch if new or from saved data
         const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] =
-            this.nodeSpecsFromRepr(savedData, numInputs, numOutputs);
+            this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
 
         // so, hasAnyPrecomputedInitialValues is true if ANY of the outputs was built
         // with "initialValue" in the JSON. This is used to stabilize circuits (such as
@@ -262,8 +353,8 @@ export abstract class ComponentBase<
         // to set all of them.
 
         // generate the input and output nodes
-        [this._inputs, this._inputGroups] = this.makeNodes(inOffsets, inputSpecs, NodeIn);
-        [this._outputs, this._outputGroups] = this.makeNodes(outOffsets, outputSpecs, NodeOut)
+        this.inputs = this.makeNodes(ins, inputSpecs, NodeIn) as TInputNodes
+        this.outputs = this.makeNodes(outs, outputSpecs, NodeOut) as TOutputNodes
 
         // setNeedsRecalc with a force propadation is needed:
         // * the forced propagation allows the current value (e.g. for InputBits)
@@ -281,7 +372,7 @@ export abstract class ComponentBase<
         this.editor.moveMgr.setDrawableStoppedMoving(this)
     }
 
-    public abstract toJSON(): Repr
+    public abstract toJSON(): TRepr
 
     // typically used by subclasses to provide only their specific JSON,
     // splatting in the result of super.toJSONBase() in the object
@@ -294,46 +385,76 @@ export abstract class ComponentBase<
 
     // creates the input/output nodes based on array of offsets (provided
     // by subclass) and spec (either loaded from JSON repr or newly generated)
-    private makeNodes<N extends Node>(
-        nodeVisuals: readonly NodeVisual[],
-        specs: readonly (InputNodeRepr | OutputNodeRepr)[], node: new (
+    private makeNodes<TNode extends Node, TDesc extends (TNode extends NodeIn ? NodeInDesc : NodeOutDesc)>(
+        nodeRec: NodeRec<TDesc> | undefined,
+        specs: readonly (InputNodeRepr | OutputNodeRepr)[],
+        node: new (
             editor: LogicEditor,
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
-            group: NodeGroup<N> | undefined,
+            group: NodeGroup<TNode> | undefined,
             name: string | undefined,
             _gridOffsetX: number,
             _gridOffsetY: number,
-            relativePosition: Orientation,
-        ) => N): [Array<N>, Map<string, NodeGroup<N>> | undefined] {
+            orient: Orientation,
+        ) => TNode) {
 
-        const nodes: N[] = []
-        let groupMap: Map<string, NodeGroup<N>> | undefined = undefined
-
-        for (let i = 0; i < nodeVisuals.length; i++) {
-            const nodeVisual = nodeVisuals[i]
-            let group: NodeGroup<N> | undefined = undefined
-            const [name, offsetX, offsetY, orient] = nodeVisual
-            if (hasGroup(nodeVisual)) {
-                const groupName = nodeVisual[4]
-                // lazily create group map
-                if (isUndefined(groupMap)) {
-                    groupMap = new Map<string, NodeGroup<N>>()
+        const nodes: Record<string, TNode | ReadonlyArray<TNode> | ReadonlyArray<ReadonlyArray<TNode>>> = {}
+        const allNodes: TNode[] = []
+        if (isDefined(nodeRec)) {
+            const makeNode = (group: NodeGroup<TNode> | undefined, defaultName: string, desc: TDesc) => {
+                const spec = specs[nextSpecIndex++]
+                const [offsetX, offsetY, orient, nameOverride, prefersSpike] = desc
+                const name = isUndefined(nameOverride) ? defaultName : isString(nameOverride) ? nameOverride : nameOverride()
+                const newNode = new node(
+                    this.editor,
+                    spec,
+                    this,
+                    group,
+                    name,
+                    offsetX,
+                    offsetY,
+                    orient,
+                )
+                if (prefersSpike ?? false) {
+                    if (newNode instanceof NodeIn) {
+                        newNode.prefersSpike = true
+                    } else {
+                        console.warn(`prefersSpike is only supported for inputs, can't set it for ${name}`)
+                    }
                 }
-                group = groupMap.get(groupName)
-                if (isUndefined(group)) {
-                    group = new NodeGroup<N>(this, groupName)
-                    groupMap.set(groupName, group)
-                }
+                allNodes.push(newNode)
+                return newNode
             }
-            const newNode = new node(this.editor, specs[i], this, group, name, offsetX, offsetY, orient)
-            nodes.push(newNode)
-            if (isDefined(group)) {
-                group.addNode(newNode)
+            let nextSpecIndex = 0
+            for (const [fieldName, desc] of Object.entries(nodeRec)) {
+                if (isNodeDesc(desc)) {
+                    // single
+                    nodes[fieldName] = makeNode(undefined, fieldName, desc)
+                } else {
+                    // group
+                    const makeNodesForGroup = (groupDesc: NodeGroupDesc<TDesc>) => {
+                        const group = new NodeGroup<TNode>(this, fieldName)
+                        for (let i = 0; i < groupDesc.length; i++) {
+                            group.addNode(makeNode(group, `${fieldName}${i}`, groupDesc[i]))
+                        }
+                        return group.nodes
+                    }
+
+                    if (isNodeDesc(desc[0])) {
+                        // normal group
+                        const groupDesc = desc as NodeGroupDesc<TDesc>
+                        nodes[fieldName] = makeNodesForGroup(groupDesc)
+                    } else {
+                        // nested group
+                        const groupMultiDesc = desc as NodeGroupMultiDesc<TDesc>
+                        nodes[fieldName] = groupMultiDesc.map(makeNodesForGroup)
+                    }
+                }
             }
         }
-
-        return [nodes, groupMap]
+        nodes._all = allNodes
+        return nodes
     }
 
     // generates two arrays of normalized node specs either as loaded from
@@ -408,8 +529,8 @@ export abstract class ComponentBase<
     // from the known nodes, builds the JSON representation of them,
     // using the most compact form available
     private buildNodesRepr(): NodeIDsRepr<THasIn, THasOut> {
-        const numInputs = this.inputs.length
-        const numOutputs = this.outputs.length
+        const numInputs = this.inputs._all.length
+        const numOutputs = this.outputs._all.length
 
         // these two functions return either an array of JSON
         // representations, or just the element skipping the array
@@ -488,21 +609,19 @@ export abstract class ComponentBase<
         return (
             numInputs !== 0
                 ? numOutputs !== 0
-                    ? { in: inNodeReprs(this.inputs), out: outNodeReprs(this.outputs) }
-                    : { id: inNodeReprs(this.inputs) }
+                    ? { in: inNodeReprs(this.inputs._all), out: outNodeReprs(this.outputs._all) }
+                    : { id: inNodeReprs(this.inputs._all) }
                 : numOutputs !== 0
-                    ? { id: outNodeReprs(this.outputs) }
+                    ? { id: outNodeReprs(this.outputs._all) }
                     : {}
         ) as NodeIDsRepr<THasIn, THasOut>
     }
 
-    protected setInputsPreferSpike(...inputs: number[]) {
-        for (const i of inputs) {
-            this._inputs[i]._prefersSpike = true
-        }
-    }
-
     public abstract get componentType(): ComponentType
+
+    protected override toStringDetails(): string {
+        return String(this.value)
+    }
 
     public get state() {
         return this._state
@@ -516,34 +635,20 @@ export abstract class ComponentBase<
         return false
     }
 
-    public get inputs(): ReadonlyArray<NodeIn> {
-        return this._inputs
-    }
-
-    public get outputs(): ReadonlyArray<NodeOut> {
-        return this._outputs
-    }
-
-    public forEachNode(f: (node: Node) => boolean): void {
-        for (const node of this.inputs) {
-            const goOn = f(node)
-            if (!goOn) {
-                return
-            }
+    public *allNodes() {
+        for (const node of this.inputs._all) {
+            yield node
         }
-        for (const node of this.outputs) {
-            const goOn = f(node)
-            if (!goOn) {
-                return
-            }
+        for (const node of this.outputs._all) {
+            yield node
         }
     }
 
-    public get value(): Value {
+    public get value(): TValue {
         return this._value
     }
 
-    protected doSetValue(newValue: Value, forcePropagate = false) {
+    protected doSetValue(newValue: TValue, forcePropagate = false) {
         const oldValue = this._value
         if (forcePropagate || !deepEquals(newValue, oldValue)) {
             this._value = newValue
@@ -556,18 +661,29 @@ export abstract class ComponentBase<
         this.doSetValue(this.doRecalcValue(), forcePropagate)
     }
 
-    protected abstract doRecalcValue(): Value
+    protected abstract doRecalcValue(): TValue
 
     public propagateCurrentValue() {
         this.propagateValue(this._value)
     }
 
-    protected propagateValue(__newValue: Value) {
+    protected propagateValue(__newValue: TValue) {
         // by default, do nothing
     }
 
-    protected inputValues(inds: ReadonlyArray<number>): Array<LogicValue> {
-        return inds.map(i => this.inputs[i].value)
+    protected inputValues(nodes: readonly NodeIn[]): LogicValue[] {
+        return nodes.map(node => node.value)
+    }
+
+    protected outputValues(nodes: readonly NodeOut[], values: LogicValue[], reverse = false) {
+        const num = nodes.length
+        if (values.length !== num) {
+            throw new Error(`outputValues: expected ${num} values, got ${values.length}`)
+        }
+        for (let i = 0; i < num; i++) {
+            const j = reverse ? num - i - 1 : i
+            nodes[i].value = values[j]
+        }
     }
 
     public setNeedsRecalc(forcePropagate = false) {
@@ -579,13 +695,23 @@ export abstract class ComponentBase<
     }
 
     private updateNodePositions() {
-        this.forEachNode((node) => {
+        for (const node of this.allNodes()) {
             node.updatePositionFromParent()
-            return true
-        })
+        }
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {
+        if (this.editor.mode >= Mode.CONNECT && !e.shiftKey) {
+            // try clearing selection
+            const mvtMgr = this.editor.cursorMovementMgr
+            let elems
+            if (isDefined(mvtMgr.currentSelection)
+                && (elems = mvtMgr.currentSelection.previouslySelectedElements).size > 0
+                && !elems.has(this)) {
+                mvtMgr.currentSelection = undefined
+            }
+        }
+
         if (this.editor.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
@@ -611,9 +737,9 @@ export abstract class ComponentBase<
                 this.autoConnected(newLinks)
             }
             this.editor.setDirty("moved component")
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     protected autoConnected(__newLinks: [Node, Component, Node][]) {
@@ -661,10 +787,9 @@ export abstract class ComponentBase<
 
     public destroy() {
         this._state = ComponentState.DEAD
-        this.forEachNode((node) => {
+        for (const node of this.allNodes()) {
             node.destroy()
-            return true
-        })
+        }
     }
 
     public override get cursorWhenMouseover(): string | undefined {
@@ -736,7 +861,7 @@ export abstract class ComponentBase<
     }
 
     protected makeForceOutputsContextMenuItem(): undefined | ContextMenuItem {
-        const numOutputs = this.outputs.length
+        const numOutputs = this.outputs._all.length
 
         if (numOutputs === 0 || this.editor.mode < Mode.FULL) {
             return undefined
@@ -775,13 +900,13 @@ export abstract class ComponentBase<
 
         if (numOutputs === 1) {
             return ContextMenuData.submenu("force", s.ForceOutputSingle, [
-                ...makeOutputItems(this._outputs[0]!),
+                ...makeOutputItems(this.outputs._all[0]!),
                 ...footerItems,
             ])
 
         } else {
             return ContextMenuData.submenu("force", s.ForceOutputMultiple, [
-                ...this._outputs.map((out) => {
+                ...this.outputs._all.map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
                     return ContextMenuData.submenu(icon, s.Output + " " + out.name,
                         makeOutputItems(out)
@@ -834,70 +959,277 @@ export abstract class ComponentBase<
 
 }
 
-
-
-export abstract class ComponentBaseWithSubclassDefinedNodes<
-    Repr extends ComponentRepr<THasIn, THasOut>,
-    Value,
-    InputIndices,
-    OutputIndices,
-    THasIn extends boolean = ExtractHasIn<Repr>,
-    THasOut extends boolean = ExtractHasOut<Repr>,
-> extends ComponentBase<Repr, Value, THasIn, THasOut> {
-
-    protected constructor(
-        editor: LogicEditor,
-        protected readonly gridWidth: number,
-        protected readonly gridHeight: number,
-        protected readonly INPUT: InputIndices,
-        protected readonly OUTPUT: OutputIndices,
-        _value: Value,
-        savedData: Repr | null,
-        nodeOffsets: NodeVisuals<THasIn, THasOut>) {
-        super(editor, _value, savedData, nodeOffsets)
-    }
-
-    public get unrotatedWidth() {
-        return this.gridWidth * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return this.gridHeight * GRID_STEP
-    }
-
-}
-
-
-export type ComponentDef<THasIn extends boolean, THasOut extends boolean, TComp extends t.Mixed> = {
+export type ComponentDef<TComp extends t.Mixed, TInOutRecs extends InOutRecs, TValue, TValueDefaults extends Record<string, unknown>> = {
     repr: TComp,
-    hasIn: THasIn,
-    hasOut: THasOut,
+    nodeRecs: TInOutRecs,
+    aults: TValueDefaults,
+    initialValue: (savedData: t.TypeOf<TComp> | null, defaults: TValueDefaults) => TValue,
 }
 
 export type Repr<TDef>
-    = TDef extends ComponentDef<infer THasIn, infer THasOut, infer TRepr>
-    ? {
+    // case: Regular, unparameterized component def
+    = TDef extends ComponentDef<infer TRepr, infer TInOutRecs, infer TValue, infer __TValueDefaults>
+    ? Expand<t.TypeOf<TRepr> & {
         _META?: {
-            hasIn: THasIn,
-            hasOut: THasOut,
+            nodeRecs: TInOutRecs,
+            value: TValue,
         }
-    } & t.TypeOf<TRepr>
+    }>
+    // case: Parameterized component def, check return type
+    : TDef extends (...args: any) => infer TReturn
+    ? Repr<TReturn>
+    // case: Abstract base component def
+    : TDef extends {
+        repr: infer TProps extends t.Props,
+        makeNodes: (...args: any) => infer TInOutRecs,
+        initialValue?: (...args: any) => infer TValue,
+    }
+    ? Expand<t.TypeOf<t.TypeC<TProps>> & ComponentRepr<true, true> & {
+        _META?: {
+            nodeRecs: TInOutRecs,
+            value: TValue,
+        }
+    }>
     : never
 
-export function defineComponent<THasIn extends boolean, THasOut extends boolean, TComp extends t.Mixed>(hasIn: THasIn, hasOut: THasOut, type: TComp) {
-    const repr = t.intersection([ComponentRepr(hasIn, hasOut), type], type.name)
-    return {
-        repr,
-        hasIn,
-        hasOut,
-    } as const //satisfies ComponentDef<THasIn, THasOut, t.Mixed> // TODO uncomment when the bundler handles the new TS version
+export type Params<TDef>
+    // case: Parameterized component def
+    = TDef extends { _TParams: infer TParams } ? TParams
+    // case: Abstract base component def
+    : TDef extends { paramDefaults: infer TParams } ? TParams
+    : never
+
+export type Value<TDef extends (...args: any) => any>
+    = ReturnType<TDef> extends { initialValue: (...args: any) => infer TValue }
+    ? TValue : never
+
+export function group<TDescArr extends readonly NodeDescInGroup[]>(orient: Orientation, nodes: TDescArr) {
+    return FixedArrayMap(nodes, ([x, y, name]) => [x, y, orient, name] as const)
 }
 
-export function extendComponent<THasIn extends boolean, THasOut extends boolean, TSuperComp extends t.Mixed, TSubComp extends t.Mixed>(superDef: ComponentDef<THasIn, THasOut, TSuperComp>, subType: TSubComp) {
-    const repr = t.intersection([superDef.repr, subType], subType.name)
+export function groupVertical(orient: "e" | "w", x: number, yCenter: number, num: number) {
+    const spacing = useCompact(num) ? 1 : 2
+    const span = (num - 1) * spacing
+    const yTop = yCenter - span / 2
+    return group(orient,
+        ArrayFillUsing(i => [x, yTop + i * spacing], num)
+    )
+}
+
+export function groupVerticalMulti(orient: "e" | "w", x: number, yCenter: number, numOuter: number, numInner: number) {
+    const innerSpacing = useCompact(numInner) ? 1 : 2
+    const groupSpacing = numInner === 1 ? innerSpacing : innerSpacing * 2
+    const groupOffset = (numInner - 1) * innerSpacing + groupSpacing
+    const span = numOuter * (numInner - 1) * innerSpacing + (numOuter - 1) * groupSpacing
+    const yTop = yCenter - span / 2
+    return ArrayFillUsing(g => group(orient,
+        ArrayFillUsing(i => [x, yTop + g * groupOffset + i * innerSpacing], numInner)
+    ), numOuter)
+}
+
+export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, num: number) {
+    const spacing = useCompact(num) ? 1 : 2
+    const span = (num - 1) * spacing
+    const xRight = xCenter + span / 2
+    return group(orient,
+        ArrayFillUsing(i => [xRight - i * spacing, y], num)
+    )
+}
+
+function typeField<
+    TName extends string | undefined
+>(jsonName: TName):
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    undefined extends TName ? {}
+    : TName extends string ? { type: t.LiteralC<TName> }
+    : never {
+
+    if (isUndefined(jsonName)) {
+        return {} as any
+    }
     return {
-        repr,
-        hasIn: superDef.hasIn,
-        hasOut: superDef.hasOut,
-    } as const //satisfies ComponentDef<THasIn, THasOut, t.Mixed> // TODO uncomment when the bundler handles the new TS version
+        type: t.literal(jsonName),
+    } as any
+}
+
+
+function makeComponentRepr<
+    TName extends string | undefined,
+    TProps extends t.Props,
+    THasIn extends boolean,
+    THasOut extends boolean,
+>(jsonName: TName, hasIn: THasIn, hasOut: THasOut, props: TProps) {
+    return t.intersection([t.type({
+        ...typeField(jsonName),
+        ...props,
+    }), ComponentRepr(hasIn, hasOut)], jsonName)
+}
+
+
+export function defineComponent<
+    TName extends string | undefined,
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    TProps extends t.Props = {},
+    THasIn extends boolean = HasField<TInOutRecs, "ins">,
+    THasOut extends boolean = HasField<TInOutRecs, "outs">,
+>(
+    jsonName: TName,
+    { repr, makeNodes, valueDefaults, initialValue }: {
+        repr?: TProps,
+        valueDefaults: TValueDefaults,
+        makeNodes: (defaults: TValueDefaults) => TInOutRecs,
+        initialValue?: (savedData: t.TypeOf<t.TypeC<TProps>> | null, defaults: TValueDefaults) => TValue
+    }) {
+    const nodes = makeNodes(valueDefaults)
+    const hasIn = ("ins" in nodes) as THasIn
+    const hasOut = ("outs" in nodes) as THasOut
+    const componentRepr = makeComponentRepr<TName, TProps, THasIn, THasOut>(jsonName, hasIn, hasOut, repr ?? {} as TProps)
+    return {
+        repr: componentRepr,
+        nodeRecs: nodes,
+        aults: valueDefaults,
+        initialValue: initialValue ?? (() => undefined as TValue),
+    } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
+}
+
+
+export function defineParametrizedComponent<
+    TName extends string | undefined,
+    THasIn extends boolean,
+    THasOut extends boolean,
+    TVariantName extends (undefined extends TName ? string : `${TName}-${string}`),
+    TProps extends t.Props,
+    TValueDefaults extends Record<string, unknown>,
+    TParams extends Record<string, unknown>,
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TResolvedParams extends Record<string, unknown> = TParams,
+    TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
+>(
+    jsonName: TName, hasIn: THasIn, hasOut: THasOut,
+    { variantName, repr, valueDefaults, paramDefaults, validateParams, makeNodes, initialValue }: {
+        variantName: (params: TParams) => TVariantName,
+        repr: TProps,
+        valueDefaults: TValueDefaults,
+        paramDefaults: TParams,
+        validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams,
+        makeNodes: (params: TResolvedParams, valueDefaults: TValueDefaults) => TInOutRecs,
+        initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
+    },
+) {
+    const componentRepr = makeComponentRepr<TName, TProps, THasIn, THasOut>(jsonName, hasIn, hasOut, repr)
+    function componentDef(params: TResolvedParams) {
+        const nodes = makeNodes(params, valueDefaults)
+        return {
+            repr: componentRepr,
+            nodeRecs: nodes,
+            aults: valueDefaults,
+            initialValue: (savedData: TRepr | null) => initialValue(savedData, params),
+        } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
+    }
+    componentDef.variantName = variantName
+    componentDef.defaultParams = paramDefaults
+    componentDef.aults = { ...valueDefaults, ...paramDefaults }
+    componentDef.repr = componentRepr
+    const doValidateParams = validateParams ?? ((params: TParams) => params as unknown as TResolvedParams)
+    componentDef.validate = <TSavedData extends Partial<TParams>>(initData: Either<Partial<TParams>, TSavedData>): [TResolvedParams, TSavedData | null] => {
+        switch (initData._tag) {
+            case "Left": {
+                const fullParams = isNullOrUndefined(initData.left) ? paramDefaults : mergeWhereDefined(paramDefaults, initData.left)
+                return [doValidateParams(fullParams, paramDefaults), null] // only params
+            }
+            case "Right": {
+                const fullParams = mergeWhereDefined(paramDefaults, initData.right)
+                return [doValidateParams(fullParams, paramDefaults), fullParams as any] // full saved data
+            }
+        }
+    }
+    componentDef._TParams = null as unknown as TParams
+    return componentDef
+}
+
+
+export function defineAbstractParametrizedComponent<
+    TProps extends t.Props,
+    TValueDefaults extends Record<string, unknown>,
+    TParams extends Record<string, unknown>,
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TResolvedParams extends Record<string, unknown> = TParams,
+    TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
+>(
+    items: {
+        repr: TProps,
+        valueDefaults: TValueDefaults,
+        paramDefaults: TParams,
+        validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams
+        makeNodes: (params: TResolvedParams, valueDefaults: TValueDefaults) => TInOutRecs,
+        initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
+    },
+) {
+    return items
+}
+
+export function defineAbstractComponent<
+    TProps extends t.Props,
+    TValueDefaults extends Record<string, unknown>,
+    TArgs extends any[],
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
+>(
+    items: {
+        repr: TProps,
+        valueDefaults: TValueDefaults,
+        makeNodes: (...args: TArgs) => TInOutRecs,
+        initialValue: (savedData: TRepr | null, defaults: TValueDefaults) => TValue
+    },
+) {
+    return {
+        ...items,
+        aults: items.valueDefaults,
+    }
+}
+
+
+export function allBooleans(values: LogicValue[]): values is boolean[] {
+    for (const v of values) {
+        if (v !== true && v !== false) {
+            return false
+        }
+    }
+    return true
+}
+
+export function isAllZeros(s: string) {
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] !== "0") {
+            return false
+        }
+    }
+    return true
+}
+
+export function binaryStringRepr(values: LogicValue[]): string {
+    const binStr = values.map(toLogicValueRepr).reverse().join("")
+    return binStr
+}
+
+export function hexStringRepr(values: boolean[], hexWidth: number): string {
+    const binStr = binaryStringRepr(values)
+    return parseInt(binStr, 2).toString(16).toUpperCase().padStart(hexWidth, "0")
+}
+
+export function wordFromBinaryOrHexRepr(wordRepr: string, numBits: number) {
+    const len = wordRepr.length
+    const isBinary = len === numBits
+    const binaryRepr = isBinary ? wordRepr : parseInt(wordRepr, 16).toString(2).padStart(numBits, "0")
+    const row: LogicValue[] = Array(numBits)
+    for (let i = 0; i < numBits; i++) {
+        row[i] = toLogicValueFromChar(binaryRepr[numBits - i - 1])
+    }
+    return row
 }

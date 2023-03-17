@@ -32,39 +32,44 @@ export function ledColorForLogicValue(v: LogicValue, onColor: LedColor) {
             v ? COLOR_LED_ON[onColor] : COLOR_WIRE_BORDER
 }
 
+
 export const OutputBarDef =
-    defineComponent(true, false, t.type({
-        type: t.literal("bar"),
-        display: t.keyof(OutputBarTypes, "OutputBarType"),
-        color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
-        transparent: typeOrUndefined(t.boolean),
-        name: ComponentNameRepr,
-    }, "OutputBar"))
+    defineComponent("bar", {
+        repr: {
+            display: t.keyof(OutputBarTypes, "OutputBarType"),
+            color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
+            transparent: typeOrUndefined(t.boolean),
+            name: ComponentNameRepr,
+        },
+        valueDefaults: {
+            display: "h" as OutputBarType,
+            color: "green" as LedColor,
+            transparent: false,
+        },
+        makeNodes: () => ({
+            ins: {
+                I: [0, 0, "w"],
+            },
+        }),
+        initialValue: () => false as LogicValue,
+    })
 
 type OutputBarRepr = Repr<typeof OutputBarDef>
 
-const OutputBarDefaults = {
-    display: "h" as OutputBarType,
-    color: "green" as LedColor,
-    transparent: false,
-}
-const GRID_WIDTH = 10
-const GRID_HEIGHT = 2
 
+export class OutputBar extends ComponentBase<OutputBarRepr> {
 
-export class OutputBar extends ComponentBase<OutputBarRepr, LogicValue> {
-
-    private _display = OutputBarDefaults.display
-    private _color = OutputBarDefaults.color
-    private _transparent = OutputBarDefaults.transparent
+    private _display = OutputBarDef.aults.display
+    private _color = OutputBarDef.aults.color
+    private _transparent = OutputBarDef.aults.transparent
     private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
-        super(editor, false, savedData, { ins: [[undefined, 0, 0, "w"]] })
+        super(editor, OutputBarDef, savedData)
         if (isNotNull(savedData)) {
             this.doSetDisplay(savedData.display)
-            this._color = savedData.color ?? OutputBarDefaults.color
-            this._transparent = savedData.transparent ?? OutputBarDefaults.transparent
+            this._color = savedData.color ?? OutputBarDef.aults.color
+            this._transparent = savedData.transparent ?? OutputBarDef.aults.transparent
             this._name = savedData.name
         } else {
             this.updateInputOffsetX()
@@ -76,8 +81,8 @@ export class OutputBar extends ComponentBase<OutputBarRepr, LogicValue> {
             type: "bar" as const,
             ...super.toJSONBase(),
             display: this._display,
-            color: this._color === OutputBarDefaults.color ? undefined : this._color,
-            transparent: this._transparent === OutputBarDefaults.transparent ? undefined : this._transparent,
+            color: this._color === OutputBarDef.aults.color ? undefined : this._color,
+            transparent: this._transparent === OutputBarDef.aults.transparent ? undefined : this._transparent,
             name: this._name,
         }
     }
@@ -112,11 +117,11 @@ export class OutputBar extends ComponentBase<OutputBarRepr, LogicValue> {
     }
 
     protected doRecalcValue(): LogicValue {
-        return this.inputs[0].value
+        return this.inputs.I.value
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const input = this.inputs[0]
+        const input = this.inputs.I
         const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
 
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
@@ -149,15 +154,17 @@ export class OutputBar extends ComponentBase<OutputBarRepr, LogicValue> {
     }
 
     public getWidthAndHeight() {
+        const w = 10
+        const h = 2
         switch (this._display) {
             case "h":
-                return [GRID_WIDTH * GRID_STEP, GRID_HEIGHT * GRID_STEP] as const
+                return [w * GRID_STEP, h * GRID_STEP] as const
             case "v":
-                return [GRID_HEIGHT * GRID_STEP, GRID_WIDTH * GRID_STEP] as const
+                return [h * GRID_STEP, w * GRID_STEP] as const
             case "px":
-                return [GRID_HEIGHT * GRID_STEP, GRID_HEIGHT * GRID_STEP] as const
+                return [h * GRID_STEP, h * GRID_STEP] as const
             case "PX":
-                return [GRID_WIDTH * GRID_STEP, GRID_WIDTH * GRID_STEP] as const
+                return [w * GRID_STEP, w * GRID_STEP] as const
         }
     }
 
@@ -198,7 +205,7 @@ export class OutputBar extends ComponentBase<OutputBarRepr, LogicValue> {
 
     private updateInputOffsetX() {
         const width = this.getWidthAndHeight()[0]
-        this.inputs[0].gridOffsetX = -pxToGrid(width / 2) - 2
+        this.inputs.I.gridOffsetX = -pxToGrid(width / 2) - 2
     }
 
     protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {

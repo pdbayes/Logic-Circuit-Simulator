@@ -1,63 +1,58 @@
-import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
+import { FixedArray, FixedArrayFillWith, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
+import { ComponentBase, defineComponent, group, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const Decoder16SegDef =
-    defineComponent(true, true, t.type({
-        type: t.literal("decoder-16seg"),
-    }, "Decoder16Seg"))
+    defineComponent("decoder-16seg", {
+        valueDefaults: {},
+        makeNodes: () => ({
+            ins: {
+                I: group("w", [
+                    [-3, -3],
+                    [-3, -2],
+                    [-3, -1],
+                    [-3, 0],
+                    [-3, +1],
+                    [-3, +2],
+                    [-3, +3],
+                ]),
+            },
+            outs: {
+                Out: group("e", [
+                    [+4, -4, "a1"],
+                    [+3, -3.5, "a2"],
+                    [+4, -3, "b"],
+                    [+3, -2.5, "c"],
+                    [+4, -2, "d2"],
+                    [+3, -1.5, "d1"],
+                    [+4, -1, "e"],
+                    [+3, -0.5, "f"],
+                    [+4, 0, "g1"],
+                    [+3, 0.5, "g2"],
+                    [+4, +1, "h"],
+                    [+3, +1.5, "i"],
+                    [+4, +2, "j"],
+                    [+3, +2.5, "k"],
+                    [+4, +3, "l"],
+                    [+3, +3.5, "m"],
+                    [+4, +4, "p"],
+                ]),
+            },
+        }),
+        initialValue: () => FixedArrayFillWith(false as LogicValue, 17),
+    })
 
-const INPUT = {
-    I: [0, 1, 2, 3, 4, 5, 6] as const,
-}
-
-// const enum OUTPUT {
-//     a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p
-// }
-
-const GRID_WIDTH = 4
-const GRID_HEIGHT = 10
 
 type Decoder16SegRepr = Repr<typeof Decoder16SegDef>
 
-export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> {
+export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
 
     public constructor(editor: LogicEditor, savedData: Decoder16SegRepr | null) {
-        super(editor, ArrayFillWith(false, 17), savedData, {
-            ins: [
-                ["I0", -3, -3, "w", "In"],
-                ["I1", -3, -2, "w", "In"],
-                ["I2", -3, -1, "w", "In"],
-                ["I3", -3, 0, "w", "In"],
-                ["I4", -3, +1, "w", "In"],
-                ["I5", -3, +2, "w", "In"],
-                ["I6", -3, +3, "w", "In"],
-            ],
-            outs: [
-                ["a1", +4, -4, "e", "Out"],
-                ["a2", +3, -3.5, "e", "Out"],
-                ["b", +4, -3, "e", "Out"],
-                ["c", +3, -2.5, "e", "Out"],
-                ["d2", +4, -2, "e", "Out"],
-                ["d1", +3, -1.5, "e", "Out"],
-                ["e", +4, -1, "e", "Out"],
-                ["f", +3, -0.5, "e", "Out"],
-                ["g1", +4, 0, "e", "Out"],
-                ["g2", +3, 0.5, "e", "Out"],
-                ["h", +4, +1, "e", "Out"],
-                ["i", +3, +1.5, "e", "Out"],
-                ["j", +4, +2, "e", "Out"],
-                ["k", +3, +2.5, "e", "Out"],
-                ["l", +4, +3, "e", "Out"],
-                ["m", +3, +3.5, "e", "Out"],
-                ["p", +4, +4, "e", "Out"],
-            ],
-        })
+        super(editor, Decoder16SegDef, savedData)
     }
 
     public toJSON() {
@@ -72,11 +67,11 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 4 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 10 * GRID_STEP
     }
 
     public override makeTooltip() {
@@ -85,19 +80,19 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
         ))
     }
 
-    protected doRecalcValue(): LogicValue[] {
-        const input = this.inputValues(INPUT.I)
+    protected doRecalcValue(): FixedArray<LogicValue, 17> {
+        const input = this.inputValues(this.inputs.I)
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
         if (isUnknown(value)) {
-            output = ArrayFillWith(Unknown, 17)
+            output = FixedArrayFillWith(Unknown, 17)
         } else if (value < 32) {
             // control chars
-            output = ArrayFillWith(false, 17)
+            output = FixedArrayFillWith(false, 17)
         } else {
             const line = DECODER_MAPPING[value - 32]
-            output = ArrayFillWith(false, 17)
+            output = FixedArrayFillWith(false, 17)
             for (let i = 0; i < line.length; i++) {
                 output[i] = line.charAt(i) === "1"
             }
@@ -107,9 +102,7 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        for (let i = 0; i < 17; i++) {
-            this.outputs[i].value = newValue[i]
-        }
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -118,8 +111,8 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 4
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = left + width
 
@@ -128,11 +121,11 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
         g.fill()
         g.stroke()
 
-        for (const input of this.inputs) {
+        for (const input of this.inputs._all) {
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
         }
 
-        for (const output of this.outputs) {
+        for (const output of this.outputs._all) {
             drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
         }
 
@@ -140,10 +133,10 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr, LogicValue[]> 
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "bold 12px sans-serif"
 
-            drawLabel(ctx, this.orient, "C", "w", left, this.posY, this.inputs[0])
+            drawLabel(ctx, this.orient, "C", "w", left, this.inputs.I)
 
             g.font = "7px sans-serif"
-            this.outputs.forEach(output => {
+            this.outputs._all.forEach(output => {
                 drawLabel(ctx, this.orient, output.name, "e", right, output)
             })
 

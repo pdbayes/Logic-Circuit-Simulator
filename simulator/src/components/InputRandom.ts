@@ -1,69 +1,90 @@
+import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, Repr } from "./Component"
+import { ArrayFillUsing, ArrayFillWith, isDefined, isNotNull, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
+import { RegisterBase } from "./Register"
+
 
 export const InputRandomDef =
-    defineComponent(true, true, t.type({
-        type: t.literal("random"),
-        prob1: typeOrUndefined(t.number),
-        showProb: typeOrUndefined(t.boolean),
-        trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-        name: ComponentNameRepr,
-    }, "InputRandom"))
+    defineParametrizedComponent("random", true, true, {
+        variantName: ({ bits }) => `random-${bits}`,
+        repr: {
+            bits: typeOrUndefined(t.number),
+            prob1: typeOrUndefined(t.number),
+            showProb: typeOrUndefined(t.boolean),
+            trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
+            name: ComponentNameRepr,
+        },
+        valueDefaults: {
+            prob1: 0.5,
+            showProb: false,
+            trigger: EdgeTrigger.rising,
+        },
+        paramDefaults: {
+            bits: 1,
+        },
+        validateParams: ({ bits }, defaults) => {
+            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Random input bits")
+            return { numBits }
+        },
+        makeNodes: ({ numBits }) => {
+            const s = S.Components.Generic
+            const clockY = InputRandom.gridHeight(numBits) / 2 - 1
+            return {
+                ins: {
+                    Clock: [-3, clockY, "w", () => s.InputClockDesc, true],
+                },
+                outs: {
+                    Out: groupVertical("e", 3, 0, numBits),
+                },
+            }
+        },
+        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+    })
+
+export type InputRandomRepr = Repr<typeof InputRandomDef>
+export type InputRandomParams = Params<typeof InputRandomDef>
 
 
-type InputRandomRepr = Repr<typeof InputRandomDef>
+export class InputRandom extends ComponentBase<InputRandomRepr> {
 
-const InputRandomDefaults = {
-    prob1: 0.5,
-    showProb: false,
-    trigger: EdgeTrigger.rising,
-}
-
-const GRID_WIDTH = 4
-const GRID_HEIGHT = 6
-
-const enum INPUT { Clock }
-const enum OUTPUT { Out }
-
-export class InputRandom extends ComponentBase<InputRandomRepr, LogicValue> {
-
-    private _prob1: number = InputRandomDefaults.prob1
-    private _showProb: boolean = InputRandomDefaults.showProb
+    public readonly numBits: number
+    private _prob1: number = InputRandomDef.aults.prob1
+    private _showProb: boolean = InputRandomDef.aults.showProb
     private _lastClock: LogicValue = Unknown
-    private _trigger: EdgeTrigger = InputRandomDefaults.trigger
+    private _trigger: EdgeTrigger = InputRandomDef.aults.trigger
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, savedData: InputRandomRepr | null) {
-        super(editor, false, savedData, {
-            ins: [["Next", -3, +2, "w"]],
-            outs: [[undefined, +3, 0, "e"]],
-        })
+    public constructor(editor: LogicEditor, initData: Either<InputRandomParams, InputRandomRepr>) {
+        const [params, savedData] = InputRandomDef.validate(initData)
+        super(editor, InputRandomDef(params), savedData)
+
+        this.numBits = params.numBits
         if (isNotNull(savedData)) {
             if (isDefined(savedData.prob1)) {
                 this._prob1 = Math.max(0, Math.min(1, savedData.prob1))
             }
-            this._showProb = savedData.showProb ?? InputRandomDefaults.showProb
-            this._trigger = savedData.trigger ?? InputRandomDefaults.trigger
+            this._showProb = savedData.showProb ?? InputRandomDef.aults.showProb
+            this._trigger = savedData.trigger ?? InputRandomDef.aults.trigger
             this._name = savedData.name
         }
-        this.setInputsPreferSpike(INPUT.Clock)
     }
 
     public override toJSON() {
         return {
             type: "random" as const,
+            bits: this.numBits === InputRandomDef.aults.bits ? undefined : this.numBits,
             ...super.toJSONBase(),
             name: this._name,
-            prob1: (this._prob1 !== InputRandomDefaults.prob1) ? this._prob1 : undefined,
-            showProb: (this._showProb !== InputRandomDefaults.showProb) ? this._showProb : undefined,
-            trigger: (this._trigger !== InputRandomDefaults.trigger) ? this._trigger : undefined,
+            prob1: (this._prob1 !== InputRandomDef.aults.prob1) ? this._prob1 : undefined,
+            showProb: (this._showProb !== InputRandomDef.aults.showProb) ? this._showProb : undefined,
+            trigger: (this._trigger !== InputRandomDef.aults.trigger) ? this._trigger : undefined,
         }
     }
 
@@ -72,11 +93,15 @@ export class InputRandom extends ComponentBase<InputRandomRepr, LogicValue> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 4 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return InputRandom.gridHeight(this.numBits) * GRID_STEP
+    }
+
+    public static gridHeight(numBits: number) {
+        return 4 + (useCompact(numBits) ? Math.floor(numBits / 2) : numBits) * 2
     }
 
     public override get allowsForcedOutputs() {
@@ -90,19 +115,21 @@ export class InputRandom extends ComponentBase<InputRandomRepr, LogicValue> {
         )
     }
 
-    protected doRecalcValue(): LogicValue {
+    protected doRecalcValue(): LogicValue[] {
         const prevClock = this._lastClock
-        const clock = this._lastClock = this.inputs[INPUT.Clock].value
+        const clock = this._lastClock = this.inputs.Clock.value
         if (!Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
             // no change
             return this.value
         }
-        const r = Math.random()
-        return r < this._prob1
+        const randBool = () => {
+            return Math.random() < this._prob1
+        }
+        return ArrayFillUsing(randBool, this.numBits)
     }
 
-    protected override propagateValue(newValue: LogicValue) {
-        this.outputs[OUTPUT.Out].value = newValue
+    protected override propagateValue(newValue: LogicValue[]) {
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
@@ -121,16 +148,23 @@ export class InputRandom extends ComponentBase<InputRandomRepr, LogicValue> {
         g.fill()
         g.stroke()
 
+        for (const output of this.outputs.Out) {
+            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
+        }
+        drawWireLineToComponent(g, this.inputs.Clock, left, this.inputs.Clock.posYInParentTransform, false)
 
-        drawWireLineToComponent(g, this.outputs[OUTPUT.Out], right, this.outputs[OUTPUT.Out].posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Clock], left, this.inputs[INPUT.Clock].posYInParentTransform, false)
-
-        Flipflop.drawClockInput(g, left, this.inputs[INPUT.Clock], this._trigger)
+        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
 
 
         ctx.inNonTransformedFrame(ctx => {
-            const outputValue = this.outputs[0].value
-            FlipflopOrLatch.drawStoredValue(g, outputValue, this.posX, this.posY, 26)
+            const outputValues = this.value
+
+            if (this.numBits === 1) {
+                const output = this.outputs.Out[0]
+                FlipflopOrLatch.drawStoredValue(g, output.value, ...ctx.rotatePoint(this.posX, output.posYInParentTransform), 26, false)
+            } else {
+                RegisterBase.drawStoredValues(g, ctx, this.outputs.Out, this.posX, Orientation.isVertical(this.orient))
+            }
 
             if (this._showProb) {
                 const isVertical = Orientation.isVertical(this.orient)
@@ -160,7 +194,8 @@ export class InputRandom extends ComponentBase<InputRandomRepr, LogicValue> {
 
 
             if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, toLogicValueRepr(outputValue), this, false)
+                const [__, value] = displayValuesFromArray(outputValues, false)
+                drawComponentName(g, ctx, this._name, value, this, false)
             }
         })
     }

@@ -1,21 +1,22 @@
+import { left, right } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
 import { isString, isUndefined } from "../utils"
-import { Passthrough1, Passthrough1Def, Passthrough4, Passthrough4Def, Passthrough8, Passthrough8Def } from "./Passthrough"
+import { Passthrough, PassthroughDef } from "./Passthrough"
 
-export type Passthrough = Passthrough1 | Passthrough4 | Passthrough8
 
-export const LayoutDef = t.union([
-    Passthrough1Def.repr,
-    Passthrough4Def.repr,
-    Passthrough8Def.repr,
-], "Layout")
+// export const LayoutDef = t.union([
+//     PassthroughDef.repr,
+// ], "Layout")
+
+export const LayoutDef = PassthroughDef.repr
 
 type LayoutRepr = t.TypeOf<typeof LayoutDef>
 
+
 export const LayoutFactory = {
 
-    make: (editor: LogicEditor, savedDataOrType: LayoutRepr | string | undefined) => {
+    make: (editor: LogicEditor, savedDataOrType: LayoutRepr | string | undefined, params: Record<string, unknown> | undefined) => {
 
         if (isUndefined(savedDataOrType)) {
             return undefined
@@ -35,11 +36,7 @@ export const LayoutFactory = {
 
         switch (savedData.type) {
             case "pass":
-                return new Passthrough1(editor, blank ? null : savedData)
-            case "pass-4":
-                return new Passthrough4(editor, blank ? null : savedData)
-            case "pass-8":
-                return new Passthrough8(editor, blank ? null : savedData)
+                return new Passthrough(editor, blank ? left(params as any) : right(savedData))
         }
 
     },

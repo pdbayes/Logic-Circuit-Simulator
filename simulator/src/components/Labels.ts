@@ -4,7 +4,6 @@ import { isString, isUndefined } from "../utils"
 import { LabelRect, LabelRectDef } from "./LabelRect"
 import { LabelString, LabelStringDef } from "./LabelString"
 
-export type Label = LabelString | LabelRect
 
 export const LabelDef = t.union([
     LabelStringDef.repr,
@@ -13,9 +12,10 @@ export const LabelDef = t.union([
 
 type LabelRepr = t.TypeOf<typeof LabelDef>
 
+
 export const LabelFactory = {
 
-    make: (editor: LogicEditor, savedDataOrType: LabelRepr | string | undefined) => {
+    make: (editor: LogicEditor, savedDataOrType: LabelRepr | string | undefined, __params: Record<string, unknown> | undefined) => {
         let blank
         let savedData: LabelRepr
 

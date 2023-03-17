@@ -9,15 +9,6 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
-const GRID_WIDTH = 25
-const GRID_HEIGHT = 5
-
-const enum INPUT {
-    Clock,
-    Clear,
-    Data,
-}
-
 
 export const ShiftBufferDecoders_ = {
     "raw": { decodeWidth: 1, maxDisplayWidth: 16, decode: (v: number) => v.toString() },
@@ -44,68 +35,72 @@ export const ShiftBufferDecoders =
 
 export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
 
+
 export const OutputShiftBufferDef =
-    defineComponent(true, false, t.type({
-        type: t.literal("shiftbuffer"),
-        state: typeOrUndefined(t.string),
-        decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),
-        groupEvery: typeOrUndefined(t.number),
-        maxItems: typeOrUndefined(t.number),
-        trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
-    }, "OutputShiftBuffer"))
+    defineComponent("shiftbuffer", {
+        repr: {
+            state: typeOrUndefined(t.string),
+            decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),
+            groupEvery: typeOrUndefined(t.number),
+            maxItems: typeOrUndefined(t.number),
+            trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
+        },
+        valueDefaults: {
+            decodeAs: "raw" as ShiftBufferDecoder,
+            trigger: EdgeTrigger.rising,
+        },
+        makeNodes: () => {
+            const s = S.Components.Generic
+            return {
+                ins: {
+                    Clock: [-14, +1, "w", s.InputClockDesc, true],
+                    Clear: [-10, +3, "s", s.InputClearDesc, true],
+                    D: [-14, -1, "w", s.InputDataDesc],
+                },
+            }
+        },
+        initialValue: (savedData): OutputShiftBufferState => {
+            if (isNull(savedData) || isUndefined(savedData.state)) {
+                return { incoming: [], decoded: [] }
+            }
+            const incoming: LogicValue[] = []
+            for (let i = 0; i < savedData.state.length; i++) {
+                const c = savedData.state.charAt(i)
+                if (c === '1') {
+                    incoming.push(true)
+                } else if (c === '0') {
+                    incoming.push(false)
+                } else {
+                    incoming.push(Unknown)
+                }
+            }
+            return { incoming, decoded: [] }
+        },
+    })
 
 type OutputShiftBufferRepr = Repr<typeof OutputShiftBufferDef>
-
-const OutputShiftBufferDefaults = {
-    decodeAs: "raw" as ShiftBufferDecoder,
-    trigger: EdgeTrigger.rising,
-}
 
 type OutputShiftBufferState = {
     incoming: LogicValue[]
     decoded: [string, LogicValue[]][]
 }
 
-export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, OutputShiftBufferState> {
+export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
 
-    protected _decodeAs: ShiftBufferDecoder = OutputShiftBufferDefaults.decodeAs
+    protected _decodeAs: ShiftBufferDecoder = OutputShiftBufferDef.aults.decodeAs
     protected _groupEvery: number | undefined = undefined
     protected _maxItems: number | undefined = undefined
-    protected _trigger: EdgeTrigger = OutputShiftBufferDefaults.trigger
+    protected _trigger: EdgeTrigger = OutputShiftBufferDef.aults.trigger
     protected _lastClock: LogicValue = Unknown
 
-    private static savedStateFrom(savedData: { state: string | undefined } | null): OutputShiftBufferState {
-        if (isNull(savedData) || isUndefined(savedData.state)) {
-            return { incoming: [], decoded: [] }
-        }
-        const incoming: LogicValue[] = []
-        for (let i = 0; i < savedData.state.length; i++) {
-            const c = savedData.state.charAt(i)
-            if (c === '1') {
-                incoming.push(true)
-            } else if (c === '0') {
-                incoming.push(false)
-            } else {
-                incoming.push(Unknown)
-            }
-        }
-        return { incoming, decoded: [] }
-    }
-
     public constructor(editor: LogicEditor, savedData: OutputShiftBufferRepr | null) {
-        super(editor, OutputShiftBuffer.savedStateFrom(savedData), savedData, {
-            ins: [
-                [S.Components.Generic.InputClockDesc, -14, +1, "w"], // Clock
-                [S.Components.Generic.InputClearDesc, -10, +3, "s"], // Clear
-                [S.Components.Generic.InputDataDesc, -14, -1, "w"], // Data in
-            ],
-        })
+        super(editor, OutputShiftBufferDef, savedData)
+
         if (isNotNull(savedData)) {
-            this._decodeAs = savedData.decodeAs ?? OutputShiftBufferDefaults.decodeAs
+            this._decodeAs = savedData.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
             this._maxItems = savedData.maxItems
-            this._trigger = savedData.trigger ?? OutputShiftBufferDefaults.trigger
+            this._trigger = savedData.trigger ?? OutputShiftBufferDef.aults.trigger
         }
-        this.setInputsPreferSpike(INPUT.Clock, INPUT.Clear)
         this.redecodeAll()
     }
 
@@ -115,10 +110,10 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
             type: "shiftbuffer" as const,
             ...this.toJSONBase(),
             state: stateArray.length === 0 ? undefined : stateArray.join(""),
-            decodeAs: (this._decodeAs !== OutputShiftBufferDefaults.decodeAs) ? this._decodeAs : undefined,
+            decodeAs: (this._decodeAs !== OutputShiftBufferDef.aults.decodeAs) ? this._decodeAs : undefined,
             groupEvery: this._groupEvery,
             maxItems: this._maxItems,
-            trigger: (this._trigger !== OutputShiftBufferDefaults.trigger) ? this._trigger : undefined,
+            trigger: (this._trigger !== OutputShiftBufferDef.aults.trigger) ? this._trigger : undefined,
         }
     }
 
@@ -127,11 +122,11 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 25 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 5 * GRID_STEP
     }
 
     public get trigger() {
@@ -145,16 +140,16 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     protected doRecalcValue(): OutputShiftBufferState {
-        if (this.inputs[INPUT.Clear].value === true) {
+        if (this.inputs.Clear.value === true) {
             return { incoming: [], decoded: [] }
         }
         const prevClock = this._lastClock
-        const clock = this._lastClock = this.inputs[INPUT.Clock].value
+        const clock = this._lastClock = this.inputs.Clock.value
         const oldValue = this.value
 
         if (Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
-            const newBit = this.inputs[INPUT.Data].value
-            const decoder = ShiftBufferDecoders.propsOf(this._decodeAs)
+            const newBit = this.inputs.D.value
+            const decoder = ShiftBufferDecoders.props[this._decodeAs]
             const maxItems = this._maxItems ?? decoder.maxDisplayWidth
             return OutputShiftBuffer.valueByAddingNewBit(newBit, oldValue, decoder, maxItems)
         }
@@ -199,16 +194,16 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         g.stroke()
         g.fillStyle = COLOR_BACKGROUND
 
-        Flipflop.drawClockInput(g, left, this.inputs[INPUT.Clock], this._trigger)
-        drawWireLineToComponent(g, this.inputs[INPUT.Clear], this.inputs[INPUT.Clear].posXInParentTransform, bottom + 2, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Data], left - 2, this.inputs[INPUT.Data].posYInParentTransform, false)
+        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
+        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom + 2, false)
+        drawWireLineToComponent(g, this.inputs.D, left - 2, this.inputs.D.posYInParentTransform, false)
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs[INPUT.Clear], bottom)
-            drawLabel(ctx, this.orient, "D", "w", left, this.inputs[INPUT.Data])
+            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
+            drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
         })
 
         const drawContents = () => {
@@ -242,7 +237,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         }
 
         const decodeAs = this._decodeAs
-        const decoder = ShiftBufferDecoders.propsOf(decodeAs)
+        const decoder = ShiftBufferDecoders.props[decodeAs]
         const toPad = decoder.decodeWidth - incoming.length
         const padding = repeatString("_ ", toPad)
         const undecodedStr = padding + displayValuesFromArray(incoming, true)[0]
@@ -285,7 +280,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     private redecodeAll() {
-        const decoder = ShiftBufferDecoders.propsOf(this._decodeAs)
+        const decoder = ShiftBufferDecoders.props[this._decodeAs]
         const allBits = allBitsOf(this.value)
         const maxItems = this._maxItems ?? decoder.maxDisplayWidth
         let value: OutputShiftBufferState = { incoming: [], decoded: [] }

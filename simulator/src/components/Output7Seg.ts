@@ -4,55 +4,53 @@ import { div, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, Repr } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, group, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
 export const Output7SegDef =
-    defineComponent(true, false, t.type({
-        type: t.literal("7seg"),
-        color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
-        transparent: typeOrUndefined(t.boolean),
-        name: ComponentNameRepr,
-    }, "Ouput7Seg"))
+    defineComponent("7seg", {
+        repr: {
+            color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
+            transparent: typeOrUndefined(t.boolean),
+            name: ComponentNameRepr,
+        },
+        valueDefaults: {
+            color: "green" as LedColor,
+            transparent: true,
+        },
+        makeNodes: () => ({
+            ins: {
+                In: group("w", [
+                    [-5, -4, "a"],
+                    [-5, -3, "b"],
+                    [-5, -2, "c"],
+                    [-5, -1, "d"],
+                    [-5, 0, "e"],
+                    [-5, +1, "f"],
+                    [-5, +2, "g"],
+                    [-5, +4, "p"],
+                ]),
+            },
+        }),
+        initialValue: () => ArrayFillWith<LogicValue>(false, 8),
+    })
 
-const enum INPUT {
-    a, b, c, d, e, f, g, p
-}
-
-const Output7SegDefaults = {
-    color: "green" as LedColor,
-    transparent: true,
-}
-
-const GRID_WIDTH = 8
-const GRID_HEIGHT = 10
 
 type Output7SegRepr = Repr<typeof Output7SegDef>
 
-export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
+export class Output7Seg extends ComponentBase<Output7SegRepr> {
 
-    private _color = Output7SegDefaults.color
-    private _transparent = Output7SegDefaults.transparent
+    private _color = Output7SegDef.aults.color
+    private _transparent = Output7SegDef.aults.transparent
     private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: Output7SegRepr | null) {
-        super(editor, ArrayFillWith(false, 8), savedData, {
-            ins: [
-                ["a", -5, -4, "w", "In"],
-                ["b", -5, -3, "w", "In"],
-                ["c", -5, -2, "w", "In"],
-                ["d", -5, -1, "w", "In"],
-                ["e", -5, 0, "w", "In"],
-                ["f", -5, +1, "w", "In"],
-                ["g", -5, +2, "w", "In"],
-                ["p", -5, +4, "w", "In"],
-            ],
-        })
+        super(editor, Output7SegDef, savedData)
         if (isNotNull(savedData)) {
-            this._color = savedData.color ?? Output7SegDefaults.color
-            this._transparent = savedData.transparent ?? Output7SegDefaults.transparent
+            this._color = savedData.color ?? Output7SegDef.aults.color
+            this._transparent = savedData.transparent ?? Output7SegDef.aults.transparent
             this._name = savedData.name
         }
     }
@@ -61,8 +59,8 @@ export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
         return {
             type: "7seg" as const,
             ...this.toJSONBase(),
-            color: this._color === Output7SegDefaults.color ? undefined : this._color,
-            transparent: this._transparent === Output7SegDefaults.transparent ? undefined : this._transparent,
+            color: this._color === Output7SegDef.aults.color ? undefined : this._color,
+            transparent: this._transparent === Output7SegDef.aults.transparent ? undefined : this._transparent,
             name: this._name,
         }
     }
@@ -72,11 +70,11 @@ export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 8 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 10 * GRID_STEP
     }
 
     public override makeTooltip() {
@@ -86,13 +84,13 @@ export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
     }
 
     protected doRecalcValue(): LogicValue[] {
-        return this.inputValues([INPUT.a, INPUT.b, INPUT.c, INPUT.d, INPUT.e, INPUT.f, INPUT.g, INPUT.p])
+        return this.inputValues(this.inputs.In)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = left + width
         const top = this.posY - height / 2
@@ -107,7 +105,7 @@ export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
         g.fill()
         g.stroke()
 
-        for (const input of this.inputs) {
+        for (const input of this.inputs.In) {
             drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
@@ -174,9 +172,9 @@ export class Output7Seg extends ComponentBase<Output7SegRepr, LogicValue[]> {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "12px sans-serif"
 
-            this.inputs.forEach(input => {
+            for (const input of this.inputs.In) {
                 drawLabel(ctx, this.orient, input.name, "w", left, input)
-            })
+            }
 
             if (isDefined(this._name)) {
                 const valueString = this.value.map(toLogicValueRepr).join("")

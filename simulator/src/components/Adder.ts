@@ -1,4 +1,3 @@
-import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
@@ -7,38 +6,32 @@ import { isHighImpedance, isUndefined, isUnknown, LogicValue, Unknown } from "..
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
-const GRID_WIDTH = 7
-const GRID_HEIGHT = 5
-
-const enum INPUT {
-    A, B, Cin
-}
-
-const enum OUTPUT {
-    S, Cout
-}
-
 export const AdderDef =
-    defineComponent(true, true, t.type({
-        type: t.literal("adder"),
-    }, "Adder"))
+    defineComponent("adder", {
+        valueDefaults: {},
+        makeNodes: () => {
+            const s = S.Components.Generic
+            return {
+                ins: {
+                    A: [-2, -4, "n"],
+                    B: [2, -4, "n"],
+                    Cin: [5, 0, "e", () => s.InputCarryInDesc],
+                },
+                outs: {
+                    S: [0, 4, "s", () => s.OutputSumDesc],
+                    Cout: [-5, 0, "w", () => s.OutputCarryOutDesc],
+                },
+            }
+        },
+        initialValue: () => ({ s: false as LogicValue, cout: false as LogicValue }),
+    })
 
 type AdderRepr = Repr<typeof AdderDef>
 
-export class Adder extends ComponentBase<AdderRepr, [LogicValue, LogicValue]> {
+export class Adder extends ComponentBase<AdderRepr> {
 
     public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
-        super(editor, [false, false], savedData, {
-            ins: [
-                ["A", -2, -4, "n"],
-                ["B", 2, -4, "n"],
-                [S.Components.Generic.InputCarryInDesc, 5, 0, "e"],
-            ],
-            outs: [
-                [S.Components.Generic.OutputSumDesc, 0, 4, "s"],
-                [S.Components.Generic.OutputCarryOutDesc, -5, 0, "w"],
-            ],
-        })
+        super(editor, AdderDef, savedData)
     }
 
     public toJSON() {
@@ -53,49 +46,50 @@ export class Adder extends ComponentBase<AdderRepr, [LogicValue, LogicValue]> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 7 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 5 * GRID_STEP
     }
 
     public override makeTooltip() {
-        return tooltipContent(S.Components.Adder.caption, mods(
-            div(S.Components.Adder.tooltip),
+        const s = S.Components.Adder.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc),
         ))
     }
 
-    protected doRecalcValue(): [LogicValue, LogicValue] {
-        const a = this.inputs[INPUT.A].value
-        const b = this.inputs[INPUT.B].value
-        const cIn = this.inputs[INPUT.Cin].value
+    protected doRecalcValue() {
+        const a = this.inputs.A.value
+        const b = this.inputs.B.value
+        const cIn = this.inputs.Cin.value
 
         if (isUnknown(a) || isUnknown(b) || isUnknown(cIn) || isHighImpedance(a) || isHighImpedance(b) || isHighImpedance(cIn)) {
-            return [Unknown, Unknown]
+            return { s: Unknown, cout: Unknown }
         }
 
         const sum = (+a) + (+b) + (+cIn)
         switch (sum) {
-            case 0: return [false, false]
-            case 1: return [true, false]
-            case 2: return [false, true]
-            case 3: return [true, true]
+            case 0: return { s: false, cout: false }
+            case 1: return { s: true, cout: false }
+            case 2: return { s: false, cout: true }
+            case 3: return { s: true, cout: true }
             default:
                 console.log("ERROR: sum of adder is > 3")
-                return [false, false]
+                return { s: false, cout: false }
         }
     }
 
-    protected override propagateValue(newValue: [LogicValue, LogicValue]) {
-        this.outputs[OUTPUT.S].value = newValue[OUTPUT.S]
-        this.outputs[OUTPUT.Cout].value = newValue[OUTPUT.Cout]
+    protected override propagateValue(newValue: { s: LogicValue, cout: LogicValue }) {
+        this.outputs.S.value = newValue.s
+        this.outputs.Cout.value = newValue.cout
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
 
         g.fillStyle = COLOR_BACKGROUND
         g.lineWidth = 3
@@ -110,13 +104,13 @@ export class Adder extends ComponentBase<AdderRepr, [LogicValue, LogicValue]> {
         g.fill()
         g.stroke()
 
-        drawWireLineToComponent(g, this.inputs[INPUT.A], this.inputs[INPUT.A].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT.B], this.inputs[INPUT.B].posXInParentTransform, this.posY - height / 2 - 2, true)
-        drawWireLineToComponent(g, this.inputs[INPUT.Cin], this.posX + width / 2 + 2, this.inputs[INPUT.Cin].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.inputs.A, this.inputs.A.posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs.B, this.inputs.B.posXInParentTransform, this.posY - height / 2 - 2, true)
+        drawWireLineToComponent(g, this.inputs.Cin, this.posX + width / 2 + 2, this.inputs.Cin.posYInParentTransform, true)
 
 
-        drawWireLineToComponent(g, this.outputs[OUTPUT.S], this.outputs[OUTPUT.S].posXInParentTransform, this.posY + height / 2 + 2, true)
-        drawWireLineToComponent(g, this.outputs[OUTPUT.Cout], this.posX - width / 2 - 2, this.outputs[OUTPUT.Cout].posYInParentTransform, true)
+        drawWireLineToComponent(g, this.outputs.S, this.outputs.S.posXInParentTransform, this.posY + height / 2 + 2, true)
+        drawWireLineToComponent(g, this.outputs.Cout, this.posX - width / 2 - 2, this.outputs.Cout.posYInParentTransform, true)
 
 
         ctx.inNonTransformedFrame(ctx => {
@@ -129,12 +123,12 @@ export class Adder extends ComponentBase<AdderRepr, [LogicValue, LogicValue]> {
             const right = this.posX + width / 2
             const left = this.posX - width / 2
 
-            drawLabel(ctx, this.orient, "A", "n", this.inputs[INPUT.A], top)
-            drawLabel(ctx, this.orient, "B", "n", this.inputs[INPUT.B], top)
-            drawLabel(ctx, this.orient, "Cin", "e", right, this.inputs[INPUT.Cin])
+            drawLabel(ctx, this.orient, "A", "n", this.inputs.A, top)
+            drawLabel(ctx, this.orient, "B", "n", this.inputs.B, top)
+            drawLabel(ctx, this.orient, "Cin", "e", right, this.inputs.Cin)
 
-            drawLabel(ctx, this.orient, "S", "s", this.outputs[OUTPUT.S], bottom)
-            drawLabel(ctx, this.orient, "Cout", "w", left, this.outputs[OUTPUT.Cout])
+            drawLabel(ctx, this.orient, "S", "s", this.outputs.S, bottom)
+            drawLabel(ctx, this.orient, "Cout", "w", left, this.outputs.Cout)
 
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 30px sans-serif"

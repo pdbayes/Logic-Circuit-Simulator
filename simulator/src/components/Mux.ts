@@ -1,162 +1,109 @@
+import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP, strokeAsWireLine } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBaseWithSubclassDefinedNodes, ComponentRepr, defineComponent, NodeVisual, Repr } from "./Component"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Params, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
-function defineMux<TName extends string>(jsonName: TName, className: string) {
-    return defineComponent(true, true, t.type({
-        type: t.literal(jsonName),
-        showWiring: typeOrUndefined(t.boolean),
-    }, className))
-}
+export const MuxDef =
+    defineParametrizedComponent("mux", true, true, {
+        variantName: ({ from, to }) => `mux-${from}to${to}`,
+        repr: {
+            from: typeOrUndefined(t.number),
+            to: typeOrUndefined(t.number),
+            showWiring: typeOrUndefined(t.boolean),
+        },
+        valueDefaults: {
+            showWiring: true,
+        },
+        paramDefaults: {
+            from: 8,
+            to: 4,
+        },
+        validateParams: ({ from, to }) => {
+            const numGroups = Math.ceil(from / to)
+            const numSel = Math.ceil(Math.log2(numGroups))
+            return { numFrom: from, numTo: to, numGroups, numSel }
+        },
+        makeNodes: ({ numFrom: __numFrom, numTo, numGroups, numSel }) => {
+            const outX = 1 + numSel
+            const inX = -outX
 
-type MuxRepr =
-    ComponentRepr<true, true> & {
-        showWiring: boolean | undefined,
-    }
+            const groupOfInputs = groupVerticalMulti("w", inX, 0, numGroups, numTo)
+            const firstInputY = groupOfInputs[0][0][1]
+            const selY = firstInputY - 2
 
-const MuxDefaults = {
-    showWiring: true,
-}
-
-type MuxInputIndices = {
-    I: number[][], // array of arrays of input indices
-    S: number[], // array of indices of selectors
-}
-
-type MuxOutputIndices = {
-    Z: number[], // array of output indices
-}
-
-abstract class Mux<Repr extends MuxRepr>
-    extends ComponentBaseWithSubclassDefinedNodes<
-        Repr,
-        LogicValue[],
-        MuxInputIndices,
-        MuxOutputIndices,
-        true, true
-    > {
-
-    private static generateInOffsets(numFrom: number, numSel: number, numTo: number): NodeVisual[] {
-        const offsets: NodeVisual[] = []
-
-        const compact = numTo >= 7
-        const spacing = compact ? 1 : 2
-
-        // left inputs
-        const numGroups = numFrom / numTo
-        const addByGroupSep = numTo > 1 ? 1 : 0
-        const numLeftSlots = (numFrom * spacing) / 2 + (numGroups - 1) * addByGroupSep
-        let x = -1 - numSel
-        let y = -(numLeftSlots - 1)
-        const selY = y - 2
-        let groupLetter = "A"
-        for (let i = 0; i < numFrom; i++) {
-            if (i !== 0 && i % numTo === 0) {
-                y += addByGroupSep * spacing
-                groupLetter = String.fromCharCode(groupLetter.charCodeAt(0) + 1)
+            return {
+                ins: {
+                    I: groupOfInputs,
+                    S: groupHorizontal("n", 0, selY, numSel),
+                },
+                outs: {
+                    Z: groupVertical("e", outX, 0, numTo),
+                },
             }
-            offsets.push([groupLetter + (i % numTo), x, y, "w", groupLetter])
-            y += spacing
-        }
+        },
+        initialValue: (savedData, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
+    })
 
-        // top input selectors
-        x = (numSel - 1)
-        for (let s = 0; s < numSel; s++) {
-            offsets.push([`S${s}`, x - 2 * s, selY, "n", "S"])
-        }
-        return offsets
-    }
 
-    private static generateOutOffsets(numSel: number, numTo: number): NodeVisual[] {
-        const offsets: NodeVisual[] = []
+export type MuxRepr = Repr<typeof MuxDef>
+export type MuxParams = Params<typeof MuxDef>
 
-        // right outputs
-        const compact = numTo >= 7
-        const spacing = compact ? 1 : 2
-        const topOffset = spacing === 1 ? -Math.round(numTo / 2) : -(numTo - 1) / 2 * spacing
-        const x = 1 + numSel
-        for (let i = 0; i < numTo; i++) {
-            offsets.push([`Z${i}`, x, topOffset + spacing * i, "e", "Z"])
-        }
-        return offsets
-    }
+export class Mux extends ComponentBase<MuxRepr> {
 
-    protected static generateInputIndices(numFrom: number, numSel: number, numTo: number): MuxInputIndices {
-        let ind = 0
-        const I: number[][] = []
-        const numGroups = Math.ceil(numFrom / numTo)
-        for (let g = 0; g < numGroups; g++) {
-            const inds: Array<number> = []
-            for (let o = 0; o < numTo; o++) {
-                inds.push(ind++)
-            }
-            I.push(inds)
-        }
-        const S: Array<number> = []
-        for (let s = 0; s < numSel; s++) {
-            S.push(ind++)
-        }
-        return { I, S }
-    }
+    public readonly numFrom: number
+    public readonly numTo: number
+    public readonly numGroups: number
+    public readonly numSel: number
+    private _showWiring: boolean = MuxDef.aults.showWiring
 
-    protected static generateOutputIndices(numTo: number): MuxOutputIndices {
-        let ind = 0
-        const Z: Array<number> = []
-        for (let o = 0; o < numTo; o++) {
-            Z.push(ind++)
-        }
-        return { Z }
-    }
+    public constructor(editor: LogicEditor, initData: Either<MuxParams, MuxRepr>) {
+        const [params, savedData] = MuxDef.validate(initData)
+        super(editor, MuxDef(params), savedData)
 
-    private static gridWidth(numSel: number): number {
-        return 2 * numSel
-    }
+        this.numFrom = params.numFrom
+        this.numTo = params.numTo
+        this.numGroups = params.numGroups
+        this.numSel = params.numSel
 
-    private static gridHeight(numFrom: number, numTo: number): number {
-        const compact = numTo >= 7
-        const spacing = compact ? 1 : 2
-        const numGroups = numFrom / numTo
-        const addByGroupSep = numTo > 1 ? 1 : 0
-        const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
-        return 1 + spacing * numLeftSlots
-    }
-
-    private _showWiring = MuxDefaults.showWiring
-
-    protected constructor(editor: LogicEditor, savedData: Repr | null,
-        public readonly numFrom: number,
-        public readonly numSel: number,
-        public readonly numTo: number,
-    ) {
-        super(editor, Mux.gridWidth(numSel), Mux.gridHeight(numFrom, numTo),
-            Mux.generateInputIndices(numFrom, numSel, numTo),
-            Mux.generateOutputIndices(numTo),
-            ArrayFillWith(false as LogicValue, numTo),
-            savedData, {
-            ins: Mux.generateInOffsets(numFrom, numSel, numTo),
-            outs: Mux.generateOutOffsets(numSel, numTo),
-        })
         if (isNotNull(savedData)) {
-            this._showWiring = savedData.showWiring ?? MuxDefaults.showWiring
+            this._showWiring = savedData.showWiring ?? MuxDef.aults.showWiring
         }
     }
 
-    protected override toJSONBase() {
+    public override toJSON() {
         return {
+            type: "mux" as const, from: this.numFrom, to: this.numTo,
             ...super.toJSONBase(),
-            showWiring: (this._showWiring !== MuxDefaults.showWiring) ? this._showWiring : undefined,
+            showWiring: (this._showWiring !== MuxDef.aults.showWiring) ? this._showWiring : undefined,
         }
     }
 
     public get componentType() {
         return "ic" as const
+    }
+
+    public get unrotatedWidth() {
+        return 2 * this.numSel * GRID_STEP
+    }
+
+    public get unrotatedHeight() {
+        return Mux.gridHeight(this.numFrom, this.numTo)
+    }
+
+    public static gridHeight(numFrom: number, numTo: number): number {
+        const compact = useCompact(numTo)
+        const spacing = compact ? 1 : 2
+        const numGroups = numFrom / numTo
+        const addByGroupSep = numTo > 1 ? 1 : 0
+        const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
+        return (1 + spacing * numLeftSlots) * GRID_STEP
     }
 
     public override makeTooltip() {
@@ -166,55 +113,49 @@ abstract class Mux<Repr extends MuxRepr>
     }
 
     protected doRecalcValue(): LogicValue[] {
-        const sels = this.inputValues(this.INPUT.S)
+        const sels = this.inputValues(this.inputs.S)
         const sel = displayValuesFromArray(sels, false)[1]
 
         if (isUnknown(sel)) {
             return ArrayFillWith(Unknown, this.numTo)
         }
-        return this.inputValues(this.INPUT.I[sel])
+        return this.inputValues(this.inputs.I[sel])
     }
 
     protected override propagateValue(newValues: LogicValue[]) {
-        const Z = this.OUTPUT.Z
-        for (let i = 0; i < Z.length; i++) {
-            this.outputs[Z[i]].value = newValues[i]
-        }
+        this.outputValues(this.outputs.Z, newValues)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = this.gridWidth * GRID_STEP
-        const height = this.gridHeight * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = this.posX + width / 2
         const top = this.posY - height / 2
         const bottom = this.posY + height / 2
+        const dy = (right - left) / 3
 
         // inputs
-        for (const GROUP of this.INPUT.I) {
-            for (let i = 0; i < GROUP.length; i++) {
-                const inputi = this.inputs[GROUP[i]]
-                drawWireLineToComponent(g, inputi, left, inputi.posYInParentTransform)
+        for (const inputGroup of this.inputs.I) {
+            for (const input of inputGroup) {
+                drawWireLineToComponent(g, input, left, input.posYInParentTransform)
             }
         }
 
         // selectors
-        for (let i = 0; i < this.INPUT.S.length; i++) {
-            const seli = this.inputs[this.INPUT.S[i]]
-            drawWireLineToComponent(g, seli, seli.posXInParentTransform, top + 20)
+        for (const sel of this.inputs.S) {
+            drawWireLineToComponent(g, sel, sel.posXInParentTransform, top + dy)
         }
 
         // outputs
-        for (let i = 0; i < this.OUTPUT.Z.length; i++) {
-            const outputi = this.outputs[this.OUTPUT.Z[i]]
-            drawWireLineToComponent(g, outputi, right, outputi.posYInParentTransform)
+        for (const output of this.outputs.Z) {
+            drawWireLineToComponent(g, output, right, output.posYInParentTransform)
         }
 
         // background
         g.fillStyle = COLOR_BACKGROUND
         const outlinePath = new Path2D()
-        const dy = (right - left) / 3
         outlinePath.moveTo(left, top)
         outlinePath.lineTo(right, top + dy)
         outlinePath.lineTo(right, bottom - dy)
@@ -224,20 +165,19 @@ abstract class Mux<Repr extends MuxRepr>
 
         // wiring
         if (this._showWiring) {
-            const sels = this.inputValues(this.INPUT.S as any)
+            const sels = this.inputValues(this.inputs.S)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
                 const neutral = this.editor.options.hideWireColors
-                const from = this.INPUT.I[sel]
-                const to = this.OUTPUT.Z
+                const selectedInputs = this.inputs.I[sel]
                 const anchorDiffX = (right - left) / 3
                 const wireStyleStraight = this.editor.options.wireStyle === WireStyles.straight
 
-                for (let i = 0; i < from.length; i++) {
+                for (let i = 0; i < selectedInputs.length; i++) {
                     this.editor.options.wireStyle
                     g.beginPath()
-                    const fromY = this.inputs[from[i]].posYInParentTransform
-                    const toNode = this.outputs[to[i]]
+                    const fromY = selectedInputs[i].posYInParentTransform
+                    const toNode = this.outputs.Z[i]
                     const toY = toNode.posYInParentTransform
                     g.moveTo(left + 1, fromY)
                     if (wireStyleStraight) {
@@ -251,7 +191,7 @@ abstract class Mux<Repr extends MuxRepr>
                             right - 1, toY,
                         )
                     }
-                    strokeAsWireLine(g, this.inputs[from[i]].value, toNode.color, false, neutral)
+                    strokeAsWireLine(g, selectedInputs[i].value, toNode.color, false, neutral)
                 }
             }
         }
@@ -293,118 +233,4 @@ abstract class Mux<Repr extends MuxRepr>
         return items
     }
 
-}
-
-
-export const Mux2To1Def = defineMux("mux-2to1", "Mux2To1")
-type Mux2To1Repr = Repr<typeof Mux2To1Def>
-export class Mux2To1 extends Mux<Mux2To1Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux2To1Repr | null) {
-        super(editor, savedData, 2, 1, 1)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-2to1" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-export const Mux4To1Def = defineMux("mux-4to1", "Mux4To1")
-type Mux4To1Repr = Repr<typeof Mux4To1Def>
-export class Mux4To1 extends Mux<Mux4To1Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux4To1Repr | null) {
-        super(editor, savedData, 4, 2, 1)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-4to1" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-export const Mux8To1Def = defineMux("mux-8to1", "Mux8To1")
-type Mux8To1Repr = Repr<typeof Mux8To1Def>
-export class Mux8To1 extends Mux<Mux8To1Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux8To1Repr | null) {
-        super(editor, savedData, 8, 3, 1)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-8to1" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-export const Mux4To2Def = defineMux("mux-4to2", "Mux4To2")
-type Mux4To2Repr = Repr<typeof Mux4To2Def>
-export class Mux4To2 extends Mux<Mux4To2Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux4To2Repr | null) {
-        super(editor, savedData, 4, 1, 2)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-4to2" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-export const Mux8To2Def = defineMux("mux-8to2", "Mux8To2")
-type Mux8To2Repr = Repr<typeof Mux8To2Def>
-export class Mux8To2 extends Mux<Mux8To2Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux8To2Repr | null) {
-        super(editor, savedData, 8, 2, 2)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-8to2" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-export const Mux8To4Def = defineMux("mux-8to4", "Mux8To4")
-type Mux8To4Repr = Repr<typeof Mux8To4Def>
-export class Mux8To4 extends Mux<Mux8To4Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux8To4Repr | null) {
-        super(editor, savedData, 8, 1, 4)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-8to4" as const,
-            ...this.toJSONBase(),
-        }
-    }
-}
-
-
-export const Mux16To8Def = defineMux("mux-16to8", "Mux16To8")
-type Mux16To8Repr = Repr<typeof Mux16To8Def>
-export class Mux16To8 extends Mux<Mux16To8Repr> {
-
-    public constructor(editor: LogicEditor, savedData: Mux16To8Repr | null) {
-        super(editor, savedData, 16, 1, 8)
-    }
-
-    public toJSON() {
-        return {
-            type: "mux-16to8" as const,
-            ...this.toJSONBase(),
-        }
-    }
 }

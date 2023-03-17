@@ -3,30 +3,33 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, LogicValue } from "../utils"
-import { Repr } from "./Component"
+import { defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { defineFlipflopOrLatch, FlipflopOrLatch, OUTPUT } from "./FlipflopOrLatch"
+import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
-const enum INPUT {
-    Set,
-    Reset,
-}
 
 export const LatchSRDef =
-    defineFlipflopOrLatch("latch-sr", "LatchSR", {})
+    defineComponent("latch-sr", {
+        ...FlipflopOrLatchDef,
+        makeNodes: () => {
+            const base = FlipflopOrLatchDef.makeNodes()
+            const s = S.Components.Generic
+            return {
+                ins: {
+                    Set: [-4, -2, "w", s.InputSetDesc, true],
+                    Reset: [-4, 2, "w", s.InputResetDesc, true],
+                },
+                outs: base.outs,
+            }
+        },
+    })
 
 type LatchSRRepr = Repr<typeof LatchSRDef>
 
 export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
 
     public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
-        super(editor, savedData, {
-            ins: [
-                [S.Components.Generic.InputSetDesc, -4, -2, "w"],
-                [S.Components.Generic.InputResetDesc, -4, 2, "w"],
-            ],
-        })
-        this.setInputsPreferSpike(INPUT.Set, INPUT.Reset)
+        super(editor, LatchSRDef, savedData)
     }
 
     public toJSON() {
@@ -44,8 +47,8 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
     }
 
     protected doRecalcValue(): [LogicValue, LogicValue] {
-        const s = this.inputs[INPUT.Set].value
-        const r = this.inputs[INPUT.Reset].value
+        const s = this.inputs.Set.value
+        const r = this.inputs.Reset.value
 
         // assume this state is valid
         this._isInInvalidState = false
@@ -66,21 +69,21 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
         }
 
         // no change
-        const q = this.outputs[OUTPUT.Q].value
+        const q = this.outputs.Q.value
         return [q, LogicValue.invert(q)]
     }
 
     protected doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
 
-        drawWireLineToComponent(g, this.inputs[INPUT.Set], left - 2, this.inputs[INPUT.Set].posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs[INPUT.Reset], left - 2, this.inputs[INPUT.Reset].posYInParentTransform, false)
+        drawWireLineToComponent(g, this.inputs.Set, left - 2, this.inputs.Set.posYInParentTransform, false)
+        drawWireLineToComponent(g, this.inputs.Reset, left - 2, this.inputs.Reset.posYInParentTransform, false)
 
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "12px sans-serif"
 
-            drawLabel(ctx, this.orient, "S", "w", left, this.inputs[INPUT.Set])
-            drawLabel(ctx, this.orient, "R", "w", left, this.inputs[INPUT.Reset])
+            drawLabel(ctx, this.orient, "S", "w", left, this.inputs.Set)
+            drawLabel(ctx, this.orient, "R", "w", left, this.inputs.Reset)
         })
     }
 

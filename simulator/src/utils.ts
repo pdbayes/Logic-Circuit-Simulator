@@ -1,5 +1,6 @@
 
 import * as t from "io-ts"
+import { Add } from "ts-arithmetic"
 
 export type Dict<T> = Record<string, T | undefined>
 export type TimeoutHandle = NodeJS.Timeout
@@ -23,7 +24,7 @@ export class RichStringEnum<K extends keyof any, P> {
 
     private _values: Array<K>
 
-    private constructor(private props: Record<K, P>) {
+    private constructor(public readonly props: Record<K, P>) {
         this._values = keysOf(props)
         for (let i = 0; i < this._values.length; i++) {
             this[i] = this._values[i]
@@ -34,7 +35,7 @@ export class RichStringEnum<K extends keyof any, P> {
         throw new Error()
     }
 
-    public get values(): Array<K> {
+    public get values(): ReadonlyArray<K> {
         return this._values
     }
 
@@ -50,16 +51,12 @@ export class RichStringEnum<K extends keyof any, P> {
         return defs
     }
 
-    public isValue(val: string | number | symbol | null | undefined): val is K {
+    public includes(val: string | number | symbol | null | undefined): val is K {
         return this.values.includes(val as any)
     }
 
     public indexOf(val: K): number {
         return this.values.indexOf(val)
-    }
-
-    public propsOf(key: K): P {
-        return this.props[key]
     }
 
     [i: number]: K
@@ -75,6 +72,22 @@ export class RichStringEnum<K extends keyof any, P> {
 // returns the passed parameter typed as a tuple
 export function tuple<T extends readonly any[]>(...items: [...T]): [...T] {
     return items
+}
+
+export function mergeWhereDefined<A, B>(a: A, b: B): A & PickDefined<B> {
+    const obj: any = { ...a }
+    for (const [k, v] of Object.entries(b as any)) {
+        if (isDefined(v)) {
+            obj[k] = v
+        }
+    }
+    return obj
+}
+
+export function brand<B>() {
+    return <A>(val: A): t.Branded<A, B> => {
+        return val as any
+    }
 }
 
 // Utility types to force the evaluation of computed types
@@ -98,6 +111,13 @@ export type FilterProperties<T, U> = {
     [P in KeysOfByType<T, U>]: T[P]
 }
 
+export type PickDefined<T> = {
+    [P in keyof T as undefined extends T[P] ? never : P]: T[P]
+}
+
+export type HasField<T, K extends string> = K extends keyof T ? true : false
+
+export type IsSameType<A, B> = A extends B ? (B extends A ? true : false) : false
 export type PartialWhereUndefinedRecursively<T> = ExpandRecursively<_PartialWhereUndefinedRecursively<T>>
 
 type _PartialWhereUndefinedRecursively<T> =
@@ -116,6 +136,27 @@ type _PartialWhereUndefinedRecursively<T> =
 
     // other types
     : T
+
+
+// Lightweight ADT facilities
+// Either go with:
+//    export const MyADT = { Case1: ..., Case2: () => ... }
+//    export type MyADT = ADTWith<typeof MyADT>
+// ... or, if you need statics:
+//    const MyADTCases = { Case1: ..., Case2: () => ... } // as before
+//    export type MyADT = ADTWith<typeof MyADTCases>
+//    export const MyADT = defineADTStatics(MyADTCases, { ...statics })
+export type ADTWith<TADTCases extends Record<string, unknown>>
+    = { [K in keyof TADTCases]:
+        TADTCases[K] extends (...args: infer TArgs) => infer TReturn ? TReturn : TADTCases[K]
+    }[keyof TADTCases]
+
+export function defineADTStatics<
+    TADTCases extends Record<string, unknown>,
+    TStatics extends Record<string, unknown>
+>(cases: TADTCases, statics: TStatics) {
+    return { ...statics, ...cases }
+}
 
 
 // Series of type-assertion functions
@@ -144,7 +185,7 @@ export function isString(v: unknown): v is string {
     return typeof v === "string"
 }
 
-export function isArray(arg: unknown): arg is ReadonlyArray<any> {
+export function isArray(arg: unknown): arg is Array<any> {
     return Array.isArray(arg)
 }
 
@@ -165,37 +206,61 @@ export function isBoolean(arg: unknown): arg is boolean {
 }
 
 
+// Array stuff
+
 export type ArrayOrDirect<T> = T | Array<T>
 
-// import { Add, Subtract } from "ts-arithmetic"
+export function ArrayFillWith<T>(val: T, n: number): Array<T> {
+    return Array(n).fill(val)
+}
 
-// // assuming N is a number literal; non-literals filtered by main type
-// type _FixedArray<TItem, TSize extends number, TRest extends number, Acc extends TItem[], TTrueIfMutable extends boolean>
-//     = TRest extends 0 ? TTrueIfMutable extends true ? Acc : readonly [...Acc]
-//     : _FixedArray<TItem, TSize, Subtract<TRest, 1>, [TItem, ...Acc], TTrueIfMutable>
+export function ArrayFillUsing<T>(val: (i: number) => T, n: number): Array<T> {
+    const arr = Array(n)
+    for (let i = 0; i < n; i++) {
+        arr[i] = val(i)
+    }
+    return arr
+}
 
-// type _FixedArrayCommons<T> = {
-//     [Symbol.iterator](): IterableIterator<T>
+export function ArrayClampOrPad<T>(arr: T[], len: number, padValue: T): T[] {
+    const missing = len - arr.length
+    if (missing > 0) {
+        for (let i = 0; i < missing; i++) {
+            arr.push(padValue)
+        }
+    } else if (missing < 0) {
+        arr.splice(len, -missing)
+    }
+    return arr
+}
+
+
+// Fixed-size array types
+
+// assuming N is a number literal; non-literals filtered by main type
+type _FixedArray<TItem, TSize extends number, TRest extends number, Acc extends TItem[], TTrueIfMutable extends boolean>
+    = TRest extends 0 ? TTrueIfMutable extends true ? Acc : readonly [...Acc]
+    : _FixedArray<TItem, TSize, Add<TRest, -1>, [TItem, ...Acc], TTrueIfMutable>
+
+export type FixedArray<T, N extends number> =
+    number extends N ? T[] : _FixedArray<T, N, N, [], true>
+
+//  boolean and not false as 4th type param to keep assignment compatibility
+export type ReadonlyFixedArray<T, N extends number> =
+    number extends N ? readonly T[] : _FixedArray<T, N, N, [], boolean>
+
+// function testAssignment<NN extends number>(n: N) {
+//     type N = NN
+//     const arr: number[] = []
+//     const arrro: readonly number[] = []
+//     const b: readonly number[] = arr
+//     // const bb: number[] = arrro
+
+//     const farr: FixedArray<number, N> = [] as any
+//     const farrro: ReadonlyFixedArray<number, N> = [] as any
+//     const fb: ReadonlyFixedArray<number, N> = farr
+//     const fbb: FixedArray<number, N> = farrro // must fail
 // }
-
-// export type FixedArray<T, N extends number> =
-//     (number extends N ? T[] : _FixedArray<T, N, N, [], true>) & _FixedArrayCommons<T>
-
-// export type ReadonlyFixedArray<T, N extends number> =
-//     (number extends N ? readonly T[] : _FixedArray<T, N, N, [], boolean>) & _FixedArrayCommons<T>
-// //  boolean and not false as 4th type param to keep assignment compatibility
-
-// // function testAssignment<N extends number>(n: N) {
-// //     const arr: number[] = []
-// //     const arrro: readonly number[] = []
-// //     const b: readonly number[] = arr
-// //     // const bb: number[] = arrro
-
-// //     const farr: FixedArray<number, N> = ArrayFillWith(0, n)
-// //     const farrro: ReadonlyFixedArray<number, N> = ArrayFillWith(0, n)
-// //     const fb: ReadonlyFixedArray<number, N> = farr
-// //     // const fbb: FixedArray<number, N> = farrro // must fail
-// // }
 
 // type _FixedArrayLength<T extends readonly any[], N extends number>
 //     = T extends [] ? N
@@ -204,57 +269,18 @@ export type ArrayOrDirect<T> = T | Array<T>
 
 // export type FixedArrayLength<T extends readonly any[]> = _FixedArrayLength<T, 0>
 
-// // // type HashSize1 = { readonly HasSize1: unique symbol }
-// // // type H<N extends number, T> = { [K in `HasSize${N}`]: T }
-// // interface HasSizeNBrand<__ extends number> {
-// //     readonly HasSizeN: unique symbol // TODO check unique per N
-// // }
-
-// // export const FixedArray = <T extends t.Mixed, N extends FixedArraySize>(tpe: T, n: N) =>
-// //     t.brand(
-// //         t.array(tpe, `array of size ${n}`),
-// //         (arr): arr is t.Branded<[t.TypeOf<T>], HasSizeNBrand<N>> => arr.length === n,
-// //         "HasSizeN"
-// //     )
-
-// export function FixedArray<Arr extends any[]>(...items: Arr): FixedArray<Arr[number], Arr["length"]> {
-//     return items as any
-// }
-
-// export function FixedArrayAssert<T, N extends number>(arr: T[], n: N): FixedArray<T, N> {
-//     if (arr.length !== n) {
-//         throw new Error(`Expected array of size ${n}, got ${arr.length}`)
-//     }
-//     return arr as any
-// }
-
-// export function FixedArrayFill<T, N extends number>(val: T, n: N): FixedArray<T, N> {
-//     return Array(n).fill(val) as any
-// }
-
-// export function FixedArrayFillFactory<T, N extends number>(val: (i: number) => T, n: N): FixedArray<T, N> {
-//     const arr = Array(n)
-//     for (let i = 0; i < n; i++) {
-//         arr[i] = val(i)
-//     }
-//     return arr as any
-// }
-
-
-// export function FixedArrayMap<U, Arr extends any[]>(items: Arr, fn: (item: Arr[number]) => U): FixedArray<U, Arr["length"]> {
-//     return items.map(fn) as any
-// }
-
-export function ArrayFillWith<T>(val: T, n: number): Array<T> {
-    return Array(n).fill(val)
+export function FixedArrayFillWith<T, N extends number>(val: T, n: N): FixedArray<T, N> {
+    return ArrayFillWith(val, n) as any
 }
-export function ArrayFillUsing<T>(val: (i: number) => T, n: number): Array<T> {
-    const arr = Array(n)
-    for (let i = 0; i < n; i++) {
-        arr[i] = val(i)
-    }
-    return arr
+
+export function FixedArrayFillUsing<T, N extends number>(val: (i: number) => T, n: N): FixedArray<T, N> {
+    return ArrayFillUsing(val, n) as any
 }
+
+export function FixedArrayMap<U, Arr extends readonly any[]>(items: Arr, fn: (item: Arr[number]) => U): FixedArray<U, Arr["length"]> {
+    return items.map(fn) as any
+}
+
 
 
 export function isTruthyString(str: string | null | undefined): boolean {
@@ -324,6 +350,27 @@ export function showModal(dlog: HTMLDialogElement): boolean {
 }
 
 
+// An InteractionResult is used to indicate whether some interaction
+// had an effect, in which case a snapshot can be taken for undo/redo.
+// It can also be a RepeatableChange to allow to redos acting as
+// repetitions of the last change.
+
+export type RepeatFunction = () => RepeatFunction | undefined
+
+const InteractionResultCases = {
+    NoChange: { _tag: "NoChange" as const, isChange: false as const },
+    SimpleChange: { _tag: "SimpleChange" as const, isChange: true as const },
+    RepeatableChange: (repeat: RepeatFunction) => ({ _tag: "RepeatableChange" as const, isChange: true as const, repeat }),
+}
+
+export const InteractionResult = defineADTStatics(InteractionResultCases, {
+    fromBoolean: (changed: boolean) =>
+        changed ? InteractionResult.SimpleChange : InteractionResult.NoChange,
+})
+
+export type InteractionResult = ADTWith<typeof InteractionResultCases>
+
+
 // More general-purpose utility functions
 
 export function any(bools: boolean[]): boolean {
@@ -354,8 +401,24 @@ export function formatString(str: string, ...varargs: any[]) {
 }
 
 
+export function deepObjectEquals(v1: Record<string, unknown>, v2: Record<string, unknown>) {
+    const keys1 = Object.keys(v1)
+    const keys2 = Object.keys(v2)
+    if (keys1.length !== keys2.length) {
+        return false
+    }
+    for (const key of keys1) {
+        if (!deepEquals(v1[key], v2[key])) {
+            return false
+        }
+    }
+    return true
+}
+
+
+
 export function deepEquals(v1: any, v2: any) {
-    if (Array.isArray(v1) && Array.isArray(v2)) {
+    if (isArray(v1) && isArray(v2)) {
         if (v1.length !== v2.length) {
             return false
         }
@@ -367,6 +430,16 @@ export function deepEquals(v1: any, v2: any) {
         return true
     } else {
         return v1 === v2
+    }
+}
+
+
+export function validate<T>(n: T, validValues: readonly T[], defaultValue: T, valueName: string): T {
+    if (validValues.includes(n)) {
+        return n
+    } else {
+        console.warn(`Using default value ${defaultValue} for ${valueName} instead of invalid value ${n}; allowed values are: ${validValues.join(", ")}`)
+        return defaultValue
     }
 }
 
@@ -423,7 +496,6 @@ export const LogicValueRepr = new t.Type<LogicValueRepr>(
     t.identity,
 )
 
-// TODO put this in TriState object
 export function toLogicValueRepr(v: LogicValue): LogicValueRepr
 export function toLogicValueRepr(v: LogicValue | undefined): LogicValueRepr | undefined
 export function toLogicValueRepr(v: LogicValue | undefined): LogicValueRepr | undefined {

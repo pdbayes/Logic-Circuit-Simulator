@@ -8,7 +8,7 @@ import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
-import { isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
+import { InteractionResult, isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -186,13 +186,12 @@ export class CursorMovementManager {
             // normal components or their nodes
             for (const comp of this.editor.components.withZIndex(DrawZIndex.Normal)) {
                 let nodeOver: Node | null = null
-                comp.forEachNode((node) => {
+                for (const node of comp.allNodes()) {
                     if (node.isOver(x, y)) {
                         nodeOver = node
-                        return false
+                        break
                     }
-                    return true
-                })
+                }
                 if (isNotNull(nodeOver)) {
                     return nodeOver
                 }
@@ -425,10 +424,11 @@ export class CursorMovementManager {
                 clearTimeout(this._startDragTimeoutHandle)
                 this._startDragTimeoutHandle = null
             }
-            let shouldTakeSnapshot = this._currentHandlers.mouseUpOn(mouseUpTarget, e)
+            const mainChange = this._currentHandlers.mouseUpOn(mouseUpTarget, e)
+            let shouldTakeSnapshot = mainChange.isChange
             for (const comp of this._currentMouseDownData?.selectionComps ?? []) {
                 if (comp !== mouseUpTarget) {
-                    shouldTakeSnapshot = this._currentHandlers.mouseUpOn(comp, e) || shouldTakeSnapshot
+                    shouldTakeSnapshot = this._currentHandlers.mouseUpOn(comp, e).isChange || shouldTakeSnapshot
                 }
             }
 
@@ -447,7 +447,8 @@ export class CursorMovementManager {
             }
 
             if (shouldTakeSnapshot) {
-                this.editor.undoMgr.takeSnapshot()
+                const repeatAction = mainChange._tag === "RepeatableChange" ? mainChange.repeat : undefined
+                this.editor.undoMgr.takeSnapshot(repeatAction)
             }
 
         } else {
@@ -488,7 +489,9 @@ export class CursorMovementManager {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 this.editor.cursorMovementMgr.currentSelection = undefined
-                const newComponent = factory(editor)
+                const paramsStr = compButton.dataset.params
+                const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
+                const newComponent = factory(editor, params)
                 this._currentMouseOverComp = newComponent
                 const { wantsDragEvents } = this._currentHandlers.mouseDownOn(newComponent, e)
                 if (wantsDragEvents) {
@@ -526,7 +529,6 @@ export class CursorMovementManager {
 
 }
 
-
 abstract class ToolHandlers {
 
     public readonly editor: LogicEditor
@@ -544,8 +546,8 @@ abstract class ToolHandlers {
     public mouseDraggedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         // empty
     }
-    public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
-        return false // false means no change in model
+    public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent): InteractionResult {
+        return InteractionResult.NoChange
     }
     public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
         return false // false means no change in model
@@ -582,7 +584,7 @@ class EditHandlers extends ToolHandlers {
             return
         }
         // maybe the component is now dead
-        if (comp instanceof ComponentBase && comp.state === ComponentState.DEAD) {
+        if ((comp instanceof ComponentBase) && comp.state === ComponentState.DEAD) {
             return
         }
         const tooltip = comp.makeTooltip()
@@ -604,9 +606,9 @@ class EditHandlers extends ToolHandlers {
         comp.mouseDragged(e)
     }
     public override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
-        const shouldTakeSnapshot = comp.mouseUp(e)
+        const change = comp.mouseUp(e)
         this.editor.wireMgr.tryCancelWire()
-        return shouldTakeSnapshot
+        return change
     }
     public override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("mouseClickedOn %o", comp)
@@ -719,9 +721,6 @@ class EditHandlers extends ToolHandlers {
         }
     }
     public override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
-        // TODO smarter selection handling:
-        // - if shift key is pressed, add to selection, also individual component
-        // - shift-click or drag inverses selection state
         const editor = this.editor
         const allowSelection = editor.mode >= Mode.CONNECT
         if (allowSelection) {

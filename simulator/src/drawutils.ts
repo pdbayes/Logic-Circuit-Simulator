@@ -1,4 +1,4 @@
-import { Component, ComponentName } from "./components/Component"
+import { Component, ComponentName, isNodeArray, ReadonlyGroupedNodeArray } from "./components/Component"
 import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
 import { RectangleColor } from "./components/LabelRect"
 import { Node, WireColor } from "./components/Node"
@@ -87,6 +87,7 @@ export function setColors(darkMode: boolean) {
         doSetColors(darkMode)
         for (const editor of LogicEditor.allConnectedEditors) {
             editor.wrapHandler(() => {
+                editor.setDark(darkMode)
                 editor.redrawMgr.addReason("dark/light mode switch", null)
             })()
         }
@@ -274,6 +275,17 @@ export function colorForFraction(fraction: number): ColorString {
 export const FONT_LABEL_DEFAULT = "18px sans-serif"
 
 
+
+//
+// NODE DEFINITIONS
+//
+
+
+export function useCompact(numNodes: number) {
+    return numNodes >= 6
+}
+
+
 //
 // DRAWING
 //
@@ -308,7 +320,11 @@ export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number
     g.stroke()
 }
 
-export function shouldShowNode(node: Node): boolean {
+export function shouldShowNode(nodeOrArray: Node | readonly Node[]): boolean {
+    if (isArray(nodeOrArray)) {
+        return nodeOrArray.map(shouldShowNode).includes(true)
+    }
+    const node = nodeOrArray as Exclude<typeof nodeOrArray, readonly Node[]>
     const editor = node.editor
     if (editor.mode <= Mode.TRYOUT && !editor.options.showDisconnectedPins && node.isDisconnected) {
         return false
@@ -423,7 +439,7 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
 
     g.strokeStyle = circleColor
     g.lineWidth = thickness
-    g.fillStyle = style === NodeStyle.IN_DISCONNECTED ? "white" : (neutral ? COLOR_UNKNOWN : colorForBoolean(value))
+    g.fillStyle = style === NodeStyle.IN_DISCONNECTED ? COLOR_BACKGROUND : (neutral ? COLOR_UNKNOWN : colorForBoolean(value))
 
     g.beginPath()
     circle(g, x, y, WAYPOINT_DIAMETER)
@@ -453,11 +469,13 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: Node): void
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: Node, y: number): void
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: number, referenceNode: Node | undefined): void
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: Node | ReadonlyGroupedNodeArray<Node>): void
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: Node | ReadonlyGroupedNodeArray<Node>, y: number): void
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: number, referenceNode: Node | ReadonlyGroupedNodeArray<Node> | undefined): void
 
-export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node, y: number | Node, referenceNode?: Node) {
+export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node | ReadonlyGroupedNodeArray<Node>, y: number | Node | ReadonlyGroupedNodeArray<Node>, referenceNode?: Node | ReadonlyGroupedNodeArray<Node>) {
+    // TODO get the name from the node? Check if that always works
+    // TODO make it bold if it's a group with len > 1
     if (isUndefined(text)) {
         return
     }
@@ -477,7 +495,6 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
         return
     }
 
-    // we assume a color and a font have been set before this function is called
     const [halign, valign, dx, dy] = (() => {
         if (isUndefined(anchor)) {
             return ["center", "middle", 0, 0] as const
@@ -491,21 +508,28 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
         }
     })()
 
-    const xx = (isNumber(x) ? x : x.posXInParentTransform)
-    const yy = (isNumber(y) ? y : y.posYInParentTransform)
+    const xx = isNumber(x) ? x :
+        (isNodeArray(x) ? x.group : x).posXInParentTransform
+    const yy = isNumber(y) ? y :
+        (isNodeArray(y) ? y.group : y).posYInParentTransform
     const [finalX, finalY] = ctx.rotatePoint(xx, yy)
 
+    // we assume a color and a font have been set before this function is called
     const g = ctx.g
     g.textAlign = halign
     g.textBaseline = valign
     g.fillText(text, finalX + dx, finalY + dy)
+
+    if (isNodeArray(referenceNode) && referenceNode.length > 1) {
+        // TODO draw light bracket indicating that this is a group
+    }
 }
 
-export function drawRoundValueCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {
-    drawRoundValue(g, value, comp.posX, comp.posY, opts)
+export function drawValueTextCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {
+    drawValueText(g, value, comp.posX, comp.posY, opts)
 }
 
-export function drawRoundValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: { fillStyle?: string, small?: boolean }) {
+export function drawValueText(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: { fillStyle?: string, small?: boolean }) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
@@ -605,6 +629,10 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     g.fillText(displayName, ...point)
     g.textBaseline = "middle" // restore
 }
+
+//
+// DATA CONVERSIONS FOR DISPLAY PURPOSES
+//
 
 export function displayValuesFromArray(values: readonly LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {
     // lowest significant bit is the first bit

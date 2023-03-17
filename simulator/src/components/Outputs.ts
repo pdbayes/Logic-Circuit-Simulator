@@ -1,25 +1,19 @@
+import { left, right } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
 import { isString, isUndefined } from "../utils"
+import { Output, OutputDef } from "./Output"
 import { Output16Seg, Output16SegDef } from "./Output16Seg"
 import { Output7Seg, Output7SegDef } from "./Output7Seg"
 import { OutputAscii, OutputAsciiDef } from "./OutputAscii"
 import { OutputBar, OutputBarDef } from "./OutputBar"
-import { OutputBit, OutputBitDef } from "./OutputBit"
-import { OutputByte, OutputByteDef } from "./OutputByte"
-import { OutputByteDisplay, OutputByteDisplayDef } from "./OutputByteDisplay"
-import { OutputNibble, OutputNibbleDef } from "./OutputNibble"
-import { OutputNibbleDisplay, OutputNibbleDisplayDef } from "./OutputNibbleDisplay"
+import { OutputDisplay, OutputDisplayDef } from "./OutputDisplay"
 import { OutputShiftBuffer, OutputShiftBufferDef } from "./OutputShiftBuffer"
 
-export type Output = OutputBit | OutputNibbleDisplay | OutputAscii | OutputBar | OutputShiftBuffer
 
-export const OutputDef = t.union([
-    OutputBitDef.repr,
-    OutputNibbleDef.repr,
-    OutputNibbleDisplayDef.repr,
-    OutputByteDef.repr,
-    OutputByteDisplayDef.repr,
+export const OutputDef_ = t.union([
+    OutputDef.repr,
+    OutputDisplayDef.repr,
     Output7SegDef.repr,
     Output16SegDef.repr,
     OutputAsciiDef.repr,
@@ -27,22 +21,23 @@ export const OutputDef = t.union([
     OutputShiftBufferDef.repr,
 ], "Output")
 
-type OutputRepr = t.TypeOf<typeof OutputDef>
+type OutputRepr_ = t.TypeOf<typeof OutputDef_>
+
 
 export const OutputFactory = {
 
-    make: (editor: LogicEditor, savedDataOrType: OutputRepr | string | undefined) => {
+    make: (editor: LogicEditor, savedDataOrType: OutputRepr_ | string | undefined, params: Record<string, unknown> | undefined) => {
         let blank
-        let savedData: OutputRepr
+        let savedData: OutputRepr_
 
         if (isUndefined(savedDataOrType)) {
             // default, typeless option
             blank = true
-            savedData = {} as OutputRepr
+            savedData = {} as OutputRepr_
         } else if (isString(savedDataOrType)) {
             // specific subtype
             blank = true
-            savedData = { type: savedDataOrType } as OutputRepr
+            savedData = { type: savedDataOrType } as OutputRepr_
         } else {
             // as saved
             blank = false
@@ -50,17 +45,11 @@ export const OutputFactory = {
         }
 
         if (!("type" in savedData)) {
-            return new OutputBit(editor, blank ? null : savedData)
+            return new Output(editor, blank ? left(params as any) : right(savedData))
         }
         switch (savedData.type) {
-            case "nibble":
-                return new OutputNibble(editor, blank ? null : savedData)
-            case "nibble-display":
-                return new OutputNibbleDisplay(editor, blank ? null : savedData)
-            case "byte":
-                return new OutputByte(editor, blank ? null : savedData)
-            case "byte-display":
-                return new OutputByteDisplay(editor, blank ? null : savedData)
+            case "display":
+                return new OutputDisplay(editor, blank ? left(params as any) : right(savedData))
             case "7seg":
                 return new Output7Seg(editor, blank ? null : savedData)
             case "16seg":

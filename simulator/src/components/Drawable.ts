@@ -1,11 +1,11 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { DrawParams, LogicEditor } from "../LogicEditor"
 import { GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { Expand, Mode, RichStringEnum, isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
+import { Expand, InteractionResult, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -166,11 +166,9 @@ export abstract class Drawable {
         // empty default implementation
     }
 
-    // Return true to indicate it was handled and had an effect, in which
-    // case a snapshot should be taken for undo/redo
-    public mouseUp(__: MouseEvent | TouchEvent): boolean {
+    public mouseUp(__: MouseEvent | TouchEvent): InteractionResult {
         // empty default implementation
-        return false
+        return InteractionResult.NoChange
     }
 
     // Return true to indicate it was handled and had an effect
@@ -359,7 +357,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
-        const roundTo = snapToGrid ? GRID_STEP : (GRID_STEP / 2)
+        const roundTo = snapToGrid ? (GRID_STEP / 2) : 1
         posX = Math.round(posX / roundTo) * roundTo
         posY = Math.round(posY / roundTo) * roundTo
         if (posX !== this._posX || posY !== this.posY) {

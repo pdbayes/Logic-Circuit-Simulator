@@ -4,64 +4,61 @@ import { div, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, Repr } from "./Component"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, group, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
 export const Output16SegDef =
-    defineComponent(true, false, t.type({
-        type: t.literal("16seg"),
-        color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
-        transparent: typeOrUndefined(t.boolean),
-        name: ComponentNameRepr,
-    }, "Ouput16Seg"))
+    defineComponent("16seg", {
+        repr: {
+            color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
+            transparent: typeOrUndefined(t.boolean),
+            name: ComponentNameRepr,
+        },
+        valueDefaults: {
+            color: "green" as LedColor,
+            transparent: true,
+        },
+        makeNodes: () => ({
+            ins: {
+                In: group("w", [
+                    [-5, -4, "a1"],
+                    [-6, -3.5, "a2"],
+                    [-5, -3, "b"],
+                    [-6, -2.5, "c"],
+                    [-5, -2, "d2"],
+                    [-6, -1.5, "d1"],
+                    [-5, -1, "e"],
+                    [-6, -0.5, "f"],
+                    [-5, 0, "g1"],
+                    [-6, 0.5, "g2"],
+                    [-5, +1, "h"],
+                    [-6, +1.5, "i"],
+                    [-5, +2, "j"],
+                    [-6, +2.5, "k"],
+                    [-5, +3, "l"],
+                    [-6, +3.5, "m"],
+                    [-5, +4, "p"],
+                ]),
+            },
+        }),
+        initialValue: () => ArrayFillWith<LogicValue>(false, 17),
+    })
 
 type Output16SegRepr = Repr<typeof Output16SegDef>
 
-const enum INPUT {
-    a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p
-}
+export class Output16Seg extends ComponentBase<Output16SegRepr> {
 
-const Output16SegDefaults = {
-    color: "green" as LedColor,
-    transparent: true,
-}
-
-const GRID_WIDTH = 8
-const GRID_HEIGHT = 10
-
-export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
-
-    private _color = Output16SegDefaults.color
-    private _transparent = Output16SegDefaults.transparent
+    private _color: LedColor = Output16SegDef.aults.color
+    private _transparent = Output16SegDef.aults.transparent
     private _name: ComponentName = undefined
 
     public constructor(editor: LogicEditor, savedData: Output16SegRepr | null) {
-        super(editor, ArrayFillWith(false, 17), savedData, {
-            ins: [
-                ["a1", -5, -4, "w", "In"],
-                ["a2", -6, -3.5, "w", "In"],
-                ["b", -5, -3, "w", "In"],
-                ["c", -6, -2.5, "w", "In"],
-                ["d2", -5, -2, "w", "In"],
-                ["d1", -6, -1.5, "w", "In"],
-                ["e", -5, -1, "w", "In"],
-                ["f", -6, -0.5, "w", "In"],
-                ["g1", -5, 0, "w", "In"],
-                ["g2", -6, 0.5, "w", "In"],
-                ["h", -5, +1, "w", "In"],
-                ["i", -6, +1.5, "w", "In"],
-                ["j", -5, +2, "w", "In"],
-                ["k", -6, +2.5, "w", "In"],
-                ["l", -5, +3, "w", "In"],
-                ["m", -6, +3.5, "w", "In"],
-                ["p", -5, +4, "w", "In"],
-            ],
-        })
+        super(editor, Output16SegDef, savedData)
         if (isNotNull(savedData)) {
-            this._color = savedData.color ?? Output16SegDefaults.color
-            this._transparent = savedData.transparent ?? Output16SegDefaults.transparent
+            this._color = savedData.color ?? Output16SegDef.aults.color
+            this._transparent = savedData.transparent ?? Output16SegDef.aults.transparent
             this._name = savedData.name
         }
     }
@@ -70,8 +67,8 @@ export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
         return {
             type: "16seg" as const,
             ...this.toJSONBase(),
-            color: this._color === Output16SegDefaults.color ? undefined : this._color,
-            transparent: this._transparent === Output16SegDefaults.transparent ? undefined : this._transparent,
+            color: this._color === Output16SegDef.aults.color ? undefined : this._color,
+            transparent: this._transparent === Output16SegDef.aults.transparent ? undefined : this._transparent,
             name: this._name,
         }
     }
@@ -81,11 +78,11 @@ export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
     }
 
     public get unrotatedWidth() {
-        return GRID_WIDTH * GRID_STEP
+        return 8 * GRID_STEP
     }
 
     public get unrotatedHeight() {
-        return GRID_HEIGHT * GRID_STEP
+        return 10 * GRID_STEP
     }
 
     public override makeTooltip() {
@@ -95,13 +92,13 @@ export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
     }
 
     protected doRecalcValue(): LogicValue[] {
-        return this.inputValues([INPUT.a1, INPUT.a2, INPUT.b, INPUT.c, INPUT.d2, INPUT.d1, INPUT.e, INPUT.f, INPUT.g1, INPUT.g2, INPUT.h, INPUT.i, INPUT.j, INPUT.k, INPUT.l, INPUT.m, INPUT.p])
+        return this.inputValues(this.inputs.In)
     }
 
     protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
-        const width = GRID_WIDTH * GRID_STEP
-        const height = GRID_HEIGHT * GRID_STEP
+        const width = this.unrotatedWidth
+        const height = this.unrotatedHeight
         const left = this.posX - width / 2
         const right = left + width
         const top = this.posY - height / 2
@@ -116,7 +113,7 @@ export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
         g.fill()
         g.stroke()
 
-        for (const input of this.inputs) {
+        for (const input of this.inputs.In) {
             drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
         }
 
@@ -223,9 +220,9 @@ export class Output16Seg extends ComponentBase<Output16SegRepr, LogicValue[]> {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
             g.font = "7px sans-serif"
 
-            this.inputs.forEach(input => {
+            for (const input of this.inputs.In) {
                 drawLabel(ctx, this.orient, input.name, "w", left, input)
-            })
+            }
 
             if (isDefined(this._name)) {
                 const valueString = this.value.map(toLogicValueRepr).join("")
