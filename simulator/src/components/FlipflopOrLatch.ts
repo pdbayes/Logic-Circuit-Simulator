@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawValueText, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawValueText, drawWireLineToComponent } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isNotNull, isNull, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
@@ -18,6 +18,7 @@ export const FlipflopOrLatchDef =
             state: false,
             showContent: true,
         },
+        size: { gridWidth: 5, gridHeight: 7 },
         makeNodes: () => {
             const s = S.Components.Generic
             return {
@@ -67,14 +68,6 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 5 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 7 * GRID_STEP
     }
 
     protected override propagateValue(newValue: [LogicValue, LogicValue]) {
@@ -173,6 +166,7 @@ export const FlipflopBaseDef =
             ...FlipflopOrLatchDef.valueDefaults,
             trigger: EdgeTrigger.rising,
         },
+        size: FlipflopOrLatchDef.size,
         makeNodes: (clockYOffset: number) => {
             const base = FlipflopOrLatchDef.makeNodes()
             const s = S.Components.Generic

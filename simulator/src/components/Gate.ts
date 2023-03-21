@@ -84,14 +84,6 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
         return this.type
     }
 
-    public get unrotatedWidth() {
-        return (7 + Math.max(0, this.numBits - 2) * 2) * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return (4 + Math.max(0, this.numBits - 2) * 2) * GRID_STEP
-    }
-
     protected doRecalcValue(): LogicValue {
         const inputs = this.inputValues(this.inputs.In)
         const logicFunc = this.gateTypes(this.numBits).props[this.type].out
@@ -513,6 +505,9 @@ export const Gate1Def =
         paramDefaults: {
             type: "NOT" as Gate1Type,
         },
+        size: () => ({
+            gridWidth: 7, gridHeight: 4,
+        }),
         makeNodes: () => ({
             ins: { In: [[-4, 0, "w"]] },
             outs: { Out: [+4, 0, "e"] },
@@ -574,6 +569,10 @@ export const GateNDef =
                 validate(type_, Gate2toNTypes.values, defaults.type, "Gate type")
             return { type, numBits }
         },
+        size: ({ numBits }) => ({
+            gridWidth: 7 + Math.max(0, numBits - 2) * 2,
+            gridHeight: 4 + Math.max(0, numBits - 2) * 2,
+        }),
         makeNodes: ({ numBits }) => {
             const outX = 4 + (numBits - 2)
             const inX = -outX

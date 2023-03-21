@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -10,6 +10,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 export const HalfAdderDef =
     defineComponent("halfadder", {
         valueDefaults: {},
+        size: { gridWidth: 4, gridHeight: 6 },
         makeNodes: () => {
             const s = S.Components.Generic
             return {
@@ -43,14 +44,6 @@ export class HalfAdder extends ComponentBase<HalfAdderRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 6 * GRID_STEP
     }
 
     public override makeTooltip() {

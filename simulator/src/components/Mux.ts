@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP, strokeAsWireLine, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -30,7 +30,15 @@ export const MuxDef =
             const numSel = Math.ceil(Math.log2(numGroups))
             return { numFrom: from, numTo: to, numGroups, numSel }
         },
-        makeNodes: ({ numFrom: __numFrom, numTo, numGroups, numSel }) => {
+        size: ({ numFrom, numTo, numGroups, numSel }) => {
+            const gridWidth = 2 * numSel
+            const spacing = useCompact(numTo) ? 1 : 2
+            const addByGroupSep = numTo > 1 ? 1 : 0
+            const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
+            const gridHeight = 1 + spacing * numLeftSlots
+            return { gridWidth, gridHeight }
+        },
+        makeNodes: ({ numTo, numGroups, numSel }) => {
             const outX = 1 + numSel
             const inX = -outX
 
@@ -87,23 +95,6 @@ export class Mux extends ComponentBase<MuxRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 2 * this.numSel * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return Mux.gridHeight(this.numFrom, this.numTo)
-    }
-
-    public static gridHeight(numFrom: number, numTo: number): number {
-        const compact = useCompact(numTo)
-        const spacing = compact ? 1 : 2
-        const numGroups = numFrom / numTo
-        const addByGroupSep = numTo > 1 ? 1 : 0
-        const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
-        return (1 + spacing * numLeftSlots) * GRID_STEP
     }
 
     public override makeTooltip() {

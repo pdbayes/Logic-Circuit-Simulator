@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -16,6 +16,7 @@ export const OutputAsciiDef =
             showAsUnknown: typeOrUndefined(t.boolean),
         },
         valueDefaults: {},
+        size: { gridWidth: 4, gridHeight: 8 },
         makeNodes: () => ({
             ins: {
                 Z: groupVertical("w", -3, 0, 7),
@@ -53,14 +54,6 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
     public get componentType() {
         return "out" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 8 * GRID_STEP
     }
 
     private get showAsUnknown() {

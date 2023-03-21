@@ -12,8 +12,8 @@ export const ShiftRegisterDef =
     defineParametrizedComponent("shift-register", true, true, {
         variantName: ({ bits }) => `shift-register-${bits}`,
         ...RegisterBaseDef,
-        makeNodes: ({ numBits }, defaults) => {
-            const base = RegisterBaseDef.makeNodes({ numBits }, defaults)
+        makeNodes: (params, defaults) => {
+            const base = RegisterBaseDef.makeNodes(params, defaults)
             const lrYOffset = base.ins.Clock[1] - 2
             return {
                 ins: {

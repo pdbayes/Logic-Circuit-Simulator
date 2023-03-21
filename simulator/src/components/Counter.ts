@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_LABEL_OFF, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, formatWithRadix, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_LABEL_OFF, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, formatWithRadix } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -22,6 +22,7 @@ export const CounterDef =
             trigger: EdgeTrigger.rising,
             displayRadix: 10,
         },
+        size: { gridWidth: 5, gridHeight: 11 },
         makeNodes: () => {
             const s = S.Components.Generic
             return {
@@ -94,14 +95,6 @@ export class Counter extends ComponentBase<CounterRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 5 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 11 * GRID_STEP
     }
 
     public get trigger() {

@@ -23,6 +23,7 @@ export const ClockDef =
             phase: 0,
             showLabel: true,
         },
+        size: { gridWidth: 2, gridHeight: 2 }, // "overridden" by superclass
         makeNodes: () => ({
             outs: {
                 // we don't strictly need a group, but we use it

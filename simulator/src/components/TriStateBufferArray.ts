@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -22,6 +22,9 @@ export const TriStateBufferArrayDef =
         validateParams: ({ bits }, defaults) => {
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Tri-state buffer array bits")
             return { numBits }
+        },
+        size: ({ numBits }) => {
+            return { gridWidth: 4, gridHeight: 8 } // TODO var height
         },
         makeNodes: ({ numBits }) => ({
             ins: {
@@ -59,14 +62,6 @@ export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> 
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 8 * GRID_STEP
     }
 
     public override makeTooltip() {

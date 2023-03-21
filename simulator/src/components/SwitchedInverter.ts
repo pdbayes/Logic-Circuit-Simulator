@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -22,6 +22,9 @@ export const SwitchedInverterDef =
         validateParams: ({ bits }, defaults) => {
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Switched inverter bits")
             return { numBits }
+        },
+        size: ({ numBits }) => {
+            return { gridWidth: 4, gridHeight: 8 } // TODO var height
         },
         makeNodes: ({ numBits }) => ({
             ins: {
@@ -60,14 +63,6 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 8 * GRID_STEP
     }
 
     public override makeTooltip() {

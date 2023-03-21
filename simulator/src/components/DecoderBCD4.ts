@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -10,6 +10,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 export const DecoderBCD4Def =
     defineComponent("decoder-bcd4", {
         valueDefaults: {},
+        size: { gridWidth: 5, gridHeight: 12 },
         makeNodes: () => ({
             ins: {
                 I: group("w", [
@@ -49,14 +50,6 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 5 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 12 * GRID_STEP
     }
 
     public override makeTooltip() {

@@ -59,6 +59,7 @@ export const LabelRectDef =
             captionInside: false,
             font: FONT_LABEL_DEFAULT,
         },
+        size: { gridWidth: 10, gridHeight: 10 },
         makeNodes: () => ({}),
     })
 
@@ -129,11 +130,11 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         return false
     }
 
-    public get unrotatedWidth() {
+    public override get unrotatedWidth() {
         return this._w
     }
 
-    public get unrotatedHeight() {
+    public override get unrotatedHeight() {
         return this._h
     }
 

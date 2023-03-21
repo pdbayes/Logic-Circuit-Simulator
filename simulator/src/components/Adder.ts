@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -9,6 +9,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 export const AdderDef =
     defineComponent("adder", {
         valueDefaults: {},
+        size: { gridWidth: 7, gridHeight: 5 },
         makeNodes: () => {
             const s = S.Components.Generic
             return {
@@ -43,14 +44,6 @@ export class Adder extends ComponentBase<AdderRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 7 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 5 * GRID_STEP
     }
 
     public override makeTooltip() {

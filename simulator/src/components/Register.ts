@@ -31,8 +31,11 @@ export const RegisterBaseDef =
             const numBits = validate(bits, [4, 8, 16], defaults.bits, "Register bits")
             return { numBits }
         },
-        makeNodes: ({ numBits }) => {
-            const gridHeight = Register.gridHeight(numBits)
+        size: ({ numBits }) => ({
+            gridWidth: 7,
+            gridHeight: Math.max(16, 5 + numBits),
+        }),
+        makeNodes: ({ numBits, gridHeight }) => {
             const bottomOffset = Math.ceil((gridHeight + 1) / 2)
             const clockYOffset = bottomOffset - 2
             const topOffset = -bottomOffset
@@ -110,18 +113,6 @@ export abstract class RegisterBase<
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 7 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return RegisterBase.gridHeight(this.numBits) * GRID_STEP
-    }
-
-    public static gridHeight(numBits: number): number {
-        return Math.max(16, 5 + numBits)
     }
 
     public get trigger() {
@@ -257,12 +248,12 @@ export const RegisterDef =
     defineParametrizedComponent("register", true, true, {
         variantName: ({ bits }) => `register-${bits}`,
         ...RegisterBaseDef,
-        makeNodes: ({ numBits }, defaults) => {
-            const base = RegisterBaseDef.makeNodes({ numBits }, defaults)
+        makeNodes: (params, defaults) => {
+            const base = RegisterBaseDef.makeNodes(params, defaults)
             return {
                 ins: {
                     ...base.ins,
-                    D: groupVertical("w", -5, 0, numBits),
+                    D: groupVertical("w", -5, 0, params.numBits),
                 },
                 outs: base.outs,
             }

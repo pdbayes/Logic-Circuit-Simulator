@@ -19,6 +19,7 @@ export const LabelStringDef =
             // align: "center" as const,
             font: FONT_LABEL_DEFAULT,
         },
+        size: { gridWidth: 4, gridHeight: 2 }, // overridden
         makeNodes: () => ({}),
     })
 
@@ -57,11 +58,11 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         return "label" as const
     }
 
-    public get unrotatedWidth() {
+    public override get unrotatedWidth() {
         return this._cachedTextMetrics?.width ?? GRID_STEP * this._text.length
     }
 
-    public get unrotatedHeight() {
+    public override get unrotatedHeight() {
         const metrics = this._cachedTextMetrics
         if (isUndefined(metrics)) {
             return 2 * GRID_STEP

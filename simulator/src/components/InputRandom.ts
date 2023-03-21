@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawComponentName, drawLabel, drawWireLineToComponent, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -33,9 +33,13 @@ export const InputRandomDef =
             const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Random input bits")
             return { numBits }
         },
-        makeNodes: ({ numBits }) => {
+        size: ({ numBits }) => ({
+            gridWidth: 4,
+            gridHeight: 4 + (useCompact(numBits) ? numBits / 2 : numBits) * 2,
+        }),
+        makeNodes: ({ numBits, gridHeight }) => {
             const s = S.Components.Generic
-            const clockY = InputRandom.gridHeight(numBits) / 2 - 1
+            const clockY = gridHeight / 2 - 1
             return {
                 ins: {
                     Clock: [-3, clockY, "w", () => s.InputClockDesc, true],
@@ -90,18 +94,6 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
 
     public get componentType() {
         return "in" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return InputRandom.gridHeight(this.numBits) * GRID_STEP
-    }
-
-    public static gridHeight(numBits: number) {
-        return 4 + (useCompact(numBits) ? Math.floor(numBits / 2) : numBits) * 2
     }
 
     public override get allowsForcedOutputs() {

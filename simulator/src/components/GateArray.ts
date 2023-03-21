@@ -29,6 +29,9 @@ export const GateArrayDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Gate array bits")
             return { numBits }
         },
+        size: ({ numBits }) => {
+            return { gridWidth: 4, gridHeight: 19 } // TODO var height
+        },
         makeNodes: ({ numBits }) => ({
             ins: {
                 A: groupVertical("w", -3, -5, numBits),
@@ -77,14 +80,6 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 19 * GRID_STEP
     }
 
     public override makeTooltip() {

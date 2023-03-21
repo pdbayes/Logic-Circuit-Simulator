@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_OFF_BACKGROUND, drawComponentName, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_LED_ON, COLOR_MOUSE_OVER, COLOR_OFF_BACKGROUND, drawComponentName, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -20,6 +20,7 @@ export const Output7SegDef =
             color: "green" as LedColor,
             transparent: true,
         },
+        size: { gridWidth: 8, gridHeight: 10 },
         makeNodes: () => ({
             ins: {
                 In: group("w", [
@@ -67,14 +68,6 @@ export class Output7Seg extends ComponentBase<Output7SegRepr> {
 
     public get componentType() {
         return "out" as const
-    }
-
-    public get unrotatedWidth() {
-        return 8 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 10 * GRID_STEP
     }
 
     public override makeTooltip() {

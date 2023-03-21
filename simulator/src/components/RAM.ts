@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP, strokeSingleLine } from "../drawutils"
+import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -34,8 +34,11 @@ export const RAMDef =
             const numWords = Math.pow(2, numAddressBits)
             return { numDataBits, numAddressBits, numWords }
         },
-        makeNodes: ({ numDataBits, numAddressBits, numWords }) => {
-            const gridHeight = RAM.gridHeight(numWords)
+        size: ({ numWords }) => ({
+            gridWidth: 11,
+            gridHeight: numWords <= 16 ? 16 : 22,// TODO better var height
+        }),
+        makeNodes: ({ numDataBits, numAddressBits, gridHeight }) => {
             const bottomOffset = Math.ceil((gridHeight + 1) / 2)
             const addrTopOffset = -bottomOffset
             const clockYOffset = bottomOffset - 2
@@ -130,18 +133,6 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 11 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return RAM.gridHeight(this.numWords) * GRID_STEP
-    }
-
-    public static gridHeight(numWords: number): number {
-        return numWords <= 16 ? 16 : 22
     }
 
     public get trigger() {

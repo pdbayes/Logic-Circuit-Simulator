@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { colorComps, colorForFraction, ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, GRID_STEP, useCompact } from "../drawutils"
+import { colorComps, colorForFraction, ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, useCompact } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -28,8 +28,12 @@ export const OutputDisplayDef =
             const numBits = validate(bits, [4, 8], defaults.bits, "Display bits")
             return { numBits }
         },
-        makeNodes: ({ numBits }) => {
-            const inX = -OutputDisplay.gridWidth(numBits) / 2 - 1
+        size: ({ numBits }) => ({
+            gridWidth: 2 + numBits / 2,
+            gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
+        }),
+        makeNodes: ({ numBits, gridWidth }) => {
+            const inX = -gridWidth / 2 - 1
             return {
                 ins: {
                     In: groupVertical("w", inX, 0, numBits),
@@ -77,22 +81,6 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
 
     public get componentType() {
         return "out" as const
-    }
-
-    public get unrotatedWidth() {
-        return OutputDisplay.gridWidth(this.numBits) * GRID_STEP
-    }
-
-    public static gridWidth(numBits: number) {
-        return 2 + numBits / 2
-    }
-
-    public get unrotatedHeight() {
-        return OutputDisplay.gridHeight(this.numBits) * GRID_STEP
-    }
-
-    public static gridHeight(numBits: number) {
-        return useCompact(numBits) ? numBits : 2 * numBits
     }
 
     private get showAsUnknown() {

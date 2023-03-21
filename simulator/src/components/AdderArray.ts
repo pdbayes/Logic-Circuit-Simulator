@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -23,6 +23,9 @@ export const AdderArrayDef =
         validateParams: ({ bits }, defaults) => {
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Adder array bits")
             return { numBits }
+        },
+        size: ({ numBits }) => {
+            return { gridWidth: 4, gridHeight: 19 } // TODO var height
         },
         makeNodes: ({ numBits }) => {
             const groupInputA = groupVertical("w", -3, -5, numBits)
@@ -72,14 +75,6 @@ export class AdderArray extends ComponentBase<AdderArrayRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 4 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 19 * GRID_STEP
     }
 
     public override makeTooltip() {

@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -49,6 +49,7 @@ export const OutputShiftBufferDef =
             decodeAs: "raw" as ShiftBufferDecoder,
             trigger: EdgeTrigger.rising,
         },
+        size: { gridWidth: 25, gridHeight: 5 },
         makeNodes: () => {
             const s = S.Components.Generic
             return {
@@ -119,14 +120,6 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
 
     public get componentType() {
         return "out" as const
-    }
-
-    public get unrotatedWidth() {
-        return 25 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 5 * GRID_STEP
     }
 
     public get trigger() {

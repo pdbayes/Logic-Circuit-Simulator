@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -9,6 +9,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 export const ComparatorDef =
     defineComponent("comparator", {
         valueDefaults: {},
+        size: { gridWidth: 5, gridHeight: 7 },
         makeNodes: () => ({
             ins: {
                 A: [-4, 2, "w"],
@@ -43,14 +44,6 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 5 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 7 * GRID_STEP
     }
 
     public override makeTooltip() {

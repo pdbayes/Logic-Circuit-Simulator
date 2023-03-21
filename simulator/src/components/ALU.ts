@@ -26,6 +26,9 @@ export const ALUDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "ALU bits")
             return { numBits }
         },
+        size: ({ numBits }) => {
+            return { gridWidth: 6, gridHeight: 19 } // TODO var height
+        },
         makeNodes: ({ numBits }) => ({
             ins: {
                 A: groupVertical("w", -4, -5, numBits),
@@ -87,14 +90,6 @@ export class ALU extends ComponentBase<ALURepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 6 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 19 * GRID_STEP
     }
 
     public override makeTooltip() {

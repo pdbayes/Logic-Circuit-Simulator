@@ -46,6 +46,7 @@ export const OutputBarDef =
             color: "green" as LedColor,
             transparent: false,
         },
+        size: { gridWidth: 1, gridHeight: 1 }, // overridden
         makeNodes: () => ({
             ins: {
                 I: [0, 0, "w"],
@@ -91,11 +92,11 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
         return "out" as const
     }
 
-    public get unrotatedWidth() {
+    public override get unrotatedWidth() {
         return this.getWidthAndHeight()[0]
     }
 
-    public get unrotatedHeight() {
+    public override get unrotatedHeight() {
         return this.getWidthAndHeight()[1]
     }
 

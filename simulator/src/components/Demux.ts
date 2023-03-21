@@ -1,6 +1,6 @@
 import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, GRID_STEP, strokeAsWireLine, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
 import { LogicEditor } from "../LogicEditor"
@@ -32,6 +32,14 @@ export const DemuxDef =
             const numGroups = Math.ceil(to / from)
             const numSel = Math.ceil(Math.log2(numGroups))
             return { numFrom: from, numTo: to, numGroups, numSel }
+        },
+        size: ({ numFrom, numTo, numGroups, numSel }) => {
+            const gridWidth = 2 * numSel
+            const spacing = useCompact(numFrom) ? 1 : 2
+            const addByGroupSep = numFrom > 1 ? 1 : 0
+            const numLeftSlots = numTo + (numGroups - 1) * addByGroupSep
+            const gridHeight = spacing * numLeftSlots
+            return { gridWidth, gridHeight }
         },
         makeNodes: ({ numFrom, numGroups, numSel }) => {
             const outX = 1 + numSel
@@ -93,22 +101,6 @@ export class Demux extends ComponentBase<DemuxRepr> {
 
     public get componentType() {
         return "ic" as const
-    }
-
-    public get unrotatedWidth() {
-        return 2 * this.numSel * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return Demux.gridHeight(this.numFrom, this.numTo)
-    }
-
-    public static gridHeight(numFrom: number, numTo: number): number {
-        const spacing = useCompact(numFrom) ? 1 : 2
-        const numGroups = numTo / numFrom
-        const addByGroupSep = numFrom > 1 ? 1 : 0
-        const numLeftSlots = numTo + (numGroups - 1) * addByGroupSep
-        return (1 + spacing * numLeftSlots) * GRID_STEP
     }
 
     public override makeTooltip() {

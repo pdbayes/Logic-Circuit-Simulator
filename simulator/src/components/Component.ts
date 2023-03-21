@@ -291,6 +291,8 @@ export abstract class ComponentBase<
     THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
 > extends DrawableWithDraggablePosition {
 
+    private _width: number
+    private _height: number
     private _state: ComponentState
     private _value: TValue
     public readonly inputs: TInputNodes
@@ -303,6 +305,8 @@ export abstract class ComponentBase<
     ) {
         super(editor, savedData)
 
+        this._width = componentDef.size.gridWidth * GRID_STEP
+        this._height = componentDef.size.gridHeight * GRID_STEP
         this._value = componentDef.initialValue(savedData, componentDef.aults)
 
         const ins = componentDef.nodeRecs.ins
@@ -618,6 +622,14 @@ export abstract class ComponentBase<
     }
 
     public abstract get componentType(): ComponentType
+
+    public get unrotatedWidth() {
+        return this._width
+    }
+
+    public get unrotatedHeight() {
+        return this._height
+    }
 
     protected override toStringDetails(): string {
         return String(this.value)
@@ -959,10 +971,13 @@ export abstract class ComponentBase<
 
 }
 
+export type ComponentGridSize = { gridWidth: number, gridHeight: number }
+
 export type ComponentDef<TComp extends t.Mixed, TInOutRecs extends InOutRecs, TValue, TValueDefaults extends Record<string, unknown>> = {
     repr: TComp,
     nodeRecs: TInOutRecs,
     aults: TValueDefaults,
+    size: ComponentGridSize,
     initialValue: (savedData: t.TypeOf<TComp> | null, defaults: TValueDefaults) => TValue,
 }
 
@@ -1066,6 +1081,7 @@ function makeComponentRepr<
 }
 
 
+
 export function defineComponent<
     TName extends string | undefined,
     TInOutRecs extends InOutRecs,
@@ -1077,13 +1093,14 @@ export function defineComponent<
     THasOut extends boolean = HasField<TInOutRecs, "outs">,
 >(
     jsonName: TName,
-    { repr, makeNodes, valueDefaults, initialValue }: {
+    { repr, makeNodes, valueDefaults, size, initialValue }: {
         repr?: TProps,
         valueDefaults: TValueDefaults,
-        makeNodes: (defaults: TValueDefaults) => TInOutRecs,
+        size: ComponentGridSize,
+        makeNodes: (size: ComponentGridSize, defaults: TValueDefaults) => TInOutRecs,
         initialValue?: (savedData: t.TypeOf<t.TypeC<TProps>> | null, defaults: TValueDefaults) => TValue
     }) {
-    const nodes = makeNodes(valueDefaults)
+    const nodes = makeNodes(size, valueDefaults)
     const hasIn = ("ins" in nodes) as THasIn
     const hasOut = ("outs" in nodes) as THasOut
     const componentRepr = makeComponentRepr<TName, TProps, THasIn, THasOut>(jsonName, hasIn, hasOut, repr ?? {} as TProps)
@@ -1091,6 +1108,7 @@ export function defineComponent<
         repr: componentRepr,
         nodeRecs: nodes,
         aults: valueDefaults,
+        size,
         initialValue: initialValue ?? (() => undefined as TValue),
     } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
 }
@@ -1110,23 +1128,26 @@ export function defineParametrizedComponent<
     TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
 >(
     jsonName: TName, hasIn: THasIn, hasOut: THasOut,
-    { variantName, repr, valueDefaults, paramDefaults, validateParams, makeNodes, initialValue }: {
+    { variantName, repr, valueDefaults, paramDefaults, validateParams, size: makeSize, makeNodes, initialValue }: {
         variantName: (params: TParams) => TVariantName,
         repr: TProps,
         valueDefaults: TValueDefaults,
         paramDefaults: TParams,
         validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams,
-        makeNodes: (params: TResolvedParams, valueDefaults: TValueDefaults) => TInOutRecs,
+        size: (params: TResolvedParams) => ComponentGridSize,
+        makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
     },
 ) {
     const componentRepr = makeComponentRepr<TName, TProps, THasIn, THasOut>(jsonName, hasIn, hasOut, repr)
     function componentDef(params: TResolvedParams) {
-        const nodes = makeNodes(params, valueDefaults)
+        const size = makeSize(params)
+        const nodes = makeNodes({ ...size, ...params }, valueDefaults)
         return {
             repr: componentRepr,
             nodeRecs: nodes,
             aults: valueDefaults,
+            size,
             initialValue: (savedData: TRepr | null) => initialValue(savedData, params),
         } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
     }
@@ -1166,7 +1187,8 @@ export function defineAbstractParametrizedComponent<
         valueDefaults: TValueDefaults,
         paramDefaults: TParams,
         validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams
-        makeNodes: (params: TResolvedParams, valueDefaults: TValueDefaults) => TInOutRecs,
+        size: (params: TResolvedParams) => ComponentGridSize,
+        makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
     },
 ) {
@@ -1184,6 +1206,7 @@ export function defineAbstractComponent<
     items: {
         repr: TProps,
         valueDefaults: TValueDefaults,
+        size: ComponentGridSize,
         makeNodes: (...args: TArgs) => TInOutRecs,
         initialValue: (savedData: TRepr | null, defaults: TValueDefaults) => TValue
     },

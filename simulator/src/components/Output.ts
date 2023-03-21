@@ -25,6 +25,16 @@ export const OutputDef =
             const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Output bits")
             return { numBits }
         },
+        size: ({ numBits }) => {
+            if (numBits === 1) {
+                const d = INPUT_OUTPUT_DIAMETER / GRID_STEP
+                return { gridWidth: d, gridHeight: d }
+            }
+            return {
+                gridWidth: 2,
+                gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
+            }
+        },
         makeNodes: ({ numBits }) => ({
             ins: {
                 In: groupVertical("w", numBits === 1 ? -3 : -2, 0, numBits),
@@ -62,16 +72,6 @@ export class Output extends ComponentBase<OutputRepr> {
 
     public get componentType() {
         return "out" as const
-    }
-
-    public get unrotatedWidth() {
-        return this.numBits === 1 ? INPUT_OUTPUT_DIAMETER
-            : 2 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return this.numBits === 1 ? INPUT_OUTPUT_DIAMETER
-            : (useCompact(this.numBits) ? this.numBits : 2 * this.numBits) * GRID_STEP
     }
 
     public override isOver(x: number, y: number) {

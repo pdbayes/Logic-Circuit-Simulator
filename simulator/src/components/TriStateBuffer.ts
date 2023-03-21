@@ -9,6 +9,7 @@ import { DrawContext } from "./Drawable"
 export const TriStateBufferDef =
     defineComponent("TRI", {
         valueDefaults: {},
+        size: { gridWidth: 7, gridHeight: 4 },
         makeNodes: () => ({
             ins: {
                 In: [-4, 0, "w"],
@@ -40,14 +41,6 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
 
     public get componentType() {
         return "gate" as const
-    }
-
-    public get unrotatedWidth() {
-        return 7 * GRID_STEP
-    }
-
-    public get unrotatedHeight() {
-        return 4 * GRID_STEP
     }
 
     public override makeTooltip() {

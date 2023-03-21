@@ -37,6 +37,10 @@ export const PassthroughDef =
             const numBits = validate(bits, [1, 2, 4, 8, 16], defaults.bits, "Passthrough width")
             return { numBits }
         },
+        size: ({ numBits }) => ({
+            gridWidth: 2,
+            gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
+        }),
         makeNodes: ({ numBits }) => ({
             ins: {
                 I: groupVertical("w", -1, 0, numBits),
@@ -125,18 +129,6 @@ export class Passthrough extends ComponentBase<PassthroughRepr> {
 
     public get componentType() {
         return "layout" as const
-    }
-
-    public get unrotatedWidth() {
-        return GRID_STEP * 2
-    }
-
-    public get unrotatedHeight(): number {
-        return Passthrough.gridHeight(this.numBits) * GRID_STEP
-    }
-
-    public static gridHeight(n: number) {
-        return useCompact(n) ? n : 2 * n
     }
 
     protected doRecalcValue(): LogicValue[] {
