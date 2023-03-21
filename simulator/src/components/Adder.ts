@@ -8,6 +8,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 export const AdderDef =
     defineComponent("ic", "adder", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 5 },
         makeNodes: () => {

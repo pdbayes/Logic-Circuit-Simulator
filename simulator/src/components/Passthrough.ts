@@ -23,6 +23,7 @@ export type Slant = keyof typeof Slant
 export const PassthroughDef =
     defineParametrizedComponent("layout", "pass", true, true, {
         variantName: ({ bits }) => `pass-${bits}`,
+        button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
             slant: typeOrUndefined(t.keyof(Slant)),

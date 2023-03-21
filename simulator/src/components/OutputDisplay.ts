@@ -11,6 +11,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 export const OutputDisplayDef =
     defineParametrizedComponent("out", "display", true, false, {
         variantName: ({ bits }) => `display-${bits}`,
+        button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
             name: ComponentNameRepr,

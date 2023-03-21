@@ -8,6 +8,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 export const ComparatorDef =
     defineComponent("ic", "comparator", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 7 },
         makeNodes: () => ({

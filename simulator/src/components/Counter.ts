@@ -13,6 +13,7 @@ const COUNTER_RESET_VALUE = Math.pow(2, COUNTER_WIDTH)
 
 export const CounterDef =
     defineComponent("ic", "counter", {
+        button: { imgWidth: 50 },
         repr: {
             count: typeOrUndefined(t.number),
             trigger: typeOrUndefined(t.keyof(EdgeTrigger)),

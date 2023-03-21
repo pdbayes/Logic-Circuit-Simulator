@@ -12,6 +12,7 @@ import { DrawContext } from "./Drawable"
 export const TriStateBufferArrayDef =
     defineParametrizedComponent("ic", "tristate-array", true, true, {
         variantName: ({ bits }) => `tristate-array-${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
         },

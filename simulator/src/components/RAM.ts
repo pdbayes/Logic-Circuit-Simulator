@@ -4,8 +4,8 @@ import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPON
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isArray, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { allBooleans, binaryStringRepr, ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, hexStringRepr, isAllZeros, Params, Repr, wordFromBinaryOrHexRepr } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Params, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
@@ -13,6 +13,7 @@ import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 export const RAMDef =
     defineParametrizedComponent("ic", "ram", true, true, {
         variantName: ({ bits, lines }) => `ram-${lines}x${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
             lines: typeOrUndefined(t.number),

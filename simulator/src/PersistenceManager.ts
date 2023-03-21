@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
-import { binaryStringRepr, Component, ComponentBase, ComponentCategories, isAllZeros, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
+import { Component, ComponentBase, ComponentCategories, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { GateDef, GateFactory } from "./components/Gates"
 import { ICDef, ICFactory } from "./components/IC"
 import { InputDef_, InputFactory } from "./components/Inputs"
@@ -10,7 +10,7 @@ import { OutputDef_, OutputFactory } from "./components/Outputs"
 import { Wire } from "./components/Wire"
 import { LogicEditor } from "./LogicEditor"
 import { stringifySmart } from "./stringifySmart"
-import { isArray, isDefined, isString, isUndefined, keysOf, toLogicValue } from "./utils"
+import { binaryStringRepr, isAllZeros, isArray, isDefined, isString, isUndefined, keysOf, toLogicValue } from "./utils"
 
 export type Workspace = Record<string, unknown>
 
@@ -131,7 +131,7 @@ class _PersistenceManager {
         loadComponentField("in", InputDef_, InputFactory)
         loadComponentField("out", OutputDef_, OutputFactory)
         loadComponentField("gates", GateDef, GateFactory as any)
-        loadComponentField("components", ICDef, ICFactory)
+        loadComponentField("ic", ICDef, ICFactory)
         loadComponentField("labels", LabelDef, LabelFactory)
         loadComponentField("layout", LayoutDef, LayoutFactory)
 
@@ -468,7 +468,7 @@ function migrate4To5(parsedContents: Record<string, unknown>) {
                 } else if (type === "byte") {
                     delete in_.type
                     in_.bits = 8
-                } 
+                }
             }
         }
     }
@@ -561,6 +561,9 @@ function migrate4To5(parsedContents: Record<string, unknown>) {
                 }
             }
         }
+
+        parsedContents.ic = components
+        delete parsedContents.components
     }
 
     const layouts = parsedContents.layout

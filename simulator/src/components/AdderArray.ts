@@ -13,6 +13,7 @@ import { DrawContext } from "./Drawable"
 export const AdderArrayDef =
     defineParametrizedComponent("ic", "adder-array", true, true, {
         variantName: ({ bits }) => `adder-array-${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
         },

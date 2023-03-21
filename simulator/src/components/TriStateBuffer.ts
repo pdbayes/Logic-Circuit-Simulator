@@ -8,6 +8,7 @@ import { DrawContext } from "./Drawable"
 
 export const TriStateBufferDef =
     defineComponent("gate", "TRI", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 4 },
         makeNodes: () => ({

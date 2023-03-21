@@ -11,8 +11,9 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { Node, NodeIn, NodeOut } from "./Node"
 
 export const InputDef =
-    defineParametrizedComponent("ic", undefined, false, true, {
+    defineParametrizedComponent("in", undefined, false, true, {
         variantName: ({ bits }) => `in-${bits}`,
+        button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
             val: typeOrUndefined(t.union([
@@ -32,7 +33,7 @@ export const InputDef =
             bits: 1,
         },
         validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Input bits")
+            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Input bits")
             return { numBits }
         },
         size: ({ numBits }) => {

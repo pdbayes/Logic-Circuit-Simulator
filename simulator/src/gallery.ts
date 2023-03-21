@@ -11,7 +11,7 @@ const Circuit = t.partial({
     in: t.array(InputDef_),
     out: t.array(OutputDef_),
     gates: t.array(GateDef),
-    components: t.array(ICDef),
+    ic: t.array(ICDef),
     wires: t.array(Wire.Repr),
 })
 type Circuit = { v: 5, opts?: Partial<EditorOptions> } & PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
@@ -361,7 +361,7 @@ export const gallery = assertCircuits({
             { "type": "bar", "pos": [420, 280], "id": 51, "display": "v" },
             { "type": "display", "bits": 4, "pos": [170, 250], "id": [11, 23, 24, 25] },
         ],
-        "components": [
+        "ic": [
             { "type": "decoder-7seg", "pos": [280, 60], "in": [12, 13, 14, 15], "out": [16, 17, 18, 19, 20, 21, 22] },
             { "type": "decoder-bcd4", "pos": [180, 80], "in": [26, 27, 28, 29], "out": [30, 31, 32, 33, 34] },
         ],
@@ -383,7 +383,7 @@ export const gallery = assertCircuits({
             { "type": "7seg", "pos": [440, 330], "id": [93, 94, 95, 96, 97, 98, 99, 100] },
         ],
         "gates": [{ "type": "OR", "pos": [330, 250], "in": [90, 91], "out": 92 }],
-        "components": [
+        "ic": [
             { "type": "decoder-16seg", "pos": [230, 170], "in": [34, 35, 36, 37, 38, 39, 40], "out": [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 89] },
             { "type": "decoder-7seg", "pos": [230, 320], "in": [101, 102, 103, 104], "out": [105, 106, 107, 108, 109, 110, 111] },
         ],
@@ -418,7 +418,7 @@ export const gallery = assertCircuits({
             { "type": "display", "bits": 4, "pos": [530, 240], "id": [8, 9, 10, 11] },
             { "type": "display", "bits": 4, "pos": [530, 390], "id": [41, 42, 43, 44] },
         ],
-        "components": [
+        "ic": [
             { "type": "adder", "pos": [420, 320], "in": [16, 17, 18], "out": [19, 20] },
             { "type": "adder", "pos": [320, 320], "in": [21, 22, 23], "out": [24, 25] },
             { "type": "adder", "pos": [220, 320], "in": [26, 27, 28], "out": [29, 30] },
@@ -479,7 +479,7 @@ export const gallery = assertCircuits({
             { "type": "display", "bits": 4, "pos": [210, 60], "orient": "n", "id": [44, 45, 46, 47], "name": "A (signé)", "radix": -10 },
             { "type": "display", "bits": 4, "pos": [210, 350], "orient": "s", "id": [48, 49, 50, 51], "name": "B (signé)", "radix": -10 },
         ],
-        "components": [
+        "ic": [
             { "type": "alu", "pos": [280, 220], "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], "out": [10, 11, 12, 13, 14, 15] },
         ],
         "wires": [
@@ -547,7 +547,7 @@ export const gallery = assertCircuits({
             { "type": "XOR", "pos": [380, 450], "orient": "s", "in": [92, 93], "out": 94 },
             { "type": "XOR", "pos": [510, 450], "orient": "s", "in": [95, 96], "out": 97 },
         ],
-        "components": [
+        "ic": [
             { "type": "adder", "pos": [490, 530], "in": [0, 1, 2], "out": [3, 4] },
             { "type": "adder", "pos": [360, 530], "in": [5, 6, 7], "out": [8, 9] },
             { "type": "adder", "pos": [230, 530], "in": [35, 36, 37], "out": [38, 39] },
@@ -606,7 +606,7 @@ export const gallery = assertCircuits({
             { "type": "display", "bits": 4, "pos": [100, 390], "orient": "s", "id": [50, 51, 52, 53], "name": "B" },
             { "type": "display", "bits": 4, "pos": [550, 230], "id": [46, 47, 48, 49], "name": "Acc." },
         ],
-        "components": [
+        "ic": [
             { "type": "alu", "pos": [180, 210], "in": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], "out": [10, 11, 12, 13, 14, 15] },
             { "type": "flipflop-d", "pos": [390, 100], "in": [17, 18, 19, 16], "out": [20, 21], "state": 0 },
             { "type": "flipflop-d", "pos": [390, 200], "in": [23, 24, 25, 22], "out": [26, 27], "state": 0 },
@@ -653,7 +653,7 @@ export const gallery = assertCircuits({
 
     LatchedCounter: {
         "v": 5,
-        "components": [
+        "ic": [
             { "type": "flipflop-d", "pos": [170, 160], "in": [7, 8, 9, 6], "out": [10, 11], "state": 0, "trigger": "falling", "showContent": true },
             { "type": "flipflop-d", "pos": [300, 160], "in": [15, 16, 17, 14], "out": [18, 19], "state": 0, "trigger": "falling", "showContent": true },
             { "type": "flipflop-d", "pos": [440, 160], "in": [21, 22, 23, 20], "out": [24, 25], "state": 0, "trigger": "falling", "showContent": true },
@@ -857,7 +857,7 @@ export const gallery = assertCircuits({
             { "pos": [100, 260], "id": 38, "name": "Reset", "val": 0, "isPushButton": true },
         ],
         "out": [{ "type": "display", "bits": 4, "pos": [650, 60], "id": [39, 40, 41, 42] }],
-        "components": [
+        "ic": [
             { "type": "flipflop-d", "pos": [560, 150], "in": [21, 22, 23, 20], "out": [24, 25], "state": 1, "showContent": true },
             { "type": "flipflop-d", "pos": [450, 150], "in": [15, 16, 17, 14], "out": [18, 19], "state": 0, "showContent": true },
             { "type": "flipflop-d", "pos": [340, 150], "in": [9, 10, 11, 8], "out": [12, 13], "state": 1, "showContent": true },
@@ -905,7 +905,7 @@ export const gallery = assertCircuits({
             { "bits": 4, "pos": [230, 520], "id": [126, 127, 128, 129], "val": [0, 0, 0, 0] },
             { "bits": 4, "pos": [230, 580], "id": [130, 131, 132, 133], "val": [0, 0, 0, 0] },
         ],
-        "components": [
+        "ic": [
             { "type": "mux", "from": 2, "to": 1, "pos": [160, 160], "in": [5, 6, 7], "out": 8 },
             { "type": "mux", "from": 4, "to": 1, "pos": [290, 180], "in": [4, 9, 10, 11, 12, 13], "out": 14 },
             { "type": "mux", "from": 8, "to": 1, "pos": [470, 210], "in": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25], "out": 26 },

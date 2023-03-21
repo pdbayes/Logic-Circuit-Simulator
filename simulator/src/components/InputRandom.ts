@@ -14,6 +14,7 @@ import { RegisterBase } from "./Register"
 export const InputRandomDef =
     defineParametrizedComponent("in", "random", true, true, {
         variantName: ({ bits }) => `random-${bits}`,
+        button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
             prob1: typeOrUndefined(t.number),

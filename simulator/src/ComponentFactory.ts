@@ -1,4 +1,4 @@
-import { Component } from "./components/Component"
+import { Component, ComponentCategory } from "./components/Component"
 import { GateFactory } from "./components/Gates"
 import { ICFactory } from "./components/IC"
 import { InputFactory } from "./components/Inputs"
@@ -10,18 +10,25 @@ import { isDefined, isUndefined, RichStringEnum } from "./utils"
 
 type Factory = { make(editor: LogicEditor, type: string | undefined, params: Record<string, unknown> | undefined): Component | undefined }
 
-function makeFactory(compType: string, factory: Factory) {
+export type ButtonDataset = {
+    category: ComponentCategory,
+    type?: string,
+    componentId?: string,
+    params?: string,
+}
+
+function makeFactory(category: ComponentCategory, factory: Factory) {
     return {
         make: (editor: LogicEditor, elem: HTMLElement, params: Record<string, unknown> | undefined) => {
-            const compDataset = elem.dataset
-            const type = compDataset["type"]
-            const newComp = factory.make(editor, type === null ? undefined : type, params)
+            const compDataset = elem.dataset as ButtonDataset
+            const type = compDataset.type
+            const newComp = factory.make(editor, type, params)
             if (isUndefined(newComp)) {
-                throw new Error(`undefined '${compType}' type - elem: ` + elem.outerHTML)
+                throw new Error(`component creation returned undefined for category=${category}, type=${type}`)
             }
 
             // further general component customisation based on editor options
-            const classId = compDataset["classid"]
+            const classId = compDataset.componentId
             if (isUndefined(classId)) {
                 console.log("WARN No class ID linked to elem " + elem.outerHTML)
             } else {
@@ -40,11 +47,11 @@ function makeFactory(compType: string, factory: Factory) {
 
 const ComponentFactoryTypes = RichStringEnum.withProps<{
     make(editor: LogicEditor, elem: HTMLElement, params: Record<string, unknown> | undefined): Component,
-}>()({
+}>()<ComponentCategory>({
     "in": makeFactory("in", InputFactory),
     "out": makeFactory("out", OutputFactory),
     "gate": makeFactory("gate", GateFactory),
-    "component": makeFactory("component", ICFactory),
+    "ic": makeFactory("ic", ICFactory),
     "label": makeFactory("label", LabelFactory),
     "layout": makeFactory("layout", LayoutFactory),
 })
@@ -52,11 +59,11 @@ const ComponentFactoryTypes = RichStringEnum.withProps<{
 
 class _ComponentFactory {
     public makeFactoryForButton(elem: HTMLElement) {
-        const compType = elem.dataset["component"]
-        if (!ComponentFactoryTypes.includes(compType)) {
-            throw new Error(`bad component category: '${compType}'; expected one of: ` + ComponentFactoryTypes.values.join(", "))
+        const category = (elem.dataset as ButtonDataset).category
+        if (!ComponentFactoryTypes.includes(category)) {
+            throw new Error(`bad component category: '${category}'; expected one of: ` + ComponentFactoryTypes.values.join(", "))
         }
-        const compDef = ComponentFactoryTypes.props[compType]
+        const compDef = ComponentFactoryTypes.props[category]
 
         return (editor: LogicEditor, params: Record<string, unknown> | undefined): Component => {
             const newComp = compDef.make(editor, elem, params)

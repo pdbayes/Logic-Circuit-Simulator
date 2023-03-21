@@ -32,32 +32,32 @@ export const Gate2toNTypes = RichStringEnum.withProps<GateTypeProps>()({
     AND: {
         out: logicAnd,
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.AND3,
+        fullShortDesc: () => S.Components.Gate.AND,
     },
     OR: {
         out: logicOr,
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.OR3,
+        fullShortDesc: () => S.Components.Gate.OR,
     },
     XOR: {
         out: logicXor,
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.XOR3,
+        fullShortDesc: () => S.Components.Gate.XOR,
     },
     NAND: {
         out: ins => LogicValue.invert(logicAnd(ins)),
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.NAND3,
+        fullShortDesc: () => S.Components.Gate.NAND,
     },
     NOR: {
         out: ins => LogicValue.invert(logicOr(ins)),
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.NOR3,
+        fullShortDesc: () => S.Components.Gate.NOR,
     },
     XNOR: {
         out: ins => LogicValue.invert(logicXor(ins)),
         includeInContextMenu: true, includeInPoseAs: true,
-        fullShortDesc: () => S.Components.Gate.XNOR3,
+        fullShortDesc: () => S.Components.Gate.XNOR,
     },
 })
 /** Gate types applicable to gates with inputs 2 to N (_not_ all gate 2 inputs) */

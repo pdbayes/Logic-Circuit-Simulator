@@ -10,6 +10,7 @@ import { NodeIn } from "./Node"
 
 export const FlipflopOrLatchDef =
     defineAbstractComponent({
+        button: { imgWidth: 50 },
         repr: {
             state: typeOrUndefined(LogicValueRepr),
             showContent: typeOrUndefined(t.boolean),
@@ -154,6 +155,7 @@ export type EdgeTrigger = keyof typeof EdgeTrigger
 
 export const FlipflopBaseDef =
     defineAbstractComponent({
+        button: FlipflopOrLatchDef.button,
         repr: {
             ...FlipflopOrLatchDef.repr,
             trigger: typeOrUndefined(t.keyof(EdgeTrigger)),

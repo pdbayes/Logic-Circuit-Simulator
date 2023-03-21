@@ -9,6 +9,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 
 export const LabelStringDef =
     defineComponent("label", undefined, {
+        button: { imgWidth: 32 },
         repr: {
             text: t.string,
             // align: typeOrUndefined(t.string), 

@@ -4,8 +4,8 @@ import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, isNull, isUndefined, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { allBooleans, binaryStringRepr, ComponentBase, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, hexStringRepr, isAllZeros, NodesIn, NodesOut, Params, ReadonlyGroupedNodeArray, Repr, wordFromBinaryOrHexRepr } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isDefined, isNotNull, isNull, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { ComponentBase, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, Params, ReadonlyGroupedNodeArray, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, DrawContextExt, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
@@ -14,6 +14,7 @@ import { type ShiftRegisterDef } from "./ShiftRegister"
 
 export const RegisterBaseDef =
     defineAbstractParametrizedComponent({
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
             showContent: typeOrUndefined(t.boolean),

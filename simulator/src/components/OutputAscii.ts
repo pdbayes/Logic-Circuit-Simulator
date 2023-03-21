@@ -10,6 +10,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 
 export const OutputAsciiDef =
     defineComponent("out", "ascii", {
+        button: { imgWidth: 32 },
         repr: {
             name: ComponentNameRepr,
             additionalReprRadix: typeOrUndefined(t.number),

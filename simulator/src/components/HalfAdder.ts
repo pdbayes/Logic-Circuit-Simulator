@@ -9,6 +9,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 export const HalfAdderDef =
     defineComponent("ic", "halfadder", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 6 },
         makeNodes: () => {

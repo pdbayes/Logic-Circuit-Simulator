@@ -35,6 +35,7 @@ export function ledColorForLogicValue(v: LogicValue, onColor: LedColor) {
 
 export const OutputBarDef =
     defineComponent("out", "bar", {
+        button: { imgWidth: 32 },
         repr: {
             display: t.keyof(OutputBarTypes, "OutputBarType"),
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),

@@ -14,6 +14,7 @@ import { WireStyles } from "./Wire"
 export const DemuxDef =
     defineParametrizedComponent("ic", "demux", true, true, {
         variantName: ({ from, to }) => `demux-${from}to${to}`,
+        button: { imgWidth: 50 },
         repr: {
             from: typeOrUndefined(t.number),
             to: typeOrUndefined(t.number),

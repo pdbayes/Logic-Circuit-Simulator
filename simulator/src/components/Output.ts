@@ -13,6 +13,7 @@ import { Node, NodeIn, NodeOut } from "./Node"
 export const OutputDef =
     defineParametrizedComponent("out", undefined, true, false, {
         variantName: ({ bits }) => `out-${bits}`,
+        button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
             name: ComponentNameRepr,
@@ -22,7 +23,7 @@ export const OutputDef =
             bits: 1,
         },
         validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Output bits")
+            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Output bits")
             return { numBits }
         },
         size: ({ numBits }) => {

@@ -330,12 +330,13 @@ const Strings_fr = {
         Gate: {
             NOT: tuple("NON", "NON", "La sortie est égale à l’entrée inversée."),
             BUF: tuple("OUI", "OUI", "La sortie est égale à l’entrée."),
-            AND: tuple("ET", "ET", "La sortie vaut 1 lorsque les deux entrées valent 1."),
-            OR: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des deux entrées vaut 1."),
-            XOR: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsque l’une ou l’autre des deux entrées vaut 1, mais pas les deux."),
-            NAND: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que les deux entrées ne valent 1."),
-            NOR: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque les deux entrées valent 0."),
-            XNOR: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsque les entrées valent soit les deux 1, soit les deux 0."),
+
+            AND: tuple("ET", "ET", "La sortie vaut 1 lorsque toutes les entrées valent 1."),
+            OR: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des entrées vaut 1."),
+            XOR: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1."),
+            NAND: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que toutes les entrées ne valent 1."),
+            NOR: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque toutes les entrées valent 0."),
+            XNOR: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1."),
 
             IMPLY: tuple("IMPLIQUE", "IMPL", "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1."),
             RIMPLY: tuple("IMPLIQUE (bis)", "IMPL", "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1."),
@@ -347,19 +348,6 @@ const Strings_fr = {
             TXNA: tuple("TRANSFERT-NON-A", undefined, "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée."),
             TXNB: tuple("TRANSFERT-NON-B", undefined, "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée."),
 
-            AND3: tuple("ET", "ET", "La sortie vaut 1 lorsque les trois entrées valent 1."),
-            OR3: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des trois entrées vaut 1."),
-            XOR3: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1."),
-            NAND3: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que les trois entrées ne valent 1."),
-            NOR3: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque les trois entrées valent 0."),
-            XNOR3: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1."),
-
-            AND4: tuple("ET", "ET", "La sortie vaut 1 lorsque les quatre entrées valent 1."),
-            OR4: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des quatre entrées vaut 1."),
-            XOR4: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1."),
-            NAND4: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que les quatre entrées ne valent 1."),
-            NOR4: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque les quatre entrées valent 0."),
-            XNOR4: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1."),
 
             tooltip: {
                 GateTitle: (gateType: Modifier) => mods("Porte ", gateType),
@@ -964,12 +952,13 @@ const Strings_en: Strings = {
         Gate: {
             NOT: tuple("NOT", "NOT", "The output is the inverted input."),
             BUF: tuple("BUF", "BUF", "The output is the same as the input."),
-            AND: tuple("AND", "AND", "The output is 1 when both inputs are also 1."),
+
+            AND: tuple("AND", "AND", "The output is 1 when all inputs are 1."),
             OR: tuple("OR", "OR", "The output is 1 when at least one of the inputs is 1."),
-            XOR: tuple("XOR", "XOR", "The output is 1 when either one of the inputs is 1, but not both."),
-            NAND: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless both inputs are 1."),
-            NOR: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when both inputs are 0."),
-            XNOR: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when the inputs either both 1 or both 0."),
+            XOR: tuple("XOR", "XOR", "The output is 1 when an odd number of inputs are 1."),
+            NAND: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless all inputs are 1."),
+            NOR: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when all inputs are 0."),
+            XNOR: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when an even number of inputs are 1."),
 
             IMPLY: tuple("IMPLY", "IMPL", "The output is 1 if the first input is 0 or if both inputs are 1."),
             RIMPLY: tuple("IMPLY (bis)", "IMPL", "The output is 1 if the second input is 0 or if both inputs are 1."),
@@ -980,20 +969,6 @@ const Strings_en: Strings = {
             TXB: tuple("TRANSFER-B", undefined, "The output is the same as the second input; the first input is ignored."),
             TXNA: tuple("TRANSFER-NOT-A", undefined, "The output is the inverted first input; the second input is ignored."),
             TXNB: tuple("TRANSFER-NOT-B", undefined, "The output is the inverted second input; the first input is ignored."),
-
-            AND3: tuple("AND", "AND", "The output is 1 when all three inputs are 1."),
-            OR3: tuple("OR", "OR", "The output is 1 when at least one of the three inputs is 1."),
-            XOR3: tuple("XOR", "XOR", "The output is 1 when an odd number of inputs are 1."),
-            NAND3: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless the three inputs are 1."),
-            NOR3: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when the three inputs are 0."),
-            XNOR3: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when an even number of inputs are 1."),
-
-            AND4: tuple("AND", "AND", "The output is 1 when all four inputs are 1."),
-            OR4: tuple("OR", "OR", "The output is 1 when at least one of the four inputs is 1."),
-            XOR4: tuple("XOR", "XOR", "The output is 1 when an odd number of inputs are 1."),
-            NAND4: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless the four inputs are 1."),
-            NOR4: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when the four inputs are 0."),
-            XNOR4: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when an even number of inputs are 1."),
 
             tooltip: {
                 GateTitle: (gateType: Modifier) => mods(gateType, " Gate"),

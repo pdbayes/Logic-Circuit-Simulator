@@ -784,7 +784,7 @@ export class LogicEditor extends HTMLElement {
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
 
         // TODO move this to the Def of LabelRect to be cleaner
-        const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-component=label][data-type=rect]")
+        const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-category=label][data-type=rect]")
         if (groupButton === null) {
             console.log("ERROR: Could not find group button")
         } else {
@@ -2018,7 +2018,7 @@ const template = (() => {
 
     template.content.querySelectorAll("i.svgicon").forEach((_iconElem) => {
         const iconElem = _iconElem as HTMLElement
-        const iconName = iconElem.dataset["icon"] ?? "question"
+        const iconName = iconElem.dataset.icon ?? "question"
         if (isIconName(iconName)) {
             iconElem.innerHTML = inlineSvgFor(iconName)
         } else {

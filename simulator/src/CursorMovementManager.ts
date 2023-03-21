@@ -1,5 +1,5 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
-import { ComponentFactory } from './ComponentFactory'
+import { ButtonDataset, ComponentFactory } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
@@ -489,7 +489,7 @@ export class CursorMovementManager {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 this.editor.cursorMovementMgr.currentSelection = undefined
-                const paramsStr = compButton.dataset.params
+                const paramsStr = (compButton.dataset as ButtonDataset).params
                 const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
                 const newComponent = factory(editor, params)
                 this._currentMouseOverComp = newComponent

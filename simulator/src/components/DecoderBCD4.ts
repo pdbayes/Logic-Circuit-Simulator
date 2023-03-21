@@ -9,6 +9,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 export const DecoderBCD4Def =
     defineComponent("ic", "decoder-bcd4", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 12 },
         makeNodes: () => ({

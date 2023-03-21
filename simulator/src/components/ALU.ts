@@ -12,6 +12,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 export const ALUDef =
     defineParametrizedComponent("ic", "alu", true, true, {
         variantName: ({ bits }) => `alu-${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
             showOp: typeOrUndefined(t.boolean),

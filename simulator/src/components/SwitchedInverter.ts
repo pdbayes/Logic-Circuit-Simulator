@@ -12,6 +12,7 @@ import { DrawContext } from "./Drawable"
 export const SwitchedInverterDef =
     defineParametrizedComponent("ic", "switched-inverter", true, true, {
         variantName: ({ bits }) => `switched-inverter-${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
         },

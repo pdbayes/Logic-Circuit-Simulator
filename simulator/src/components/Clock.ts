@@ -10,6 +10,7 @@ import { InputBase } from "./Input"
 
 export const ClockDef =
     defineComponent("in", "clock", {
+        button: { imgWidth: 50 },
         repr: {
             name: ComponentNameRepr,
             period: t.number,

@@ -44,7 +44,7 @@ import wirestyle from '../img/icons/wirestyle.icon.svg'; // @ts-ignore
 
 // images
 import Adder from '../img/Adder.svg'; // @ts-ignore
-import AdderArray from '../img/AdderArray.svg'; // @ts-ignore
+import AdderArray4 from '../img/AdderArray4.svg'; // @ts-ignore
 import ALU4 from '../img/ALU4.svg'; // @ts-ignore
 import ALU8 from '../img/ALU8.svg'; // @ts-ignore
 import AND from '../img/AND.svg'; // @ts-ignore
@@ -99,8 +99,10 @@ import Passthrough8 from '../img/Passthrough8.svg'; // @ts-ignore
 import RAM16x4 from '../img/RAM16x4.svg'; // @ts-ignore
 import RAM16x8 from '../img/RAM16x8.svg'; // @ts-ignore
 import RAM64x8 from '../img/RAM64x8.svg'; // @ts-ignore
-import Register from '../img/Register.svg'; // @ts-ignore
-import ShiftRegister from '../img/ShiftRegister.svg'; // @ts-ignore
+import Register4 from '../img/Register4.svg'; // @ts-ignore
+import Register8 from '../img/Register8.svg'; // @ts-ignore
+import ShiftRegister4 from '../img/ShiftRegister4.svg'; // @ts-ignore
+import ShiftRegister8 from '../img/ShiftRegister8.svg'; // @ts-ignore
 import SwitchedInverter from '../img/SwitchedInverter.svg'; // @ts-ignore
 import TRI from '../img/TRI.svg'; // @ts-ignore
 import TriStateBufferArray from '../img/TriStateBufferArray.svg'; // @ts-ignore
@@ -156,7 +158,7 @@ const icons = {
 
 const images = {
     Adder,
-    AdderArray,
+    AdderArray4,
     ALU4,
     ALU8,
     AND,
@@ -211,8 +213,10 @@ const images = {
     RAM16x4,
     RAM16x8,
     RAM64x8,
-    Register,
-    ShiftRegister,
+    Register4,
+    Register8,
+    ShiftRegister4,
+    ShiftRegister8,
     SwitchedInverter,
     TRI,
     TriStateBufferArray,
@@ -250,7 +254,7 @@ export function makeIcon(name: IconName, width?: number, height?: number): HTMLE
     if (isDefined(height)) {
         elem.style.height = `${height}px`
     }
-    elem.dataset["icon"] = name
+    elem.dataset.icon = name
     elem.innerHTML = inlineSvgFor(name)
     return elem
 }

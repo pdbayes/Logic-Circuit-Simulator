@@ -13,6 +13,7 @@ import { WireStyles } from "./Wire"
 export const MuxDef =
     defineParametrizedComponent("ic", "mux", true, true, {
         variantName: ({ from, to }) => `mux-${from}to${to}`,
+        button: { imgWidth: 50 },
         repr: {
             from: typeOrUndefined(t.number),
             to: typeOrUndefined(t.number),

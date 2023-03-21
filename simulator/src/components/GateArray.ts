@@ -13,6 +13,7 @@ import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 export const GateArrayDef =
     defineParametrizedComponent("ic", "gate-array", true, true, {
         variantName: ({ bits }) => `gate-array-${bits}`,
+        button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
             subtype: GateNTypeRepr,

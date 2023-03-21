@@ -8,6 +8,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 export const Decoder16SegDef =
     defineComponent("ic", "decoder-16seg", {
+        button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 10 },
         makeNodes: () => ({

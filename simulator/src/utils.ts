@@ -530,6 +530,46 @@ export function toLogicValueFromChar(char: string): LogicValue {
     }
 }
 
+export function allBooleans(values: LogicValue[]): values is boolean[] {
+    for (const v of values) {
+        if (v !== true && v !== false) {
+            return false
+        }
+    }
+    return true
+}
+
+export function isAllZeros(s: string) {
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] !== "0") {
+            return false
+        }
+    }
+    return true
+}
+
+export function binaryStringRepr(values: LogicValue[]): string {
+    const binStr = values.map(toLogicValueRepr).reverse().join("")
+    return binStr
+}
+
+export function hexStringRepr(values: boolean[], hexWidth: number): string {
+    const binStr = binaryStringRepr(values)
+    return parseInt(binStr, 2).toString(16).toUpperCase().padStart(hexWidth, "0")
+}
+
+export function wordFromBinaryOrHexRepr(wordRepr: string, numBits: number) {
+    const len = wordRepr.length
+    const isBinary = len === numBits
+    const binaryRepr = isBinary ? wordRepr : parseInt(wordRepr, 16).toString(2).padStart(numBits, "0")
+    const row: LogicValue[] = Array(numBits)
+    for (let i = 0; i < numBits; i++) {
+        row[i] = toLogicValueFromChar(binaryRepr[numBits - i - 1])
+    }
+    return row
+}
+
+
 // Enums or RichEnums used in several files
 
 export enum Mode {

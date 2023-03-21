@@ -11,6 +11,7 @@ import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 export const Output16SegDef =
     defineComponent("out", "16seg", {
+        button: { imgWidth: 32 },
         repr: {
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
             transparent: typeOrUndefined(t.boolean),

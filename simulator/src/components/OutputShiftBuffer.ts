@@ -38,6 +38,7 @@ export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
 
 export const OutputShiftBufferDef =
     defineComponent("out", "shift-buffer", {
+        button: { imgWidth: 50 },
         repr: {
             state: typeOrUndefined(t.string),
             decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),

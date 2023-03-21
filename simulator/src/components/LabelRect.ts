@@ -35,6 +35,7 @@ export type CaptionPosition = keyof typeof CaptionPosition
 
 export const LabelRectDef =
     defineComponent("label", "rect", {
+        button: { imgWidth: 32 },
         repr: {
             w: t.number,
             h: t.number,
