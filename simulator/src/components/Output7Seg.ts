@@ -10,7 +10,7 @@ import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
 export const Output7SegDef =
-    defineComponent("7seg", {
+    defineComponent("out", "7seg", {
         repr: {
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
             transparent: typeOrUndefined(t.boolean),
@@ -64,10 +64,6 @@ export class Output7Seg extends ComponentBase<Output7SegRepr> {
             transparent: this._transparent === Output7SegDef.aults.transparent ? undefined : this._transparent,
             name: this._name,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     public override makeTooltip() {

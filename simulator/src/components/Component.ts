@@ -198,21 +198,19 @@ export const JsonFieldsAux = ["v", "opts", "userdata"] as const
 export type JsonFieldAux = typeof JsonFieldsAux[number]
 export type JsonField = JsonFieldComponent | JsonFieldAux
 
-const ComponentTypes_ = {
+export const ComponentCategories = RichStringEnum.withProps<{
+    jsonFieldName: JsonFieldComponent
+}>()({
     in: { jsonFieldName: "in" },
     out: { jsonFieldName: "out" },
     gate: { jsonFieldName: "gates" },
     ic: { jsonFieldName: "components" },
     label: { jsonFieldName: "labels" },
     layout: { jsonFieldName: "layout" },
-} as const
+})
 
-export const ComponentTypes = RichStringEnum.withProps<{
-    jsonFieldName: JsonFieldComponent
-}>()(ComponentTypes_)
-
-export type ComponentType = typeof ComponentTypes.type
-export type MainJsonFieldName = typeof ComponentTypes_[ComponentType]["jsonFieldName"]
+export type ComponentCategory = typeof ComponentCategories.type
+export type MainJsonFieldName = typeof ComponentCategories.props[ComponentCategory]["jsonFieldName"]
 
 export type DynamicName = Record<string | number, string>
 export function isDynamicName(obj: any): obj is DynamicName {
@@ -291,6 +289,7 @@ export abstract class ComponentBase<
     THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
 > extends DrawableWithDraggablePosition {
 
+    public readonly category: ComponentCategory
     private _width: number
     private _height: number
     private _state: ComponentState
@@ -305,6 +304,7 @@ export abstract class ComponentBase<
     ) {
         super(editor, savedData)
 
+        this.category = componentDef.category
         this._width = componentDef.size.gridWidth * GRID_STEP
         this._height = componentDef.size.gridHeight * GRID_STEP
         this._value = componentDef.initialValue(savedData, componentDef.aults)
@@ -620,8 +620,6 @@ export abstract class ComponentBase<
                     : {}
         ) as NodeIDsRepr<THasIn, THasOut>
     }
-
-    public abstract get componentType(): ComponentType
 
     public get unrotatedWidth() {
         return this._width
@@ -974,6 +972,7 @@ export abstract class ComponentBase<
 export type ComponentGridSize = { gridWidth: number, gridHeight: number }
 
 export type ComponentDef<TComp extends t.Mixed, TInOutRecs extends InOutRecs, TValue, TValueDefaults extends Record<string, unknown>> = {
+    category: ComponentCategory,
     repr: TComp,
     nodeRecs: TInOutRecs,
     aults: TValueDefaults,
@@ -1092,6 +1091,7 @@ export function defineComponent<
     THasIn extends boolean = HasField<TInOutRecs, "ins">,
     THasOut extends boolean = HasField<TInOutRecs, "outs">,
 >(
+    category: ComponentCategory,
     jsonName: TName,
     { repr, makeNodes, valueDefaults, size, initialValue }: {
         repr?: TProps,
@@ -1105,6 +1105,7 @@ export function defineComponent<
     const hasOut = ("outs" in nodes) as THasOut
     const componentRepr = makeComponentRepr<TName, TProps, THasIn, THasOut>(jsonName, hasIn, hasOut, repr ?? {} as TProps)
     return {
+        category,
         repr: componentRepr,
         nodeRecs: nodes,
         aults: valueDefaults,
@@ -1127,6 +1128,7 @@ export function defineParametrizedComponent<
     TResolvedParams extends Record<string, unknown> = TParams,
     TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
 >(
+    category: ComponentCategory,
     jsonName: TName, hasIn: THasIn, hasOut: THasOut,
     { variantName, repr, valueDefaults, paramDefaults, validateParams, size: makeSize, makeNodes, initialValue }: {
         variantName: (params: TParams) => TVariantName,
@@ -1144,6 +1146,7 @@ export function defineParametrizedComponent<
         const size = makeSize(params)
         const nodes = makeNodes({ ...size, ...params }, valueDefaults)
         return {
+            category,
             repr: componentRepr,
             nodeRecs: nodes,
             aults: valueDefaults,
@@ -1151,10 +1154,11 @@ export function defineParametrizedComponent<
             initialValue: (savedData: TRepr | null) => initialValue(savedData, params),
         } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
     }
+    componentDef.category = category
     componentDef.variantName = variantName
+    componentDef.repr = componentRepr
     componentDef.defaultParams = paramDefaults
     componentDef.aults = { ...valueDefaults, ...paramDefaults }
-    componentDef.repr = componentRepr
     const doValidateParams = validateParams ?? ((params: TParams) => params as unknown as TResolvedParams)
     componentDef.validate = <TSavedData extends Partial<TParams>>(initData: Either<Partial<TParams>, TSavedData>): [TResolvedParams, TSavedData | null] => {
         switch (initData._tag) {

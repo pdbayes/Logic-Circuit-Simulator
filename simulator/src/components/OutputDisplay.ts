@@ -9,7 +9,7 @@ import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComp
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
-    defineParametrizedComponent("display", true, false, {
+    defineParametrizedComponent("out", "display", true, false, {
         variantName: ({ bits }) => `display-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -77,10 +77,6 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
             radix: this._radix === OutputDisplayDef.aults.radix ? undefined : this._radix,
             showAsUnknown: this._showAsUnknown === OutputDisplayDef.aults.showAsUnknown ? undefined : this._showAsUnknown,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     private get showAsUnknown() {

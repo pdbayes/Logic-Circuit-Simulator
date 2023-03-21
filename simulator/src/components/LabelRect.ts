@@ -34,7 +34,7 @@ export const CaptionPosition = {
 export type CaptionPosition = keyof typeof CaptionPosition
 
 export const LabelRectDef =
-    defineComponent("rect", {
+    defineComponent("label", "rect", {
         repr: {
             w: t.number,
             h: t.number,
@@ -120,10 +120,6 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
             captionInside: this._captionInside === LabelRectDef.aults.captionInside ? undefined : this._captionInside,
             font: this._font === LabelRectDef.aults.font ? undefined : this._font,
         }
-    }
-
-    public get componentType() {
-        return "label" as const
     }
 
     public override canRotate() {

@@ -7,7 +7,7 @@ import { ComponentBase, defineComponent, group, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const Decoder7SegDef =
-    defineComponent("decoder-7seg", {
+    defineComponent("ic", "decoder-7seg", {
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 8 },
         makeNodes: () => ({
@@ -47,10 +47,6 @@ export class Decoder7Seg extends ComponentBase<Decoder7SegRepr> {
             type: "decoder-7seg" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

@@ -8,7 +8,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 
 export const DecoderBCD4Def =
-    defineComponent("decoder-bcd4", {
+    defineComponent("ic", "decoder-bcd4", {
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 12 },
         makeNodes: () => ({
@@ -46,10 +46,6 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
             type: "decoder-bcd4" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

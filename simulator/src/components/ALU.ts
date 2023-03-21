@@ -10,7 +10,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 
 
 export const ALUDef =
-    defineParametrizedComponent("alu", true, true, {
+    defineParametrizedComponent("ic", "alu", true, true, {
         variantName: ({ bits }) => `alu-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -86,10 +86,6 @@ export class ALU extends ComponentBase<ALURepr> {
             ...this.toJSONBase(),
             showOp: (this._showOp !== ALUDef.aults.showOp) ? this._showOp : undefined,
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

@@ -12,7 +12,7 @@ const COUNTER_WIDTH = 4
 const COUNTER_RESET_VALUE = Math.pow(2, COUNTER_WIDTH)
 
 export const CounterDef =
-    defineComponent("counter", {
+    defineComponent("ic", "counter", {
         repr: {
             count: typeOrUndefined(t.number),
             trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
@@ -91,10 +91,6 @@ export class Counter extends ComponentBase<CounterRepr> {
             trigger: (this._trigger !== CounterDef.aults.trigger) ? this._trigger : undefined,
             displayRadix: (displayRadix !== CounterDef.aults.displayRadix) ? displayRadix : undefined,
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public get trigger() {

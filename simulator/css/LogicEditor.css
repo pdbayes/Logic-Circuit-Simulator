@@ -32,7 +32,6 @@ logic-editor:not(:defined) {
 #leftToolbar {
   display: flex;
   flex-direction: column;
-  background-color: lightgray;
   color: black;
 }
 
@@ -42,6 +41,7 @@ logic-editor:not(:defined) {
   padding: 1px;
   /* word-break: break-all; */
   text-align: center;
+  background-color: lightgray;
 }
 
 .leftToolbarMore {

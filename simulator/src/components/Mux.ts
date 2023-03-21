@@ -11,7 +11,7 @@ import { WireStyles } from "./Wire"
 
 
 export const MuxDef =
-    defineParametrizedComponent("mux", true, true, {
+    defineParametrizedComponent("ic", "mux", true, true, {
         variantName: ({ from, to }) => `mux-${from}to${to}`,
         repr: {
             from: typeOrUndefined(t.number),
@@ -91,10 +91,6 @@ export class Mux extends ComponentBase<MuxRepr> {
             ...super.toJSONBase(),
             showWiring: (this._showWiring !== MuxDef.aults.showWiring) ? this._showWiring : undefined,
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

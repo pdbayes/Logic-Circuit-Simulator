@@ -8,7 +8,7 @@ import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const LabelStringDef =
-    defineComponent(undefined, {
+    defineComponent("label", undefined, {
         repr: {
             text: t.string,
             // align: typeOrUndefined(t.string), 
@@ -52,10 +52,6 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
             // align: this._align === LabelStringDefaults.align ? undefined : this._align,
             font: this._font === LabelStringDef.aults.font ? undefined : this._font,
         }
-    }
-
-    public get componentType() {
-        return "label" as const
     }
 
     public override get unrotatedWidth() {

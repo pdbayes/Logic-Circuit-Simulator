@@ -9,7 +9,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 
 
 export const OutputAsciiDef =
-    defineComponent("ascii", {
+    defineComponent("out", "ascii", {
         repr: {
             name: ComponentNameRepr,
             additionalReprRadix: typeOrUndefined(t.number),
@@ -50,10 +50,6 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
             additionalReprRadix: this._additionalReprRadix,
             showAsUnknown: (this._showAsUnknown) ? true : undefined,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     private get showAsUnknown() {

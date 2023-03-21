@@ -46,10 +46,6 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
 
     protected abstract gateTypes(numBits: number): GateTypes<TGateType>
 
-    public get componentType() {
-        return "gate" as const
-    }
-
     public get type() {
         return this._type
     }
@@ -494,7 +490,7 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
 
 
 export const Gate1Def =
-    defineParametrizedComponent(undefined, true, true, {
+    defineParametrizedComponent("gate", undefined, true, true, {
         variantName: ({ type }) => `${type}`,
         repr: {
             type: Gate1TypeRepr,
@@ -550,7 +546,7 @@ export class Gate1 extends GateBase<Gate1Repr> {
 
 
 export const GateNDef =
-    defineParametrizedComponent(undefined, true, true, {
+    defineParametrizedComponent("gate", undefined, true, true, {
         variantName: ({ type }) => `${type}`,
         repr: {
             type: GateNTypeRepr,

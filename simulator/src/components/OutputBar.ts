@@ -34,7 +34,7 @@ export function ledColorForLogicValue(v: LogicValue, onColor: LedColor) {
 
 
 export const OutputBarDef =
-    defineComponent("bar", {
+    defineComponent("out", "bar", {
         repr: {
             display: t.keyof(OutputBarTypes, "OutputBarType"),
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
@@ -86,10 +86,6 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
             transparent: this._transparent === OutputBarDef.aults.transparent ? undefined : this._transparent,
             name: this._name,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     public override get unrotatedWidth() {

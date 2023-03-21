@@ -10,7 +10,7 @@ import { DrawContext } from "./Drawable"
 
 
 export const TriStateBufferArrayDef =
-    defineParametrizedComponent("tristate-array", true, true, {
+    defineParametrizedComponent("ic", "tristate-array", true, true, {
         variantName: ({ bits }) => `tristate-array-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -58,10 +58,6 @@ export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> 
             bits: this.numBits === TriStateBufferArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

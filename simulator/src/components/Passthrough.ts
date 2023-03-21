@@ -21,7 +21,7 @@ export type Slant = keyof typeof Slant
 
 
 export const PassthroughDef =
-    defineParametrizedComponent("pass", true, true, {
+    defineParametrizedComponent("layout", "pass", true, true, {
         variantName: ({ bits }) => `pass-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -125,10 +125,6 @@ export class Passthrough extends ComponentBase<PassthroughRepr> {
 
     public override get alwaysDrawMultiOutNodes() {
         return true
-    }
-
-    public get componentType() {
-        return "layout" as const
     }
 
     protected doRecalcValue(): LogicValue[] {

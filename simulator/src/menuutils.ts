@@ -135,7 +135,7 @@ const componentsMenu: Array<Section> = [
                 normallyHidden: true,
             },
             {
-                type: "out", subtype: "shiftbuffer",
+                type: "out", subtype: "shift-buffer",
                 strings: "OutputShiftBuffer", img: "OutputShiftBuffer", width: 50,
                 normallyHidden: true,
             },

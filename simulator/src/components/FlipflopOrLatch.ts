@@ -66,10 +66,6 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         }
     }
 
-    public get componentType() {
-        return "ic" as const
-    }
-
     protected override propagateValue(newValue: [LogicValue, LogicValue]) {
         this.outputs.Q.value = newValue[0]
         this.outputs.Qb.value = newValue[1]

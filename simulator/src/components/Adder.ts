@@ -7,7 +7,7 @@ import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const AdderDef =
-    defineComponent("adder", {
+    defineComponent("ic", "adder", {
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 5 },
         makeNodes: () => {
@@ -40,10 +40,6 @@ export class Adder extends ComponentBase<AdderRepr> {
             type: "adder" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

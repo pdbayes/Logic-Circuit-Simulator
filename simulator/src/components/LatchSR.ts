@@ -9,7 +9,7 @@ import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
 export const LatchSRDef =
-    defineComponent("latch-sr", {
+    defineComponent("ic", "latch-sr", {
         ...FlipflopOrLatchDef,
         makeNodes: () => {
             const base = FlipflopOrLatchDef.makeNodes()

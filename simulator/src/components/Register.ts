@@ -111,10 +111,6 @@ export abstract class RegisterBase<
         return isAllZeros(repr) ? undefined : repr
     }
 
-    public get componentType() {
-        return "ic" as const
-    }
-
     public get trigger() {
         return this._trigger
     }
@@ -245,7 +241,7 @@ export abstract class RegisterBase<
 }
 
 export const RegisterDef =
-    defineParametrizedComponent("register", true, true, {
+    defineParametrizedComponent("ic", "register", true, true, {
         variantName: ({ bits }) => `register-${bits}`,
         ...RegisterBaseDef,
         makeNodes: (params, defaults) => {

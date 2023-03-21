@@ -11,7 +11,7 @@ import { Node, NodeIn, NodeOut } from "./Node"
 
 
 export const OutputDef =
-    defineParametrizedComponent(undefined, true, false, {
+    defineParametrizedComponent("out", undefined, true, false, {
         variantName: ({ bits }) => `out-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -68,10 +68,6 @@ export class Output extends ComponentBase<OutputRepr> {
             ...this.toJSONBase(),
             name: this._name,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     public override isOver(x: number, y: number) {

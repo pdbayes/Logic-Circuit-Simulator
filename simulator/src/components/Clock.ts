@@ -9,7 +9,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { InputBase } from "./Input"
 
 export const ClockDef =
-    defineComponent("clock", {
+    defineComponent("in", "clock", {
         repr: {
             name: ComponentNameRepr,
             period: t.number,

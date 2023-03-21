@@ -7,7 +7,7 @@ import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
 export const ComparatorDef =
-    defineComponent("comparator", {
+    defineComponent("ic", "comparator", {
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 7 },
         makeNodes: () => ({
@@ -40,10 +40,6 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
             type: "comparator" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

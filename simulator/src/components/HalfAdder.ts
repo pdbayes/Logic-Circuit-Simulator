@@ -8,7 +8,7 @@ import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawab
 
 
 export const HalfAdderDef =
-    defineComponent("halfadder", {
+    defineComponent("ic", "halfadder", {
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 6 },
         makeNodes: () => {
@@ -40,10 +40,6 @@ export class HalfAdder extends ComponentBase<HalfAdderRepr> {
             type: "halfadder" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

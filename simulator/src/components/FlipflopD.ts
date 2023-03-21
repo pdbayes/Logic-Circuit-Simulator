@@ -9,7 +9,7 @@ import { Flipflop, FlipflopBaseDef } from "./FlipflopOrLatch"
 
 
 export const FlipflopDDef =
-    defineComponent("flipflop-d", {
+    defineComponent("ic", "flipflop-d", {
         ...FlipflopBaseDef,
         makeNodes: () => {
             const base = FlipflopBaseDef.makeNodes(2)

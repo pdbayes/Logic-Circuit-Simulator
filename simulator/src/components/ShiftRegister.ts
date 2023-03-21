@@ -9,7 +9,7 @@ import { DrawContextExt } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
-    defineParametrizedComponent("shift-register", true, true, {
+    defineParametrizedComponent("out", "shift-register", true, true, {
         variantName: ({ bits }) => `shift-register-${bits}`,
         ...RegisterBaseDef,
         makeNodes: (params, defaults) => {

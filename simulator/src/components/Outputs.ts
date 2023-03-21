@@ -58,7 +58,7 @@ export const OutputFactory = {
                 return new OutputAscii(editor, blank ? null : savedData)
             case "bar":
                 return new OutputBar(editor, blank ? null : savedData)
-            case "shiftbuffer":
+            case "shift-buffer":
                 return new OutputShiftBuffer(editor, blank ? null : savedData)
         }
     },

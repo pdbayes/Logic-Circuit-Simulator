@@ -12,7 +12,7 @@ import { RegisterBase } from "./Register"
 
 
 export const InputRandomDef =
-    defineParametrizedComponent("random", true, true, {
+    defineParametrizedComponent("in", "random", true, true, {
         variantName: ({ bits }) => `random-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -90,10 +90,6 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
             showProb: (this._showProb !== InputRandomDef.aults.showProb) ? this._showProb : undefined,
             trigger: (this._trigger !== InputRandomDef.aults.trigger) ? this._trigger : undefined,
         }
-    }
-
-    public get componentType() {
-        return "in" as const
     }
 
     public override get allowsForcedOutputs() {

@@ -11,7 +11,7 @@ import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
 export const GateArrayDef =
-    defineParametrizedComponent("gate-array", true, true, {
+    defineParametrizedComponent("ic", "gate-array", true, true, {
         variantName: ({ bits }) => `gate-array-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -76,10 +76,6 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
             ...this.toJSONBase(),
             showAsUnknown: this._showAsUnknown === GateArrayDef.aults.showAsUnknown ? undefined : this._showAsUnknown,
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

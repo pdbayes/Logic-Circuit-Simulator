@@ -7,7 +7,7 @@ import { ComponentBase, defineComponent, Repr } from "./Component"
 import { DrawContext } from "./Drawable"
 
 export const TriStateBufferDef =
-    defineComponent("TRI", {
+    defineComponent("gate", "TRI", {
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 4 },
         makeNodes: () => ({
@@ -37,10 +37,6 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
             type: "TRI" as const,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "gate" as const
     }
 
     public override makeTooltip() {

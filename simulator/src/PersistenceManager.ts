@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { PathReporter } from 'io-ts/PathReporter'
-import { binaryStringRepr, Component, ComponentBase, ComponentTypes, isAllZeros, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
+import { binaryStringRepr, Component, ComponentBase, ComponentCategories, isAllZeros, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { GateDef, GateFactory } from "./components/Gates"
 import { ICDef, ICFactory } from "./components/IC"
 import { InputDef_, InputFactory } from "./components/Inputs"
@@ -205,7 +205,7 @@ class _PersistenceManager {
         }
 
         for (const comp of editor.components.all()) {
-            const fieldName = ComponentTypes.props[comp.componentType].jsonFieldName
+            const fieldName = ComponentCategories.props[comp.category].jsonFieldName
             let arr = workspace[fieldName]
             if (isUndefined(arr)) {
                 workspace[fieldName] = (arr = [comp])
@@ -493,6 +493,9 @@ function migrate4To5(parsedContents: Record<string, unknown>) {
                 } else if (type === "byte-display") {
                     out.type = "display"
                     out.bits = 8
+
+                } else if (type === "shiftbuffer") {
+                    out.type = "shift-buffer"
                 }
             }
         }

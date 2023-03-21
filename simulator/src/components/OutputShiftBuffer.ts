@@ -37,7 +37,7 @@ export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
 
 
 export const OutputShiftBufferDef =
-    defineComponent("shiftbuffer", {
+    defineComponent("out", "shift-buffer", {
         repr: {
             state: typeOrUndefined(t.string),
             decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),
@@ -108,7 +108,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
     public toJSON() {
         const stateArray = allBitsOf(this.value).map(b => toLogicValueRepr(b))
         return {
-            type: "shiftbuffer" as const,
+            type: "shift-buffer" as const,
             ...this.toJSONBase(),
             state: stateArray.length === 0 ? undefined : stateArray.join(""),
             decodeAs: (this._decodeAs !== OutputShiftBufferDef.aults.decodeAs) ? this._decodeAs : undefined,
@@ -116,10 +116,6 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
             maxItems: this._maxItems,
             trigger: (this._trigger !== OutputShiftBufferDef.aults.trigger) ? this._trigger : undefined,
         }
-    }
-
-    public get componentType() {
-        return "out" as const
     }
 
     public get trigger() {

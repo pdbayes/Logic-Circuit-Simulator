@@ -11,7 +11,7 @@ import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 
 export const RAMDef =
-    defineParametrizedComponent("ram", true, true, {
+    defineParametrizedComponent("ic", "ram", true, true, {
         variantName: ({ bits, lines }) => `ram-${lines}x${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -129,10 +129,6 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
             trigger: (this._trigger !== RAMDef.aults.trigger) ? this._trigger : undefined,
             content: this.contentRepr(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public get trigger() {

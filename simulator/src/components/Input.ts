@@ -11,7 +11,7 @@ import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext
 import { Node, NodeIn, NodeOut } from "./Node"
 
 export const InputDef =
-    defineParametrizedComponent(undefined, false, true, {
+    defineParametrizedComponent("ic", undefined, false, true, {
         variantName: ({ bits }) => `in-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -100,10 +100,6 @@ export abstract class InputBase<TRepr extends InputBaseRepr> extends ComponentBa
             ...super.toJSONBase(),
             name: this._name,
         }
-    }
-
-    public get componentType() {
-        return "in" as const
     }
 
     public override isOver(x: number, y: number) {

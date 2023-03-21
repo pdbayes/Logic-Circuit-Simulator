@@ -12,7 +12,7 @@ import { WireStyles } from "./Wire"
 
 
 export const DemuxDef =
-    defineParametrizedComponent("demux", true, true, {
+    defineParametrizedComponent("ic", "demux", true, true, {
         variantName: ({ from, to }) => `demux-${from}to${to}`,
         repr: {
             from: typeOrUndefined(t.number),
@@ -97,10 +97,6 @@ export class Demux extends ComponentBase<DemuxRepr> {
             showWiring: (this._showWiring !== DemuxDef.aults.showWiring) ? this._showWiring : undefined,
             disconnectedAsHighZ: (this._disconnectedAsHighZ !== DemuxDef.aults.disconnectedAsHighZ) ? this._disconnectedAsHighZ : undefined,
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

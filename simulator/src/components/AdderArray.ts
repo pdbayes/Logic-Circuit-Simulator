@@ -11,7 +11,7 @@ import { DrawContext } from "./Drawable"
 
 
 export const AdderArrayDef =
-    defineParametrizedComponent("adder-array", true, true, {
+    defineParametrizedComponent("ic", "adder-array", true, true, {
         variantName: ({ bits }) => `adder-array-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -71,10 +71,6 @@ export class AdderArray extends ComponentBase<AdderArrayRepr> {
             bits: this.numBits === AdderArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {

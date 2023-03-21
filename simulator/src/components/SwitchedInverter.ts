@@ -10,7 +10,7 @@ import { DrawContext } from "./Drawable"
 
 
 export const SwitchedInverterDef =
-    defineParametrizedComponent("switched-inverter", true, true, {
+    defineParametrizedComponent("ic", "switched-inverter", true, true, {
         variantName: ({ bits }) => `switched-inverter-${bits}`,
         repr: {
             bits: typeOrUndefined(t.number),
@@ -59,10 +59,6 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
             bits: this.numBits === SwitchedInverterDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
         }
-    }
-
-    public get componentType() {
-        return "ic" as const
     }
 
     public override makeTooltip() {
