@@ -4,7 +4,7 @@ import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_RECTANGLE_BACKGROUND, C
 import { span, style, title } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, isUndefined, typeOrUndefined } from "../utils"
+import { isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
 
@@ -79,19 +79,19 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     private _captionInside: boolean
     private _font: string
 
-    public constructor(editor: LogicEditor, savedData: LabelRectRepr | null) {
-        super(editor, LabelRectDef, savedData)
-        if (isNotNull(savedData)) {
-            this._w = savedData.w
-            this._h = savedData.h
-            this._color = savedData.color ?? LabelRectDef.aults.color
-            this._strokeWidth = savedData.strokeWidth ?? LabelRectDef.aults.strokeWidth
-            this._noFill = savedData.noFill ?? LabelRectDef.aults.noFill
-            this._rounded = savedData.rounded ?? LabelRectDef.aults.rounded
-            this._caption = savedData.caption ?? LabelRectDef.aults.caption
-            this._captionPos = savedData.captionPos ?? LabelRectDef.aults.captionPos
-            this._captionInside = savedData.captionInside ?? LabelRectDef.aults.captionInside
-            this._font = savedData.font ?? LabelRectDef.aults.font
+    public constructor(editor: LogicEditor, saved?: LabelRectRepr) {
+        super(editor, LabelRectDef, saved)
+        if (isDefined(saved)) {
+            this._w = saved.w
+            this._h = saved.h
+            this._color = saved.color ?? LabelRectDef.aults.color
+            this._strokeWidth = saved.strokeWidth ?? LabelRectDef.aults.strokeWidth
+            this._noFill = saved.noFill ?? LabelRectDef.aults.noFill
+            this._rounded = saved.rounded ?? LabelRectDef.aults.rounded
+            this._caption = saved.caption ?? LabelRectDef.aults.caption
+            this._captionPos = saved.captionPos ?? LabelRectDef.aults.captionPos
+            this._captionInside = saved.captionInside ?? LabelRectDef.aults.captionInside
+            this._font = saved.font ?? LabelRectDef.aults.font
         } else {
             this._w = LabelRectDef.aults.width
             this._h = LabelRectDef.aults.height
@@ -444,3 +444,4 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     }
 
 }
+LabelRectDef.impl = LabelRect

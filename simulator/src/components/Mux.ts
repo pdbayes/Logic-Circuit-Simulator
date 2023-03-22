@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Params, Repr } from "./Component"
+import { ArrayFillWith, isDefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { WireStyles } from "./Wire"
 
@@ -57,12 +56,12 @@ export const MuxDef =
                 },
             }
         },
-        initialValue: (savedData, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
+        initialValue: (saved, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
     })
 
 
 export type MuxRepr = Repr<typeof MuxDef>
-export type MuxParams = Params<typeof MuxDef>
+export type MuxParams = ResolvedParams<typeof MuxDef>
 
 export class Mux extends ComponentBase<MuxRepr> {
 
@@ -72,17 +71,16 @@ export class Mux extends ComponentBase<MuxRepr> {
     public readonly numSel: number
     private _showWiring: boolean = MuxDef.aults.showWiring
 
-    public constructor(editor: LogicEditor, initData: Either<MuxParams, MuxRepr>) {
-        const [params, savedData] = MuxDef.validate(initData)
-        super(editor, MuxDef(params), savedData)
+    public constructor(editor: LogicEditor, params: MuxParams, saved?: MuxRepr) {
+        super(editor, MuxDef.with(params), saved)
 
         this.numFrom = params.numFrom
         this.numTo = params.numTo
         this.numGroups = params.numGroups
         this.numSel = params.numSel
 
-        if (isNotNull(savedData)) {
-            this._showWiring = savedData.showWiring ?? MuxDef.aults.showWiring
+        if (isDefined(saved)) {
+            this._showWiring = saved.showWiring ?? MuxDef.aults.showWiring
         }
     }
 
@@ -222,3 +220,4 @@ export class Mux extends ComponentBase<MuxRepr> {
     }
 
 }
+MuxDef.impl = Mux

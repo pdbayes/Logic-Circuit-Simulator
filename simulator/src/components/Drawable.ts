@@ -5,7 +5,7 @@ import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { Expand, InteractionResult, isDefined, isNotNull, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
+import { Expand, InteractionResult, isDefined, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -270,18 +270,18 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     private _posY: number
     private _orient: Orientation
 
-    protected constructor(editor: LogicEditor, savedData: PositionSupportRepr | null) {
+    protected constructor(editor: LogicEditor, saved?: PositionSupportRepr) {
         super(editor)
 
         // using null and not undefined to prevent subclasses from
         // unintentionally skipping the parameter
 
-        if (isNotNull(savedData)) {
+        if (isDefined(saved)) {
             // restoring from saved object
-            this.ref = savedData.ref
-            this._posX = savedData.pos[0]
-            this._posY = savedData.pos[1]
-            this._orient = savedData.orient ?? Orientation.default
+            this.ref = saved.ref
+            this._posX = saved.pos[0]
+            this._posY = saved.pos[1]
+            this._orient = saved.orient ?? Orientation.default
         } else {
             // creating new object
             this._posX = Math.max(0, this.editor.mouseX)
@@ -401,8 +401,8 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     private _isMovingWithContext: undefined | DragContext = undefined
 
-    protected constructor(editor: LogicEditor, savedData: PositionSupportRepr | null) {
-        super(editor, savedData)
+    protected constructor(editor: LogicEditor, saved?: PositionSupportRepr) {
+        super(editor, saved)
     }
 
     public get isMoving() {

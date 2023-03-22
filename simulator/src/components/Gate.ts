@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, PATTERN_STRIPED_GRAY } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, deepEquals, isDefined, isNotNull, isUndefined, isUnknown, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, Params, Repr } from "./Component"
+import { ArrayFillUsing, deepEquals, isDefined, isUndefined, isUnknown, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
 
@@ -24,13 +23,13 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
     private _poseAs: TGateType | undefined = undefined
     private _showAsUnknown = false
 
-    protected constructor(editor: LogicEditor, SubclassDef: ReturnType<typeof Gate1Def | typeof GateNDef>, type: TGateType, savedData: TRepr | null) {
-        super(editor, SubclassDef, savedData)
+    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, LogicValue>, type: TGateType, saved?: TRepr) {
+        super(editor, SubclassDef, saved)
 
         this._type = type
-        if (isNotNull(savedData)) {
-            this._poseAs = savedData.poseAs as TGateType
-            this._showAsUnknown = savedData.showAsUnknown ?? false
+        if (isDefined(saved)) {
+            this._poseAs = saved.poseAs as TGateType
+            this._showAsUnknown = saved.showAsUnknown ?? false
         }
     }
 
@@ -513,16 +512,15 @@ export const Gate1Def =
     })
 
 export type Gate1Repr = Repr<typeof Gate1Def>
-export type Gate1Params = Params<typeof Gate1Def>
+export type Gate1Params = ResolvedParams<typeof Gate1Def>
 
 
 export class Gate1 extends GateBase<Gate1Repr> {
 
     public get numBits() { return 1 }
 
-    public constructor(editor: LogicEditor, initData: Either<Gate1Params, Gate1Repr>) {
-        const [params, savedData] = Gate1Def.validate(initData)
-        super(editor, Gate1Def(params), params.type, savedData)
+    public constructor(editor: LogicEditor, params: Gate1Params, saved?: Gate1Repr) {
+        super(editor, Gate1Def.with(params), params.type, saved)
     }
 
     protected gateTypes() { return Gate1Types }
@@ -543,6 +541,7 @@ export class Gate1 extends GateBase<Gate1Repr> {
     }
 
 }
+Gate1Def.impl = Gate1
 
 
 
@@ -587,16 +586,15 @@ export const GateNDef =
     })
 
 export type GateNRepr = Repr<typeof GateNDef>
-export type GateNParams = Params<typeof GateNDef>
+export type GateNParams = ResolvedParams<typeof GateNDef>
 
 
 export class GateN extends GateBase<GateNRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, initData: Either<GateNParams, GateNRepr>) {
-        const [params, savedData] = GateNDef.validate(initData)
-        super(editor, GateNDef(params), params.type, savedData)
+    public constructor(editor: LogicEditor, params: GateNParams, saved?: GateNRepr) {
+        super(editor, GateNDef.with(params), params.type, saved)
         this.numBits = params.numBits
     }
 
@@ -641,6 +639,7 @@ export class GateN extends GateBase<GateNRepr> {
     }
 
 }
+GateNDef.impl = GateN
 
 
 

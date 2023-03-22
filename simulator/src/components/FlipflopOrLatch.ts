@@ -2,8 +2,8 @@ import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawValueText, drawWireLineToComponent } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, isNull, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentDef, defineAbstractComponent, InOutRecs, NodesIn, NodesOut, Repr } from "./Component"
+import { isDefined, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, defineAbstractComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { NodeIn } from "./Node"
 
@@ -29,20 +29,21 @@ export const FlipflopOrLatchDef =
                 },
             }
         },
-        initialValue: (savedData, defaults): [LogicValue, LogicValue] => {
-            if (isNull(savedData)) {
+        initialValue: (saved, defaults): [LogicValue, LogicValue] => {
+            if (isUndefined(saved)) {
                 return [false, true]
             }
-            const state = isUndefined(savedData.state) ? defaults.state : toLogicValue(savedData.state)
+            const state = isUndefined(saved.state) ? defaults.state : toLogicValue(saved.state)
             return [state, LogicValue.invert(state)]
         },
     })
 
 export type FlipflopOrLatchRepr = Repr<typeof FlipflopOrLatchDef>
+export type FlipflopOrLatchValue = [LogicValue, LogicValue]
 
 export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends ComponentBase<
     TRepr,
-    [LogicValue, LogicValue],
+    FlipflopOrLatchValue,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
     true, true
@@ -51,10 +52,10 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
     protected _showContent: boolean = FlipflopOrLatchDef.aults.showContent
     protected _isInInvalidState = false
 
-    protected constructor(editor: LogicEditor, SubclassDef: ComponentDef<t.Mixed, InOutRecs, [LogicValue, LogicValue], any> /* TODO */, savedData: TRepr | null) {
-        super(editor, SubclassDef, savedData)
-        if (isNotNull(savedData)) {
-            this._showContent = savedData.showContent ?? FlipflopOrLatchDef.aults.showContent
+    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
+        super(editor, SubclassDef, saved)
+        if (isDefined(saved)) {
+            this._showContent = saved.showContent ?? FlipflopOrLatchDef.aults.showContent
         }
     }
 
@@ -148,6 +149,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
 export const EdgeTrigger = {
     rising: "rising",
     falling: "falling",
+    both: "both",
 } as const
 
 export type EdgeTrigger = keyof typeof EdgeTrigger
@@ -198,10 +200,10 @@ export abstract class Flipflop<
     protected _lastClock: LogicValue = Unknown
     protected _trigger: EdgeTrigger = FlipflopBaseDef.aults.trigger
 
-    protected constructor(editor: LogicEditor, SubclassDef: ComponentDef<t.Mixed, InOutRecs, [LogicValue, LogicValue], any> /* TODO */, savedData: TRepr | null) {
-        super(editor, SubclassDef, savedData)
-        if (isNotNull(savedData)) {
-            this._trigger = savedData.trigger ?? FlipflopBaseDef.aults.trigger
+    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
+        super(editor, SubclassDef, saved)
+        if (isDefined(saved)) {
+            this._trigger = saved.trigger ?? FlipflopBaseDef.aults.trigger
         }
     }
 

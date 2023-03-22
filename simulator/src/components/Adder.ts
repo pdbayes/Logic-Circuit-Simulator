@@ -32,8 +32,8 @@ type AdderRepr = Repr<typeof AdderDef>
 
 export class Adder extends ComponentBase<AdderRepr> {
 
-    public constructor(editor: LogicEditor, savedData: AdderRepr | null) {
-        super(editor, AdderDef, savedData)
+    public constructor(editor: LogicEditor, saved?: AdderRepr) {
+        super(editor, AdderDef, saved)
     }
 
     public toJSON() {
@@ -140,3 +140,4 @@ export class Adder extends ComponentBase<AdderRepr> {
 
 
 }
+AdderDef.impl = Adder

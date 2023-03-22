@@ -1,23 +1,26 @@
 import dialogPolyfill from 'dialog-polyfill'
+import * as LZString from "lz-string"
+import * as pngMeta from 'png-metadata-writer'
+import { ComponentList, DrawZIndex } from "./ComponentList"
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { clampZoom, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
-import { gallery } from "./gallery"
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
+import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager, Workspace } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
+import { DefaultLang, isLang, S, setLang } from "./strings"
+import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
-import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isNotNull, isNull, isNullOrUndefined, isString, isTruthyString, isUndefined, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { UndoManager } from './UndoManager'
+import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
-import * as LZString from "lz-string"
-import * as pngMeta from 'png-metadata-writer'
-// import * as QRCode from "qrcode"
-// import * as C2S from "canvas2svg"
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -30,14 +33,7 @@ import LogicEditorCSS from "../css/LogicEditor.css"
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
-import { ComponentFactory } from "./ComponentFactory"
-import { ComponentList, DrawZIndex } from "./ComponentList"
-import { LabelRect } from "./components/LabelRect"
-import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
-import { DefaultLang, isLang, S, setLang } from "./strings"
-import { Tests } from "./Tests"
-import { UndoManager } from './UndoManager'
-
+import { gallery } from './gallery'
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -307,7 +303,7 @@ export class LogicEditor extends HTMLElement {
 
     public setActiveTool(toolElement: HTMLElement) {
         const tool = toolElement.getAttribute("tool")
-        if (isNullOrUndefined(tool)) {
+        if (isUndefinedOrNull(tool)) {
             return
         }
 
@@ -364,7 +360,7 @@ export class LogicEditor extends HTMLElement {
         const { rootDiv, mainCanvas } = this.html
 
         const parentStyles = this.getAttribute("style")
-        if (isNotNull(parentStyles)) {
+        if (parentStyles !== null) {
             rootDiv.setAttribute("style", rootDiv.getAttribute("style") + parentStyles)
         }
 
@@ -379,7 +375,7 @@ export class LogicEditor extends HTMLElement {
             return false
         }
         mainCanvas.ondrop = e => {
-            if (isNull(e.dataTransfer)) {
+            if (e.dataTransfer === null) {
                 return false
             }
 
@@ -513,7 +509,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (this._isSingleton) {
-            console.log("LogicEditor is in singleton mode")
+            // console.log("LogicEditor is in singleton mode")
 
             // singletons manage their dark mode according to system settings
             const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
@@ -793,8 +789,8 @@ export class LogicEditor extends HTMLElement {
                 if (selectedComps.size !== 0) {
                     e.preventDefault()
                     e.stopImmediatePropagation()
-                    const factory = ComponentFactory.makeFactoryForButton(groupButton as HTMLElement)
-                    const newGroup = factory(this, undefined)
+
+                    const newGroup = LabelRectDef.make<LabelRect>(this)
                     newGroup.setSpawned()
 
                     if (newGroup instanceof LabelRect) {

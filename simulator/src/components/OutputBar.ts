@@ -3,7 +3,7 @@ import { COLOR_COMPONENT_BORDER, COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_MOUSE
 import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { HighImpedance, isDefined, isHighImpedance, isNotNull, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { HighImpedance, isDefined, isHighImpedance, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
@@ -66,13 +66,13 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
     private _transparent = OutputBarDef.aults.transparent
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, savedData: OutputBarRepr | null) {
-        super(editor, OutputBarDef, savedData)
-        if (isNotNull(savedData)) {
-            this.doSetDisplay(savedData.display)
-            this._color = savedData.color ?? OutputBarDef.aults.color
-            this._transparent = savedData.transparent ?? OutputBarDef.aults.transparent
-            this._name = savedData.name
+    public constructor(editor: LogicEditor, saved?: OutputBarRepr) {
+        super(editor, OutputBarDef, saved)
+        if (isDefined(saved)) {
+            this.doSetDisplay(saved.display)
+            this._color = saved.color ?? OutputBarDef.aults.color
+            this._transparent = saved.transparent ?? OutputBarDef.aults.transparent
+            this._name = saved.name
         } else {
             this.updateInputOffsetX()
         }
@@ -258,3 +258,4 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
     }
 
 }
+OutputBarDef.impl = OutputBar

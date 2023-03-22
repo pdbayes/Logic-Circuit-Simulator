@@ -38,8 +38,8 @@ type DecoderBCD4Repr = Repr<typeof DecoderBCD4Def>
 
 export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
 
-    public constructor(editor: LogicEditor, savedData: DecoderBCD4Repr | null) {
-        super(editor, DecoderBCD4Def, savedData)
+    public constructor(editor: LogicEditor, saved?: DecoderBCD4Repr) {
+        super(editor, DecoderBCD4Def, saved)
     }
 
     public toJSON() {
@@ -141,5 +141,5 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
         ]
     }
 
-
 }
+DecoderBCD4Def.impl = DecoderBCD4

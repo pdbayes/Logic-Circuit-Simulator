@@ -30,7 +30,7 @@ type _SumUp<T extends Record<string, number>, Keys, Result extends number = 0> =
     : Result
 type SumUp<T extends Record<string, number>> = _SumUp<T, TuplifyUnion<keyof T>>
 
-export type CountNodes<TRec extends NodeRec<any>> = SumUp<MappedNodeCountOf<TRec>>
+type CountNodes<TRec extends NodeRec<any>> = SumUp<MappedNodeCountOf<TRec>>
 
 const ALUNodes = {
     ins: {
@@ -65,5 +65,5 @@ const ALUNodes = {
     },
 }
 
-type ShouldBeLiteralTypeWithTS5 = CountNodes<typeof ALUNodes["ins"]>
+type __ShouldBeLiteralTypeWithTS5 = CountNodes<typeof ALUNodes["ins"]>
 

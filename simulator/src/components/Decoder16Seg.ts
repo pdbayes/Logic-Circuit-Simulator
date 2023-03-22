@@ -53,8 +53,8 @@ type Decoder16SegRepr = Repr<typeof Decoder16SegDef>
 
 export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
 
-    public constructor(editor: LogicEditor, savedData: Decoder16SegRepr | null) {
-        super(editor, Decoder16SegDef, savedData)
+    public constructor(editor: LogicEditor, saved?: Decoder16SegRepr) {
+        super(editor, Decoder16SegDef, saved)
     }
 
     public toJSON() {
@@ -143,8 +143,9 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
         ]
     }
 
-
 }
+Decoder16SegDef.impl = Decoder16Seg
+
 
 // Taken and modified from https://github.com/dmadison/LED-Segment-ASCII
 const DECODER_MAPPING = [

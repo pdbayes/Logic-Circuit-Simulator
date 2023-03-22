@@ -28,8 +28,8 @@ type LatchSRRepr = Repr<typeof LatchSRDef>
 
 export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
 
-    public constructor(editor: LogicEditor, savedData: LatchSRRepr | null) {
-        super(editor, LatchSRDef, savedData)
+    public constructor(editor: LogicEditor, saved?: LatchSRRepr) {
+        super(editor, LatchSRDef, saved)
     }
 
     public toJSON() {
@@ -109,3 +109,4 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
     }
 
 }
+LatchSRDef.impl = LatchSR

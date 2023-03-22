@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawComponentName, drawLabel, drawWireLineToComponent, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, isDefined, isNotNull, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ArrayFillUsing, ArrayFillWith, isDefined, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
@@ -50,11 +49,11 @@ export const InputRandomDef =
                 },
             }
         },
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
 export type InputRandomRepr = Repr<typeof InputRandomDef>
-export type InputRandomParams = Params<typeof InputRandomDef>
+export type InputRandomParams = ResolvedParams<typeof InputRandomDef>
 
 
 export class InputRandom extends ComponentBase<InputRandomRepr> {
@@ -66,18 +65,17 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
     private _trigger: EdgeTrigger = InputRandomDef.aults.trigger
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, initData: Either<InputRandomParams, InputRandomRepr>) {
-        const [params, savedData] = InputRandomDef.validate(initData)
-        super(editor, InputRandomDef(params), savedData)
+    public constructor(editor: LogicEditor, params: InputRandomParams, saved?: InputRandomRepr) {
+        super(editor, InputRandomDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isNotNull(savedData)) {
-            if (isDefined(savedData.prob1)) {
-                this._prob1 = Math.max(0, Math.min(1, savedData.prob1))
+        if (isDefined(saved)) {
+            if (isDefined(saved.prob1)) {
+                this._prob1 = Math.max(0, Math.min(1, saved.prob1))
             }
-            this._showProb = savedData.showProb ?? InputRandomDef.aults.showProb
-            this._trigger = savedData.trigger ?? InputRandomDef.aults.trigger
-            this._name = savedData.name
+            this._showProb = saved.showProb ?? InputRandomDef.aults.showProb
+            this._trigger = saved.trigger ?? InputRandomDef.aults.trigger
+            this._name = saved.name
         }
     }
 
@@ -220,3 +218,4 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
     }
 
 }
+InputRandomDef.impl = InputRandom

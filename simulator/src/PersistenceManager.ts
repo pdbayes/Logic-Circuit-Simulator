@@ -1,16 +1,9 @@
-import * as t from "io-ts"
-import { PathReporter } from 'io-ts/PathReporter'
-import { Component, ComponentBase, ComponentCategories, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
-import { GateDef, GateFactory } from "./components/Gates"
-import { ICDef, ICFactory } from "./components/IC"
-import { InputDef_, InputFactory } from "./components/Inputs"
-import { LabelDef, LabelFactory } from "./components/Labels"
-import { LayoutDef, LayoutFactory } from "./components/Layout"
-import { OutputDef_, OutputFactory } from "./components/Outputs"
+import { ComponentFactory } from "./ComponentFactory"
+import { ComponentCategories, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { Wire } from "./components/Wire"
 import { LogicEditor } from "./LogicEditor"
 import { stringifySmart } from "./stringifySmart"
-import { binaryStringRepr, isAllZeros, isArray, isDefined, isString, isUndefined, keysOf, toLogicValue } from "./utils"
+import { binaryStringRepr, isAllZeros, isArray, isDefined, isString, isUndefined, keysOf, toLogicValue, validateJson } from "./utils"
 
 export type Workspace = Record<string, unknown>
 
@@ -88,52 +81,27 @@ class _PersistenceManager {
         nodeMgr.clearAllLiveNodes()
         editor.timeline.reset()
 
-        function loadField<T>(fieldName: MainJsonFieldName | "wires", repr: t.Type<T, any> | { repr: t.Type<T, any> }, process: (params: T) => any) {
+        function loadField(fieldName: MainJsonFieldName | "wires", process: (obj: unknown) => any) {
             if (!(fieldName in parsedContents)) {
                 return
             }
-            const fieldValues = parsedContents[fieldName]
+            const objects = parsedContents[fieldName]
             delete parsedContents[fieldName]
 
-            if (!isArray(fieldValues)) {
+            if (!isArray(objects)) {
                 return
             }
-            if ("repr" in repr) {
-                repr = repr.repr
-            }
-            for (const someDefinition of fieldValues) {
-                const validated = repr.decode(someDefinition)
-                switch (validated._tag) {
-                    case "Left":
-                        console.log(`ERROR while parsing ${repr.name} from %o -> %s: `, someDefinition, PathReporter.report(validated).join("; "))
-                        break
-                    case "Right":
-                        process(validated.right)
-                        break
-                }
+            for (const obj of objects) {
+                process(obj)
             }
         }
 
-        type Factory<T> = {
-            make: (editor: LogicEditor, savedDataOrType: T, params: Record<string, unknown> | undefined) => Component | undefined
-        }
-
-        function loadComponentField<T>(fieldName: MainJsonFieldName, repr: t.Type<T, any> | { repr: t.Type<T, any> }, factory: Factory<T>) {
-            loadField(fieldName, repr, (d) => {
-                const comp = factory.make(editor, d, undefined)
-                if (isDefined(comp)) {
-                    const _comp = comp instanceof ComponentBase ? (comp as unknown as Component) : comp
-                    components.add(_comp)
-                }
+        for (const category of ComponentCategories) {
+            const fieldName = ComponentCategories.props[category].jsonFieldName
+            loadField(fieldName, obj => {
+                ComponentFactory.makeFromJSON(editor, category, obj)
             })
         }
-
-        loadComponentField("in", InputDef_, InputFactory)
-        loadComponentField("out", OutputDef_, OutputFactory)
-        loadComponentField("gates", GateDef, GateFactory as any)
-        loadComponentField("ic", ICDef, ICFactory)
-        loadComponentField("labels", LabelDef, LabelFactory)
-        loadComponentField("layout", LayoutDef, LayoutFactory)
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
@@ -141,7 +109,13 @@ class _PersistenceManager {
         const recalcMgr = editor.recalcMgr
         recalcMgr.recalcAndPropagateIfNeeded()
 
-        loadField("wires", Wire.Repr, ([nodeID1, nodeID2, wireOptions]) => {
+        loadField("wires", obj => {
+            const wireData = validateJson(obj, Wire.Repr, "wire")
+            if (isUndefined(wireData)) {
+                return
+            }
+
+            const [nodeID1, nodeID2, wireOptions] = wireData
             const node1 = nodeMgr.findNode(nodeID1)
             const node2 = nodeMgr.findNode(nodeID2)
             if (!isUndefined(node1) && !isUndefined(node2)) {

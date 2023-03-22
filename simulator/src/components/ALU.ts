@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isBoolean, isDefined, isHighImpedance, isNotNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Params, Repr, Value } from "./Component"
+import { ArrayFillWith, HighImpedance, isBoolean, isDefined, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Repr, ResolvedParams, Value } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 
 
@@ -44,14 +43,14 @@ export const ALUDef =
                 Cout: [-2, 10, "s", () => `Cout (${S.Components.ALU.OutputCoutDesc})`],
             },
         }),
-        initialValue: (savedData, { numBits }) => {
+        initialValue: (saved, { numBits }) => {
             const false_ = false as LogicValue
             return { s: ArrayFillWith(false_, numBits), v: false_, z: false_, cout: false_ }
         },
     })
 
 export type ALURepr = Repr<typeof ALUDef>
-export type ALUParams = Params<typeof ALUDef>
+export type ALUParams = ResolvedParams<typeof ALUDef>
 
 type ALUValue = Value<typeof ALUDef>
 
@@ -70,13 +69,12 @@ export class ALU extends ComponentBase<ALURepr> {
     public readonly numBits: number
     private _showOp = ALUDef.aults.showOp
 
-    public constructor(editor: LogicEditor, initData: Either<ALUParams, ALURepr>) {
-        const [params, savedData] = ALUDef.validate(initData)
-        super(editor, ALUDef(params), savedData)
+    public constructor(editor: LogicEditor, params: ALUParams, saved?: ALURepr) {
+        super(editor, ALUDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isNotNull(savedData)) {
-            this._showOp = savedData.showOp ?? ALUDef.aults.showOp
+        if (isDefined(saved)) {
+            this._showOp = saved.showOp ?? ALUDef.aults.showOp
         }
     }
 
@@ -403,4 +401,4 @@ export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicVa
     const z = allZeros(y)
     return { s: y, v, z, cout }
 }
-
+ALUDef.impl = ALU

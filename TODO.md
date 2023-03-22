@@ -22,6 +22,7 @@
 ## Medium priority
 
  * ROM
+ * Undo/redo as buttons
  * Add contextual menu to clock
  * Custom component creation
  * (Address) decoder: 2, 3, 4 bit versions

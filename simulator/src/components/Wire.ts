@@ -1,16 +1,15 @@
 import { Bezier, Offset } from "bezier-js"
-import { left } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, NodeStyle, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { Timestamp } from "../Timeline"
-import { InteractionResult, isArray, isDefined, isNotNull, isNull, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
+import { InteractionResult, isArray, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
 import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
-import { Passthrough } from "./Passthrough"
+import { Passthrough, PassthroughDef } from "./Passthrough"
 
 type WaypointRepr = t.TypeOf<typeof Waypoint.Repr>
 
@@ -23,9 +22,9 @@ export class Waypoint extends DrawableWithDraggablePosition {
         ], "Wire")
     }
 
-    public static toSuperRepr(saved: WaypointRepr | null): PositionSupportRepr | null {
-        if (isNull(saved)) {
-            return null
+    public static toSuperRepr(saved?: WaypointRepr | undefined): PositionSupportRepr | undefined {
+        if (isUndefined(saved)) {
+            return undefined
         }
         return {
             pos: [saved[0], saved[1]],
@@ -36,10 +35,10 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
     public constructor(
         editor: LogicEditor,
-        savedData: WaypointRepr | null,
+        saved: WaypointRepr | undefined,
         public readonly parent: Wire,
     ) {
-        super(editor, Waypoint.toSuperRepr(savedData))
+        super(editor, Waypoint.toSuperRepr(saved))
     }
 
     public toJSON(): WaypointRepr {
@@ -257,7 +256,7 @@ export class Wire extends Drawable {
         if (Node.isOutput(this._startNode)) {
             this._startNode.removeOutgoingWire(this)
         }
-        if (isNotNull(this._endNode)) {
+        if (this._endNode !== null) {
             this._endNode.incomingWire = null
         }
         // for (const waypoint of this._waypoints) {
@@ -270,21 +269,20 @@ export class Wire extends Drawable {
         // should either be null (wire being drawn) or alive
         // (wire set) for the wire to be alive
         return this.startNode.isAlive &&
-            (isNull(this.endNode) || this.endNode.isAlive)
+            (this.endNode === null || this.endNode.isAlive)
     }
 
     public addPassthroughFrom(e: MouseEvent | TouchEvent): Passthrough | undefined {
         const editor = this.editor
         const [x, y] = editor.offsetXYForContextMenu(e, true)
         const endNode = this.endNode
-        if (isNull(endNode)) {
+        if (endNode === null) {
             return undefined
         }
 
-        const passthrough = new Passthrough(editor, left({ bits: 1 }))
-        editor.components.add(passthrough)
+        const passthrough = PassthroughDef.make<Passthrough>(editor, { bits: 1 })
+        passthrough.setSpawned()
         passthrough.setPosition(x, y)
-        editor.moveMgr.setDrawableStoppedMoving(passthrough)
 
         // modify this wire to go to the passthrough
         this.setSecondNode(passthrough.inputs.I[0])
@@ -384,7 +382,7 @@ export class Wire extends Drawable {
         const drawTime = ctx.drawParams.drawTime
         const wireValue = this.prunePropagatingValues(drawTime, propagationDelay)
 
-        if (isNull(this.endNode)) {
+        if (this.endNode === null) {
             // draw to mouse position
             drawStraightWireLine(g, this.startNode.posX, this.startNode.posY, this.editor.mouseX, this.editor.mouseY, wireValue, this._startNode.color, neutral)
 

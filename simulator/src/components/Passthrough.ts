@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_NODE_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
@@ -50,11 +49,11 @@ export const PassthroughDef =
                 O: groupVertical("e", +1, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
 export type PassthroughRepr = Repr<typeof PassthroughDef>
-export type PassthroughParams = Params<typeof PassthroughDef>
+export type PassthroughParams = ResolvedParams<typeof PassthroughDef>
 
 
 export class Passthrough extends ComponentBase<PassthroughRepr> {
@@ -63,12 +62,11 @@ export class Passthrough extends ComponentBase<PassthroughRepr> {
     private _slant: Slant
     private _hShift: [number, number]
 
-    public constructor(editor: LogicEditor, initData: Either<PassthroughParams, PassthroughRepr>) {
-        const [params, savedData] = PassthroughDef.validate(initData)
-        super(editor, PassthroughDef(params), savedData)
+    public constructor(editor: LogicEditor, params: PassthroughParams, saved?: PassthroughRepr) {
+        super(editor, PassthroughDef.with(params), saved)
         this.numBits = params.numBits
         this._hShift = [0, 0] // updated by updateNodeOffsets
-        this._slant = savedData?.slant ?? PassthroughDef.aults.slant
+        this._slant = saved?.slant ?? PassthroughDef.aults.slant
         this.updateNodeOffsets()
     }
 
@@ -270,3 +268,4 @@ export class Passthrough extends ComponentBase<PassthroughRepr> {
     }
 
 }
+PassthroughDef.impl = Passthrough

@@ -1,27 +1,4 @@
-import * as t from "io-ts"
-import { GateDef } from "./components/Gates"
-import { ICDef } from "./components/IC"
-import { InputDef_ } from "./components/Inputs"
-import { OutputDef_ } from "./components/Outputs"
-import { Wire } from "./components/Wire"
-import { EditorOptions } from "./LogicEditor"
-import { PartialWhereUndefinedRecursively } from "./utils"
-
-const Circuit = t.partial({
-    in: t.array(InputDef_),
-    out: t.array(OutputDef_),
-    gates: t.array(GateDef),
-    ic: t.array(ICDef),
-    wires: t.array(Wire.Repr),
-})
-type Circuit = { v: 5, opts?: Partial<EditorOptions> } & PartialWhereUndefinedRecursively<t.TypeOf<typeof Circuit>>
-
-function assertCircuits<T extends Record<string, Circuit>>(v: T): T {
-    // remove prototype to have a nice, clean completion in the console
-    return Object.assign(Object.create(null), v)
-}
-
-export const gallery = assertCircuits({
+export const gallery = {
     CharacterComparator: {
         "v": 5,
         "in": [
@@ -961,5 +938,4 @@ export const gallery = assertCircuits({
             [132, 41],
         ],
     },
-})
-
+}

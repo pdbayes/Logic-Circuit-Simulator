@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { DrawContext } from "./Drawable"
 
 
@@ -36,21 +35,20 @@ export const SwitchedInverterDef =
                 O: groupVertical("e", +3, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
 
 export type SwitchedInverterRepr = Repr<typeof SwitchedInverterDef>
-export type SwitchedInverterParams = Params<typeof SwitchedInverterDef>
+export type SwitchedInverterParams = ResolvedParams<typeof SwitchedInverterDef>
 
 
 export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, initData: Either<SwitchedInverterParams, SwitchedInverterRepr>) {
-        const [params, savedData] = SwitchedInverterDef.validate(initData)
-        super(editor, SwitchedInverterDef(params), savedData)
+    public constructor(editor: LogicEditor, params: SwitchedInverterParams, saved?: SwitchedInverterRepr) {
+        super(editor, SwitchedInverterDef.with(params), saved)
         this.numBits = params.numBits
     }
 
@@ -139,4 +137,4 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
         }
     }
 }
-
+SwitchedInverterDef.impl = SwitchedInverter

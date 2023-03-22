@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { GRID_STEP, useCompact } from "../drawutils"
 import { ImageName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryItem } from "../menuutils"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNotNull, isNullOrUndefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -16,7 +15,7 @@ type NodeSeqRepr<TFullNodeRepr> =
 export const NodeSeqRepr = <T>(fullNodeRepr: t.Type<T>) =>
     t.union([
         t.number, // just the ID
-        t.string,
+        t.string, // a range of IDs as string
         fullNodeRepr,
         t.array(t.union([
             t.number,
@@ -50,13 +49,13 @@ type OutputNodeSeqRepr = t.TypeOf<typeof OutputNodeSeqRepr>
 // If both inputs and outputs are present, we have separate "in" and "out" fields.
 
 // These are just 3 intermediate types
-const OnlyInNodeIds = t.type({ id: InputNodeSeqRepr })
+const OnlyInNodeIds = t.partial({ id: InputNodeSeqRepr })
 type OnlyInNodeIds = t.TypeOf<typeof OnlyInNodeIds>
 
-const OnlyOutNodeIds = t.type({ id: OutputNodeSeqRepr })
+const OnlyOutNodeIds = t.partial({ id: OutputNodeSeqRepr })
 type OnlyOutNodeIds = t.TypeOf<typeof OnlyOutNodeIds>
 
-const InAndOutNodeIds = t.type({
+const InAndOutNodeIds = t.partial({
     in: InputNodeSeqRepr,
     out: OutputNodeSeqRepr,
 })
@@ -272,21 +271,23 @@ export abstract class ComponentBase<
     private _value: TValue
     public readonly inputs: TInputNodes
     public readonly outputs: TOutputNodes
+    public readonly inputGroups: Map<string, NodeGroup<NodeIn>>
+    public readonly outputGroups: Map<string, NodeGroup<NodeOut>>
 
     protected constructor(
         editor: LogicEditor,
-        componentDef: ComponentDef<t.Mixed, InOutRecs, TValue, any>, // TODO specify this better
-        savedData: TRepr | null
+        def: InstantiatedComponentDef<TRepr, TValue>,
+        saved: TRepr | undefined
     ) {
-        super(editor, savedData)
+        super(editor, saved)
 
-        this.category = componentDef.category
-        this._width = componentDef.size.gridWidth * GRID_STEP
-        this._height = componentDef.size.gridHeight * GRID_STEP
-        this._value = componentDef.initialValue(savedData, componentDef.aults)
+        this.category = def.category
+        this._width = def.size.gridWidth * GRID_STEP
+        this._height = def.size.gridHeight * GRID_STEP
+        this._value = def.initialValue(saved)
 
-        const ins = componentDef.nodeRecs.ins
-        const outs = componentDef.nodeRecs.outs
+        const ins = def.nodeRecs.ins
+        const outs = def.nodeRecs.outs
 
         function countNodes(rec: NodeRec<NodeDesc> | undefined) {
             if (isUndefined(rec)) {
@@ -312,7 +313,7 @@ export abstract class ComponentBase<
         const numInputs = countNodes(ins)
         const numOutputs = countNodes(outs)
 
-        if (isNotNull(savedData)) {
+        if (isDefined(saved)) {
             // restoring
             this._state = ComponentState.SPAWNED
         } else {
@@ -323,7 +324,7 @@ export abstract class ComponentBase<
 
         // build node specs either from scratch if new or from saved data
         const [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues] =
-            this.nodeSpecsFromRepr(savedData, numInputs, numOutputs)
+            this.nodeSpecsFromRepr(saved, numInputs, numOutputs);
 
         // so, hasAnyPrecomputedInitialValues is true if ANY of the outputs was built
         // with "initialValue" in the JSON. This is used to stabilize circuits (such as
@@ -333,8 +334,8 @@ export abstract class ComponentBase<
         // to set all of them.
 
         // generate the input and output nodes
-        this.inputs = this.makeNodes(ins, inputSpecs, NodeIn) as TInputNodes
-        this.outputs = this.makeNodes(outs, outputSpecs, NodeOut) as TOutputNodes
+        [this.inputs, this.inputGroups] = this.makeNodes(ins, inputSpecs, NodeIn) as [TInputNodes, Map<string, NodeGroup<NodeIn>>];
+        [this.outputs, this.outputGroups] = this.makeNodes(outs, outputSpecs, NodeOut) as [TOutputNodes, Map<string, NodeGroup<NodeOut>>]
 
         // setNeedsRecalc with a force propadation is needed:
         // * the forced propagation allows the current value (e.g. for InputBits)
@@ -373,7 +374,7 @@ export abstract class ComponentBase<
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
             group: NodeGroup<TNode> | undefined,
-            name: string | undefined,
+            name: string,
             _gridOffsetX: number,
             _gridOffsetY: number,
             orient: Orientation,
@@ -381,6 +382,8 @@ export abstract class ComponentBase<
 
         const nodes: Record<string, TNode | ReadonlyArray<TNode> | ReadonlyArray<ReadonlyArray<TNode>>> = {}
         const allNodes: TNode[] = []
+        const nodeGroups: Map<string, NodeGroup<TNode>> = new Map()
+
         if (isDefined(nodeRec)) {
             const makeNode = (group: NodeGroup<TNode> | undefined, defaultName: string, desc: TDesc) => {
                 const spec = specs[nextSpecIndex++]
@@ -415,6 +418,7 @@ export abstract class ComponentBase<
                     // group
                     const makeNodesForGroup = (groupDesc: NodeGroupDesc<TDesc>) => {
                         const group = new NodeGroup<TNode>(this, fieldName)
+                        nodeGroups.set(fieldName, group)
                         for (let i = 0; i < groupDesc.length; i++) {
                             group.addNode(makeNode(group, `${fieldName}${i}`, groupDesc[i]))
                         }
@@ -434,36 +438,41 @@ export abstract class ComponentBase<
             }
         }
         nodes._all = allNodes
-        return nodes
+        return [nodes, nodeGroups]
     }
 
     // generates two arrays of normalized node specs either as loaded from
     // JSON or obtained with default values when _repr is null and we're
     // creating a new component from scratch
-    private nodeSpecsFromRepr(_repr: NodeIDsRepr<THasIn, THasOut> | null, numInputs: number, numOutputs: number): [
+    private nodeSpecsFromRepr(_repr: NodeIDsRepr<THasIn, THasOut> | undefined, numInputs: number, numOutputs: number): [
         inputSpecs: Array<InputNodeRepr>,
         outputSpecs: Array<OutputNodeRepr>,
         hasAnyPrecomputedInitialValues: boolean
     ] {
         const nodeMgr = this.editor.nodeMgr
+        const makeDefaultSpec = () => ({ id: nodeMgr.newID() })
+        const makeDefaultSpecArray = (len: number) => ArrayFillUsing(makeDefaultSpec, len)
 
-        if (_repr === null) {
-            const makeDefaultSpec = () =>
-                ({ id: nodeMgr.newID() })
+        if (isUndefined(_repr)) {
             return [
-                ArrayFillUsing(makeDefaultSpec, numInputs),
-                ArrayFillUsing(makeDefaultSpec, numOutputs),
+                makeDefaultSpecArray(numInputs),
+                makeDefaultSpecArray(numOutputs),
                 false,
             ]
         }
 
-        const inputSpecs: InputNodeRepr[] = []
-        const outputSpecs: OutputNodeRepr[] = []
+        let inputSpecs: InputNodeRepr[] = []
+        let outputSpecs: OutputNodeRepr[] = []
 
         const makeNormalizedSpecs = <TNodeNormized extends InputNodeRepr | OutputNodeRepr>(
-            specs: Array<TNodeNormized>,
-            seqRepr: ArrayOrDirect<string | number | TNodeNormized>,
+            num: number,
+            seqRepr?: ArrayOrDirect<string | number | TNodeNormized>,
         ) => {
+            if (isUndefined(seqRepr)) {
+                return makeDefaultSpecArray(num)
+            }
+
+            const specs: Array<TNodeNormized> = []
             function pushId(id: number) {
                 specs.push({ id } as TNodeNormized)
                 nodeMgr.markIDUsed(id)
@@ -482,6 +491,7 @@ export abstract class ComponentBase<
                     nodeMgr.markIDUsed(spec.id)
                 }
             }
+            return specs
         }
 
         // manually distinguishing the cases where we have no inputs or no
@@ -489,15 +499,15 @@ export abstract class ComponentBase<
         if (numInputs !== 0) {
             if (numOutputs !== 0) {
                 const repr = _repr as InAndOutNodeIds
-                makeNormalizedSpecs(inputSpecs, repr.in)
-                makeNormalizedSpecs(outputSpecs, repr.out)
+                inputSpecs = makeNormalizedSpecs(numInputs, repr.in)
+                outputSpecs = makeNormalizedSpecs(numOutputs, repr.out)
             } else {
                 const repr = _repr as OnlyInNodeIds
-                makeNormalizedSpecs(inputSpecs, repr.id)
+                inputSpecs = makeNormalizedSpecs(numInputs, repr.id)
             }
         } else if (numOutputs !== 0) {
             const repr = _repr as OnlyOutNodeIds
-            makeNormalizedSpecs(outputSpecs, repr.id)
+            outputSpecs = makeNormalizedSpecs(numOutputs, repr.id)
         }
 
         const hasAnyPrecomputedInitialValues =
@@ -993,16 +1003,21 @@ export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, n
 /** Represents the JSON object holding properties from the passed component def */
 export type Repr<TDef>
     // case: Regular, unparameterized component def
-    = TDef extends ComponentDef<infer TRepr, infer TInOutRecs, infer TValue, infer __TValueDefaults>
-    ? Expand<t.TypeOf<TRepr> & {
+    = TDef extends ComponentDef<infer TTypeName, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TProps, infer THasIn, infer THasOut, infer __TWeakRepr>
+    ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
         }
-    }>
+    }
     // case: Parameterized component def, check return type
-    : TDef extends (...args: any) => infer TReturn
-    ? Repr<TReturn>
+    : TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer __TParams, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
+    ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
+        _META?: {
+            nodeRecs: TInOutRecs,
+            value: TValue,
+        }
+    }
     // case: Abstract base component def
     : TDef extends {
         repr: infer TProps extends t.Props,
@@ -1017,17 +1032,19 @@ export type Repr<TDef>
     }>
     : never
 
-export type Value<TDef extends (...args: any) => any>
-    = ReturnType<TDef> extends { initialValue: (...args: any) => infer TValue }
+export type Value<TDef>
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParams, infer __TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
     ? TValue : never
 
-function typeField<
-    TTypeName extends string | undefined
->(type: TTypeName):
+type TypeFieldProp<TTypeName extends string | undefined>
     // eslint-disable-next-line @typescript-eslint/ban-types
-    undefined extends TTypeName ? {}
+    = undefined extends TTypeName ? {}
     : TTypeName extends string ? { type: t.LiteralC<TTypeName> }
-    : never {
+    : never
+
+function typeFieldProp<
+    TTypeName extends string | undefined
+>(type: TTypeName): TypeFieldProp<TTypeName> {
 
     if (isUndefined(type)) {
         return {} as any
@@ -1044,7 +1061,7 @@ function makeComponentRepr<
     THasOut extends boolean,
 >(type: TTypeName, hasIn: THasIn, hasOut: THasOut, props: TProps) {
     return t.intersection([t.type({
-        ...typeField(type),
+        ...typeFieldProp(type),
         ...props,
     }), ComponentRepr(hasIn, hasOut)], type)
 }
@@ -1055,24 +1072,92 @@ function makeComponentRepr<
 // ComponentDef and friends
 //
 
-export type ComponentDef<
-    TComp extends t.Mixed,
-    TInOutRecs extends InOutRecs,
-    TValue,
-    TValueDefaults extends Record<string, unknown>
-> = {
-    category: ComponentCategory,
-    button: (visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions) => LibraryItem
-    repr: TComp,
-    nodeRecs: TInOutRecs,
-    aults: TValueDefaults,
-    size: ComponentGridSize,
-    initialValue: (savedData: t.TypeOf<TComp> | null, defaults: TValueDefaults) => TValue,
-}
-
 export type ComponentGridSize = { gridWidth: number, gridHeight: number }
 
-export type LibraryButtonOptions = { variantNameCompat?: string, normallyHidden?: boolean }
+export type InstantiatedComponentDef<
+    TRepr extends t.TypeOf<t.Mixed>,
+    TValue,
+> = {
+    category: ComponentCategory,
+    size: ComponentGridSize,
+    nodeRecs: InOutRecs,
+    initialValue: (saved: TRepr | undefined) => TValue,
+}
+
+export type LibraryButtonProps = { imgWidth: number }
+export type LibraryButtonOptions = { compat?: string, hidden?: boolean }
+
+export class ComponentDef<
+    TTypeName extends string | undefined,
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    TProps extends t.Props = {},
+    THasIn extends boolean = HasField<TInOutRecs, "ins">,
+    THasOut extends boolean = HasField<TInOutRecs, "outs">,
+    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
+> implements InstantiatedComponentDef<TRepr, TValue> {
+
+    public readonly nodeRecs: TInOutRecs
+    public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
+
+    public impl: (new (editor: LogicEditor, saved?: TRepr) => Component) = undefined as any
+
+    public constructor(
+        public readonly category: ComponentCategory,
+        public readonly type: TTypeName,
+        public readonly aults: TValueDefaults,
+        public readonly size: ComponentGridSize,
+        private readonly _buttonProps: LibraryButtonProps,
+        private readonly _initialValue: (saved: t.TypeOf<t.TypeC<TProps>> | undefined, defaults: TValueDefaults) => TValue,
+        makeNodes: (size: ComponentGridSize, defaults: TValueDefaults) => TInOutRecs,
+        repr?: TProps,
+    ) {
+        const nodes = makeNodes(size, aults)
+        this.nodeRecs = nodes
+
+        const hasIn = ("ins" in nodes) as THasIn
+        const hasOut = ("outs" in nodes) as THasOut
+        this.repr = makeComponentRepr(type, hasIn, hasOut, repr ?? ({} as TProps)) as any
+    }
+
+    public isValid() {
+        return isDefined(this.impl)
+    }
+
+    public initialValue(saved?: TRepr): TValue {
+        return this._initialValue(saved, this.aults)
+    }
+
+    public button(visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem {
+        return {
+            category: this.category,
+            type: this.type,
+            visual,
+            width: this._buttonProps.imgWidth,
+            ...options,
+        }
+    }
+
+    public make<TComp extends Component>(editor: LogicEditor): TComp {
+        const comp = new this.impl(editor)
+        editor.components.add(comp)
+        return comp as TComp
+    }
+
+    public makeFromJSON(editor: LogicEditor, data: Record<string, unknown>): Component | undefined {
+        const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
+        if (isUndefined(validated)) {
+            return undefined
+        }
+        const comp = new this.impl(editor, validated)
+        editor.components.add(comp)
+        return comp
+    }
+
+}
+
 
 
 export function defineComponent<
@@ -1082,38 +1167,21 @@ export function defineComponent<
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
     // eslint-disable-next-line @typescript-eslint/ban-types
     TProps extends t.Props = {},
-    THasIn extends boolean = HasField<TInOutRecs, "ins">,
-    THasOut extends boolean = HasField<TInOutRecs, "outs">,
 >(
     category: ComponentCategory, type: TTypeName,
-    { button, repr, makeNodes, valueDefaults, size, initialValue }: {
-        button: { imgWidth: number },
+    { button, repr, valueDefaults, size, makeNodes, initialValue }: {
+        button: LibraryButtonProps,
         repr?: TProps,
         valueDefaults: TValueDefaults,
         size: ComponentGridSize,
         makeNodes: (size: ComponentGridSize, defaults: TValueDefaults) => TInOutRecs,
-        initialValue?: (savedData: t.TypeOf<t.TypeC<TProps>> | null, defaults: TValueDefaults) => TValue
-    }) {
-    const nodes = makeNodes(size, valueDefaults)
-    const hasIn = ("ins" in nodes) as THasIn
-    const hasOut = ("outs" in nodes) as THasOut
-    const componentRepr = makeComponentRepr<TTypeName, TProps, THasIn, THasOut>(type, hasIn, hasOut, repr ?? {} as TProps)
-
-    return {
-        category,
-        button: (visual, options?) => ({
-            category, type,
-            visual,
-            width: button.imgWidth,
-            ...options,
-        }),
-        repr: componentRepr,
-        nodeRecs: nodes,
-        aults: valueDefaults,
-        size,
-        initialValue: initialValue ?? (() => undefined as TValue),
-    } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
+        initialValue?: (saved: t.TypeOf<t.TypeC<TProps>> | undefined, defaults: TValueDefaults) => TValue
+    }
+) {
+    return new ComponentDef(category, type, valueDefaults, size, button, initialValue ?? (() => undefined as TValue), makeNodes, repr,)
 }
+
+
 
 export function defineAbstractComponent<
     TProps extends t.Props,
@@ -1129,7 +1197,7 @@ export function defineAbstractComponent<
         valueDefaults: TValueDefaults,
         size: ComponentGridSize,
         makeNodes: (...args: TArgs) => TInOutRecs,
-        initialValue: (savedData: TRepr | null, defaults: TValueDefaults) => TValue
+        initialValue: (saved: TRepr | undefined, defaults: TValueDefaults) => TValue
     },
 ) {
     return {
@@ -1144,28 +1212,115 @@ export function defineAbstractComponent<
 // ParameterizedComponentDef and friends
 //
 
-export type ParametrizedComponentDef<
+export class ParametrizedComponentDef<
     TTypeName extends string | undefined,
+    THasIn extends boolean,
+    THasOut extends boolean,
+    TVariantName extends (undefined extends TTypeName ? string : `${TTypeName}-${string}`),
+    TProps extends t.Props,
     TParams extends Record<string, unknown>,
-// TInOutRecs extends InOutRecs,
-// TValue,
-// TValueDefaults extends Record<string, unknown>
-> = {
-    type: TTypeName,
-    category: ComponentCategory,
-    variantName: (params: TParams) => string,
-    defaultParams: TParams,
-    repr: t.Mixed,
-    // validateParams: (params: TParams) => any,
-    // (params: TParams): ComponentDef<TComp, TInOutRecs, TValue, TValueDefaults>,
+    TInOutRecs extends InOutRecs,
+    TValue,
+    TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
+    TResolvedParams extends Record<string, unknown> = TParams,
+    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
+> {
+
+    public readonly aults: TValueDefaults & TParams
+    public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
+
+    public impl: (new (editor: LogicEditor, params: TResolvedParams, saved?: TRepr) => Component) = undefined as any
+
+    public constructor(
+        public readonly category: ComponentCategory,
+        public readonly type: TTypeName,
+        hasIn: THasIn,
+        hasOut: THasOut,
+        public readonly variantName: (params: TParams) => TVariantName,
+        private readonly _buttonProps: LibraryButtonProps,
+        repr: TProps,
+        valueDefaults: TValueDefaults,
+        public readonly defaultParams: TParams,
+        private readonly _makeSize: (params: TResolvedParams) => ComponentGridSize,
+        private readonly _makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
+        private readonly _initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
+        private readonly _validateParams: (params: TParams, paramDefaults: TParams) => TResolvedParams,
+    ) {
+        this.aults = { ...valueDefaults, ...defaultParams }
+        this.repr = makeComponentRepr(type, hasIn, hasOut, repr ?? ({} as TProps)) as any
+    }
+
+    public isValid() {
+        return isDefined(this.impl)
+    }
+
+    public with(params: TResolvedParams): InstantiatedComponentDef<TRepr, TValue> {
+        const size = this._makeSize(params)
+        const nodes = this._makeNodes({ ...size, ...params }, this.aults)
+        return {
+            category: this.category,
+            size,
+            nodeRecs: nodes,
+            initialValue: (saved: TRepr | undefined) => this._initialValue(saved, params),
+        }
+    }
+
+    public button(params: TParams, visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem {
+        const completedType = isString(params.type) ? params.type : this.type
+        return {
+            category: this.category,
+            type: completedType,
+            params: defParams<TParams>(this, params),
+            visual,
+            width: this._buttonProps.imgWidth,
+            ...options,
+        }
+    }
+
+    public make<TComp extends Component>(editor: LogicEditor, params?: TParams): TComp {
+        const fullParams = isUndefined(params) ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
+        const resolvedParams = this._validateParams(fullParams, this.defaultParams)
+        const comp = new this.impl(editor, resolvedParams)
+        editor.components.add(comp)
+        return comp as TComp
+    }
+
+    public makeFromJSON(editor: LogicEditor, data: Record<string, unknown>): Component | undefined {
+        const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
+        if (isUndefined(validated)) {
+            return undefined
+        }
+        const fullParams = mergeWhereDefined(this.defaultParams, validated)
+        const resolvedParams = this._validateParams(fullParams, this.defaultParams)
+        const comp = new this.impl(editor, resolvedParams, validated)
+        editor.components.add(comp)
+        return comp
+    }
 }
 
 export type Params<TDef>
     // case: Parameterized component def
-    = TDef extends { _TParams: infer TParams } ? TParams
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer TParams, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr> ? TParams
     // case: Abstract base component def
     : TDef extends { paramDefaults: infer TParams } ? TParams
     : never
+
+export type ResolvedParams<TDef>
+    // case: Parameterized component def
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParams, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer TResolvedParams, infer __TWeakRepr> ? TResolvedParams
+    // case: Abstract base component def
+    : TDef extends { validateParams?: infer TFunc } ?
+    TFunc extends (...args: any) => any ? ReturnType<TFunc> : never
+    : never
+
+
+type ReprWith<
+    TTypeName extends string | undefined,
+    THasIn extends boolean,
+    THasOut extends boolean,
+    TProps extends t.Props,
+> = t.TypeOf<t.TypeC<TProps & TypeFieldProp<TTypeName>>> & ComponentRepr<THasIn, THasOut>
+
 
 export function defineParametrizedComponent<
     TTypeName extends string | undefined,
@@ -1178,74 +1333,25 @@ export function defineParametrizedComponent<
     TInOutRecs extends InOutRecs,
     TValue,
     TResolvedParams extends Record<string, unknown> = TParams,
-    TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
+    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
 >(
     category: ComponentCategory, type: TTypeName, hasIn: THasIn, hasOut: THasOut,
-    { variantName, button, repr, valueDefaults, paramDefaults, validateParams, size: makeSize, makeNodes, initialValue }: {
+    { variantName, button, repr, valueDefaults, paramDefaults, validateParams, size, makeNodes, initialValue }: {
         variantName: (params: TParams) => TVariantName,
-        button: { imgWidth: number },
+        button: LibraryButtonProps,
         repr: TProps,
         valueDefaults: TValueDefaults,
         paramDefaults: TParams,
         validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams,
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
-        initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
+        initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
     },
 ) {
-    const componentRepr = makeComponentRepr<TTypeName, TProps, THasIn, THasOut>(type, hasIn, hasOut, repr)
-    function componentDef(params: TResolvedParams) {
-        const size = makeSize(params)
-        const nodes = makeNodes({ ...size, ...params }, valueDefaults)
-        return {
-            category,
-            button: (visual, options?) => ({
-                category, type,
-                visual,
-                width: button.imgWidth,
-                ...options,
-            }),
-            repr: componentRepr,
-            nodeRecs: nodes,
-            aults: valueDefaults,
-            size,
-            initialValue: (savedData: TRepr | null) => initialValue(savedData, params),
-        } satisfies ComponentDef<t.Mixed, TInOutRecs, TValue, TValueDefaults>
-    }
-    componentDef.category = category
-    componentDef.type = type
-    componentDef.variantName = variantName
-    componentDef.repr = componentRepr
-    componentDef.defaultParams = paramDefaults
-    componentDef.aults = { ...valueDefaults, ...paramDefaults }
-    const doValidateParams = validateParams ?? ((params: TParams) => params as unknown as TResolvedParams)
-    componentDef.validate = <TSavedData extends Partial<TParams>>(initData: Either<Partial<TParams>, TSavedData>): [TResolvedParams, TSavedData | null] => {
-        switch (initData._tag) {
-            case "Left": {
-                const fullParams = isNullOrUndefined(initData.left) ? paramDefaults : mergeWhereDefined(paramDefaults, initData.left)
-                return [doValidateParams(fullParams, paramDefaults), null] // only params
-            }
-            case "Right": {
-                const fullParams = mergeWhereDefined(paramDefaults, initData.right)
-                return [doValidateParams(fullParams, paramDefaults), fullParams as any] // full saved data
-            }
-        }
-    }
-    componentDef.button = (params: TParams, visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem => {
-        const completedType = isString(params.type) ? params.type : type
-        return {
-            category, type: completedType,
-            params: defParams<TParams>(componentDef, params),
-            visual,
-            width: button.imgWidth,
-            ...options,
-        }
-    }
-    componentDef._TParams = null as unknown as TParams
-    return componentDef satisfies ParametrizedComponentDef<TTypeName, TParams>
+    return new ParametrizedComponentDef(category, type, hasIn, hasOut, variantName, button, repr, valueDefaults, paramDefaults, size, makeNodes, initialValue, validateParams ?? ((params: TParams) => params as unknown as TResolvedParams))
 }
 
-function defParams<TParams extends Record<string, unknown>>(def: ParametrizedComponentDef<string | undefined, TParams>,
+function defParams<TParams extends Record<string, unknown>>(def: ParametrizedComponentDef<string | undefined, boolean, boolean, any, any, TParams, InOutRecs, any, any, any, any>,
     params: TParams): t.Branded<DefAndParams<TParams>, "params"> {
     return brand<"params">()({ def, params })
 }
@@ -1267,7 +1373,7 @@ export function defineAbstractParametrizedComponent<
         validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
-        initialValue: (savedData: TRepr | null, params: TResolvedParams) => TValue,
+        initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
     },
 ) {
     return items

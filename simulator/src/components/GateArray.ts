@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ArrayFillWith, isDefined, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
@@ -42,12 +41,12 @@ export const GateArrayDef =
                 S: groupVertical("e", 3, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
 
 export type GateArrayRepr = Repr<typeof GateArrayDef>
-export type GateArrayParams = Params<typeof GateArrayDef>
+export type GateArrayParams = ResolvedParams<typeof GateArrayDef>
 
 export class GateArray extends ComponentBase<GateArrayRepr> {
 
@@ -55,14 +54,13 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
     private _subtype: GateNType
     private _showAsUnknown: boolean
 
-    public constructor(editor: LogicEditor, initData: Either<GateArrayParams, GateArrayRepr>) {
-        const [params, savedData] = GateArrayDef.validate(initData)
-        super(editor, GateArrayDef(params), savedData)
+    public constructor(editor: LogicEditor, params: GateArrayParams, saved?: GateArrayRepr) {
+        super(editor, GateArrayDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isNotNull(savedData)) {
-            this._subtype = savedData.subtype
-            this._showAsUnknown = savedData.showAsUnknown ?? GateArrayDef.aults.showAsUnknown
+        if (isDefined(saved)) {
+            this._subtype = saved.subtype
+            this._showAsUnknown = saved.showAsUnknown ?? GateArrayDef.aults.showAsUnknown
         } else {
             this._subtype = GateArrayDef.aults.subtype
             this._showAsUnknown = GateArrayDef.aults.showAsUnknown
@@ -309,3 +307,4 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
     }
 
 }
+GateArrayDef.impl = GateArray

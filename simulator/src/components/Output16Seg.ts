@@ -3,7 +3,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ArrayFillWith, isDefined, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, group, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
@@ -56,12 +56,12 @@ export class Output16Seg extends ComponentBase<Output16SegRepr> {
     private _transparent = Output16SegDef.aults.transparent
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, savedData: Output16SegRepr | null) {
-        super(editor, Output16SegDef, savedData)
-        if (isNotNull(savedData)) {
-            this._color = savedData.color ?? Output16SegDef.aults.color
-            this._transparent = savedData.transparent ?? Output16SegDef.aults.transparent
-            this._name = savedData.name
+    public constructor(editor: LogicEditor, saved?: Output16SegRepr) {
+        super(editor, Output16SegDef, saved)
+        if (isDefined(saved)) {
+            this._color = saved.color ?? Output16SegDef.aults.color
+            this._transparent = saved.transparent ?? Output16SegDef.aults.transparent
+            this._name = saved.name
         }
     }
 
@@ -275,3 +275,4 @@ export class Output16Seg extends ComponentBase<Output16SegRepr> {
     }
 
 }
+Output16SegDef.impl = Output16Seg

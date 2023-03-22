@@ -1,4 +1,3 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
@@ -6,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined, validate } from "../utils"
 import { doALUOp } from "./ALU"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr, Value } from "./Component"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams, Value } from "./Component"
 import { DrawContext } from "./Drawable"
 
 
@@ -45,7 +44,7 @@ export const AdderArrayDef =
                 },
             }
         },
-        initialValue: (savedData, { numBits }) => ({
+        initialValue: (saved, { numBits }) => ({
             s: ArrayFillWith<LogicValue>(false, numBits),
             cout: false as LogicValue,
         }),
@@ -53,16 +52,15 @@ export const AdderArrayDef =
 
 
 export type AdderArrayRepr = Repr<typeof AdderArrayDef>
-export type AdderArrayParams = Params<typeof AdderArrayDef>
+export type AdderArrayParams = ResolvedParams<typeof AdderArrayDef>
 export type AdderArrayValue = Value<typeof AdderArrayDef>
 
 export class AdderArray extends ComponentBase<AdderArrayRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, initData: Either<AdderArrayParams, AdderArrayRepr>) {
-        const [params, savedData] = AdderArrayDef.validate(initData)
-        super(editor, AdderArrayDef(params), savedData)
+    public constructor(editor: LogicEditor, params: AdderArrayParams, saved?: AdderArrayRepr) {
+        super(editor, AdderArrayDef.with(params), saved)
         this.numBits = params.numBits
     }
 
@@ -152,3 +150,4 @@ export class AdderArray extends ComponentBase<AdderArrayRepr> {
     }
 
 }
+AdderArrayDef.impl = AdderArray

@@ -3,7 +3,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNO
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined } from "../utils"
+import { isDefined, isUnknown, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, groupVertical, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 
@@ -34,12 +34,12 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     private _additionalReprRadix: number | undefined = undefined
     private _showAsUnknown = false
 
-    public constructor(editor: LogicEditor, savedData: OutputAsciiRepr | null) {
-        super(editor, OutputAsciiDef, savedData)
-        if (isNotNull(savedData)) {
-            this._name = savedData.name
-            this._additionalReprRadix = savedData.additionalReprRadix
-            this._showAsUnknown = savedData.showAsUnknown ?? false
+    public constructor(editor: LogicEditor, saved?: OutputAsciiRepr) {
+        super(editor, OutputAsciiDef, saved)
+        if (isDefined(saved)) {
+            this._name = saved.name
+            this._additionalReprRadix = saved.additionalReprRadix
+            this._showAsUnknown = saved.showAsUnknown ?? false
         }
     }
 
@@ -242,5 +242,5 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         }
     }
 
-
 }
+OutputAsciiDef.impl = OutputAscii

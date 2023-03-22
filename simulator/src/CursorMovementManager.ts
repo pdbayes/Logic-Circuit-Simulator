@@ -1,5 +1,5 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
-import { ButtonDataset, ComponentFactory } from './ComponentFactory'
+import { ComponentFactory } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
 import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
@@ -8,7 +8,7 @@ import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
-import { InteractionResult, isDefined, isNotNull, isNull, isUndefined, Mode, TimeoutHandle } from "./utils"
+import { InteractionResult, isDefined, isUndefined, Mode, TimeoutHandle } from "./utils"
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -115,7 +115,7 @@ export class CursorMovementManager {
             this.editor.wrapHandler(() => {
                 let fireDrag = true
                 const endMouseDownData = this._currentMouseDownData
-                if (isNotNull(endMouseDownData)) {
+                if (endMouseDownData !== null) {
                     endMouseDownData.fireMouseClickedOnFinish = false
                     if (endMouseDownData.triggeredContextMenu) {
                         fireDrag = false
@@ -135,14 +135,14 @@ export class CursorMovementManager {
     }
 
     public clearStartDragTimeout() {
-        if (isNotNull(this._startDragTimeoutHandle)) {
+        if (this._startDragTimeoutHandle !== null) {
             clearTimeout(this._startDragTimeoutHandle)
             this._startDragTimeoutHandle = null
         }
     }
 
     public clearHoverTimeoutHandle() {
-        if (isNotNull(this._startHoverTimeoutHandle)) {
+        if (this._startHoverTimeoutHandle !== null) {
             clearTimeout(this._startHoverTimeoutHandle)
             this._startHoverTimeoutHandle = null
         }
@@ -154,7 +154,7 @@ export class CursorMovementManager {
             this.clearHoverTimeoutHandle()
 
             this._currentMouseOverComp = comp
-            if (isNotNull(comp)) {
+            if (comp !== null) {
                 this._startHoverTimeoutHandle = setTimeout(() => {
                     this._currentHandlers.mouseHoverOn(comp)
                     this._startHoverTimeoutHandle = null
@@ -169,7 +169,7 @@ export class CursorMovementManager {
         const findMouseOver: () => Drawable | null = () => {
             // easy optimization: maybe we're still over the
             // same component as before, so quickly check this
-            if (isNotNull(this._currentMouseOverComp) && this._currentMouseOverComp.drawZIndex !== 0) {
+            if (this._currentMouseOverComp !== null && this._currentMouseOverComp.drawZIndex !== 0) {
                 // second condition says: always revalidate the mouseover of background components (with z index 0)
                 if (this._currentMouseOverComp.isOver(x, y)) {
                     return this._currentMouseOverComp
@@ -192,7 +192,7 @@ export class CursorMovementManager {
                         break
                     }
                 }
-                if (isNotNull(nodeOver)) {
+                if (nodeOver !== null) {
                     return nodeOver
                 }
                 if (comp.isOver(x, y)) {
@@ -251,7 +251,7 @@ export class CursorMovementManager {
 
 
     public clearPopperIfNecessary() {
-        if (isNotNull(this._currentMouseOverPopper)) {
+        if (this._currentMouseOverPopper !== null) {
             this._currentMouseOverPopper.destroy()
             this._currentMouseOverPopper = null
             this.editor.html.tooltipElem.style.display = "none"
@@ -329,7 +329,7 @@ export class CursorMovementManager {
         canvas.addEventListener("contextmenu", editor.wrapHandler((e) => {
             // console.log("contextmenu %o, composedPath = %o", e, e.composedPath())
             e.preventDefault()
-            if (this.editor.mode >= Mode.CONNECT && isNotNull(this._currentMouseOverComp)) {
+            if (this.editor.mode >= Mode.CONNECT && this._currentMouseOverComp !== null) {
                 this._currentHandlers.contextMenuOn(this._currentMouseOverComp, e)
             }
         }))
@@ -338,10 +338,10 @@ export class CursorMovementManager {
     private _mouseDownTouchStart(e: MouseEvent | TouchEvent) {
         this.clearHoverTimeoutHandle()
         this.clearPopperIfNecessary()
-        if (isNull(this._currentMouseDownData)) {
+        if (this._currentMouseDownData === null) {
             const xy = this.editor.offsetXY(e)
             this.updateMouseOver(xy)
-            if (isNotNull(this._currentMouseOverComp)) {
+            if (this._currentMouseOverComp !== null) {
                 // mouse down on component
                 const { wantsDragEvents } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
                 if (wantsDragEvents) {
@@ -381,7 +381,7 @@ export class CursorMovementManager {
     }
 
     private _mouseMoveTouchMove(e: MouseEvent | TouchEvent) {
-        if (isNotNull(this._currentMouseDownData)) {
+        if (this._currentMouseDownData !== null) {
             if (this._currentMouseDownData.triggeredContextMenu) {
                 // cancel it all
                 this._currentMouseDownData = null
@@ -420,7 +420,7 @@ export class CursorMovementManager {
         const mouseUpTarget = this._currentMouseDownData?.mainComp ?? this._currentMouseOverComp
         if (mouseUpTarget instanceof Drawable) {
             // mouseup on component
-            if (isNotNull(this._startDragTimeoutHandle)) {
+            if (this._startDragTimeoutHandle !== null) {
                 clearTimeout(this._startDragTimeoutHandle)
                 this._startDragTimeoutHandle = null
             }
@@ -483,15 +483,15 @@ export class CursorMovementManager {
         const editor = this.editor
         for (let i = 0; i < componentButtons.length; i++) {
             const compButton = componentButtons[i]
-            const factory = ComponentFactory.makeFactoryForButton(compButton)
 
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 this.editor.cursorMovementMgr.currentSelection = undefined
-                const paramsStr = (compButton.dataset as ButtonDataset).params
-                const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
-                const newComponent = factory(editor, params)
+                const newComponent = ComponentFactory.makeFromButton(editor, compButton)
+                if (isUndefined(newComponent)) {
+                    return
+                }
                 this._currentMouseOverComp = newComponent
                 const { wantsDragEvents } = this._currentHandlers.mouseDownOn(newComponent, e)
                 if (wantsDragEvents) {
@@ -636,7 +636,7 @@ class EditHandlers extends ToolHandlers {
 
             // console.log("setting triggered")
             const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
-            if (isNotNull(currentMouseDownData)) {
+            if (currentMouseDownData !== null) {
                 currentMouseDownData.triggeredContextMenu = true
             }
 

@@ -1,12 +1,11 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isDefined, isNotNull, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Params, Repr } from "./Component"
+import { ArrayFillWith, HighImpedance, isDefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { WireStyles } from "./Wire"
 
@@ -60,12 +59,12 @@ export const DemuxDef =
                 },
             }
         },
-        initialValue: (savedData, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
+        initialValue: (saved, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
     })
 
 
 export type DemuxRepr = Repr<typeof DemuxDef>
-export type DemuxParams = Params<typeof DemuxDef>
+export type DemuxParams = ResolvedParams<typeof DemuxDef>
 
 export class Demux extends ComponentBase<DemuxRepr> {
 
@@ -76,18 +75,17 @@ export class Demux extends ComponentBase<DemuxRepr> {
     private _showWiring = DemuxDef.aults.showWiring
     private _disconnectedAsHighZ = DemuxDef.aults.disconnectedAsHighZ
 
-    public constructor(editor: LogicEditor, initData: Either<DemuxParams, DemuxRepr>) {
-        const [params, savedData] = DemuxDef.validate(initData)
-        super(editor, DemuxDef(params), savedData)
+    public constructor(editor: LogicEditor, params: DemuxParams, saved?: DemuxRepr) {
+        super(editor, DemuxDef.with(params), saved)
 
         this.numFrom = params.numFrom
         this.numTo = params.numTo
         this.numGroups = params.numGroups
         this.numSel = params.numSel
 
-        if (isNotNull(savedData)) {
-            this._showWiring = savedData.showWiring ?? DemuxDef.aults.showWiring
-            this._disconnectedAsHighZ = savedData.disconnectedAsHighZ ?? DemuxDef.aults.disconnectedAsHighZ
+        if (isDefined(saved)) {
+            this._showWiring = saved.showWiring ?? DemuxDef.aults.showWiring
+            this._disconnectedAsHighZ = saved.disconnectedAsHighZ ?? DemuxDef.aults.disconnectedAsHighZ
         }
     }
 
@@ -258,3 +256,4 @@ export class Demux extends ComponentBase<DemuxRepr> {
     }
 
 }
+DemuxDef.impl = Demux

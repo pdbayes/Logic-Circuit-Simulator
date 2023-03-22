@@ -3,7 +3,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillWith, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent, group, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
@@ -42,11 +42,11 @@ export const CounterDef =
                 },
             }
         },
-        initialValue: (savedData) => {
-            if (isNull(savedData) || isUndefined(savedData.count)) {
+        initialValue: saved => {
+            if (isUndefined(saved) || isUndefined(saved.count)) {
                 return Counter.emptyValue(COUNTER_WIDTH)
             }
-            return [Counter.decimalToNBits(savedData.count, COUNTER_WIDTH), false] as const
+            return [Counter.decimalToNBits(saved.count, COUNTER_WIDTH), false] as const
         },
     })
 
@@ -72,12 +72,12 @@ export class Counter extends ComponentBase<CounterRepr> {
         return asBits
     }
 
-    public constructor(editor: LogicEditor, savedData: CounterRepr | null) {
-        super(editor, CounterDef, savedData)
-        if (isNotNull(savedData)) {
-            this._trigger = savedData.trigger ?? CounterDef.aults.trigger
-            this._displayRadix = isUndefined(savedData.displayRadix) ? CounterDef.aults.displayRadix :
-                (savedData.displayRadix === null ? undefined : savedData.displayRadix) // convert null in the repr to undefined
+    public constructor(editor: LogicEditor, saved?: CounterRepr) {
+        super(editor, CounterDef, saved)
+        if (isDefined(saved)) {
+            this._trigger = saved.trigger ?? CounterDef.aults.trigger
+            this._displayRadix = isUndefined(saved.displayRadix) ? CounterDef.aults.displayRadix :
+                (saved.displayRadix === null ? undefined : saved.displayRadix) // convert null in the repr to undefined
         }
     }
 
@@ -235,3 +235,4 @@ export class Counter extends ComponentBase<CounterRepr> {
     }
 
 }
+CounterDef.impl = Counter

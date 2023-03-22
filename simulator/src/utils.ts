@@ -1,5 +1,7 @@
 
+import { isLeft } from "fp-ts/lib/Either"
 import * as t from "io-ts"
+import { PathReporter } from "io-ts/lib/PathReporter"
 import { Add } from "ts-arithmetic"
 
 export type Dict<T> = Record<string, T | undefined>
@@ -115,6 +117,8 @@ export type PickDefined<T> = {
     [P in keyof T as undefined extends T[P] ? never : P]: T[P]
 }
 
+export type ValuesOf<T> = T[keyof T]
+
 export type HasField<T, K extends string> = K extends keyof T ? true : false
 
 export type IsSameType<A, B> = A extends B ? (B extends A ? true : false) : false
@@ -169,16 +173,8 @@ export function isDefined<T>(v: T | undefined): v is T {
     return typeof v !== "undefined"
 }
 
-export function isNullOrUndefined(v: unknown): v is null | undefined {
-    return isUndefined(v) || v === null
-}
-
-export function isNull<T>(v: T | null): v is null {
-    return v === null
-}
-
-export function isNotNull<T>(v: T | null): v is T {
-    return v !== null
+export function isUndefinedOrNull(v: unknown): v is undefined | null {
+    return v === null || isUndefined(v)
 }
 
 export function isString(v: unknown): v is string {
@@ -284,11 +280,11 @@ export function FixedArrayMap<U, Arr extends readonly any[]>(items: Arr, fn: (it
 
 
 export function isTruthyString(str: string | null | undefined): boolean {
-    return !isNullOrUndefined(str) && (str === "1" || str.toLowerCase() === "true")
+    return !isUndefinedOrNull(str) && (str === "1" || str.toLowerCase() === "true")
 }
 
 export function isFalsyString(str: string | null | undefined): boolean {
-    return !isNullOrUndefined(str) && (str === "0" || str.toLowerCase() === "false")
+    return !isUndefinedOrNull(str) && (str === "0" || str.toLowerCase() === "false")
 }
 
 export function getURLParameter<T>(sParam: string, defaultValue: T): string | T
@@ -455,6 +451,15 @@ export const typeOrNull = <T extends t.Mixed>(tpe: T) => {
     return t.union([tpe, t.null], tpe.name + " | null")
 }
 
+export function validateJson<T, I>(obj: I, repr: t.Decoder<I, T>, what: string): T | undefined {
+    const validated = repr.decode(obj)
+    if (isLeft(validated)) {
+        console.warn(`ERROR while parsing ${what} from %o -> %s: `, obj, PathReporter.report(validated).join("; "))
+        return undefined
+    }
+    return validated.right
+}
+
 
 // Unset; LogicValue
 
@@ -596,7 +601,7 @@ export function copyToClipboard(textToCopy: string): boolean {
         const range = document.createRange()
         range.selectNodeContents(textArea)
         const selection = window.getSelection()
-        if (isNotNull(selection)) {
+        if (selection !== null) {
             selection.removeAllRanges()
             selection.addRange(range)
             textArea.setSelectionRange(0, 999999)

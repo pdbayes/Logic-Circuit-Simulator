@@ -1,6 +1,6 @@
 import { drawWaypoint, GRID_STEP, isOverWaypoint, NodeStyle, WAYPOINT_DIAMETER } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
-import { HighImpedance, InteractionResult, isDefined, isNull, isUndefined, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
+import { HighImpedance, InteractionResult, isDefined, isUndefined, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
 import { ComponentState, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
 import { Wire } from "./Wire"
@@ -41,12 +41,12 @@ abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
         public readonly group: NodeGroup<N> | undefined,
-        public readonly name: string | undefined,
+        public readonly name: string,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
         relativePosition: Orientation,
     ) {
-        super(editor, null)
+        super(editor)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
             this._forceValue = toLogicValue(nodeSpec.force)
@@ -303,7 +303,7 @@ export class NodeIn extends NodeBase<NodeIn> {
 
     public set incomingWire(wire: Wire | null) {
         this._incomingWire = wire
-        if (isNull(wire)) {
+        if (wire === null) {
             this.value = false
         } else {
             this.value = wire.startNode.value
@@ -317,11 +317,11 @@ export class NodeIn extends NodeBase<NodeIn> {
     }
 
     public get acceptsMoreConnections() {
-        return isNull(this._incomingWire)
+        return this._incomingWire === null
     }
 
     public get isDisconnected() {
-        return isNull(this._incomingWire)
+        return this._incomingWire === null
     }
 
     public get forceValue() {

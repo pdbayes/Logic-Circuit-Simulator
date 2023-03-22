@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { DrawContext } from "./Drawable"
 
 
@@ -36,20 +35,19 @@ export const TriStateBufferArrayDef =
                 O: groupVertical("e", 3, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(HighImpedance, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(HighImpedance, numBits),
     })
 
 
 export type TriStateBufferArrayRepr = Repr<typeof TriStateBufferArrayDef>
-export type TriStateBufferArrayParams = Params<typeof TriStateBufferArrayDef>
+export type TriStateBufferArrayParams = ResolvedParams<typeof TriStateBufferArrayDef>
 
 export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, initData: Either<TriStateBufferArrayParams, TriStateBufferArrayRepr>) {
-        const [params, savedData] = TriStateBufferArrayDef.validate(initData)
-        super(editor, TriStateBufferArrayDef(params), savedData)
+    public constructor(editor: LogicEditor, params: TriStateBufferArrayParams, saved?: TriStateBufferArrayRepr) {
+        super(editor, TriStateBufferArrayDef.with(params), saved)
         this.numBits = params.numBits
     }
 
@@ -133,3 +131,4 @@ export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> 
         }
     }
 }
+TriStateBufferArrayDef.impl = TriStateBufferArray

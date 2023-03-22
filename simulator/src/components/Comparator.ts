@@ -32,8 +32,8 @@ type ComparatorRepr = Repr<typeof ComparatorDef>
 
 export class Comparator extends ComponentBase<ComparatorRepr> {
 
-    public constructor(editor: LogicEditor, savedData: ComparatorRepr | null) {
-        super(editor, ComparatorDef, savedData)
+    public constructor(editor: LogicEditor, saved?: ComparatorRepr) {
+        super(editor, ComparatorDef, saved)
     }
 
     public toJSON() {
@@ -136,3 +136,4 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
         ]
     }
 }
+ComparatorDef.impl = Comparator

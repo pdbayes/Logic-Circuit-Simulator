@@ -1,10 +1,9 @@
-import { Either } from "fp-ts/lib/Either"
 import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { defineParametrizedComponent, Params, Repr } from "./Component"
+import { defineParametrizedComponent, Repr, ResolvedParams } from "./Component"
 import { DrawContextExt } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
@@ -27,12 +26,12 @@ export const ShiftRegisterDef =
     })
 
 export type ShiftRegisterRepr = Repr<typeof ShiftRegisterDef>
-export type ShiftRegisterParams = Params<typeof ShiftRegisterDef>
+export type ShiftRegisterParams = ResolvedParams<typeof ShiftRegisterDef>
 
-export class ShiftRegister extends RegisterBase<ShiftRegisterRepr, ShiftRegisterParams> {
+export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
 
-    public constructor(editor: LogicEditor, initData: Either<ShiftRegisterParams, ShiftRegisterRepr>) {
-        super(editor, ShiftRegisterDef, initData)
+    public constructor(editor: LogicEditor, params: ShiftRegisterParams, saved?: ShiftRegisterRepr) {
+        super(editor, ShiftRegisterDef, params, saved)
     }
 
     public toJSON() {
@@ -84,3 +83,4 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr, ShiftRegister
     }
 
 }
+ShiftRegisterDef.impl = ShiftRegister

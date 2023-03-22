@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isNotNull, isNull, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Params, Repr } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
@@ -58,12 +57,12 @@ export const RAMDef =
                 },
             }
         },
-        initialValue: (savedData, { numDataBits, numWords }) => {
-            if (isNull(savedData) || isUndefined(savedData.content)) {
+        initialValue: (saved, { numDataBits, numWords }) => {
+            if (isUndefined(saved) || isUndefined(saved.content)) {
                 return RAM.defaultValue(numWords, numDataBits)
             }
             const mem: LogicValue[][] = new Array(numWords)
-            const savedContent = isArray(savedData.content) ? savedData.content : savedData.content.split(" ")
+            const savedContent = isArray(saved.content) ? saved.content : saved.content.split(" ")
             for (let i = 0; i < numWords; i++) {
                 const row = i >= savedContent.length
                     ? ArrayFillWith(false, numDataBits)
@@ -77,7 +76,7 @@ export const RAMDef =
 
 
 export type RAMRepr = Repr<typeof RAMDef>
-export type RAMParams = Params<typeof RAMDef>
+export type RAMParams = ResolvedParams<typeof RAMDef>
 
 type RAMValue = {
     mem: LogicValue[][]
@@ -106,17 +105,16 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
     private _trigger: EdgeTrigger = RAMDef.aults.trigger
     private _lastClock: LogicValue = Unknown
 
-    public constructor(editor: LogicEditor, initData: Either<RAMParams, RAMRepr>) {
-        const [params, savedData] = RAMDef.validate(initData)
-        super(editor, RAMDef(params), savedData)
+    public constructor(editor: LogicEditor, params: RAMParams, saved?: RAMRepr) {
+        super(editor, RAMDef.with(params), saved)
 
         this.numDataBits = params.numDataBits
         this.numAddressBits = params.numAddressBits
         this.numWords = params.numWords
 
-        if (isNotNull(savedData)) {
-            this._showContent = savedData.showContent ?? RAMDef.aults.showContent
-            this._trigger = savedData.trigger ?? RAMDef.aults.trigger
+        if (isDefined(saved)) {
+            this._showContent = saved.showContent ?? RAMDef.aults.showContent
+            this._trigger = saved.trigger ?? RAMDef.aults.trigger
         }
     }
 
@@ -328,6 +326,8 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
     }
 
 }
+RAMDef.impl = RAM
+
 
 function drawMemoryCells(g: CanvasRenderingContext2D, mem: LogicValue[][], numDataBits: number, addr: number | Unknown, start: number, end: number, centerX: number, centerY: number, cellWidth: number, cellHeight: number,) {
     const numCellsToDraw = end - start

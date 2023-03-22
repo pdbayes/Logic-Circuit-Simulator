@@ -29,8 +29,8 @@ type TriStateBufferRepr = Repr<typeof TriStateBufferDef>
 
 export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
 
-    public constructor(editor: LogicEditor, savedData: TriStateBufferRepr | null) {
-        super(editor, TriStateBufferDef, savedData)
+    public constructor(editor: LogicEditor, saved?: TriStateBufferRepr) {
+        super(editor, TriStateBufferDef, saved)
     }
 
     public toJSON() {
@@ -110,3 +110,4 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
     }
 
 }
+TriStateBufferDef.impl = TriStateBuffer

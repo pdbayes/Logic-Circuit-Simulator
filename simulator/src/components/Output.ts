@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isNotNull, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -41,11 +40,11 @@ export const OutputDef =
                 In: groupVertical("w", numBits === 1 ? -3 : -2, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
+        initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
 export type OutputRepr = Repr<typeof OutputDef>
-export type OutputParams = Params<typeof OutputDef>
+export type OutputParams = ResolvedParams<typeof OutputDef>
 
 
 export class Output extends ComponentBase<OutputRepr> {
@@ -53,13 +52,12 @@ export class Output extends ComponentBase<OutputRepr> {
     public readonly numBits: number
     private _name: ComponentName = undefined
 
-    public constructor(editor: LogicEditor, initData: Either<OutputParams, OutputRepr>) {
-        const [params, savedData] = OutputDef.validate(initData)
-        super(editor, OutputDef(params), savedData)
+    public constructor(editor: LogicEditor, params: OutputParams, saved?: OutputRepr) {
+        super(editor, OutputDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isNotNull(savedData)) {
-            this._name = savedData.name
+        if (isDefined(saved)) {
+            this._name = saved.name
         }
     }
 
@@ -231,5 +229,5 @@ export class Output extends ComponentBase<OutputRepr> {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         }
     }
-
 }
+OutputDef.impl = Output

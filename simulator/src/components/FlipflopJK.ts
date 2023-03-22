@@ -29,8 +29,8 @@ type FlipflopJKRepr = Repr<typeof FlipflopJKDef>
 
 export class FlipflopJK extends Flipflop<FlipflopJKRepr> {
 
-    public constructor(editor: LogicEditor, savedData: FlipflopJKRepr | null) {
-        super(editor, FlipflopJKDef, savedData)
+    public constructor(editor: LogicEditor, saved?: FlipflopJKRepr) {
+        super(editor, FlipflopJKDef, saved)
     }
 
     public toJSON() {
@@ -82,3 +82,4 @@ export class FlipflopJK extends Flipflop<FlipflopJKRepr> {
     }
 
 }
+FlipflopJKDef.impl = FlipflopJK

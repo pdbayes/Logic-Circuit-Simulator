@@ -3,7 +3,7 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isNotNull, isNull, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { isDefined, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
@@ -61,13 +61,13 @@ export const OutputShiftBufferDef =
                 },
             }
         },
-        initialValue: (savedData): OutputShiftBufferState => {
-            if (isNull(savedData) || isUndefined(savedData.state)) {
+        initialValue: saved => {
+            if (isUndefined(saved) || isUndefined(saved.state)) {
                 return { incoming: [], decoded: [] }
             }
             const incoming: LogicValue[] = []
-            for (let i = 0; i < savedData.state.length; i++) {
-                const c = savedData.state.charAt(i)
+            for (let i = 0; i < saved.state.length; i++) {
+                const c = saved.state.charAt(i)
                 if (c === '1') {
                     incoming.push(true)
                 } else if (c === '0') {
@@ -87,7 +87,7 @@ type OutputShiftBufferState = {
     decoded: [string, LogicValue[]][]
 }
 
-export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
+export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, OutputShiftBufferState> {
 
     protected _decodeAs: ShiftBufferDecoder = OutputShiftBufferDef.aults.decodeAs
     protected _groupEvery: number | undefined = undefined
@@ -95,13 +95,13 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
     protected _trigger: EdgeTrigger = OutputShiftBufferDef.aults.trigger
     protected _lastClock: LogicValue = Unknown
 
-    public constructor(editor: LogicEditor, savedData: OutputShiftBufferRepr | null) {
-        super(editor, OutputShiftBufferDef, savedData)
+    public constructor(editor: LogicEditor, saved?: OutputShiftBufferRepr) {
+        super(editor, OutputShiftBufferDef, saved)
 
-        if (isNotNull(savedData)) {
-            this._decodeAs = savedData.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
-            this._maxItems = savedData.maxItems
-            this._trigger = savedData.trigger ?? OutputShiftBufferDef.aults.trigger
+        if (isDefined(saved)) {
+            this._decodeAs = saved.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
+            this._maxItems = saved.maxItems
+            this._trigger = saved.trigger ?? OutputShiftBufferDef.aults.trigger
         }
         this.redecodeAll()
     }
@@ -336,6 +336,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr> {
         ]
     }
 }
+OutputShiftBufferDef.impl = OutputShiftBuffer
 
 function allBitsOf({ incoming, decoded }: OutputShiftBufferState): LogicValue[] {
     const allBits = [...incoming]

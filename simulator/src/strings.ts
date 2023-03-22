@@ -745,7 +745,7 @@ const Strings_en: Strings = {
             Register4: ["4-Bit Register", "Register"],
             Register8: ["8-Bit Register", "Reg. (8 b.)"],
             ShiftRegister4: ["4-Bit Shift Register", "Shift Reg."],
-            ShiftRegister8: ["8-Bit Shift Register", "Shift Reg. (8 b.)"],
+            ShiftRegister8: ["8-Bit Shift Register", "Shift R. (8 b.)"],
             RAM16x4: ["RAM, 16 × 4 Bits", "RAM 16×4"],
             RAM16x8: ["RAM, 16 × 8 Bits", "RAM 16×8"],
             RAM64x8: ["RAM, 64 × 8 Bits", "RAM 64×8"],
@@ -1288,7 +1288,7 @@ export function isLang(lang: string): lang is Lang {
 }
 
 export function setLang(l: Lang) {
-    console.log(`Setting language to '${l}'`)
+    // console.log(`Setting language to '${l}'`)
     S = langs[l]
 }
 

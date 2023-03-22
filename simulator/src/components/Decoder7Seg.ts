@@ -39,8 +39,8 @@ type Decoder7SegRepr = Repr<typeof Decoder7SegDef>
 
 export class Decoder7Seg extends ComponentBase<Decoder7SegRepr> {
 
-    public constructor(editor: LogicEditor, savedData: Decoder7SegRepr | null) {
-        super(editor, Decoder7SegDef, savedData)
+    public constructor(editor: LogicEditor, saved?: Decoder7SegRepr) {
+        super(editor, Decoder7SegDef, saved)
     }
 
     public toJSON() {
@@ -142,5 +142,5 @@ export class Decoder7Seg extends ComponentBase<Decoder7SegRepr> {
         ]
     }
 
-
 }
+Decoder7SegDef.impl = Decoder7Seg

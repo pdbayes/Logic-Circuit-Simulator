@@ -1,14 +1,14 @@
-import { Either } from "fp-ts/lib/Either"
+import { right } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isDefined, isNotNull, isNull, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { ComponentBase, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, Params, ReadonlyGroupedNodeArray, Repr } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { Component, ComponentBase, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, DrawContextExt, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
-import { NodeOut } from "./Node"
+import { NodeIn, NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
 
 
@@ -53,9 +53,9 @@ export const RegisterBaseDef =
                 },
             }
         },
-        initialValue: (savedData, { numBits }) => {
+        initialValue: (saved, { numBits }) => {
             let content
-            if (isNull(savedData) || isUndefined(content = savedData.content)) {
+            if (isUndefined(saved) || isUndefined(content = saved.content)) {
                 return ArrayFillWith(false, numBits)
             }
             return wordFromBinaryOrHexRepr(content, numBits)
@@ -64,12 +64,9 @@ export const RegisterBaseDef =
 
 
 export type RegisterBaseRepr = Repr<typeof RegisterBaseDef>
-export type RegisterBaseParams = Params<typeof RegisterBaseDef>
+export type RegisterBaseParams = ResolvedParams<typeof RegisterBaseDef>
 
-export abstract class RegisterBase<
-    TRepr extends RegisterBaseRepr,
-    TParams extends RegisterBaseParams
-> extends ComponentBase<
+export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends ComponentBase<
     TRepr,
     LogicValue[],
     NodesIn<TRepr>,
@@ -83,15 +80,14 @@ export abstract class RegisterBase<
     protected _isInInvalidState = false
     protected _lastClock: LogicValue = Unknown
 
-    protected constructor(editor: LogicEditor, SubclassDef: typeof RegisterDef | typeof ShiftRegisterDef, initData: Either<TParams, TRepr>) {
-        const [params, savedData] = SubclassDef.validate(initData)
-        super(editor, SubclassDef(params), savedData)
+    protected constructor(editor: LogicEditor, SubclassDef: typeof RegisterDef | typeof ShiftRegisterDef, params: RegisterBaseParams, saved?: TRepr) {
+        super(editor, SubclassDef.with(params) as any /* TODO */, saved)
 
         this.numBits = params.numBits
 
-        if (isNotNull(savedData)) {
-            this._showContent = savedData.showContent ?? RegisterDef.aults.showContent
-            this._trigger = savedData.trigger ?? RegisterDef.aults.trigger
+        if (isDefined(saved)) {
+            this._showContent = saved.showContent ?? RegisterDef.aults.showContent
+            this._trigger = saved.trigger ?? RegisterDef.aults.trigger
         }
     }
 
@@ -164,7 +160,6 @@ export abstract class RegisterBase<
             drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
         }
 
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
         drawWireLineToComponent(g, this.inputs.Preset, this.inputs.Preset.posXInParentTransform, top, false)
         drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom, false)
         this.doDrawSpecificInputs(g, left)
@@ -175,8 +170,8 @@ export abstract class RegisterBase<
         g.fillStyle = this._isInInvalidState ? COLOR_BACKGROUND_INVALID : COLOR_BACKGROUND
         g.fill(outlinePath)
 
-        // g.fillStyle = COLOR_BACKGROUND
-
+        // clock input
+        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
 
         // outline
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
@@ -258,12 +253,12 @@ export const RegisterDef =
     })
 
 export type RegisterRepr = Repr<typeof RegisterDef>
-export type RegisterParams = Params<typeof RegisterDef>
+export type RegisterParams = ResolvedParams<typeof RegisterDef>
 
-export class Register extends RegisterBase<RegisterRepr, RegisterParams> {
+export class Register extends RegisterBase<RegisterRepr> {
 
-    public constructor(editor: LogicEditor, initData: Either<RegisterParams, RegisterRepr>) {
-        super(editor, RegisterDef, initData)
+    public constructor(editor: LogicEditor, params: RegisterParams, saved?: RegisterRepr) {
+        super(editor, RegisterDef, params, saved)
     }
 
     public toJSON() {
@@ -305,4 +300,6 @@ export class Register extends RegisterBase<RegisterRepr, RegisterParams> {
         g.font = "bold 12px sans-serif"
         drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
     }
+
 }
+RegisterDef.impl = Register

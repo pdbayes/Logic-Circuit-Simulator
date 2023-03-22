@@ -32,8 +32,8 @@ type HalfAdderRepr = Repr<typeof HalfAdderDef>
 
 export class HalfAdder extends ComponentBase<HalfAdderRepr> {
 
-    public constructor(editor: LogicEditor, savedData: HalfAdderRepr | null) {
-        super(editor, HalfAdderDef, savedData)
+    public constructor(editor: LogicEditor, saved?: HalfAdderRepr) {
+        super(editor, HalfAdderDef, saved)
     }
 
     public toJSON() {
@@ -130,3 +130,4 @@ export class HalfAdder extends ComponentBase<HalfAdderRepr> {
     }
 
 }
+HalfAdderDef.impl = HalfAdder

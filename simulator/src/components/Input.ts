@@ -1,12 +1,11 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, inRect, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNotNull, isNull, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
-import { ClockDef, ClockRepr } from "./Clock"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, Params, Repr } from "./Component"
+import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
+import { ClockRepr } from "./Clock"
+import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -51,13 +50,13 @@ export const InputDef =
                 Out: groupVertical("e", numBits === 1 ? 3 : 2, 0, numBits),
             },
         }),
-        initialValue: (savedData, { numBits }) => {
+        initialValue: (saved, { numBits }) => {
             const allFalse = () => ArrayFillWith<LogicValue>(false, numBits)
-            if (isNull(savedData)) {
+            if (isUndefined(saved)) {
                 return allFalse()
             }
             let val
-            if (isDefined(val = savedData.val)) {
+            if (isDefined(val = saved.val)) {
                 if (isArray(val)) {
                     return ArrayClampOrPad(val.map(v => toLogicValue(v)), numBits, false)
                 } else if (isNumber(val)) {
@@ -73,7 +72,7 @@ export const InputDef =
     })
 
 export type InputRepr = Repr<typeof InputDef>
-export type InputParams = Params<typeof InputDef>
+export type InputParams = ResolvedParams<typeof InputDef>
 
 
 type InputBaseRepr = InputRepr | ClockRepr
@@ -89,10 +88,10 @@ export abstract class InputBase<TRepr extends InputBaseRepr> extends ComponentBa
     public abstract get numBits(): number
     protected _name: ComponentName = undefined
 
-    protected constructor(editor: LogicEditor, SubclassDef: ReturnType<typeof InputDef> | typeof ClockDef, savedData: TRepr | null) {
-        super(editor, SubclassDef, savedData)
-        if (isNotNull(savedData)) {
-            this._name = savedData.name
+    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, LogicValue[]>, saved?: TRepr) {
+        super(editor, SubclassDef, saved)
+        if (isDefined(saved)) {
+            this._name = saved.name
         }
     }
 
@@ -296,14 +295,13 @@ export class Input extends InputBase<InputRepr> {
     private _isPushButton = InputDef.aults.isPushButton
     private _isConstant = InputDef.aults.isConstant
 
-    public constructor(editor: LogicEditor, initData: Either<InputParams, InputRepr>) {
-        const [params, savedData] = InputDef.validate(initData)
-        super(editor, InputDef(params), savedData)
+    public constructor(editor: LogicEditor, params: InputParams, saved?: InputRepr) {
+        super(editor, InputDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isNotNull(savedData)) {
-            this._isPushButton = savedData.isPushButton ?? InputDef.aults.isPushButton
-            this._isConstant = savedData.isConstant ?? InputDef.aults.isConstant
+        if (isDefined(saved)) {
+            this._isPushButton = saved.isPushButton ?? InputDef.aults.isPushButton
+            this._isConstant = saved.isConstant ?? InputDef.aults.isConstant
         }
     }
 
@@ -465,6 +463,7 @@ export class Input extends InputBase<InputRepr> {
     }
 
 }
+InputDef.impl = Input
 
 function nextValue(value: LogicValue, mode: Mode, altKey: boolean): LogicValue {
     switch (value) {

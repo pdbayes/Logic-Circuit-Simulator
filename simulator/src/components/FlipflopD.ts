@@ -28,8 +28,8 @@ type FlipflopDRepr = Repr<typeof FlipflopDDef>
 
 export class FlipflopD extends Flipflop<FlipflopDRepr> {
 
-    public constructor(editor: LogicEditor, savedData: FlipflopDRepr | null) {
-        super(editor, FlipflopDDef, savedData)
+    public constructor(editor: LogicEditor, saved?: FlipflopDRepr) {
+        super(editor, FlipflopDDef, saved)
     }
 
     public toJSON() {
@@ -64,3 +64,4 @@ export class FlipflopD extends Flipflop<FlipflopDRepr> {
     }
 
 }
+FlipflopDDef.impl = FlipflopD

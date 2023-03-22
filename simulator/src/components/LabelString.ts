@@ -3,7 +3,7 @@ import { DrawZIndex } from "../ComponentList"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isNotNull, isUndefined, typeOrUndefined } from "../utils"
+import { isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 
@@ -33,12 +33,12 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     private _font: string
     private _cachedTextMetrics: TextMetrics | undefined = undefined
 
-    public constructor(editor: LogicEditor, savedData: LabelStringRepr | null) {
-        super(editor, LabelStringDef, savedData)
-        if (isNotNull(savedData)) {
-            this._text = savedData.text
-            // this._align = (savedData.align as CanvasTextAlign) ?? LabelStringDefaults.align
-            this._font = savedData.font ?? LabelStringDef.aults.font
+    public constructor(editor: LogicEditor, saved?: LabelStringRepr) {
+        super(editor, LabelStringDef, saved)
+        if (isDefined(saved)) {
+            this._text = saved.text
+            // this._align = (saved.align as CanvasTextAlign) ?? LabelStringDefaults.align
+            this._font = saved.font ?? LabelStringDef.aults.font
         } else {
             this._text = LabelStringDef.aults.text
             // this._align = LabelStringDefaults.align
@@ -148,3 +148,4 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     }
 
 }
+LabelStringDef.impl = LabelString

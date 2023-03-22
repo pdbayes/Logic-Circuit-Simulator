@@ -1,11 +1,10 @@
-import { Either } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { colorComps, colorForFraction, ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, useCompact } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, isUnknown, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Params, Repr } from "./Component"
+import { isDefined, isUnknown, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
@@ -41,13 +40,13 @@ export const OutputDisplayDef =
                 },
             }
         },
-        initialValue: (savedData, { numBits }): [string, number | Unknown] =>
+        initialValue: (saved, { numBits }): [string, number | Unknown] =>
             [repeatString("0", numBits), 0],
     })
 
 
 export type OutputDisplayRepr = Repr<typeof OutputDisplayDef>
-export type OutputDisplayParams = Params<typeof OutputDisplayDef>
+export type OutputDisplayParams = ResolvedParams<typeof OutputDisplayDef>
 
 
 export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
@@ -57,15 +56,14 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
     private _radix = OutputDisplayDef.aults.radix
     private _showAsUnknown = false
 
-    public constructor(editor: LogicEditor, initData: Either<OutputDisplayParams, OutputDisplayRepr>) {
-        const [params, savedData] = OutputDisplayDef.validate(initData)
-        super(editor, OutputDisplayDef(params), savedData)
+    public constructor(editor: LogicEditor, params: OutputDisplayParams, saved?: OutputDisplayRepr) {
+        super(editor, OutputDisplayDef.with(params), saved)
         this.numBits = params.numBits
 
-        if (isNotNull(savedData)) {
-            this._name = savedData.name
-            this._radix = savedData.radix ?? OutputDisplayDef.aults.radix
-            this._showAsUnknown = savedData.showAsUnknown ?? OutputDisplayDef.aults.showAsUnknown
+        if (isDefined(saved)) {
+            this._name = saved.name
+            this._radix = saved.radix ?? OutputDisplayDef.aults.radix
+            this._showAsUnknown = saved.showAsUnknown ?? OutputDisplayDef.aults.showAsUnknown
         }
     }
 
@@ -238,6 +236,7 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
     }
 
 }
+OutputDisplayDef.impl = OutputDisplay
 
 function repeatString(s: string, n: number) {
     let result = ""

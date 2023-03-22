@@ -3,7 +3,7 @@ import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isNotNull, LogicValue, typeOrUndefined } from "../utils"
+import { isDefined, LogicValue, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, defineComponent, Repr } from "./Component"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
 import { InputBase } from "./Input"
@@ -45,17 +45,17 @@ export class Clock extends InputBase<ClockRepr> {
     private _phase: number = ClockDef.aults.phase
     private _showLabel: boolean = ClockDef.aults.showLabel
 
-    public constructor(editor: LogicEditor, savedData: ClockRepr | null) {
-        super(editor, ClockDef, savedData)
-        if (isNotNull(savedData)) {
-            this._period = savedData.period
-            if (isDefined(savedData.dutycycle)) {
-                this._dutycycle = savedData.dutycycle % 100
+    public constructor(editor: LogicEditor, saved?: ClockRepr) {
+        super(editor, ClockDef, saved)
+        if (isDefined(saved)) {
+            this._period = saved.period
+            if (isDefined(saved.dutycycle)) {
+                this._dutycycle = saved.dutycycle % 100
             }
-            if (isDefined(savedData.phase)) {
-                this._phase = savedData.phase % savedData.period
+            if (isDefined(saved.phase)) {
+                this._phase = saved.phase % saved.period
             }
-            this._showLabel = savedData.showLabel ?? ClockDef.aults.showLabel
+            this._showLabel = saved.showLabel ?? ClockDef.aults.showLabel
         }
         // sets the value and schedules the next tick
         this.tickCallback(editor.timeline.adjustedTime())
@@ -192,5 +192,5 @@ export class Clock extends InputBase<ClockRepr> {
         return newItems
     }
 
-
 }
+ClockDef.impl = Clock
