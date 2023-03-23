@@ -3,9 +3,9 @@ import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPON
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 
@@ -29,14 +29,14 @@ export const RAMDef =
             lines: 16,
         },
         validateParams: ({ bits, lines }, defaults) => {
-            const numDataBits = validate(bits, [4, 8, 16], defaults.bits, "RAM bits")
+            const numDataBits = validate(bits, [4, 8, 16, 32], defaults.bits, "RAM bits")
             const numAddressBits = Math.ceil(Math.log2(lines))
             const numWords = Math.pow(2, numAddressBits)
             return { numDataBits, numAddressBits, numWords }
         },
-        size: ({ numWords }) => ({
-            gridWidth: 11,
-            gridHeight: numWords <= 16 ? 16 : 22,// TODO better var height
+        size: ({ numWords, numDataBits }) => ({
+            gridWidth: 11, // always wide enough even for 256 lines
+            gridHeight: Math.max(numWords <= 16 ? 16 : 22, numDataBits + 4),
         }),
         makeNodes: ({ numDataBits, numAddressBits, gridHeight }) => {
             const bottomOffset = Math.ceil((gridHeight + 1) / 2)
@@ -83,7 +83,7 @@ type RAMValue = {
     out: LogicValue[]
 }
 
-export class RAM extends ComponentBase<RAMRepr, RAMValue> {
+export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
 
     public static defaultValue(numWords: number, numDataBits: number) {
         return RAM.valueFilledWith(false, numWords, numDataBits)
@@ -101,7 +101,7 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
     public readonly numDataBits: number
     public readonly numAddressBits: number
     public readonly numWords: number
-    private _showContent: boolean = RAMDef.aults.showContent
+    private _showContent: boolean
     private _trigger: EdgeTrigger = RAMDef.aults.trigger
     private _lastClock: LogicValue = Unknown
 
@@ -112,10 +112,8 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
         this.numAddressBits = params.numAddressBits
         this.numWords = params.numWords
 
-        if (isDefined(saved)) {
-            this._showContent = saved.showContent ?? RAMDef.aults.showContent
-            this._trigger = saved.trigger ?? RAMDef.aults.trigger
-        }
+        this._showContent = saved?.showContent ?? (!this.canShowContent() ? false : RAMDef.aults.showContent)
+        this._trigger = saved?.trigger ?? RAMDef.aults.trigger
     }
 
     public toJSON() {
@@ -124,7 +122,7 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
             bits: this.numDataBits === RAMDef.aults.bits ? undefined : this.numDataBits,
             lines: this.numWords === RAMDef.aults.lines ? undefined : this.numWords,
             ...super.toJSONBase(),
-            showContent: (this._showContent !== RAMDef.aults.showContent) ? this._showContent : undefined,
+            showContent: (!this.canShowContent()) ? undefined : (this._showContent !== RAMDef.aults.showContent) ? this._showContent : undefined,
             trigger: (this._trigger !== RAMDef.aults.trigger) ? this._trigger : undefined,
             content: this.contentRepr(),
         }
@@ -210,6 +208,10 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
         this.outputValues(this.outputs.Q, newValue.out)
     }
 
+    private canShowContent() {
+        return this.numWords <= 64 && this.numDataBits <= 16
+    }
+
     protected doSetShowContent(showContent: boolean) {
         this._showContent = showContent
         this.setNeedsRedraw("show content changed")
@@ -264,7 +266,7 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
 
 
         ctx.inNonTransformedFrame(ctx => {
-            if (!this._showContent || this.editor.options.hideMemoryContent) {
+            if (!this._showContent || !this.canShowContent() || this.editor.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
@@ -305,24 +307,25 @@ export class RAM extends ComponentBase<RAMRepr, RAMValue> {
 
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
-            () => this.doSetShowContent(!this._showContent))
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.Generic.contextMenu
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        const icon = this._showContent ? "check" : "none"
+        const toggleShowContentItems: MenuItems =
+            !this.canShowContent() ? [] : [
+                ["mid", ContextMenuData.item(icon, s.ShowContent,
+                    () => this.doSetShowContent(!this._showContent))],
+                ["mid", ContextMenuData.sep()],
+            ]
+
+        return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
-            ["mid", toggleShowOpItem]]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
+            ...toggleShowContentItems,
+            this.makeChangeParamsContextMenuItem("memlines", s.ParamNumWords, this.numWords, "lines", [8, 16, 32, 64, 128, 256]),
+            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numDataBits, "bits", [4, 8, 16, 32]),
+            ...this.makeForceOutputsContextMenuItem(true),
+        ]
     }
 
 }

@@ -5,94 +5,28 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
 import { ClockRepr } from "./Clock"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Params, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
-
-export const InputDef =
-    defineParametrizedComponent("in", undefined, false, true, {
-        variantName: ({ bits }) => `in-${bits}`,
-        button: { imgWidth: 32 },
-        repr: {
-            bits: typeOrUndefined(t.number),
-            val: typeOrUndefined(t.union([
-                LogicValueRepr,
-                t.string,
-                t.array(LogicValueRepr),
-            ])),
-            isPushButton: typeOrUndefined(t.boolean),
-            isConstant: typeOrUndefined(t.boolean),
-            name: ComponentNameRepr,
-        },
-        valueDefaults: {
-            isPushButton: false,
-            isConstant: false,
-        },
-        paramDefaults: {
-            bits: 1,
-        },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Input bits")
-            return { numBits }
-        },
-        size: ({ numBits }) => {
-            if (numBits === 1) {
-                const d = INPUT_OUTPUT_DIAMETER / GRID_STEP
-                return { gridWidth: d, gridHeight: d }
-            }
-            return {
-                gridWidth: 2,
-                gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
-            }
-        },
-        makeNodes: ({ numBits }) => ({
-            outs: {
-                Out: groupVertical("e", numBits === 1 ? 3 : 2, 0, numBits),
-            },
-        }),
-        initialValue: (saved, { numBits }) => {
-            const allFalse = () => ArrayFillWith<LogicValue>(false, numBits)
-            if (isUndefined(saved)) {
-                return allFalse()
-            }
-            let val
-            if (isDefined(val = saved.val)) {
-                if (isArray(val)) {
-                    return ArrayClampOrPad(val.map(v => toLogicValue(v)), numBits, false)
-                } else if (isNumber(val)) {
-                    return ArrayFillWith<LogicValue>(toLogicValue(val), numBits)
-                } else if (val.length === 0) {
-                    return allFalse()
-                } else {
-                    return ArrayClampOrPad(Array.from(val).reverse().map(v => toLogicValueFromChar(v)), numBits, false)
-                }
-            }
-            return allFalse()
-        },
-    })
-
-export type InputRepr = Repr<typeof InputDef>
-export type InputParams = ResolvedParams<typeof InputDef>
 
 
 type InputBaseRepr = InputRepr | ClockRepr
 
-export abstract class InputBase<TRepr extends InputBaseRepr> extends ComponentBase<
+export abstract class InputBase<TRepr extends InputBaseRepr, TParams extends ExtractParams<TRepr>> extends ParametrizedComponentBase<
     TRepr,
     LogicValue[],
+    TParams,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
     false, true
 > {
 
     public abstract get numBits(): number
-    protected _name: ComponentName = undefined
+    protected _name: ComponentName
 
-    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, LogicValue[]>, saved?: TRepr) {
+    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue[]>, SomeParamCompDef], saved?: TRepr) {
         super(editor, SubclassDef, saved)
-        if (isDefined(saved)) {
-            this._name = saved.name
-        }
+        this._name = saved?.name ?? undefined
     }
 
     protected override toJSONBase() {
@@ -271,8 +205,7 @@ export abstract class InputBase<TRepr extends InputBaseRepr> extends ComponentBa
         this.setNeedsRedraw("name changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         return [
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
@@ -288,21 +221,85 @@ export abstract class InputBase<TRepr extends InputBaseRepr> extends ComponentBa
 }
 
 
+export const InputDef =
+    defineParametrizedComponent("in", undefined, false, true, {
+        variantName: ({ bits }) => `in-${bits}`,
+        button: { imgWidth: 32 },
+        repr: {
+            bits: typeOrUndefined(t.number),
+            val: typeOrUndefined(t.union([
+                LogicValueRepr,
+                t.string,
+                t.array(LogicValueRepr),
+            ])),
+            isPushButton: typeOrUndefined(t.boolean),
+            isConstant: typeOrUndefined(t.boolean),
+            name: ComponentNameRepr,
+        },
+        valueDefaults: {
+            isPushButton: false,
+            isConstant: false,
+        },
+        paramDefaults: {
+            bits: 1,
+        },
+        validateParams: ({ bits }, defaults) => {
+            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Input bits")
+            return { numBits }
+        },
+        size: ({ numBits }) => {
+            if (numBits === 1) {
+                const d = INPUT_OUTPUT_DIAMETER / GRID_STEP
+                return { gridWidth: d, gridHeight: d }
+            }
+            return {
+                gridWidth: 2,
+                gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
+            }
+        },
+        makeNodes: ({ numBits }) => ({
+            outs: {
+                Out: groupVertical("e", numBits === 1 ? 3 : 2, 0, numBits),
+            },
+        }),
+        initialValue: (saved, { numBits }) => {
+            const allFalse = () => ArrayFillWith<LogicValue>(false, numBits)
+            if (isUndefined(saved)) {
+                return allFalse()
+            }
+            let val
+            if (isDefined(val = saved.val)) {
+                if (isArray(val)) {
+                    return ArrayClampOrPad(val.map(v => toLogicValue(v)), numBits, false)
+                } else if (isNumber(val)) {
+                    return ArrayFillWith<LogicValue>(toLogicValue(val), numBits)
+                } else if (val.length === 0) {
+                    return allFalse()
+                } else {
+                    return ArrayClampOrPad(Array.from(val).reverse().map(v => toLogicValueFromChar(v)), numBits, false)
+                }
+            }
+            return allFalse()
+        },
+    })
 
-export class Input extends InputBase<InputRepr> {
+export type InputRepr = Repr<typeof InputDef>
+export type InputParams = ResolvedParams<typeof InputDef>
+
+
+export class Input extends InputBase<InputRepr, Params<typeof InputDef>> {
 
     public readonly numBits: number
-    private _isPushButton = InputDef.aults.isPushButton
-    private _isConstant = InputDef.aults.isConstant
+    private _isPushButton: boolean
+    private _isConstant: boolean
 
     public constructor(editor: LogicEditor, params: InputParams, saved?: InputRepr) {
         super(editor, InputDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isDefined(saved)) {
-            this._isPushButton = saved.isPushButton ?? InputDef.aults.isPushButton
-            this._isConstant = saved.isConstant ?? InputDef.aults.isConstant
-        }
+
+        this._isPushButton = saved?.isPushButton ?? InputDef.aults.isPushButton
+        this._isConstant = saved?.isConstant ?? InputDef.aults.isConstant
     }
 
     public toJSON() {
@@ -372,8 +369,8 @@ export class Input extends InputBase<InputRepr> {
             return false
         }
 
-        const i = this.clickedBitOffset(e)
-        if (isDefined(i)) {
+        const i = this.clickedBitIndex(e)
+        if (i !== -1) {
             this.doSetValueChangingBit(i, nextValue(this.value[i], this.editor.mode, e.altKey))
         }
         return true
@@ -390,19 +387,22 @@ export class Input extends InputBase<InputRepr> {
         return result
     }
 
-    private clickedBitOffset(e: MouseEvent | TouchEvent): number | undefined {
+    private clickedBitIndex(e: MouseEvent | TouchEvent): number {
         const h = this.unrotatedHeight
         const y = this.editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
         const i = Math.floor(y * this.numBits / h)
         if (i >= 0 && i < this.numBits) {
             return i
         }
-        return undefined
+        return -1
     }
 
     private trySetPushButtonBit(v: LogicValue, e: MouseEvent | TouchEvent) {
         let i
-        if (this.editor.mode !== Mode.STATIC && this._isPushButton && !this._isConstant && isDefined(i = this.clickedBitOffset(e))) {
+        if (this.editor.mode !== Mode.STATIC
+            && this._isPushButton
+            && !this._isConstant
+            && (i = this.clickedBitIndex(e)) !== -1) {
             this.doSetValueChangingBit(i, v)
         }
     }
@@ -425,7 +425,7 @@ export class Input extends InputBase<InputRepr> {
         this.setNeedsRedraw("constant changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Input.contextMenu
 
         const makeItemBehaveAs = (desc: string, value: boolean) => {
@@ -435,10 +435,13 @@ export class Input extends InputBase<InputRepr> {
             return ContextMenuData.item(icon, desc, action)
         }
 
-        const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        const newItems: MenuItems = [
             ["mid", makeItemBehaveAs(s.ToggleButton, false)],
             ["mid", makeItemBehaveAs(s.PushButton, true)],
             ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
+            ["mid", ContextMenuData.sep()],
+
         ]
 
         if (this.numBits === 1) {
@@ -454,10 +457,7 @@ export class Input extends InputBase<InputRepr> {
             )
         }
 
-        const superItems = super.makeComponentSpecificContextMenuItems()
-        if (isDefined(superItems)) {
-            newItems.push(...superItems)
-        }
+        newItems.push(...super.makeComponentSpecificContextMenuItems())
 
         return newItems
     }

@@ -43,14 +43,14 @@ const Strings_fr = {
         },
         Components: RichStringEnum.withProps<ComponentStrings>()({
             Input1: "Entrée",
-            Input4: ["Entrée semioctet (4 bits)", "In 4 bits"],
+            InputN: ["Entrée multiple", "In mult."],
             Input8: ["Entrée octet (8 bits)", "In 8 bits"],
             Clock: ["Générateur de signal d’horloge", "Horloge"],
             InputRandom: ["Entrée aléatoire", "Aléatoire"],
             Output1: "Sortie",
-            Output4: ["Sortie semioctet (4 bits)", "Out 4 bits"],
+            OutputN: ["Sortie multiple", "Out mult."],
             Output8: ["Sortie octet (8 bits)", "Out 8 bits"],
-            OutputDisplay4: ["Affichage de 4 bits", "Aff. 4 bits"],
+            OutputDisplayN: ["Afficheur d’une valeur", "Afficheur"],
             OutputDisplay8: ["Affichage de 8 bits", "Aff. 8 bits"],
             Output7Seg: ["Afficheur à 7 segments", "7 segments"],
             Output16Seg: ["Afficheur à 16 segments", "16 segments"],
@@ -59,8 +59,7 @@ const Strings_fr = {
             OutputShiftBuffer: ["Affichage avec buffer à décalage", "Affichage à décalage"],
 
             Passthrough1: ["Broche", "Broche"],
-            Passthrough4: ["Broche à 4 entrées-sortes", "Broche (4)"],
-            Passthrough8: ["Broche à 8 entrées-sortes", "Broche (8)"],
+            PassthroughN: ["Broche à plusieurs entrées-sortes", "Broche (n)"],
             LabelString: ["Étiquette", "Label"],
             LabelRectangle: ["Rectangle de regroupement", "Groupe"],
 
@@ -91,16 +90,16 @@ const Strings_fr = {
             NOR4: ["Porte NON-OU à 4 entrées", "NON-OU (4)"],
             XNOR4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
 
-            SwitchedInverter: ["Inverseur commuté à 4 bits", "Inv. comm."],
+            SwitchedInverter: ["Inverseur commuté", "Inv. comm."],
             GateArray: ["Porte multiple", "Porte mult."],
             TriStateBufferArray: ["Sortie à 3 états multiple", "3 états mult."],
 
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Addit."],
-            AdderArray4: ["Additionneur multiple à 4 bits", "Add. (4)"],
-            ALU4: ["Unité arithmétique et logique à 4 bits", "ALU (4 b.)"],
-            ALU8: ["Unité arithmétique et logique à 8 bits", "ALU (8 b.)"],
+            AdderArray: ["Additionneur multiple", "Add. mult."],
+            ALU: ["Unité arithmétique et logique", "ALU"],
 
+            Mux: ["Multiplexer", "Mux"],
             Mux2to1: ["Multiplexer 2-vers-1 (1 bit de contrôle)", "Mux 2-1"],
             Mux4to1: ["Multiplexer 4-vers-1 (2 bits de contrôle)", "Mux 4-1"],
             Mux8to1: ["Multiplexer 8-vers-1 (3 bits de contrôle)", "Mux 8-1"],
@@ -108,6 +107,8 @@ const Strings_fr = {
             Mux8to2: ["Multiplexer 8-vers-2 (2 bits de contrôle)", "Mux 8-2"],
             Mux8to4: ["Multiplexer 8-vers-4 (1 bit de contrôle)", "Mux 8-4"],
             Mux16to8: ["Multiplexer 16-vers-8 (1 bit de contrôle)", "Mux 16-8"],
+
+            Demux: ["Démultiplexer", "Demux"],
             Demux1to2: ["Démultiplexer 1-vers-2 (1 bit de contrôle)", "Demux 1-2"],
             Demux1to4: ["Démultiplexer 1-vers-4 (2 bits de contrôle)", "Demux 1-4"],
             Demux1to8: ["Démultiplexer 1-vers-8 (3 bits de contrôle)", "Demux 1-8"],
@@ -120,20 +121,16 @@ const Strings_fr = {
             FlipflopJK: ["Bascule JK", "Basc. JK"],
             FlipflopT: ["Bascule T", "Basc. T"],
             FlipflopD: ["Bascule D", "Basc. D"],
-            Register4: ["Registre à 4 bits", "Registre"],
-            Register8: ["Registre à 8 bits", "Reg. (8 bits)"],
-            ShiftRegister4: ["Registre à décalage à 4 bits", "Reg. déc."],
-            ShiftRegister8: ["Registre à décalage à 8 bits", "Reg. déc. (8 b.)"],
-            RAM16x4: ["RAM, 16 × 4 bits", "RAM 16×4"],
-            RAM16x8: ["RAM, 16 × 8 bits", "RAM 16×8"],
-            RAM64x8: ["RAM, 64 × 8 bits", "RAM 64×8"],
+            Register: ["Registre", "Registre"],
+            ShiftRegister: ["Registre à décalage", "Reg. déc."],
+            RAM: ["RAM (mémoire vive)", "RAM"],
 
             Counter: ["Compteur 4 bits", "Compteur"],
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
             Decoder16Seg: ["Décodeur ASCII vers 16 segments", "Déc. 16 seg."],
             DecoderBCD4: ["Décodeur 4 bits vers BCD sur 5 bits", "Déc. BCD"],
 
-            Comparator: ["Comparateur", "Comp."],
+            Comparator: ["Comparateur", "Compar."],
         }),
     },
     Modes: {
@@ -188,7 +185,7 @@ const Strings_fr = {
                 Delete: "Supprimer",
 
                 SetIdentifier: "Attribuer un identifiant…",
-                ChangeIdentifier: tuple("Changer l’identifiant (", ")"),
+                ChangeIdentifier: tuple("Changer l’identifiant (", ")…"),
                 SetIdentifierPrompt: "Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)",
 
                 Orientation: "Orientation",
@@ -216,6 +213,10 @@ const Strings_fr = {
                 TriggerFallingEdge: "flanc descendant",
 
                 ShowContent: "Montrer le contenu",
+
+                ParamNumInputs: tuple("Nombre d’entrées", template("${val} entrées")),
+                ParamNumBits: tuple("Nombre de bits", template("${val} bits")),
+                ParamNumWords: tuple("Nombre de lignes", template("${val} lignes")),
             },
 
             InputCarryInDesc: "Cin (retenue précédente)",
@@ -302,9 +303,6 @@ const Strings_fr = {
         },
         Demux: {
             tooltip: template("Démultiplexeur ${from} vers ${to}"),
-            contextMenu: {
-                UseZForDisconnected: "Utiliser Z pour sorties déconnectées",
-            },
         },
         FlipflopD: {
             tooltip: {
@@ -454,8 +452,14 @@ const Strings_fr = {
         },
         Mux: {
             tooltip: template("Multiplexeur ${from} vers ${to}"),
+        },
+        MuxDemux: {
             contextMenu: {
                 ShowWiring: "Afficher les connexions",
+                UseZForDisconnected: "Utiliser Z pour sorties déconnectées",
+
+                ParamNumFrom: tuple("Nombre d’entrées", template("${val} entrées")),
+                ParamNumTo: tuple("Nombre de sorties", template("${val} sorties")),
             },
         },
         Output: {
@@ -523,9 +527,10 @@ const Strings_fr = {
             },
             contextMenu: {
                 DisplayAs: "Afficher",
-                DisplayAsDecimal: "en décimal",
+                DisplayAsDecimal: "en décimal (base 10)",
                 DisplayAsSignedDecimal: "en décimal signé",
-                DisplayAsHexadecimal: "en hexadécimal",
+                DisplayAsOctal: "en octal (base 8)",
+                DisplayAsHexadecimal: "en hexadécimal (base 16)",
                 DisplayAsUnknown: "comme inconnu",
             },
         },
@@ -597,8 +602,8 @@ const Strings_fr = {
         },
         SwitchedInverter: {
             tooltip: {
-                title: "Inverseur commuté à 4 bits",
-                desc: "Inverse ses 4 entrées si le bit de contrôle S vaut 1; sinon, les sorties sont égales aux entrées.",
+                title: "Inverseur commuté",
+                desc: "Inverse ses entrées si le bit de contrôle S vaut 1; sinon, les sorties sont égales aux entrées.",
             },
         },
         TriStateBuffer: {
@@ -665,14 +670,14 @@ const Strings_en: Strings = {
         },
         Components: RichStringEnum.withProps<ComponentStrings>()({
             Input1: "Input",
-            Input4: ["Nibble (4-Bit) Input", "4-Bit In"],
+            InputN: ["Multiple Inputs", "In (Mult.)"],
             Input8: ["Byte (8-Bit) Input", "8-Bit In"],
             Clock: ["Clock Generator", "Clock"],
             InputRandom: ["Random Input", "Random"],
             Output1: "Output",
-            Output4: ["Nibble (4-Bit) Output", "4-Bit Out"],
+            OutputN: ["Multiple Outputs", "Out (Mult.)"],
             Output8: ["Byte (8-Bit) Output", "8-Bit Out"],
-            OutputDisplay4: ["Nibble (4-Bit) Display", "4-Bit Displ."],
+            OutputDisplayN: ["Value Display", "Display"],
             OutputDisplay8: ["Byte (8-Bit) Display", "8-Bit Displ."],
             Output7Seg: ["7-Segment Display", "7-Segment"],
             Output16Seg: ["16-Segment Display", "16-Segment"],
@@ -681,8 +686,7 @@ const Strings_en: Strings = {
             OutputShiftBuffer: ["Display with Shift Buffer", "Shift Displ."],
 
             Passthrough1: ["Passthrough", "Passthrough"],
-            Passthrough4: ["Passthrough with 4 inputs-outputs", "Passthr. (4)"],
-            Passthrough8: ["Passthrough with 8 inputs-outputs", "Passthr. (8)"],
+            PassthroughN: ["Passthrough with multiple inputs-outputs", "Passthr. (n)"],
             LabelString: ["Label", "Label"],
             LabelRectangle: ["Grouping Rectangle", "Group"],
 
@@ -713,16 +717,16 @@ const Strings_en: Strings = {
             NOR4: ["4-Input AND Gate", "NOR (4)"],
             XNOR4: ["4-Input AND Gate", "XNOR (4)"],
 
-            SwitchedInverter: ["4-Bit Switched Inverter", "Switched Inv."],
+            SwitchedInverter: ["Switched Inverter", "Switched Inv."],
             GateArray: ["Gate Array", "Gate Array"],
             TriStateBufferArray: ["Tri-State Buffer Array", "Tri-state Arr."],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
-            AdderArray4: ["4-Bit Adder Array", "Adder (4 b.)"],
-            ALU4: ["Arithmetic and Logic Unit (4-bit)", "ALU (4 b.)"],
-            ALU8: ["Arithmetic and Logic Unit (8-bit)", "ALU (8 b.)"],
+            AdderArray: ["Adder Array", "Adder Arr."],
+            ALU: ["Arithmetic and Logic Unit", "ALU"],
 
+            Mux: ["Multiplexer", "Mux"],
             Mux2to1: ["2-to-1 Multiplexer (1 Control Bit)", "Mux 2-1"],
             Mux4to1: ["4-to-1 Multiplexer (2 Control Bit)", "Mux 4-1"],
             Mux8to1: ["8-to-1 Multiplexer (3 Control Bit)", "Mux 8-1"],
@@ -730,6 +734,8 @@ const Strings_en: Strings = {
             Mux8to2: ["8-to-2 Multiplexer (2 Control Bit)", "Mux 8-2"],
             Mux8to4: ["8-to-4 Multiplexer (1 Control Bit)", "Mux 8-4"],
             Mux16to8: ["16-to-8 Multiplexer (1 Control Bit)", "Mux 16-8"],
+
+            Demux: ["Demultiplexer", "Demux"],
             Demux1to2: ["1-to-2 Demultiplexer (1 Control Bit)", "Demux 1-2"],
             Demux1to4: ["1-to-4 Demultiplexer (2 Control Bit)", "Demux 1-4"],
             Demux1to8: ["1-to-8 Demultiplexer (3 Control Bit)", "Demux 1-8"],
@@ -742,20 +748,16 @@ const Strings_en: Strings = {
             FlipflopJK: ["JK Flip-Flop", "FF-JK"],
             FlipflopT: ["T Flip-Flop", "FF-T"],
             FlipflopD: ["D Flip-Flop", "FF-D"],
-            Register4: ["4-Bit Register", "Register"],
-            Register8: ["8-Bit Register", "Reg. (8 b.)"],
-            ShiftRegister4: ["4-Bit Shift Register", "Shift Reg."],
-            ShiftRegister8: ["8-Bit Shift Register", "Shift R. (8 b.)"],
-            RAM16x4: ["RAM, 16 × 4 Bits", "RAM 16×4"],
-            RAM16x8: ["RAM, 16 × 8 Bits", "RAM 16×8"],
-            RAM64x8: ["RAM, 64 × 8 Bits", "RAM 64×8"],
+            Register: ["Register", "Register"],
+            ShiftRegister: ["Shift Register", "Shift Reg."],
+            RAM: ["RAM Module", "RAM"],
 
             Counter: ["4-Bit Counter", "Counter"],
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
             Decoder16Seg: ["ASCII-to-16-Segment Decoder", "16-Seg. Dec."],
             DecoderBCD4: ["4-Bit-to-BCD Decoder", "BCD Dec."],
 
-            Comparator: ["Comparator", "Comp."],
+            Comparator: ["Comparator", "Compar."],
         }),
     },
     Modes: {
@@ -810,7 +812,7 @@ const Strings_en: Strings = {
                 Delete: "Delete",
 
                 SetIdentifier: "Set Identifier…",
-                ChangeIdentifier: tuple("Change Identifier (", ")"),
+                ChangeIdentifier: tuple("Change Identifier (", ")…"),
                 SetIdentifierPrompt: "Choose the identifier to use for this component or leave empty to remove it:\n\n(The identifier is only used to refer to this component from external JavaScript code.)",
 
                 Orientation: "Orientation",
@@ -838,6 +840,10 @@ const Strings_en: Strings = {
                 TriggerFallingEdge: "Fallling Edge",
 
                 ShowContent: "Show Content",
+
+                ParamNumInputs: tuple("Number of Inputs", template("${val} Inputs")),
+                ParamNumBits: tuple("Number of Bits", template("${val} Bits")),
+                ParamNumWords: tuple("Number of Lines", template("${val} Lines")),
             },
 
             InputCarryInDesc: "Cin (Previous Carry)",
@@ -924,9 +930,6 @@ const Strings_en: Strings = {
         },
         Demux: {
             tooltip: template("${from}-to-${to} Demultiplexer"),
-            contextMenu: {
-                UseZForDisconnected: "Use Z For Disconnected Pins",
-            },
         },
         FlipflopD: {
             tooltip: {
@@ -1075,8 +1078,14 @@ const Strings_en: Strings = {
         },
         Mux: {
             tooltip: template("${from}-to-${to} Multiplexer"),
+        },
+        MuxDemux: {
             contextMenu: {
                 ShowWiring: "Show Internal Wiring",
+                UseZForDisconnected: "Use Z For Disconnected Pins",
+
+                ParamNumFrom: tuple("Number of Inputs", template("${val} Inputs")),
+                ParamNumTo: tuple("Number of Outputs", template("${val} Outputs")),
             },
         },
         Output: {
@@ -1145,9 +1154,10 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 DisplayAs: "Display as",
-                DisplayAsDecimal: "Decimal",
+                DisplayAsDecimal: "Decimal (Base 10)",
                 DisplayAsSignedDecimal: "Signed Decimal",
-                DisplayAsHexadecimal: "Hexadecimal",
+                DisplayAsOctal: "Octal (Base 8)",
+                DisplayAsHexadecimal: "Hexadecimal (Base 16)",
                 DisplayAsUnknown: "Unkown",
             },
         },
@@ -1219,8 +1229,8 @@ const Strings_en: Strings = {
         },
         SwitchedInverter: {
             tooltip: {
-                title: "4-Bit Switched Inverter",
-                desc: "Inverts its four inputs when the control bit S is on; otherwise, just outputs the inputs.",
+                title: "Switched Inverter",
+                desc: "Inverts its inputs when the control bit S is on; otherwise, just outputs the inputs.",
             },
         },
         TriStateBuffer: {

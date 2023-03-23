@@ -2,9 +2,9 @@ import * as t from "io-ts"
 import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawValueText, drawWireLineToComponent } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineAbstractComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { NodeIn } from "./Node"
 
 
@@ -49,14 +49,12 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
     true, true
 > {
 
-    protected _showContent: boolean = FlipflopOrLatchDef.aults.showContent
+    protected _showContent: boolean
     protected _isInInvalidState = false
 
     protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
         super(editor, SubclassDef, saved)
-        if (isDefined(saved)) {
-            this._showContent = saved.showContent ?? FlipflopOrLatchDef.aults.showContent
-        }
+        this._showContent = saved?.showContent ?? FlipflopOrLatchDef.aults.showContent
     }
 
     protected override toJSONBase() {
@@ -198,13 +196,11 @@ export abstract class Flipflop<
 > extends FlipflopOrLatch<TRepr> implements SyncComponent<[LogicValue, LogicValue]> {
 
     protected _lastClock: LogicValue = Unknown
-    protected _trigger: EdgeTrigger = FlipflopBaseDef.aults.trigger
+    protected _trigger: EdgeTrigger
 
     protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
         super(editor, SubclassDef, saved)
-        if (isDefined(saved)) {
-            this._trigger = saved.trigger ?? FlipflopBaseDef.aults.trigger
-        }
+        this._trigger = saved?.trigger ?? FlipflopBaseDef.aults.trigger
     }
 
     protected override toJSONBase() {
@@ -323,32 +319,24 @@ export abstract class Flipflop<
         })
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
+        const toggleShowContentItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
-            ["mid", toggleShowOpItem],
+            ["mid", toggleShowContentItem],
+            ...this.makeForceOutputsContextMenuItem(true),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
     }
 
 }
 
 
-export function makeTriggerItems(currentTrigger: EdgeTrigger, handler: (trigger: EdgeTrigger) => void): [ContextMenuItemPlacement, ContextMenuItem][] {
+export function makeTriggerItems(currentTrigger: EdgeTrigger, handler: (trigger: EdgeTrigger) => void): MenuItems {
     const s = S.Components.Generic.contextMenu
 
     const makeTriggerItem = (trigger: EdgeTrigger, desc: string) => {

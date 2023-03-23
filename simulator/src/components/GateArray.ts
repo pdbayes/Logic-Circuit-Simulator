@@ -3,9 +3,10 @@ import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ArrayFillWith, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ALUDef } from "./ALU"
+import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
@@ -29,18 +30,22 @@ export const GateArrayDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Gate array bits")
             return { numBits }
         },
-        size: ({ numBits }) => {
-            return { gridWidth: 4, gridHeight: 19 } // TODO var height
-        },
-        makeNodes: ({ numBits }) => ({
-            ins: {
-                A: groupVertical("w", -3, -5, numBits),
-                B: groupVertical("w", -3, +5, numBits),
-            },
-            outs: {
-                S: groupVertical("e", 3, 0, numBits),
-            },
+        size: ({ numBits }) => ({
+            gridWidth: 4, // constant
+            gridHeight: ALUDef.size({ numBits }).gridHeight, // mimic ALU
         }),
+        makeNodes: ({ numBits }) => {
+            const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
+            return {
+                ins: {
+                    A: groupVertical("w", -3, -inputCenterY, numBits),
+                    B: groupVertical("w", -3, inputCenterY, numBits),
+                },
+                outs: {
+                    S: groupVertical("e", 3, 0, numBits),
+                },
+            }
+        },
         initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
@@ -48,7 +53,7 @@ export const GateArrayDef =
 export type GateArrayRepr = Repr<typeof GateArrayDef>
 export type GateArrayParams = ResolvedParams<typeof GateArrayDef>
 
-export class GateArray extends ComponentBase<GateArrayRepr> {
+export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
 
     public readonly numBits: number
     private _subtype: GateNType
@@ -58,13 +63,8 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
         super(editor, GateArrayDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isDefined(saved)) {
-            this._subtype = saved.subtype
-            this._showAsUnknown = saved.showAsUnknown ?? GateArrayDef.aults.showAsUnknown
-        } else {
-            this._subtype = GateArrayDef.aults.subtype
-            this._showAsUnknown = GateArrayDef.aults.showAsUnknown
-        }
+        this._subtype = saved?.subtype ?? GateArrayDef.aults.subtype
+        this._showAsUnknown = saved?.showAsUnknown ?? GateArrayDef.aults.showAsUnknown
     }
 
     public toJSON() {
@@ -270,18 +270,22 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
         this.setNeedsRedraw("display as unknown changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.GateArray.contextMenu
 
         const typeItems: ContextMenuData = []
-        for (const subtype of ["AND", "OR", "XOR", "NAND", "NOR", "XNOR"] as const) {
-            const icon = this._subtype === subtype ? "check" : "none"
-            typeItems.push(ContextMenuData.item(icon, subtype, () => {
-                this.doSetSubtype(subtype)
-            }))
+        for (const subtype of ["AND", "OR", "XOR", "NAND", "NOR", "XNOR", "-", "IMPLY", "RIMPLY", "NIMPLY", "RNIMPLY"] as const) {
+            if (subtype === "-") {
+                typeItems.push(ContextMenuData.sep())
+            } else {
+                const icon = this._subtype === subtype ? "check" : "none"
+                typeItems.push(ContextMenuData.item(icon, subtype, () => {
+                    this.doSetSubtype(subtype)
+                }))
+            }
         }
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        const items: MenuItems = [
             ["mid", ContextMenuData.submenu("settings", s.Type, typeItems)],
         ]
 
@@ -295,13 +299,11 @@ export class GateArray extends ComponentBase<GateArrayRepr> {
             )
         }
 
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", ContextMenuData.sep()],
-                ["mid", forceOutputItem]
-            )
-        }
+        items.push(
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            ...this.makeForceOutputsContextMenuItem(true)
+        )
 
         return items
     }

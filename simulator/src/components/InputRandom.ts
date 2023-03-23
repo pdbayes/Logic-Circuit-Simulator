@@ -4,8 +4,8 @@ import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, isDefined, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
@@ -56,27 +56,25 @@ export type InputRandomRepr = Repr<typeof InputRandomDef>
 export type InputRandomParams = ResolvedParams<typeof InputRandomDef>
 
 
-export class InputRandom extends ComponentBase<InputRandomRepr> {
+export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
 
     public readonly numBits: number
-    private _prob1: number = InputRandomDef.aults.prob1
-    private _showProb: boolean = InputRandomDef.aults.showProb
+    private _prob1: number
+    private _showProb: boolean
     private _lastClock: LogicValue = Unknown
-    private _trigger: EdgeTrigger = InputRandomDef.aults.trigger
-    private _name: ComponentName = undefined
+    private _trigger: EdgeTrigger
+    private _name: ComponentName
 
     public constructor(editor: LogicEditor, params: InputRandomParams, saved?: InputRandomRepr) {
         super(editor, InputRandomDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isDefined(saved)) {
-            if (isDefined(saved.prob1)) {
-                this._prob1 = Math.max(0, Math.min(1, saved.prob1))
-            }
-            this._showProb = saved.showProb ?? InputRandomDef.aults.showProb
-            this._trigger = saved.trigger ?? InputRandomDef.aults.trigger
-            this._name = saved.name
-        }
+
+        this._prob1 = isDefined(saved?.prob1)
+            ? Math.max(0, Math.min(1, saved!.prob1)) : InputRandomDef.aults.prob1
+        this._showProb = saved?.showProb ?? InputRandomDef.aults.showProb
+        this._trigger = saved?.trigger ?? InputRandomDef.aults.trigger
+        this._name = saved?.name ?? undefined
     }
 
     public override toJSON() {
@@ -197,7 +195,7 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
         this.setNeedsRedraw("show probability changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.InputRandom.contextMenu
         const icon = this._showProb ? "check" : "none"
         const toggleShowProbItem = ContextMenuData.item(icon, s.ShowProb,
@@ -205,6 +203,8 @@ export class InputRandom extends ComponentBase<InputRandomRepr> {
 
         return [
             ["mid", toggleShowProbItem],
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 7, 8, 16]),
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]

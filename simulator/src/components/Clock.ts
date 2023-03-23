@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, LogicValue, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { InputBase } from "./Input"
 
 export const ClockDef =
@@ -37,26 +37,24 @@ export const ClockDef =
 
 export type ClockRepr = Repr<typeof ClockDef>
 
-export class Clock extends InputBase<ClockRepr> {
+export class Clock extends InputBase<ClockRepr, {}> {
 
     public get numBits() { return 1 }
-    private _period: number = ClockDef.aults.period
-    private _dutycycle: number = ClockDef.aults.dutycycle
-    private _phase: number = ClockDef.aults.phase
-    private _showLabel: boolean = ClockDef.aults.showLabel
+    private _period: number
+    private _dutycycle: number
+    private _phase: number
+    private _showLabel: boolean
 
     public constructor(editor: LogicEditor, saved?: ClockRepr) {
-        super(editor, ClockDef, saved)
-        if (isDefined(saved)) {
-            this._period = saved.period
-            if (isDefined(saved.dutycycle)) {
-                this._dutycycle = saved.dutycycle % 100
-            }
-            if (isDefined(saved.phase)) {
-                this._phase = saved.phase % saved.period
-            }
-            this._showLabel = saved.showLabel ?? ClockDef.aults.showLabel
-        }
+        // 'undefined as any' is a hack to get around the fact that InputBase is parametrized
+        // and Clock is not. As long as we don't try to change nonexitent params, it's fine.
+        super(editor, [ClockDef, undefined as any], saved)
+
+        this._period = saved?.period ?? ClockDef.aults.period
+        this._dutycycle = isDefined(saved?.dutycycle) ? saved!.dutycycle % 100 : ClockDef.aults.dutycycle
+        this._phase = isDefined(saved?.phase) ? saved!.phase % this._period : ClockDef.aults.phase
+        this._showLabel = saved?.showLabel ?? ClockDef.aults.showLabel
+
         // sets the value and schedules the next tick
         this.tickCallback(editor.timeline.adjustedTime())
     }
@@ -157,14 +155,8 @@ export class Clock extends InputBase<ClockRepr> {
         this.setNeedsRedraw("period changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        const newItems: [ContextMenuItemPlacement, ContextMenuItem][] = []
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Clock.contextMenu
-
-        const superItems = super.makeComponentSpecificContextMenuItems()
-        if (isDefined(superItems)) {
-            newItems.push(...superItems)
-        }
 
         const periodPresets: [number, string][] = [
             [100, "100 ms (10 Hz)"],
@@ -183,13 +175,11 @@ export class Clock extends InputBase<ClockRepr> {
             return ContextMenuData.item(icon, desc, () => this.doSetPeriod(period))
         }
 
-        const myItems: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
+            ...super.makeComponentSpecificContextMenuItems(),
             ["mid", ContextMenuData.sep()],
             ["mid", ContextMenuData.submenu("timer", s.Period, periodPresets.map(makeItemSetPeriod))],
         ]
-
-        newItems.push(...myItems)
-        return newItems
     }
 
 }

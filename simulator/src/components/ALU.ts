@@ -3,9 +3,9 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isBoolean, isDefined, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, Repr, ResolvedParams, Value } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { ArrayFillWith, HighImpedance, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
 
 export const ALUDef =
@@ -26,23 +26,29 @@ export const ALUDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "ALU bits")
             return { numBits }
         },
-        size: ({ numBits }) => {
-            return { gridWidth: 6, gridHeight: 19 } // TODO var height
-        },
-        makeNodes: ({ numBits }) => ({
-            ins: {
-                A: groupVertical("w", -4, -5, numBits),
-                B: groupVertical("w", -4, 5, numBits),
-                Op: groupHorizontal("n", 1, -10, 2),
-                Cin: [-2, -10, "n", () => `Cin (${S.Components.ALU.InputCinDesc})`],
-            },
-            outs: {
-                S: groupVertical("e", 4, 0, numBits),
-                V: [0, 10, "s", "V (oVerflow)"],
-                Z: [2, 10, "s", "Z (Zero)"],
-                Cout: [-2, 10, "s", () => `Cout (${S.Components.ALU.OutputCoutDesc})`],
-            },
+        size: ({ numBits }) => ({
+            gridWidth: 6, // always enough
+            gridHeight: 19 + Math.max(0, numBits - 8) * 2,
         }),
+        makeNodes: ({ numBits, gridHeight }) => {
+            const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
+            const bottom = (gridHeight + 1) / 2
+            const top = -bottom
+            return {
+                ins: {
+                    A: groupVertical("w", -4, -inputCenterY, numBits),
+                    B: groupVertical("w", -4, inputCenterY, numBits),
+                    Op: groupHorizontal("n", 1, top, 2),
+                    Cin: [-2, top, "n", () => `Cin (${S.Components.ALU.InputCinDesc})`],
+                },
+                outs: {
+                    S: groupVertical("e", 4, 0, numBits),
+                    V: [0, bottom, "s", "V (oVerflow)"],
+                    Z: [2, bottom, "s", "Z (Zero)"],
+                    Cout: [-2, bottom, "s", () => `Cout (${S.Components.ALU.OutputCoutDesc})`],
+                },
+            }
+        },
         initialValue: (saved, { numBits }) => {
             const false_ = false as LogicValue
             return { s: ArrayFillWith(false_, numBits), v: false_, z: false_, cout: false_ }
@@ -64,18 +70,17 @@ export const ALUOp = {
     },
 }
 
-export class ALU extends ComponentBase<ALURepr> {
+export class ALU extends ParametrizedComponentBase<ALURepr> {
 
     public readonly numBits: number
-    private _showOp = ALUDef.aults.showOp
+    private _showOp: boolean
 
     public constructor(editor: LogicEditor, params: ALUParams, saved?: ALURepr) {
         super(editor, ALUDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isDefined(saved)) {
-            this._showOp = saved.showOp ?? ALUDef.aults.showOp
-        }
+
+        this._showOp = saved?.showOp ?? ALUDef.aults.showOp
     }
 
     public toJSON() {
@@ -240,26 +245,19 @@ export class ALU extends ComponentBase<ALURepr> {
         this.setNeedsRedraw("show op changed")
     }
 
-
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const icon = this._showOp ? "check" : "none"
         const toggleShowOpItem = ContextMenuData.item(icon, S.Components.ALU.contextMenu.toggleShowOp, () => {
             this.doSetShowOp(!this._showOp)
         })
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
             ["mid", toggleShowOpItem],
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            ["mid", ContextMenuData.sep()],
+            ...this.makeForceOutputsContextMenuItem(),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
     }
 
 }

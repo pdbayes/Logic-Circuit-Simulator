@@ -4,8 +4,8 @@ import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
-import { Component, ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
@@ -47,18 +47,17 @@ export type OutputRepr = Repr<typeof OutputDef>
 export type OutputParams = ResolvedParams<typeof OutputDef>
 
 
-export class Output extends ComponentBase<OutputRepr> {
+export class Output extends ParametrizedComponentBase<OutputRepr> {
 
     public readonly numBits: number
-    private _name: ComponentName = undefined
+    private _name: ComponentName
 
     public constructor(editor: LogicEditor, params: OutputParams, saved?: OutputRepr) {
         super(editor, OutputDef.with(params), saved)
 
         this.numBits = params.numBits
-        if (isDefined(saved)) {
-            this._name = saved.name
-        }
+
+        this._name = saved?.name ?? undefined
     }
 
     public toJSON() {
@@ -217,10 +216,12 @@ export class Output extends ComponentBase<OutputRepr> {
         this.setNeedsRedraw("name changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         return [
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
         ]
     }
 

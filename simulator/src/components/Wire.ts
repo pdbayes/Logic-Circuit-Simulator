@@ -141,6 +141,7 @@ export class Wire extends Drawable {
         return t.union([fullRepr, simpleRepr], "Wire")
     }
 
+    private _startNode: Node // not NodeOut since we can start from the end
     private _endNode: NodeIn | null = null
     private _waypoints: Waypoint[] = []
     private _style: WireStyle | undefined = undefined
@@ -149,13 +150,12 @@ export class Wire extends Drawable {
     public customPropagationDelay: number | undefined = undefined
     public ribbon: Ribbon | undefined = undefined
 
-    public constructor(
-        private _startNode: Node // not NodeOut since we can start from the end
-    ) {
-        super(_startNode.editor)
-        const editor = _startNode.editor
+    public constructor(startNode: Node) {
+        super(startNode.editor)
+        this._startNode = startNode
+        const editor = startNode.editor
         const longAgo = -1 - editor.options.propagationDelay // make sure it is fully propagated no matter what
-        this._propagatingValues.push([_startNode.value, longAgo])
+        this._propagatingValues.push([startNode.value, longAgo])
     }
 
     public toJSON(): WireRepr {
@@ -221,14 +221,14 @@ export class Wire extends Drawable {
 
         if (!Node.isOutput(secondNode)) {
             if (!Node.isOutput(this._startNode)) {
-                console.log("WARN connecting two input nodes")
+                console.warn("Connecting two input nodes")
                 return
             }
             this._endNode = secondNode
 
         } else {
             if (Node.isOutput(this._startNode)) {
-                console.log("WARN connecting two output nodes")
+                console.warn("Connecting two output nodes")
                 return
             }
 
@@ -244,6 +244,18 @@ export class Wire extends Drawable {
         this._endNode.incomingWire = this
         this._endNode.value = this.startNode.value
         this._endNode.doSetColor(this._startNode.color)
+    }
+
+    public changeStartNode(startNode: NodeOut) {
+        if (Node.isOutput(this._startNode)) {
+            this._startNode.removeOutgoingWire(this)
+        } else {
+            // should never happen
+            console.warn("Start node is not an output node")
+        }
+
+        this._startNode = startNode
+        this._startNode.addOutgoingWire(this)
     }
 
     public propageNewValue(newValue: LogicValue, now: Timestamp) {
@@ -292,7 +304,7 @@ export class Wire extends Drawable {
         wireMgr.addNode(passthrough.outputs.O[0])
         const newWire = wireMgr.addNode(endNode)
         if (isUndefined(newWire)) {
-            console.log("WARN: couldn't create new wire")
+            console.warn("Couldn't create new wire")
             return
         }
         newWire.doSetStyle(this.style)

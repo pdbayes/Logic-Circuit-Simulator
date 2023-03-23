@@ -3,9 +3,9 @@ import { DrawZIndex } from "../ComponentList"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 
 export const LabelStringDef =
     defineComponent("label", undefined, {
@@ -35,15 +35,9 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
 
     public constructor(editor: LogicEditor, saved?: LabelStringRepr) {
         super(editor, LabelStringDef, saved)
-        if (isDefined(saved)) {
-            this._text = saved.text
-            // this._align = (saved.align as CanvasTextAlign) ?? LabelStringDefaults.align
-            this._font = saved.font ?? LabelStringDef.aults.font
-        } else {
-            this._text = LabelStringDef.aults.text
-            // this._align = LabelStringDefaults.align
-            this._font = LabelStringDef.aults.font
-        }
+        this._text = saved?.text ?? LabelStringDef.aults.text
+        // this._align = (saved?.align as CanvasTextAlign) ?? LabelStringDefaults.align
+        this._font = saved?.font ?? LabelStringDef.aults.font
     }
 
     public toJSON() {
@@ -110,7 +104,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         this.setNeedsRedraw("font changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.LabelString.contextMenu
         const setTextItem = ContextMenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
 

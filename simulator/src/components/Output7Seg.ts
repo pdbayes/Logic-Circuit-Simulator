@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, group, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { LedColor, ledColorForLogicValue, LedColors } from "./OutputBar"
 
 
@@ -44,17 +44,15 @@ type Output7SegRepr = Repr<typeof Output7SegDef>
 
 export class Output7Seg extends ComponentBase<Output7SegRepr> {
 
-    private _color = Output7SegDef.aults.color
-    private _transparent = Output7SegDef.aults.transparent
-    private _name: ComponentName = undefined
+    private _color: LedColor
+    private _transparent: boolean
+    private _name: ComponentName
 
     public constructor(editor: LogicEditor, saved?: Output7SegRepr) {
         super(editor, Output7SegDef, saved)
-        if (isDefined(saved)) {
-            this._color = saved.color ?? Output7SegDef.aults.color
-            this._transparent = saved.transparent ?? Output7SegDef.aults.transparent
-            this._name = saved.name
-        }
+        this._color = saved?.color ?? Output7SegDef.aults.color
+        this._transparent = saved?.transparent ?? Output7SegDef.aults.transparent
+        this._name = saved?.name ?? undefined
     }
 
     public toJSON() {
@@ -188,7 +186,7 @@ export class Output7Seg extends ComponentBase<Output7SegRepr> {
         this.setNeedsRedraw("transparent changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         // TODO merge with OutputBar
         const s = S.Components.OutputBar.contextMenu

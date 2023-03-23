@@ -2,9 +2,9 @@ import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../d
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, LogicValue } from "../utils"
+import { LogicValue } from "../utils"
 import { defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
@@ -87,25 +87,16 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
         })
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent, () => {
+        const toggleShowContentItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent, () => {
             this.doSetShowContent(!this._showContent)
         })
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
-            ["mid", toggleShowOpItem],
+        return [
+            ["mid", toggleShowContentItem],
+            ...this.makeForceOutputsContextMenuItem(true),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
-
     }
 
 }

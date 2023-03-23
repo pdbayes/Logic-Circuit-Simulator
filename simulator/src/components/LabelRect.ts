@@ -6,7 +6,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, Drawable, DrawableWithPosition, DrawContext } from "./Drawable"
+import { ContextMenuData, Drawable, DrawableWithPosition, DrawContext, MenuItems } from "./Drawable"
 
 export const RectangleColor = {
     grey: "grey",
@@ -81,29 +81,16 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
 
     public constructor(editor: LogicEditor, saved?: LabelRectRepr) {
         super(editor, LabelRectDef, saved)
-        if (isDefined(saved)) {
-            this._w = saved.w
-            this._h = saved.h
-            this._color = saved.color ?? LabelRectDef.aults.color
-            this._strokeWidth = saved.strokeWidth ?? LabelRectDef.aults.strokeWidth
-            this._noFill = saved.noFill ?? LabelRectDef.aults.noFill
-            this._rounded = saved.rounded ?? LabelRectDef.aults.rounded
-            this._caption = saved.caption ?? LabelRectDef.aults.caption
-            this._captionPos = saved.captionPos ?? LabelRectDef.aults.captionPos
-            this._captionInside = saved.captionInside ?? LabelRectDef.aults.captionInside
-            this._font = saved.font ?? LabelRectDef.aults.font
-        } else {
-            this._w = LabelRectDef.aults.width
-            this._h = LabelRectDef.aults.height
-            this._color = LabelRectDef.aults.color
-            this._strokeWidth = LabelRectDef.aults.strokeWidth
-            this._noFill = LabelRectDef.aults.noFill
-            this._rounded = LabelRectDef.aults.rounded
-            this._caption = LabelRectDef.aults.caption
-            this._captionPos = LabelRectDef.aults.captionPos
-            this._captionInside = LabelRectDef.aults.captionInside
-            this._font = LabelRectDef.aults.font
-        }
+        this._w = saved?.w ?? LabelRectDef.aults.width
+        this._h = saved?.h ?? LabelRectDef.aults.height
+        this._color = saved?.color ?? LabelRectDef.aults.color
+        this._strokeWidth = saved?.strokeWidth ?? LabelRectDef.aults.strokeWidth
+        this._noFill = saved?.noFill ?? LabelRectDef.aults.noFill
+        this._rounded = saved?.rounded ?? LabelRectDef.aults.rounded
+        this._caption = saved?.caption ?? LabelRectDef.aults.caption
+        this._captionPos = saved?.captionPos ?? LabelRectDef.aults.captionPos
+        this._captionInside = saved?.captionInside ?? LabelRectDef.aults.captionInside
+        this._font = saved?.font ?? LabelRectDef.aults.font
     }
 
     public toJSON() {
@@ -263,7 +250,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         return `${this._w} × ${this._h}`
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.LabelRect.contextMenu
         const currentSizeStr = this.makeCurrentSizeString()
         const setSizeItem = ContextMenuData.item("dimensions", s.Size + ` (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))

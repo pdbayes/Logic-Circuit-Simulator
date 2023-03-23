@@ -4,9 +4,9 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isDefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ArrayFillWith, HighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -29,9 +29,11 @@ export const DemuxDef =
             to: 8,
         },
         validateParams: ({ from, to }) => {
-            const numGroups = Math.ceil(to / from)
+            // refernce is 'from'; 'to' is clamped to be between 2*from and 16*from
+            const numTo = Math.min(16 * from, Math.max(2 * from, to))
+            const numGroups = Math.ceil(numTo / from)
             const numSel = Math.ceil(Math.log2(numGroups))
-            return { numFrom: from, numTo: to, numGroups, numSel }
+            return { numFrom: from, numTo, numGroups, numSel }
         },
         size: ({ numFrom, numTo, numGroups, numSel }) => {
             const gridWidth = 2 * numSel
@@ -66,14 +68,14 @@ export const DemuxDef =
 export type DemuxRepr = Repr<typeof DemuxDef>
 export type DemuxParams = ResolvedParams<typeof DemuxDef>
 
-export class Demux extends ComponentBase<DemuxRepr> {
+export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
     public readonly numFrom: number
     public readonly numSel: number
     public readonly numGroups: number
     public readonly numTo: number
-    private _showWiring = DemuxDef.aults.showWiring
-    private _disconnectedAsHighZ = DemuxDef.aults.disconnectedAsHighZ
+    private _showWiring: boolean
+    private _disconnectedAsHighZ: boolean
 
     public constructor(editor: LogicEditor, params: DemuxParams, saved?: DemuxRepr) {
         super(editor, DemuxDef.with(params), saved)
@@ -83,10 +85,8 @@ export class Demux extends ComponentBase<DemuxRepr> {
         this.numGroups = params.numGroups
         this.numSel = params.numSel
 
-        if (isDefined(saved)) {
-            this._showWiring = saved.showWiring ?? DemuxDef.aults.showWiring
-            this._disconnectedAsHighZ = saved.disconnectedAsHighZ ?? DemuxDef.aults.disconnectedAsHighZ
-        }
+        this._showWiring = saved?.showWiring ?? DemuxDef.aults.showWiring
+        this._disconnectedAsHighZ = saved?.disconnectedAsHighZ ?? DemuxDef.aults.disconnectedAsHighZ
     }
 
     public override toJSON() {
@@ -163,14 +163,14 @@ export class Demux extends ComponentBase<DemuxRepr> {
         }
 
         // background
-        const outlinePath = new Path2D()
-        outlinePath.moveTo(left, top + dy)
-        outlinePath.lineTo(right, top)
-        outlinePath.lineTo(right, bottom)
-        outlinePath.lineTo(left, bottom - dy)
-        outlinePath.closePath()
+        const outline = new Path2D()
+        outline.moveTo(left, top + dy)
+        outline.lineTo(right, top)
+        outline.lineTo(right, bottom)
+        outline.lineTo(left, bottom - dy)
+        outline.closePath()
         g.fillStyle = COLOR_BACKGROUND
-        g.fill(outlinePath)
+        g.fill(outline)
 
         // wiring
         if (this._showWiring) {
@@ -211,7 +211,7 @@ export class Demux extends ComponentBase<DemuxRepr> {
         } else {
             g.strokeStyle = COLOR_COMPONENT_BORDER
         }
-        g.stroke(outlinePath)
+        g.stroke(outline)
 
     }
 
@@ -226,11 +226,11 @@ export class Demux extends ComponentBase<DemuxRepr> {
     }
 
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
-        const s = S.Components.Demux.contextMenu
+        const s = S.Components.MuxDemux.contextMenu
         let icon: IconName = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, S.Components.Mux.contextMenu.ShowWiring, () => {
+        const toggleShowWiringItem = ContextMenuData.item(icon, s.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 
@@ -239,20 +239,14 @@ export class Demux extends ComponentBase<DemuxRepr> {
             this.doSetDisconnectedAsHighZ(!this._disconnectedAsHighZ)
         })
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
+            this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from", [1, 2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to", [2, 4, 8, 16].map(x => x * this.numFrom)),
+            ["mid", ContextMenuData.sep()],
             ["mid", toggleShowWiringItem],
             ["mid", toggleUseHighZItem],
+            ...this.makeForceOutputsContextMenuItem(true),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", ContextMenuData.sep()],
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
     }
 
 }

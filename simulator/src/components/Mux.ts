@@ -3,9 +3,9 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValu
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ArrayFillWith, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -26,9 +26,11 @@ export const MuxDef =
             to: 4,
         },
         validateParams: ({ from, to }) => {
-            const numGroups = Math.ceil(from / to)
+            // refernce is 'to'; 'from' is clamped to be between 2*to and 16*to
+            const numFrom = Math.min(16 * to, Math.max(2 * to, from))
+            const numGroups = Math.ceil(numFrom / to)
             const numSel = Math.ceil(Math.log2(numGroups))
-            return { numFrom: from, numTo: to, numGroups, numSel }
+            return { numFrom, numTo: to, numGroups, numSel }
         },
         size: ({ numFrom, numTo, numGroups, numSel }) => {
             const gridWidth = 2 * numSel
@@ -63,13 +65,13 @@ export const MuxDef =
 export type MuxRepr = Repr<typeof MuxDef>
 export type MuxParams = ResolvedParams<typeof MuxDef>
 
-export class Mux extends ComponentBase<MuxRepr> {
+export class Mux extends ParametrizedComponentBase<MuxRepr> {
 
     public readonly numFrom: number
     public readonly numTo: number
     public readonly numGroups: number
     public readonly numSel: number
-    private _showWiring: boolean = MuxDef.aults.showWiring
+    private _showWiring: boolean
 
     public constructor(editor: LogicEditor, params: MuxParams, saved?: MuxRepr) {
         super(editor, MuxDef.with(params), saved)
@@ -79,9 +81,7 @@ export class Mux extends ComponentBase<MuxRepr> {
         this.numGroups = params.numGroups
         this.numSel = params.numSel
 
-        if (isDefined(saved)) {
-            this._showWiring = saved.showWiring ?? MuxDef.aults.showWiring
-        }
+        this._showWiring = saved?.showWiring ?? MuxDef.aults.showWiring
     }
 
     public override toJSON() {
@@ -141,13 +141,13 @@ export class Mux extends ComponentBase<MuxRepr> {
 
         // background
         g.fillStyle = COLOR_BACKGROUND
-        const outlinePath = new Path2D()
-        outlinePath.moveTo(left, top)
-        outlinePath.lineTo(right, top + dy)
-        outlinePath.lineTo(right, bottom - dy)
-        outlinePath.lineTo(left, bottom)
-        outlinePath.closePath()
-        g.fill(outlinePath)
+        const outline = new Path2D()
+        outline.moveTo(left, top)
+        outline.lineTo(right, top + dy)
+        outline.lineTo(right, bottom - dy)
+        outline.lineTo(left, bottom)
+        outline.closePath()
+        g.fill(outline)
 
         // wiring
         if (this._showWiring) {
@@ -189,7 +189,7 @@ export class Mux extends ComponentBase<MuxRepr> {
         } else {
             g.strokeStyle = COLOR_COMPONENT_BORDER
         }
-        g.stroke(outlinePath)
+        g.stroke(outline)
 
     }
 
@@ -199,24 +199,20 @@ export class Mux extends ComponentBase<MuxRepr> {
     }
 
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.MuxDemux.contextMenu
         const icon = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, S.Components.Mux.contextMenu.ShowWiring, () => {
+        const toggleShowWiringItem = ContextMenuData.item(icon, s.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
+            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to", [1, 2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from", [2, 4, 8, 16].map(x => x * this.numTo)),
+            ["mid", ContextMenuData.sep()],
             ["mid", toggleShowWiringItem],
+            ...this.makeForceOutputsContextMenuItem(true),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
     }
 
 }

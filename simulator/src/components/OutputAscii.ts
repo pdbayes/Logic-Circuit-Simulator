@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isUnknown, Mode, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, groupVertical, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
 
 export const OutputAsciiDef =
@@ -30,17 +30,15 @@ type OutputAsciiRepr = Repr<typeof OutputAsciiDef>
 
 export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
-    private _name: ComponentName = undefined
-    private _additionalReprRadix: number | undefined = undefined
-    private _showAsUnknown = false
+    private _name: ComponentName
+    private _additionalReprRadix: number | undefined
+    private _showAsUnknown: boolean
 
     public constructor(editor: LogicEditor, saved?: OutputAsciiRepr) {
         super(editor, OutputAsciiDef, saved)
-        if (isDefined(saved)) {
-            this._name = saved.name
-            this._additionalReprRadix = saved.additionalReprRadix
-            this._showAsUnknown = saved.showAsUnknown ?? false
-        }
+        this._name = saved?.name ?? undefined
+        this._additionalReprRadix = saved?.additionalReprRadix ?? undefined
+        this._showAsUnknown = saved?.showAsUnknown ?? false
     }
 
     public toJSON() {
@@ -204,7 +202,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         this.setNeedsRedraw("additional display radix changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         const s = S.Components.OutputAscii.contextMenu
 

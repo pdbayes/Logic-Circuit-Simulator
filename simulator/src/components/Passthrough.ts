@@ -4,8 +4,8 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
 
@@ -34,7 +34,7 @@ export const PassthroughDef =
             bits: 1,
         },
         validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 4, 8, 16], defaults.bits, "Passthrough width")
+            const numBits = validate(bits, [1, 2, 3, 4, 8, 16], defaults.bits, "Passthrough width")
             return { numBits }
         },
         size: ({ numBits }) => ({
@@ -56,7 +56,7 @@ export type PassthroughRepr = Repr<typeof PassthroughDef>
 export type PassthroughParams = ResolvedParams<typeof PassthroughDef>
 
 
-export class Passthrough extends ComponentBase<PassthroughRepr> {
+export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
 
     public readonly numBits: number
     private _slant: Slant
@@ -201,30 +201,30 @@ export class Passthrough extends ComponentBase<PassthroughRepr> {
         }
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-
-        if (this.numBits > 1) {
-            const s = S.Components.Passthrough.contextMenu
-
-            const makeItemSetSlant = (desc: string, slant: Slant) => {
-                const isCurrent = this._slant === slant
-                const icon = isCurrent ? "check" : "none"
-                const action = isCurrent ? () => undefined : () => this.doSetSlant(slant)
-                return ContextMenuData.item(icon, desc, action)
-            }
-
-            return [
-                ["mid", ContextMenuData.submenu("slanted", s.Slant, [
-                    makeItemSetSlant(s.SlantNone, Slant.none),
-                    ContextMenuData.sep(),
-                    makeItemSetSlant(s.SlantRight, Slant.down),
-                    makeItemSetSlant(s.SlantLeft, Slant.up),
-                ])],
-            ]
-        } else {
-            return undefined
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        if (this.numBits === 1) {
+            return []
         }
 
+        const s = S.Components.Passthrough.contextMenu
+
+        const makeItemSetSlant = (desc: string, slant: Slant) => {
+            const isCurrent = this._slant === slant
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => this.doSetSlant(slant)
+            return ContextMenuData.item(icon, desc, action)
+        }
+
+        return [
+            ["mid", ContextMenuData.submenu("slanted", s.Slant, [
+                makeItemSetSlant(s.SlantNone, Slant.none),
+                ContextMenuData.sep(),
+                makeItemSetSlant(s.SlantRight, Slant.down),
+                makeItemSetSlant(s.SlantLeft, Slant.up),
+            ])],
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
+        ]
     }
 
     private doSetSlant(slant: Slant) {

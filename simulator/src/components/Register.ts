@@ -1,14 +1,13 @@
-import { right } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { Component, ComponentBase, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, NodesIn, NodesOut, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, DrawContextExt, Orientation } from "./Drawable"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
+import { defineAbstractParametrizedComponent, defineParametrizedComponent, ExtractParams, groupVertical, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
-import { NodeIn, NodeOut } from "./Node"
+import { NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
 
 
@@ -62,21 +61,21 @@ export const RegisterBaseDef =
         },
     })
 
-
 export type RegisterBaseRepr = Repr<typeof RegisterBaseDef>
 export type RegisterBaseParams = ResolvedParams<typeof RegisterBaseDef>
 
-export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends ComponentBase<
+export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends ParametrizedComponentBase<
     TRepr,
     LogicValue[],
+    ExtractParams<TRepr>,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
     true, true
 > {
 
     public readonly numBits: number
-    protected _showContent: boolean = RegisterDef.aults.showContent
-    protected _trigger: EdgeTrigger = RegisterDef.aults.trigger
+    protected _showContent: boolean
+    protected _trigger: EdgeTrigger
     protected _isInInvalidState = false
     protected _lastClock: LogicValue = Unknown
 
@@ -85,10 +84,8 @@ export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends Compo
 
         this.numBits = params.numBits
 
-        if (isDefined(saved)) {
-            this._showContent = saved.showContent ?? RegisterDef.aults.showContent
-            this._trigger = saved.trigger ?? RegisterDef.aults.trigger
-        }
+        this._showContent = saved?.showContent ?? RegisterDef.aults.showContent
+        this._trigger = saved?.trigger ?? RegisterDef.aults.trigger
     }
 
     protected override toJSONBase() {
@@ -165,10 +162,10 @@ export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends Compo
         this.doDrawSpecificInputs(g, left)
 
         // background
-        const outlinePath = new Path2D()
-        outlinePath.rect(left, top, width, height)
+        const outline = new Path2D()
+        outline.rect(left, top, width, height)
         g.fillStyle = this._isInInvalidState ? COLOR_BACKGROUND_INVALID : COLOR_BACKGROUND
-        g.fill(outlinePath)
+        g.fill(outline)
 
         // clock input
         Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
@@ -176,9 +173,9 @@ export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends Compo
         // outline
         g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 3
-        g.stroke(outlinePath)
+        g.stroke(outline)
 
-
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             if (this._showContent && !this.editor.options.hideMemoryContent) {
                 RegisterBase.drawStoredValues(g, ctx, this.outputs.Q, this.posX, Orientation.isVertical(this.orient))
@@ -213,25 +210,20 @@ export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends Compo
 
     protected abstract doDrawSpecificLabels(g: CanvasRenderingContext2D, ctx: DrawContextExt, left: number): void
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.Generic.contextMenu
         const icon = this._showContent ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
+        const toggleShowContentItem = ContextMenuData.item(icon, s.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+        return [
+            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumBits, this.numBits, "bits", [4, 8, 16]),
+            ["mid", ContextMenuData.sep()],
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
-            ["mid", toggleShowOpItem],
+            ["mid", toggleShowContentItem],
+            ...this.makeForceOutputsContextMenuItem(true),
         ]
-
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isDefined(forceOutputItem)) {
-            items.push(
-                ["mid", forceOutputItem]
-            )
-        }
-
-        return items
     }
 
 }

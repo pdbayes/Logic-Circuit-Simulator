@@ -49,6 +49,10 @@ export type DefAndParams<TParams extends Record<string, unknown>> = {
     params: TParams
 }
 
+export type LibraryItemVisibility = "always" | "withButton" | "ifShowOnly"
+const withButton = "withButton"
+const ifShowOnly = "ifShowOnly"
+
 export type LibraryItem = {
     category: ComponentCategory
     type?: string
@@ -56,8 +60,11 @@ export type LibraryItem = {
     visual: ComponentKey & ImageName | [ComponentKey, ImageName]
     compat?: string // for compatibility with old URL params
     width: number
-    hidden?: boolean
+    visible?: LibraryItemVisibility
 }
+
+export type LibraryButtonProps = { imgWidth: number }
+export type LibraryButtonOptions = { compat?: string, visible?: LibraryItemVisibility }
 
 type SectionNameKey = keyof Strings["ComponentBar"]["SectionNames"]
 
@@ -71,30 +78,30 @@ const componentsMenu: Array<Section> = [{
     items: [
         InputDef.button({ bits: 1 }, "Input1"),
         OutputDef.button({ bits: 1 }, "Output1"),
-        OutputBarDef.button("OutputBar", { hidden: true }),
+        OutputBarDef.button("OutputBar", { visible: withButton }),
         ClockDef.button("Clock"),
 
-        InputDef.button({ bits: 4 }, "Input4", { compat: "in.nibble" }),
-        OutputDef.button({ bits: 4 }, "Output4", { compat: "out.nibble" }),
-        OutputDisplayDef.button({ bits: 4 }, "OutputDisplay4", { compat: "out.nibble-display" }),
+        InputDef.button({ bits: 4 }, ["InputN", "Input4"], { compat: "in.nibble" }),
+        OutputDef.button({ bits: 4 }, ["OutputN", "Output4"], { compat: "out.nibble" }),
+        OutputDisplayDef.button({ bits: 4 }, ["OutputDisplayN", "OutputDisplay4"], { compat: "out.nibble-display" }),
 
-        InputDef.button({ bits: 8 }, "Input8", { compat: "in.byte", hidden: true }),
-        OutputDef.button({ bits: 8 }, "Output8", { compat: "out.byte", hidden: true }),
-        OutputDisplayDef.button({ bits: 8 }, "OutputDisplay8", { compat: "out.byte-display", hidden: true }),
+        InputDef.button({ bits: 8 }, "Input8", { compat: "in.byte", visible: ifShowOnly }),
+        OutputDef.button({ bits: 8 }, "Output8", { compat: "out.byte", visible: ifShowOnly }),
+        OutputDisplayDef.button({ bits: 8 }, "OutputDisplay8", { compat: "out.byte-display", visible: ifShowOnly }),
 
-        Output7SegDef.button("Output7Seg", { hidden: true }),
-        Output16SegDef.button("Output16Seg", { hidden: true }),
-        OutputAsciiDef.button("OutputAscii", { hidden: true }),
+        Output7SegDef.button("Output7Seg", { visible: withButton }),
+        Output16SegDef.button("Output16Seg", { visible: withButton }),
+        OutputAsciiDef.button("OutputAscii", { visible: withButton }),
 
-        InputRandomDef.button({ bits: 1 }, "InputRandom", { hidden: true }),
-        OutputShiftBufferDef.button("OutputShiftBuffer", { hidden: true }),
+        InputRandomDef.button({ bits: 1 }, "InputRandom", { visible: withButton }),
+        OutputShiftBufferDef.button("OutputShiftBuffer", { visible: withButton }),
     ],
 }, {
     nameKey: "Gates",
     items: [
         Gate1Def.button({ type: "NOT" }, "NOT"),
-        Gate1Def.button({ type: "BUF" }, "BUF", { hidden: true }),
-        TriStateBufferDef.button("TRI", { hidden: true }),
+        Gate1Def.button({ type: "BUF" }, "BUF", { visible: withButton }),
+        TriStateBufferDef.button("TRI", { visible: withButton }),
 
         GateNDef.button({ type: "AND", bits: 2 }, "AND"),
         GateNDef.button({ type: "OR", bits: 2 }, "OR"),
@@ -102,28 +109,28 @@ const componentsMenu: Array<Section> = [{
         GateNDef.button({ type: "NAND", bits: 2 }, "NAND"),
         GateNDef.button({ type: "NOR", bits: 2 }, "NOR"),
 
-        GateNDef.button({ type: "XNOR", bits: 2 }, "XNOR", { hidden: true }),
-        GateNDef.button({ type: "IMPLY", bits: 2 }, "IMPLY", { hidden: true }),
-        GateNDef.button({ type: "NIMPLY", bits: 2 }, "NIMPLY", { hidden: true }),
-        GateNDef.button({ type: "TXA", bits: 2 }, ["TRANSFER", "TXA"], { hidden: true }),
+        GateNDef.button({ type: "XNOR", bits: 2 }, "XNOR", { visible: withButton }),
+        GateNDef.button({ type: "IMPLY", bits: 2 }, "IMPLY", { visible: withButton }),
+        GateNDef.button({ type: "NIMPLY", bits: 2 }, "NIMPLY", { visible: withButton }),
+        GateNDef.button({ type: "TXA", bits: 2 }, ["TRANSFER", "TXA"], { visible: withButton }),
 
-        GateNDef.button({ type: "AND", bits: 3 }, "AND3", { compat: "AND3", hidden: true }),
-        GateNDef.button({ type: "OR", bits: 3 }, "OR3", { compat: "OR3", hidden: true }),
-        GateNDef.button({ type: "XOR", bits: 3 }, "XOR3", { compat: "XOR3", hidden: true }),
-        GateNDef.button({ type: "NAND", bits: 3 }, "NAND3", { compat: "NAND3", hidden: true }),
-        GateNDef.button({ type: "NOR", bits: 3 }, "NOR3", { compat: "NOR3", hidden: true }),
-        GateNDef.button({ type: "XNOR", bits: 3 }, "XNOR3", { compat: "XNOR3", hidden: true }),
+        GateNDef.button({ type: "AND", bits: 3 }, "AND3", { compat: "AND3", visible: ifShowOnly }),
+        GateNDef.button({ type: "OR", bits: 3 }, "OR3", { compat: "OR3", visible: ifShowOnly }),
+        GateNDef.button({ type: "XOR", bits: 3 }, "XOR3", { compat: "XOR3", visible: ifShowOnly }),
+        GateNDef.button({ type: "NAND", bits: 3 }, "NAND3", { compat: "NAND3", visible: ifShowOnly }),
+        GateNDef.button({ type: "NOR", bits: 3 }, "NOR3", { compat: "NOR3", visible: ifShowOnly }),
+        GateNDef.button({ type: "XNOR", bits: 3 }, "XNOR3", { compat: "XNOR3", visible: ifShowOnly }),
 
-        GateNDef.button({ type: "AND", bits: 4 }, "AND4", { compat: "AND4", hidden: true }),
-        GateNDef.button({ type: "OR", bits: 4 }, "OR4", { compat: "OR4", hidden: true }),
-        GateNDef.button({ type: "XOR", bits: 4 }, "XOR4", { compat: "XOR4", hidden: true }),
-        GateNDef.button({ type: "NAND", bits: 4 }, "NAND4", { compat: "NAND4", hidden: true }),
-        GateNDef.button({ type: "NOR", bits: 4 }, "NOR4", { compat: "NOR4", hidden: true }),
-        GateNDef.button({ type: "XNOR", bits: 4 }, "XNOR4", { compat: "XNOR4", hidden: true }),
+        GateNDef.button({ type: "AND", bits: 4 }, "AND4", { compat: "AND4", visible: ifShowOnly }),
+        GateNDef.button({ type: "OR", bits: 4 }, "OR4", { compat: "OR4", visible: ifShowOnly }),
+        GateNDef.button({ type: "XOR", bits: 4 }, "XOR4", { compat: "XOR4", visible: ifShowOnly }),
+        GateNDef.button({ type: "NAND", bits: 4 }, "NAND4", { compat: "NAND4", visible: ifShowOnly }),
+        GateNDef.button({ type: "NOR", bits: 4 }, "NOR4", { compat: "NOR4", visible: ifShowOnly }),
+        GateNDef.button({ type: "XNOR", bits: 4 }, "XNOR4", { compat: "XNOR4", visible: ifShowOnly }),
 
-        SwitchedInverterDef.button({ bits: 4 }, "SwitchedInverter", { hidden: true }),
-        GateArrayDef.button({ bits: 4 }, "GateArray", { hidden: true }),
-        TriStateBufferArrayDef.button({ bits: 4 }, "TriStateBufferArray", { hidden: true }),
+        SwitchedInverterDef.button({ bits: 4 }, "SwitchedInverter", { visible: withButton }),
+        GateArrayDef.button({ bits: 4 }, "GateArray", { visible: withButton }),
+        TriStateBufferArrayDef.button({ bits: 4 }, "TriStateBufferArray", { visible: withButton }),
 
     ],
 }, {
@@ -133,57 +140,35 @@ const componentsMenu: Array<Section> = [{
         LabelRectDef.button("LabelRectangle"),
 
         PassthroughDef.button({ bits: 1 }, "Passthrough1"),
-        PassthroughDef.button({ bits: 4 }, "Passthrough4"),
-        PassthroughDef.button({ bits: 8 }, "Passthrough8", { hidden: true }),
+        PassthroughDef.button({ bits: 4 }, "PassthroughN"),
     ],
 }, {
     nameKey: "Components",
     items: [
         HalfAdderDef.button("HalfAdder"),
         AdderDef.button("Adder"),
-        AdderArrayDef.button({ bits: 4 }, "AdderArray4"),
+        ComparatorDef.button("Comparator", { visible: withButton }),
+        
+        AdderArrayDef.button({ bits: 4 }, "AdderArray"),
+        ALUDef.button({ bits: 4 }, "ALU"),
 
-        ALUDef.button({ bits: 4 }, "ALU4"),
-        ALUDef.button({ bits: 8 }, "ALU8", { hidden: true }),
-
-        MuxDef.button({ from: 2, to: 1 }, ["Mux2to1", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 4, to: 1 }, ["Mux4to1", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 8, to: 1 }, ["Mux8to1", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 4, to: 2 }, ["Mux4to2", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 8, to: 2 }, ["Mux8to2", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 8, to: 4 }, ["Mux8to4", "Mux"], { hidden: true }),
-        MuxDef.button({ from: 16, to: 8 }, ["Mux16to8", "Mux"], { hidden: true }),
-
-        DemuxDef.button({ from: 1, to: 2 }, ["Demux1to2", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 1, to: 4 }, ["Demux1to4", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 1, to: 8 }, ["Demux1to8", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 2, to: 4 }, ["Demux2to4", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 2, to: 8 }, ["Demux2to8", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 4, to: 8 }, ["Demux4to8", "Demux"], { hidden: true }),
-        DemuxDef.button({ from: 8, to: 16 }, ["Demux8to16", "Demux"], { hidden: true }),
+        MuxDef.button({ from: 4, to: 2 }, "Mux"),
+        DemuxDef.button({ from: 2, to: 4 }, "Demux"),
 
         LatchSRDef.button("LatchSR"),
-        FlipflopJKDef.button("FlipflopJK", { hidden: true }),
-        FlipflopTDef.button("FlipflopT", { hidden: true }),
+        FlipflopJKDef.button("FlipflopJK", { visible: withButton }),
+        FlipflopTDef.button("FlipflopT", { visible: withButton }),
         FlipflopDDef.button("FlipflopD"),
 
-        RegisterDef.button({ bits: 4 }, "Register4"),
-        RegisterDef.button({ bits: 8 }, "Register8", { hidden: true }),
+        RegisterDef.button({ bits: 4 }, "Register"),
+        ShiftRegisterDef.button({ bits: 4 }, "ShiftRegister"),
+        CounterDef.button({ bits: 4 }, "Counter"),
 
-        ShiftRegisterDef.button({ bits: 4 }, "ShiftRegister4"),
-        ShiftRegisterDef.button({ bits: 8 }, "ShiftRegister8", { hidden: true }),
-
-        RAMDef.button({ lines: 16, bits: 4 }, "RAM16x4"),
-        RAMDef.button({ lines: 16, bits: 8 }, "RAM16x8", { hidden: true }),
-        RAMDef.button({ lines: 64, bits: 8 }, "RAM64x8", { hidden: true }),
-
-        CounterDef.button("Counter"),
+        RAMDef.button({ lines: 16, bits: 4 }, "RAM"),
 
         Decoder7SegDef.button("Decoder7Seg"),
-        Decoder16SegDef.button("Decoder16Seg", { hidden: true }),
-        DecoderBCD4Def.button("DecoderBCD4", { hidden: true }),
-
-        ComparatorDef.button("Comparator", { hidden: true }),
+        Decoder16SegDef.button("Decoder16Seg", { visible: withButton }),
+        DecoderBCD4Def.button("DecoderBCD4", { visible: withButton }),
 
     ],
 }]
@@ -224,9 +209,10 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
 
         // section content
         let numAdded = 0
-        const normallyHiddenButtons: HTMLButtonElement[] = []
+        const showWithMoreButton: HTMLButtonElement[] = []
+        const showOnlyWithURLParam: HTMLButtonElement[] = []
         for (const item of section.items) {
-            const normallyHidden = item.hidden ?? false
+            const normallyHidden = isDefined(item.visible) && item.visible !== "always"
             const hiddenNow = isDefined(showOnly) ? !shouldShow(item, showOnly) : normallyHidden
 
             const buttonStyle = !hiddenNow ? "" : "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
@@ -256,24 +242,25 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
             }
 
             if (hiddenNow) {
-                normallyHiddenButtons.push(compButton)
+                const targetArray = item.visible === "withButton" ? showWithMoreButton : showOnlyWithURLParam
+                targetArray.push(compButton)
             }
 
             target.appendChild(compButton)
             numAdded++
         }
 
-        const numHidden = normallyHiddenButtons.length
-        const numVisible = numAdded - numHidden
+        const numShowWithMoreButton = showWithMoreButton.length
+        const numVisible = numAdded - numShowWithMoreButton - showOnlyWithURLParam.length
 
         // link to show more if needed
-        if (numHidden !== 0 && isUndefined(showOnly)) {
+        if (numShowWithMoreButton !== 0 && isUndefined(showOnly)) {
             let moreShown = false
             const names = [S.ComponentBar.Labels.More + " ↓", S.ComponentBar.Labels.Less + " ↑"]
             const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
             linkShowMore.addEventListener("click", () => {
                 moreShown = !moreShown
-                for (const button of normallyHiddenButtons) {
+                for (const button of showWithMoreButton) {
                     if (moreShown) {
                         button.style.removeProperty("padding")
                         button.style.removeProperty("border")

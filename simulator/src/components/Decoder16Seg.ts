@@ -2,9 +2,9 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { FixedArray, FixedArrayFillWith, isUndefined, isUnknown, LogicValue, Unknown } from "../utils"
+import { FixedArray, FixedArrayFillWith, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent, group, Repr } from "./Component"
-import { ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { DrawContext, MenuItems } from "./Drawable"
 
 export const Decoder16SegDef =
     defineComponent("ic", "decoder-16seg", {
@@ -133,14 +133,8 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
         })
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        const forceOutputItem = this.makeForceOutputsContextMenuItem()
-        if (isUndefined(forceOutputItem)) {
-            return []
-        }
-        return [
-            ["mid", forceOutputItem],
-        ]
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        return this.makeForceOutputsContextMenuItem()
     }
 
 }

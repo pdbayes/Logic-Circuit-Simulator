@@ -5,8 +5,9 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined, validate } from "../utils"
 import { doALUOp } from "./ALU"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams, Value } from "./Component"
-import { DrawContext } from "./Drawable"
+import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { DrawContext, MenuItems } from "./Drawable"
+import { GateArrayDef } from "./GateArray"
 
 
 export const AdderArrayDef =
@@ -24,18 +25,19 @@ export const AdderArrayDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Adder array bits")
             return { numBits }
         },
-        size: ({ numBits }) => {
-            return { gridWidth: 4, gridHeight: 19 } // TODO var height
-        },
-        makeNodes: ({ numBits }) => {
-            const groupInputA = groupVertical("w", -3, -5, numBits)
-            const cinY = groupInputA[0][1] - 2
-            const coutY = -cinY
+        size: ({ numBits }) => ({
+            gridWidth: 4, // constant
+            gridHeight: GateArrayDef.size({ numBits }).gridHeight, // mimic GateArray
+        }),
+        makeNodes: ({ numBits, gridHeight }) => {
+            const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
+            const coutY = Math.floor(gridHeight / 2) + 1
+            const cinY = -coutY
 
             return {
                 ins: {
-                    A: groupInputA,
-                    B: groupVertical("w", -3, 5, numBits),
+                    A: groupVertical("w", -3, -inputCenterY, numBits),
+                    B: groupVertical("w", -3, inputCenterY, numBits),
                     Cin: [0, cinY, "n"],
                 },
                 outs: {
@@ -55,7 +57,7 @@ export type AdderArrayRepr = Repr<typeof AdderArrayDef>
 export type AdderArrayParams = ResolvedParams<typeof AdderArrayDef>
 export type AdderArrayValue = Value<typeof AdderArrayDef>
 
-export class AdderArray extends ComponentBase<AdderArrayRepr> {
+export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
 
     public readonly numBits: number
 
@@ -147,6 +149,13 @@ export class AdderArray extends ComponentBase<AdderArrayRepr> {
             g.fillText("+", ...ctx.rotatePoint(this.posX - 4, this.posY))
         })
 
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        return [
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            ...this.makeForceOutputsContextMenuItem(true),
+        ]
     }
 
 }

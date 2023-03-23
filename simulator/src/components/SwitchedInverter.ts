@@ -4,8 +4,8 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { DrawContext } from "./Drawable"
+import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { DrawContext, MenuItems } from "./Drawable"
 
 
 export const SwitchedInverterDef =
@@ -23,13 +23,14 @@ export const SwitchedInverterDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Switched inverter bits")
             return { numBits }
         },
-        size: ({ numBits }) => {
-            return { gridWidth: 4, gridHeight: 8 } // TODO var height
-        },
-        makeNodes: ({ numBits }) => ({
+        size: ({ numBits }) => ({
+            gridWidth: 4,
+            gridHeight: 8 + Math.max(0, numBits - 8),
+        }),
+        makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
                 I: groupVertical("w", -3, 0, numBits),
-                S: [0, -5, "n"],
+                S: [0, -(gridHeight / 2 + 1), "n"],
             },
             outs: {
                 O: groupVertical("e", +3, 0, numBits),
@@ -43,7 +44,7 @@ export type SwitchedInverterRepr = Repr<typeof SwitchedInverterDef>
 export type SwitchedInverterParams = ResolvedParams<typeof SwitchedInverterDef>
 
 
-export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
+export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverterRepr> {
 
     public readonly numBits: number
 
@@ -136,5 +137,13 @@ export class SwitchedInverter extends ComponentBase<SwitchedInverterRepr> {
             drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
         }
     }
+
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        return [
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            ...this.makeForceOutputsContextMenuItem(true),
+        ]
+    }
+
 }
 SwitchedInverterDef.impl = SwitchedInverter

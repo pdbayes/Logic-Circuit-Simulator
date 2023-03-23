@@ -1,12 +1,12 @@
 import * as t from "io-ts"
 import { GRID_STEP, useCompact } from "../drawutils"
-import { ImageName } from "../images"
+import { IconName, ImageName } from "../images"
 import { LogicEditor } from "../LogicEditor"
-import type { ComponentKey, DefAndParams, LibraryItem } from "../menuutils"
-import { S } from "../strings"
+import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
+import { S, Template } from "../strings"
 import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, Orientation, PositionSupportRepr } from "./Drawable"
-import { DEFAULT_WIRE_COLOR, Node, NodeIn, NodeOut, WireColor } from "./Node"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
 type NodeSeqRepr<TFullNodeRepr> =
@@ -159,7 +159,7 @@ export enum ComponentState {
 }
 
 // Simplified, generics-free representation of a component
-export type Component = ComponentBase<ComponentRepr<boolean, boolean>, unknown, any, any, any, any>
+export type Component = ComponentBase<ComponentRepr<boolean, boolean>, unknown, NamedNodes<NodeIn>, NamedNodes<NodeOut>, boolean, boolean>
 
 export const JsonFieldsComponents = ["in", "out", "gates", "ic", "labels", "layout"] as const
 export type JsonFieldComponent = typeof JsonFieldsComponents[number]
@@ -243,6 +243,8 @@ export type NodesOut<TRepr> = ExtractNodes<TRepr, "outs", NodeOut>
 export type IsNonEmpty<TNamedNodes> = TNamedNodes extends { _empty: true } ? false : true
 
 export type ExtractValue<TRepr> = TRepr extends { _META?: { value: infer TValue } } ? TValue : never
+
+export type ExtractParams<TRepr> = TRepr extends { _META?: { params: infer TParams } } ? TParams : never
 
 export type InOutRecs = {
     ins?: NodeRec<NodeInDesc>
@@ -799,10 +801,7 @@ export abstract class ComponentBase<
         const specificItems = this.makeComponentSpecificContextMenuItems()
 
         let lastWasSep = true
-        function addItemsAt(placement: ContextMenuItemPlacement, items: [ContextMenuItemPlacement, ContextMenuItem][] | undefined, insertSep = false) {
-            if (isUndefined(items)) {
-                return
-            }
+        function addItemsAt(placement: ContextMenuItemPlacement, items: MenuItems, insertSep = false) {
             if (insertSep) {
                 if (!lastWasSep) {
                     menuItems.push(ContextMenuData.sep())
@@ -827,14 +826,14 @@ export abstract class ComponentBase<
         return menuItems
     }
 
-    private makeBaseContextMenu(): [ContextMenuItemPlacement, ContextMenuItem][] {
-        const setRefItems: [ContextMenuItemPlacement, ContextMenuItem][] =
+    private makeBaseContextMenu(): MenuItems {
+        const setRefItems: MenuItems =
             this.editor.mode < Mode.FULL ? [] : [
                 ["end", this.makeSetRefContextMenuItem()],
                 ["end", ContextMenuData.sep()],
             ]
 
-        const rotateItems: [ContextMenuItemPlacement, ContextMenuItem][] =
+        const rotateItems: MenuItems =
             !this.canRotate() ? [] : [
                 ["start", this.makeChangeOrientationContextMenuItem()],
             ]
@@ -846,8 +845,8 @@ export abstract class ComponentBase<
         ]
     }
 
-    protected makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        return undefined
+    protected makeComponentSpecificContextMenuItems(): MenuItems {
+        return []
     }
 
     protected makeDeleteContextMenuItem(): ContextMenuItem {
@@ -856,11 +855,11 @@ export abstract class ComponentBase<
         }, true)
     }
 
-    protected makeForceOutputsContextMenuItem(): undefined | ContextMenuItem {
+    protected makeForceOutputsContextMenuItem(withSepBefore = false): MenuItems {
         const numOutputs = this.outputs._all.length
 
         if (numOutputs === 0 || this.editor.mode < Mode.FULL) {
-            return undefined
+            return []
         }
 
         const s = S.Components.Generic.contextMenu
@@ -894,14 +893,18 @@ export abstract class ComponentBase<
             ContextMenuData.text(s.ForceOutputDesc),
         ]
 
+        const items: MenuItems = []
+        if (withSepBefore) {
+            items.push(["mid", ContextMenuData.sep()])
+        }
         if (numOutputs === 1) {
-            return ContextMenuData.submenu("force", s.ForceOutputSingle, [
+            items.push(["mid", ContextMenuData.submenu("force", s.ForceOutputSingle, [
                 ...makeOutputItems(this.outputs._all[0]!),
                 ...footerItems,
-            ])
+            ])])
 
         } else {
-            return ContextMenuData.submenu("force", s.ForceOutputMultiple, [
+            items.push(["mid", ContextMenuData.submenu("force", s.ForceOutputMultiple, [
                 ...this.outputs._all.map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
                     return ContextMenuData.submenu(icon, s.Output + " " + out.name,
@@ -909,8 +912,10 @@ export abstract class ComponentBase<
                     )
                 }),
                 ...footerItems,
-            ])
+            ])])
         }
+
+        return items
     }
 
     protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): ContextMenuItem {
@@ -951,6 +956,142 @@ export abstract class ComponentBase<
             const newFont = promptReturnValue.length === 0 ? defaultIfEmpty : promptReturnValue
             callback(newFont)
         }
+    }
+
+}
+
+export type SomeParamCompDef = ParametrizedComponentDef<any, any, any, any, any, any, any, any, any, any, any>
+
+export abstract class ParametrizedComponentBase<
+    TRepr extends ComponentRepr<THasIn, THasOut>, // JSON representation
+    TValue = ExtractValue<TRepr>, // internal value recomputed when inputs change
+    TParams extends ExtractParams<TRepr> = ExtractParams<TRepr>,
+    TInputNodes extends NamedNodes<NodeIn> = NodesIn<TRepr>,
+    TOutputNodes extends NamedNodes<NodeOut> = NodesOut<TRepr>,
+    THasIn extends boolean = IsNonEmpty<TInputNodes>,
+    THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
+> extends ComponentBase<
+    TRepr,
+    TValue,
+    TInputNodes,
+    TOutputNodes,
+    THasIn,
+    THasOut
+> {
+
+    private _def: SomeParamCompDef
+
+    protected constructor(
+        editor: LogicEditor,
+        [instance, def]: [
+            InstantiatedComponentDef<TRepr, TValue>,
+            SomeParamCompDef,
+        ],
+        saved: TRepr | undefined
+    ) {
+        super(editor, instance, saved)
+        this._def = def
+    }
+
+    protected makeChangeParamsContextMenuItem<
+        TField extends keyof TParams,
+        TVal extends TParams[TField] = TParams[TField]
+    >(
+        icon: IconName,
+        [caption, itemCaption]: [string, Template<["val"]>],
+        currentValue: TVal,
+        fieldName: TField,
+        possibleValues: ReadonlyArray<TVal> | ReadonlyArray<readonly [unknown, TVal]>, // [display, value]
+    ): [ContextMenuItemPlacement, ContextMenuItem] {
+        const makeChangeValueItem = (spec: TVal | readonly [unknown, TVal]) => {
+            const [display, val] = isArray(spec) ? spec : [spec, spec]
+            const isCurrent = currentValue === spec
+            const icon = isCurrent ? "check" : "none"
+            const action = isCurrent ? () => undefined : () => {
+                const newParams: Partial<TParams> = {}
+                newParams[fieldName] = val
+                this.replaceWithNewParams(newParams)
+            }
+            return ContextMenuData.item(icon, itemCaption.expand({ val: display }), action)
+        }
+
+        return ["mid", ContextMenuData.submenu(icon, caption, possibleValues.map(makeChangeValueItem))]
+    }
+
+    protected replaceWithNewParams(newParams: Partial<TParams>): void {
+        const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => TWires): Map<string, TWires | TWires[]> => {
+            const savedWires: Map<string, TWires | TWires[]> = new Map()
+            for (const node of nodes) {
+                const group = node.group
+                const wires = getWires(node)
+                if (isUndefined(group)) {
+                    savedWires.set(node.name, wires)
+                } else {
+                    let groupSavedNodes = savedWires.get(group.name) as TWires[]
+                    if (!isArray(groupSavedNodes)) {
+                        groupSavedNodes = new Array(group.nodes.length)
+                        savedWires.set(group.name, groupSavedNodes)
+                    }
+                    groupSavedNodes[group.nodes.indexOf(node)] = wires
+                }
+            }
+            return savedWires
+        }
+
+        const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
+        const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
+
+        const currentRepr = this.toJSON()
+        const newRepr = { ...currentRepr, ...newParams }
+        delete (newRepr as ComponentRepr<true, true>).in
+        delete (newRepr as ComponentRepr<true, true>).out
+        delete (newRepr as ComponentRepr<true, false>).id
+
+        const newComp = this._def.makeFromJSON(this.editor, newRepr)
+        if (isUndefined(newComp)) {
+            console.warn("Could not create component variant")
+            return
+        }
+        newComp.setPosition(this.posX, this.posY)
+        newComp.setSpawned()
+
+        const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
+            for (const node of nodes) {
+                const group = node.group
+                if (isUndefined(group)) {
+                    const wires = savedWires.get(node.name) as TWires
+                    setWires(wires, node)
+                } else {
+                    const wiresArray = savedWires.get(group.name) as TWires[]
+                    const wires = wiresArray[group.nodes.indexOf(node)]
+                    setWires(wires, node)
+                }
+            }
+        }
+
+        restoreNodes(savedWiresIn, newComp.inputs._all, (wire, node) => {
+            if (wire === null || isUndefined(wire)) {
+                return
+            }
+            wire.setSecondNode(node)
+        })
+        restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => { 
+            if (isUndefined(wires) || wires.length === 0) {
+                return
+            }
+            for (const wire of [...wires]) {
+                wire.changeStartNode(node)
+            }
+        })
+
+        const editor = this.editor
+        const deleted = editor.tryDeleteDrawable(this)
+        if (!deleted) {
+            console.warn("Could not delete old component")
+        }
+
+        editor.undoMgr.takeSnapshot()
+        editor.redrawMgr.addReason("component replaced", newComp)
     }
 
 }
@@ -1002,23 +1143,39 @@ export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, n
 
 /** Represents the JSON object holding properties from the passed component def */
 export type Repr<TDef>
-    // case: Regular, unparameterized component def
-    = TDef extends ComponentDef<infer TTypeName, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TProps, infer THasIn, infer THasOut, infer __TWeakRepr>
+    // case: Parameterized component def
+    = TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer TParams, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
     ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            params: TParams,
         }
     }
-    // case: Parameterized component def, check return type
-    : TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer __TParams, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
+    // case: Unparameterized component def
+    : TDef extends ComponentDef<infer TTypeName, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TProps, infer THasIn, infer THasOut, infer __TWeakRepr>
     ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            params: {},
         }
     }
-    // case: Abstract base component def
+    // case: Abstract parameterized component def
+    : TDef extends {
+        repr: infer TProps extends t.Props,
+        paramDefaults: infer TParams extends Record<string, unknown>,
+        makeNodes: (...args: any) => infer TInOutRecs,
+        initialValue?: (...args: any) => infer TValue,
+    }
+    ? Expand<t.TypeOf<t.TypeC<TProps>> & ComponentRepr<true, true> & {
+        _META?: {
+            nodeRecs: TInOutRecs,
+            value: TValue,
+            params: TParams,
+        }
+    }>
+    // case: Abstract component def
     : TDef extends {
         repr: infer TProps extends t.Props,
         makeNodes: (...args: any) => infer TInOutRecs,
@@ -1028,6 +1185,7 @@ export type Repr<TDef>
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            params: {},
         }
     }>
     : never
@@ -1037,7 +1195,6 @@ export type Value<TDef>
     ? TValue : never
 
 type TypeFieldProp<TTypeName extends string | undefined>
-    // eslint-disable-next-line @typescript-eslint/ban-types
     = undefined extends TTypeName ? {}
     : TTypeName extends string ? { type: t.LiteralC<TTypeName> }
     : never
@@ -1084,15 +1241,11 @@ export type InstantiatedComponentDef<
     initialValue: (saved: TRepr | undefined) => TValue,
 }
 
-export type LibraryButtonProps = { imgWidth: number }
-export type LibraryButtonOptions = { compat?: string, hidden?: boolean }
-
 export class ComponentDef<
     TTypeName extends string | undefined,
     TInOutRecs extends InOutRecs,
     TValue,
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/ban-types
     TProps extends t.Props = {},
     THasIn extends boolean = HasField<TInOutRecs, "ins">,
     THasOut extends boolean = HasField<TInOutRecs, "outs">,
@@ -1165,7 +1318,6 @@ export function defineComponent<
     TInOutRecs extends InOutRecs,
     TValue,
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/ban-types
     TProps extends t.Props = {},
 >(
     category: ComponentCategory, type: TTypeName,
@@ -1241,7 +1393,7 @@ export class ParametrizedComponentDef<
         repr: TProps,
         valueDefaults: TValueDefaults,
         public readonly defaultParams: TParams,
-        private readonly _makeSize: (params: TResolvedParams) => ComponentGridSize,
+        public readonly size: (params: TResolvedParams) => ComponentGridSize,
         private readonly _makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         private readonly _initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
         private readonly _validateParams: (params: TParams, paramDefaults: TParams) => TResolvedParams,
@@ -1254,15 +1406,15 @@ export class ParametrizedComponentDef<
         return isDefined(this.impl)
     }
 
-    public with(params: TResolvedParams): InstantiatedComponentDef<TRepr, TValue> {
-        const size = this._makeSize(params)
+    public with(params: TResolvedParams): [InstantiatedComponentDef<TRepr, TValue>, this] {
+        const size = this.size(params)
         const nodes = this._makeNodes({ ...size, ...params }, this.aults)
-        return {
+        return [{
             category: this.category,
             size,
             nodeRecs: nodes,
             initialValue: (saved: TRepr | undefined) => this._initialValue(saved, params),
-        }
+        }, this]
     }
 
     public button(params: TParams, visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem {

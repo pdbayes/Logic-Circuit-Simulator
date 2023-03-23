@@ -3,9 +3,9 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
@@ -89,20 +89,20 @@ type OutputShiftBufferState = {
 
 export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, OutputShiftBufferState> {
 
-    protected _decodeAs: ShiftBufferDecoder = OutputShiftBufferDef.aults.decodeAs
-    protected _groupEvery: number | undefined = undefined
-    protected _maxItems: number | undefined = undefined
-    protected _trigger: EdgeTrigger = OutputShiftBufferDef.aults.trigger
+    protected _decodeAs: ShiftBufferDecoder
+    protected _groupEvery: number | undefined
+    protected _maxItems: number | undefined
+    protected _trigger: EdgeTrigger
     protected _lastClock: LogicValue = Unknown
 
     public constructor(editor: LogicEditor, saved?: OutputShiftBufferRepr) {
         super(editor, OutputShiftBufferDef, saved)
 
-        if (isDefined(saved)) {
-            this._decodeAs = saved.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
-            this._maxItems = saved.maxItems
-            this._trigger = saved.trigger ?? OutputShiftBufferDef.aults.trigger
-        }
+        this._decodeAs = saved?.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
+        this._groupEvery = saved?.groupEvery ?? undefined
+        this._maxItems = saved?.maxItems ?? undefined
+        this._trigger = saved?.trigger ?? OutputShiftBufferDef.aults.trigger
+
         this.redecodeAll()
     }
 
@@ -290,7 +290,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         this.setNeedsRedraw("grouping changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         const s = S.Components.OutputShiftBuffer.contextMenu
         const makeItemDecodeAs = (decoder: ShiftBufferDecoder, desc: string) => {

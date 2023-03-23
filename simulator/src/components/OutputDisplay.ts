@@ -4,8 +4,8 @@ import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isUnknown, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, Orientation } from "./Drawable"
+import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
     defineParametrizedComponent("out", "display", true, false, {
@@ -25,11 +25,11 @@ export const OutputDisplayDef =
             bits: 4,
         },
         validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [4, 8], defaults.bits, "Display bits")
+            const numBits = validate(bits, [3, 4, 8, 16], defaults.bits, "Display bits")
             return { numBits }
         },
         size: ({ numBits }) => ({
-            gridWidth: 2 + numBits / 2,
+            gridWidth: 2 + Math.ceil(numBits / 2),
             gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
         }),
         makeNodes: ({ numBits, gridWidth }) => {
@@ -49,22 +49,21 @@ export type OutputDisplayRepr = Repr<typeof OutputDisplayDef>
 export type OutputDisplayParams = ResolvedParams<typeof OutputDisplayDef>
 
 
-export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
+export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> {
 
     public readonly numBits: number
-    private _name: ComponentName = undefined
-    private _radix = OutputDisplayDef.aults.radix
-    private _showAsUnknown = false
+    private _name: ComponentName
+    private _radix: number
+    private _showAsUnknown: boolean
 
     public constructor(editor: LogicEditor, params: OutputDisplayParams, saved?: OutputDisplayRepr) {
         super(editor, OutputDisplayDef.with(params), saved)
+
         this.numBits = params.numBits
 
-        if (isDefined(saved)) {
-            this._name = saved.name
-            this._radix = saved.radix ?? OutputDisplayDef.aults.radix
-            this._showAsUnknown = saved.showAsUnknown ?? OutputDisplayDef.aults.showAsUnknown
-        }
+        this._name = saved?.name ?? undefined
+        this._radix = saved?.radix ?? OutputDisplayDef.aults.radix
+        this._showAsUnknown = saved?.showAsUnknown ?? OutputDisplayDef.aults.showAsUnknown
     }
 
     public toJSON() {
@@ -149,22 +148,16 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
             g.textAlign = "center"
 
             if (!this.showAsUnknown) {
-                g.font = "10px sans-serif"
-                g.fillText(binaryStringRep, this.posX + textXShift, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+                const [hasSpaces, spacedStringRep] = insertSpaces(binaryStringRep, this._radix)
+                g.font = `${hasSpaces ? 9 : 10}px sans-serif`
+                g.fillText(spacedStringRep, this.posX + textXShift, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
             }
 
-            g.font = "bold 18px sans-serif"
+            const mainSize = this.numBits === 4 && this._radix === 8 ? 16 : 18
+            g.font = `bold ${mainSize}px sans-serif`
 
-            let stringRep: string
-            if (this.showAsUnknown) {
-                stringRep = "?"
-                // if (!isUnset(value)) {
-                //     // otherwise we get the same color for background and text
-                //     g.fillStyle = COLOR_UNSET
-                // }
-            } else {
-                stringRep = formatWithRadix(value, this._radix, 8)
-            }
+            const stringRep = this.showAsUnknown ? Unknown
+                : formatWithRadix(value, this._radix, this.numBits)
             g.fillText(stringRep, this.posX + textXShift, this.posY + (isVertical ? 6 : 0))
         })
     }
@@ -200,7 +193,7 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
         this.setNeedsRedraw("radix changed")
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         const s = S.Components.OutputDisplay.contextMenu
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
@@ -222,8 +215,11 @@ export class OutputDisplay extends ComponentBase<OutputDisplayRepr> {
         return [
             ["mid", makeItemShowRadix(10, s.DisplayAsDecimal)],
             ["mid", makeItemShowRadix(-10, s.DisplayAsSignedDecimal)],
+            ["mid", makeItemShowRadix(8, s.DisplayAsOctal)],
             ["mid", makeItemShowRadix(16, s.DisplayAsHexadecimal)],
             ["mid", makeItemShowAs(s.DisplayAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [3, 4, 8, 16]),
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
@@ -244,4 +240,23 @@ function repeatString(s: string, n: number) {
         result += s
     }
     return result
+}
+
+function insertSpaces(binaryStringRep: string, radix: number): [boolean, string] {
+    let n = -1
+    if (radix === 16) {
+        n = 4
+    } else if (radix === 8) {
+        n = 3
+    }
+    if (n < 0) {
+        return [false, binaryStringRep]
+    }
+    const re = new RegExp(`(.{${n}})`, "g")
+    const spaced = reverseString(reverseString(binaryStringRep).replace(re, "$1 "))
+    return [true, spaced]
+}
+
+function reverseString(str: string) {
+    return str.split("").reverse().join("")
 }

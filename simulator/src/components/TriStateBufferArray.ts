@@ -4,8 +4,9 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, Repr, ResolvedParams } from "./Component"
-import { DrawContext } from "./Drawable"
+import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { DrawContext, MenuItems } from "./Drawable"
+import { SwitchedInverterDef } from "./SwitchedInverter"
 
 
 export const TriStateBufferArrayDef =
@@ -23,13 +24,11 @@ export const TriStateBufferArrayDef =
             const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Tri-state buffer array bits")
             return { numBits }
         },
-        size: ({ numBits }) => {
-            return { gridWidth: 4, gridHeight: 8 } // TODO var height
-        },
-        makeNodes: ({ numBits }) => ({
+        size: SwitchedInverterDef.size,
+        makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
                 I: groupVertical("w", -3, 0, numBits),
-                E: [0, -5, "n", "E (Enable)"],
+                E: [0, -(gridHeight / 2 + 1), "n", "E (Enable)"],
             },
             outs: {
                 O: groupVertical("e", 3, 0, numBits),
@@ -42,7 +41,7 @@ export const TriStateBufferArrayDef =
 export type TriStateBufferArrayRepr = Repr<typeof TriStateBufferArrayDef>
 export type TriStateBufferArrayParams = ResolvedParams<typeof TriStateBufferArrayDef>
 
-export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> {
+export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBufferArrayRepr> {
 
     public readonly numBits: number
 
@@ -130,5 +129,13 @@ export class TriStateBufferArray extends ComponentBase<TriStateBufferArrayRepr> 
             drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
         }
     }
+
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        return [
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            ...this.makeForceOutputsContextMenuItem(true),
+        ]
+    }
+
 }
 TriStateBufferArrayDef.impl = TriStateBufferArray

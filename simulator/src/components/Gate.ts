@@ -4,15 +4,20 @@ import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, 
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, deepEquals, isDefined, isUndefined, isUnknown, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentBase, defineParametrizedComponent, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext } from "./Drawable"
-import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
+import { defineParametrizedComponent, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
+import { ContextMenuData, ContextMenuItem, DrawContext, MenuItems } from "./Drawable"
+import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
 
 type GateRepr = Gate1Repr | GateNRepr
 
-export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["type"] = TRepr["type"]> extends ComponentBase<
+export abstract class GateBase<
+    TRepr extends GateRepr,
+    TGateType extends TRepr["type"] = TRepr["type"],
+    TParams extends ExtractParams<TRepr> = ExtractParams<TRepr>
+> extends ParametrizedComponentBase<
     TRepr,
     LogicValue,
+    TParams,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
     true, true
@@ -20,17 +25,15 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
 
     public abstract get numBits(): number
     private _type: TGateType
-    private _poseAs: TGateType | undefined = undefined
-    private _showAsUnknown = false
+    private _poseAs: TGateType | undefined
+    private _showAsUnknown: boolean
 
-    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, LogicValue>, type: TGateType, saved?: TRepr) {
+    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue>, SomeParamCompDef], type: TGateType, saved?: TRepr) {
         super(editor, SubclassDef, saved)
 
         this._type = type
-        if (isDefined(saved)) {
-            this._poseAs = saved.poseAs as TGateType
-            this._showAsUnknown = saved.showAsUnknown ?? false
-        }
+        this._poseAs = saved?.poseAs as TGateType ?? undefined
+        this._showAsUnknown = saved?.showAsUnknown ?? false
     }
 
     protected toGateJSON(numBits: number | undefined) {
@@ -421,20 +424,15 @@ export abstract class GateBase<TRepr extends GateRepr, TGateType extends TRepr["
         return false
     }
 
-    protected override makeComponentSpecificContextMenuItems(): undefined | [ContextMenuItemPlacement, ContextMenuItem][] {
-        const items: [ContextMenuItemPlacement, ContextMenuItem][] = [
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const items: MenuItems = [
             ["start", this.makeReplaceByMenuItem()],
         ]
         if (this.editor.mode >= Mode.FULL) {
             items.push(
                 ["mid", this.makePoseAsMenuItem()],
+                ...this.makeForceOutputsContextMenuItem()
             )
-            const forceOutputItem = this.makeForceOutputsContextMenuItem()
-            if (isDefined(forceOutputItem)) {
-                items.push(
-                    ["mid", forceOutputItem]
-                )
-            }
         }
         return items
     }
@@ -636,6 +634,20 @@ export class GateN extends GateBase<GateNRepr> {
             }
         }
         return false
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.Generic.contextMenu
+
+        const changeBitsItems: MenuItems = Gate2OnlyTypes.includes(this.type) ? [] : [
+            this.makeChangeParamsContextMenuItem("inputs", s.ParamNumInputs, this.numBits, "bits", [2, 3, 4]),
+            ["mid", ContextMenuData.sep()],
+        ]
+
+        return [
+            ...changeBitsItems,
+            ...super.makeComponentSpecificContextMenuItems(),
+        ]
     }
 
 }
