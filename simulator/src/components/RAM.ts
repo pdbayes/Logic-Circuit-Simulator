@@ -239,31 +239,32 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
         const top = this.posY - height / 2
         const bottom = this.posY + height / 2
 
+        // background
+        const outline = new Path2D()
+        outline.rect(left, top, width, height)
         g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
+        g.fill(outline)
 
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
-        g.fillStyle = COLOR_BACKGROUND
-
+        // inputs/outputs
         Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-        drawWireLineToComponent(g, this.inputs.WriteEnable, this.inputs.WriteEnable.posXInParentTransform, bottom + 2, false)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom + 2, false)
+        drawWireLineToComponent(g, this.inputs.WriteEnable, this.inputs.WriteEnable.posXInParentTransform, bottom, false)
+        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom, false)
         for (const input of this.inputs.D) {
-            drawWireLineToComponent(g, input, left - 1, input.posYInParentTransform, false)
+            drawWireLineToComponent(g, input, left, input.posYInParentTransform, false)
         }
         for (const input of this.inputs.Addr) {
             drawWireLineToComponent(g, input, input.posXInParentTransform, top, false)
         }
-
         for (const output of this.outputs.Q) {
-            drawWireLineToComponent(g, output, right + 1, output.posYInParentTransform, false)
+            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
         }
 
+        // outline
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.lineWidth = 3
+        g.stroke(outline)
 
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             if (!this._showContent || !this.canShowContent() || this.editor.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
@@ -276,16 +277,24 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
             } else {
                 const mem = this.value.mem
                 const addr = this.currentAddress()
-                const showSingleVerticalBlock = this.numWords <= 16 || !Orientation.isVertical(this.orient)
-                const cellHeight = this.numWords <= 16
-                    ? Orientation.isVertical(this.orient) ? 4.5 : 7
-                    : 2.5
+                const isVertical = Orientation.isVertical(this.orient)
+                const canUseTwoCols = isVertical
+                const [availWidth, availHeight] = isVertical
+                    ? [height - 66, width - 35]
+                    : [width - 42, height - 40]
+                const arrowWidth = 10
 
-                if (showSingleVerticalBlock) {
-                    const cellWidth = this.numDataBits <= 4 ? 10 : this.numDataBits <= 8 ? 8 : 4.5
-                    drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords, this.posX + 2, this.posY, cellWidth, cellHeight)
+                let useTwoCols = false
+                let cellHeight = Math.floor(availHeight * 2 / this.numWords) / 2
+                if (cellHeight <= 2 && canUseTwoCols) {
+                    useTwoCols = true
+                    cellHeight = Math.floor(availHeight * 4 / this.numWords) / 2
+                }
+                if (!useTwoCols) {
+                    const cellWidth = Math.floor((availWidth - arrowWidth) * 2 / this.numDataBits) / 2
+                    drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords, this.posX + 3, this.posY, cellWidth, cellHeight)
                 } else {
-                    const cellWidth = this.numDataBits <= 8 ? 6.5 : 4
+                    const cellWidth = Math.floor((availWidth / 2 - 2 * arrowWidth) * 2 / this.numDataBits) / 2
                     drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords / 2, this.posX + 2 - 38, this.posY, cellWidth, cellHeight)
                     drawMemoryCells(g, mem, this.numDataBits, addr, this.numWords / 2, this.numWords, this.posX + 2 + 38, this.posY, cellWidth, cellHeight)
                 }
