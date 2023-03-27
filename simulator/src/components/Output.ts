@@ -3,8 +3,8 @@ import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLO
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
-import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -18,13 +18,12 @@ export const OutputDef =
             name: ComponentNameRepr,
         },
         valueDefaults: {},
-        paramDefaults: {
-            bits: 1,
+        params: {
+            bits: param(1, [1, 2, 3, 4, 7, 8, 16, 32]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Output bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => {
             if (numBits === 1) {
                 const d = INPUT_OUTPUT_DIAMETER / GRID_STEP
@@ -221,13 +220,15 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         return [
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
         ]
     }
 
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 }

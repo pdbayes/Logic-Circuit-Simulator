@@ -3,8 +3,8 @@ import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPON
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
@@ -24,15 +24,14 @@ export const RAMDef =
             showContent: true,
             trigger: EdgeTrigger.rising,
         },
-        paramDefaults: {
-            bits: 4,
-            lines: 16,
+        params: {
+            bits: param(4, [4, 8, 16, 32]),
+            lines: param(16, [8, 16, 32, 64, 128, 256]),
         },
-        validateParams: ({ bits, lines }, defaults) => {
-            const numDataBits = validate(bits, [4, 8, 16, 32], defaults.bits, "RAM bits")
+        validateParams: ({ bits, lines }) => {
             const numAddressBits = Math.ceil(Math.log2(lines))
             const numWords = Math.pow(2, numAddressBits)
-            return { numDataBits, numAddressBits, numWords }
+            return { numDataBits: bits, numAddressBits, numWords }
         },
         size: ({ numWords, numDataBits }) => ({
             gridWidth: 11, // always wide enough even for 256 lines
@@ -322,8 +321,8 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
             ...toggleShowContentItems,
-            this.makeChangeParamsContextMenuItem("memlines", s.ParamNumWords, this.numWords, "lines", [8, 16, 32, 64, 128, 256]),
-            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numDataBits, "bits", [4, 8, 16, 32]),
+            this.makeChangeParamsContextMenuItem("memlines", s.ParamNumWords, this.numWords, "lines"),
+            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numDataBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
     }

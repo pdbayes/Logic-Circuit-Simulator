@@ -244,7 +244,11 @@ export type IsNonEmpty<TNamedNodes> = TNamedNodes extends { _empty: true } ? fal
 
 export type ExtractValue<TRepr> = TRepr extends { _META?: { value: infer TValue } } ? TValue : never
 
-export type ExtractParams<TRepr> = TRepr extends { _META?: { params: infer TParams } } ? TParams : never
+export type ExtractParams<TRepr> = TRepr extends { _META?: { params: infer TParams } } ? TParams : {}
+
+export type ExtractParamDefs<TRepr> = TRepr extends { _META?: { paramDefs: infer TParamDefs extends Record<string, ParamDef<unknown>> } } ? TParamDefs : Record<string, ParamDef<unknown>>
+
+
 
 export type InOutRecs = {
     ins?: NodeRec<NodeInDesc>
@@ -960,16 +964,16 @@ export abstract class ComponentBase<
 
 }
 
-export type SomeParamCompDef = ParametrizedComponentDef<any, any, any, any, any, any, any, any, any, any, any>
 
 export abstract class ParametrizedComponentBase<
     TRepr extends ComponentRepr<THasIn, THasOut>, // JSON representation
     TValue = ExtractValue<TRepr>, // internal value recomputed when inputs change
+    TParamDefs extends ExtractParamDefs<TRepr> = ExtractParamDefs<TRepr>,
     TParams extends ExtractParams<TRepr> = ExtractParams<TRepr>,
     TInputNodes extends NamedNodes<NodeIn> = NodesIn<TRepr>,
     TOutputNodes extends NamedNodes<NodeOut> = NodesOut<TRepr>,
     THasIn extends boolean = IsNonEmpty<TInputNodes>,
-    THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
+    THasOut extends boolean = IsNonEmpty<TOutputNodes>,// in-out node presence
 > extends ComponentBase<
     TRepr,
     TValue,
@@ -979,13 +983,13 @@ export abstract class ParametrizedComponentBase<
     THasOut
 > {
 
-    private _def: SomeParamCompDef
+    private _def: SomeParamCompDef<TParamDefs>
 
     protected constructor(
         editor: LogicEditor,
         [instance, def]: [
             InstantiatedComponentDef<TRepr, TValue>,
-            SomeParamCompDef,
+            SomeParamCompDef<TParamDefs>,
         ],
         saved: TRepr | undefined
     ) {
@@ -994,31 +998,33 @@ export abstract class ParametrizedComponentBase<
     }
 
     protected makeChangeParamsContextMenuItem<
-        TField extends keyof TParams,
+        TField extends (keyof TParams & keyof TParamDefs),
         TVal extends TParams[TField] = TParams[TField]
     >(
         icon: IconName,
         [caption, itemCaption]: [string, Template<["val"]>],
         currentValue: TVal,
         fieldName: TField,
-        possibleValues: ReadonlyArray<TVal> | ReadonlyArray<readonly [unknown, TVal]>, // [display, value]
+        values?: readonly TVal[],
     ): [ContextMenuItemPlacement, ContextMenuItem] {
-        const makeChangeValueItem = (spec: TVal | readonly [unknown, TVal]) => {
-            const [display, val] = isArray(spec) ? spec : [spec, spec]
-            const isCurrent = currentValue === spec
+        const makeChangeValueItem = (val: TVal) => {
+            const isCurrent = currentValue === val
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => {
                 const newParams: Partial<TParams> = {}
                 newParams[fieldName] = val
                 this.replaceWithNewParams(newParams)
             }
-            return ContextMenuData.item(icon, itemCaption.expand({ val: display }), action)
+            return ContextMenuData.item(icon, itemCaption.expand({ val }), action)
         }
 
-        return ["mid", ContextMenuData.submenu(icon, caption, possibleValues.map(makeChangeValueItem))]
+        if (isUndefined(values)) {
+            values = (this._def.paramDefs[fieldName] as ParamDef<TVal>).range
+        }
+        return ["mid", ContextMenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
     }
 
-    protected replaceWithNewParams(newParams: Partial<TParams>): void {
+    protected replaceWithNewParams(newParams: Partial<TParams>): Component | undefined {
         const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => TWires): Map<string, TWires | TWires[]> => {
             const savedWires: Map<string, TWires | TWires[]> = new Map()
             for (const node of nodes) {
@@ -1050,7 +1056,7 @@ export abstract class ParametrizedComponentBase<
         const newComp = this._def.makeFromJSON(this.editor, newRepr)
         if (isUndefined(newComp)) {
             console.warn("Could not create component variant")
-            return
+            return undefined
         }
         newComp.setPosition(this.posX, this.posY)
         newComp.setSpawned()
@@ -1075,7 +1081,7 @@ export abstract class ParametrizedComponentBase<
             }
             wire.setSecondNode(node)
         })
-        restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => { 
+        restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
             if (isUndefined(wires) || wires.length === 0) {
                 return
             }
@@ -1092,6 +1098,48 @@ export abstract class ParametrizedComponentBase<
 
         editor.undoMgr.takeSnapshot()
         editor.redrawMgr.addReason("component replaced", newComp)
+
+        return newComp
+    }
+
+    public override keyDown(e: KeyboardEvent): void {
+        if (e.key === "+") {
+            this.tryChangeParam(0, true)
+        } else if (e.key === "-") {
+            this.tryChangeParam(0, false)
+        } else if (e.key === "*") {
+            this.tryChangeParam(1, true)
+        } else if (e.key === "/") {
+            this.tryChangeParam(1, false)
+        } else {
+            super.keyDown(e)
+        }
+    }
+
+    private tryChangeParam(paramIndex: number, increase: boolean): void {
+        const params = Object.keys(this._def.defaultParams)
+        const numParams = params.length
+        if (paramIndex >= numParams) {
+            return
+        }
+        const paramName = params[paramIndex]
+        let currentParamValue = (this.toJSON() as any)[paramName]
+        const paramDef = this._def.paramDefs[paramName]
+        if (isUndefined(currentParamValue)) {
+            currentParamValue = paramDef.defaultValue
+        }
+        if (!isNumber(currentParamValue)) {
+            return
+        }
+
+        const newParamValue = paramDef.nextValue(currentParamValue, increase)
+        if (isUndefined(newParamValue) || newParamValue === currentParamValue) {
+            return
+        }
+        const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
+        if (isDefined(newComp)) {
+            this.editor.cursorMovementMgr.setCurrentMouseOverComp(newComp)
+        }
     }
 
 }
@@ -1144,11 +1192,12 @@ export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, n
 /** Represents the JSON object holding properties from the passed component def */
 export type Repr<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer TParams, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
+    = TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer TParamDefs, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr>
     ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            paramDefs: TParamDefs,
             params: TParams,
         }
     }
@@ -1158,13 +1207,14 @@ export type Repr<TDef>
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            paramDefs: {},
             params: {},
         }
     }
     // case: Abstract parameterized component def
     : TDef extends {
         repr: infer TProps extends t.Props,
-        paramDefaults: infer TParams extends Record<string, unknown>,
+        params: infer TParamDefs extends Record<string, ParamDef<unknown>>,
         makeNodes: (...args: any) => infer TInOutRecs,
         initialValue?: (...args: any) => infer TValue,
     }
@@ -1172,7 +1222,8 @@ export type Repr<TDef>
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
-            params: TParams,
+            paramDefs: TParamDefs,
+            params: ParamsFromDefs<TParamDefs>,
         }
     }>
     // case: Abstract component def
@@ -1185,13 +1236,14 @@ export type Repr<TDef>
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
+            paramDefs: {},
             params: {},
         }
     }>
     : never
 
 export type Value<TDef>
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParams, infer __TInOutRecs, infer TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr>
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer TValue, infer __TValueDefaults, infer __TParams, infer __TResolvedParams, infer __TWeakRepr>
     ? TValue : never
 
 type TypeFieldProp<TTypeName extends string | undefined>
@@ -1364,20 +1416,70 @@ export function defineAbstractComponent<
 // ParameterizedComponentDef and friends
 //
 
+export type SomeParamCompDef<TParamDefs extends Record<string, ParamDef<unknown>>> = ParametrizedComponentDef<string | undefined, boolean, boolean, any, t.Props, TParamDefs, InOutRecs, unknown, any, ParamsFromDefs<TParamDefs>, any, any>
+
+export class ParamDef<T> {
+
+    public constructor(
+        public readonly defaultValue: T,
+        public readonly range: readonly T[],
+        public readonly isAllowed: (val: unknown) => boolean,
+    ) { }
+
+    public validate(n: T, context: string) {
+        if (this.isAllowed(n)) {
+            return n
+        } else {
+            console.warn(`Using default value ${this.defaultValue} for ${context} instead of invalid value ${n}; allowed values are: ${this.range.join(", ")}`)
+            return this.defaultValue
+        }
+    }
+
+    public nextValue(value: T, increase: boolean): T | undefined {
+        const i = this.range.indexOf(value)
+        if (i === -1) {
+            return this.defaultValue
+        }
+        const j = i + (increase ? 1 : -1)
+        if (j < 0 || j >= this.range.length) {
+            return undefined
+        }
+        return this.range[j]
+    }
+
+}
+
+export function param<T>(defaultValue: T, range?: T[]): ParamDef<T> {
+    if (isUndefined(range)) {
+        return new ParamDef(defaultValue, [], () => true)
+    }
+    return new ParamDef(defaultValue, range, val => range.includes(val as T))
+}
+
+export type ParamsFromDefs<TDefs extends Record<string, ParamDef<unknown>>> = {
+    [K in keyof TDefs]: TDefs[K] extends ParamDef<infer T> ? T : never
+}
+
+function paramDefaults<TParamDefs extends Record<string, ParamDef<unknown>>>(defs: TParamDefs): ParamsFromDefs<TParamDefs> {
+    return Object.fromEntries(Object.entries(defs).map(([k, v]) => [k, v.defaultValue])) as any
+}
+
 export class ParametrizedComponentDef<
     TTypeName extends string | undefined,
     THasIn extends boolean,
     THasOut extends boolean,
     TVariantName extends (undefined extends TTypeName ? string : `${TTypeName}-${string}`),
     TProps extends t.Props,
-    TParams extends Record<string, unknown>,
+    TParamDefs extends Record<string, ParamDef<unknown>>,
     TInOutRecs extends InOutRecs,
     TValue,
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
+    TParams extends ParamsFromDefs<TParamDefs> = ParamsFromDefs<TParamDefs>,
     TResolvedParams extends Record<string, unknown> = TParams,
     TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
 > {
 
+    public readonly defaultParams: TParams
     public readonly aults: TValueDefaults & TParams
     public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
 
@@ -1392,13 +1494,14 @@ export class ParametrizedComponentDef<
         private readonly _buttonProps: LibraryButtonProps,
         repr: TProps,
         valueDefaults: TValueDefaults,
-        public readonly defaultParams: TParams,
+        public readonly paramDefs: TParamDefs,
         public readonly size: (params: TResolvedParams) => ComponentGridSize,
         private readonly _makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         private readonly _initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
-        private readonly _validateParams: (params: TParams, paramDefaults: TParams) => TResolvedParams,
+        private readonly _validateParams: (params: TParams, paramDefs: TParamDefs) => TResolvedParams,
     ) {
-        this.aults = { ...valueDefaults, ...defaultParams }
+        this.defaultParams = paramDefaults(paramDefs) as TParams
+        this.aults = { ...valueDefaults, ...this.defaultParams }
         this.repr = makeComponentRepr(type, hasIn, hasOut, repr ?? ({} as TProps)) as any
     }
 
@@ -1422,7 +1525,7 @@ export class ParametrizedComponentDef<
         return {
             category: this.category,
             type: completedType,
-            params: defParams<TParams>(this, params),
+            params: defParams<TParamDefs, TParams>(this, params),
             visual,
             width: this._buttonProps.imgWidth,
             ...options,
@@ -1431,7 +1534,7 @@ export class ParametrizedComponentDef<
 
     public make<TComp extends Component>(editor: LogicEditor, params?: TParams): TComp {
         const fullParams = isUndefined(params) ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
-        const resolvedParams = this._validateParams(fullParams, this.defaultParams)
+        const resolvedParams = this.doValidate(fullParams)
         const comp = new this.impl(editor, resolvedParams)
         editor.components.add(comp)
         return comp as TComp
@@ -1443,23 +1546,34 @@ export class ParametrizedComponentDef<
             return undefined
         }
         const fullParams = mergeWhereDefined(this.defaultParams, validated)
-        const resolvedParams = this._validateParams(fullParams, this.defaultParams)
+        const resolvedParams = this.doValidate(fullParams)
         const comp = new this.impl(editor, resolvedParams, validated)
         editor.components.add(comp)
         return comp
     }
+
+    private doValidate(fullParams: TParams) {
+        const className = this.impl?.name ?? "component"
+        fullParams = Object.fromEntries(Object.entries(this.paramDefs).map(([paramName, paramDef]) => {
+            const paramValue = fullParams[paramName] ?? paramDef.defaultValue
+            const validatedValue = paramDef.validate(paramValue, `${className}.${paramName}`)
+            return [paramName, validatedValue]
+        })) as TParams
+        return this._validateParams(fullParams, this.paramDefs)
+    }
+
 }
 
 export type Params<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer TParams, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer __TResolvedParams, infer __TWeakRepr> ? TParams
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr> ? TParams
     // case: Abstract base component def
-    : TDef extends { paramDefaults: infer TParams } ? TParams
+    : TDef extends { paramDefs: infer TParamDefs extends Record<string, ParamDef<unknown>> } ? ParamsFromDefs<TParamDefs>
     : never
 
 export type ResolvedParams<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParams, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer TResolvedParams, infer __TWeakRepr> ? TResolvedParams
+    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer __TParams, infer TResolvedParams, infer __TWeakRepr> ? TResolvedParams
     // case: Abstract base component def
     : TDef extends { validateParams?: infer TFunc } ?
     TFunc extends (...args: any) => any ? ReturnType<TFunc> : never
@@ -1481,39 +1595,46 @@ export function defineParametrizedComponent<
     TVariantName extends (undefined extends TTypeName ? string : `${TTypeName}-${string}`),
     TProps extends t.Props,
     TValueDefaults extends Record<string, unknown>,
-    TParams extends Record<string, unknown>,
+    TParamDefs extends Record<string, ParamDef<unknown>>,
     TInOutRecs extends InOutRecs,
     TValue,
+    TParams extends ParamsFromDefs<TParamDefs> = ParamsFromDefs<TParamDefs>,
     TResolvedParams extends Record<string, unknown> = TParams,
     TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
 >(
     category: ComponentCategory, type: TTypeName, hasIn: THasIn, hasOut: THasOut,
-    { variantName, button, repr, valueDefaults, paramDefaults, validateParams, size, makeNodes, initialValue }: {
+    { variantName, button, repr, valueDefaults, params, validateParams, size, makeNodes, initialValue }: {
         variantName: (params: TParams) => TVariantName,
         button: LibraryButtonProps,
         repr: TProps,
         valueDefaults: TValueDefaults,
-        paramDefaults: TParams,
-        validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams,
+        params: TParamDefs,
+        validateParams?: (params: TParams, paramDefs: TParamDefs) => TResolvedParams,
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
     },
 ) {
-    return new ParametrizedComponentDef(category, type, hasIn, hasOut, variantName, button, repr, valueDefaults, paramDefaults, size, makeNodes, initialValue, validateParams ?? ((params: TParams) => params as unknown as TResolvedParams))
+    return new ParametrizedComponentDef(category, type, hasIn, hasOut, variantName, button, repr, valueDefaults, params, size, makeNodes, initialValue, validateParams ?? ((params: TParams) => params as unknown as TResolvedParams))
 }
 
-function defParams<TParams extends Record<string, unknown>>(def: ParametrizedComponentDef<string | undefined, boolean, boolean, any, any, TParams, InOutRecs, any, any, any, any>,
-    params: TParams): t.Branded<DefAndParams<TParams>, "params"> {
-    return brand<"params">()({ def, params })
+function defParams<
+    TParamDefs extends Record<string, ParamDef<unknown>>,
+    TParams extends ParamsFromDefs<TParamDefs>
+>(
+    def: ParametrizedComponentDef<string | undefined, boolean, boolean, any, any, TParamDefs, InOutRecs, any, any, TParams, any, any>,
+    params: TParams
+): t.Branded<DefAndParams<TParamDefs, TParams>, "params"> {
+    return brand<"params">()({ def, params } as DefAndParams<TParamDefs, TParams>)
 }
 
 export function defineAbstractParametrizedComponent<
     TProps extends t.Props,
     TValueDefaults extends Record<string, unknown>,
-    TParams extends Record<string, unknown>,
+    TParamDefs extends Record<string, ParamDef<unknown>>,
     TInOutRecs extends InOutRecs,
     TValue,
+    TParams extends ParamsFromDefs<TParamDefs> = ParamsFromDefs<TParamDefs>,
     TResolvedParams extends Record<string, unknown> = TParams,
     TRepr extends t.TypeOf<t.TypeC<TProps>> = t.TypeOf<t.TypeC<TProps>>,
 >(
@@ -1521,8 +1642,8 @@ export function defineAbstractParametrizedComponent<
         button: { imgWidth: number },
         repr: TProps,
         valueDefaults: TValueDefaults,
-        paramDefaults: TParams,
-        validateParams?: (params: TParams, paramDefaults: TParams) => TResolvedParams
+        params: TParamDefs,
+        validateParams?: (params: TParams, paramDefs: TParamDefs) => TResolvedParams
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,

@@ -427,6 +427,8 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetCaptionDialog()
+        } else {
+            super.keyDown(e)
         }
     }
 

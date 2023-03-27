@@ -3,8 +3,8 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown, validate } from "../utils"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
@@ -23,14 +23,13 @@ export const CounterDef =
             trigger: EdgeTrigger.rising,
             displayRadix: 10,
         },
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 3, 4, 7, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 3, 4, 7, 8, 16], defaults.bits, "Counter bits")
-            const resetValue = Math.pow(2, numBits)
-            return { numBits, resetValue }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+            resetValue: Math.pow(2, bits),
+        }),
         size: ({ numBits }) => ({
             gridWidth: numBits <= 6 ? 5 : numBits <= 8 ? 6 : 7,
             gridHeight: Math.max(11, 1 + (numBits + 1) * (useCompact(numBits) ? 1 : 2)),
@@ -245,7 +244,7 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
             ["mid", makeItemShowRadix(10, s.DisplayDecimal)],
             ["mid", makeItemShowRadix(16, s.DisplayHex)],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 3, 4, 7, 8, 16]),
+            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
     }

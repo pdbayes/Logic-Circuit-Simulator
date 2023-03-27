@@ -3,8 +3,8 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, isDefined, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillUsing, ArrayFillWith, isDefined, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
@@ -26,13 +26,12 @@ export const InputRandomDef =
             showProb: false,
             trigger: EdgeTrigger.rising,
         },
-        paramDefaults: {
-            bits: 1,
+        params: {
+            bits: param(1, [1, 2, 3, 4, 7, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16], defaults.bits, "Random input bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 4,
             gridHeight: 4 + (useCompact(numBits) ? numBits / 2 : numBits) * 2,
@@ -204,7 +203,7 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
         return [
             ["mid", toggleShowProbItem],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 7, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
@@ -214,6 +213,8 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 

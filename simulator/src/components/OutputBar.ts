@@ -252,6 +252,8 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 

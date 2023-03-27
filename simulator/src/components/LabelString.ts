@@ -130,6 +130,8 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetTextDialog()
+        } else {
+            super.keyDown(e)
         }
     }
 

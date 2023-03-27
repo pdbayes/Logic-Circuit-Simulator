@@ -429,17 +429,6 @@ export function deepEquals(v1: any, v2: any) {
 }
 
 
-export function validate<T>(n: T, validValues: readonly T[], defaultValue: T, valueName: string): T {
-    if (validValues.includes(n)) {
-        return n
-    } else {
-        console.warn(`Using default value ${defaultValue} for ${valueName} instead of invalid value ${n}; allowed values are: ${validValues.join(", ")}`)
-        return defaultValue
-    }
-}
-
-
-
 // io-ts utils
 
 export const typeOrUndefined = <T extends t.Mixed>(tpe: T) => {

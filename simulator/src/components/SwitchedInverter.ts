@@ -3,8 +3,8 @@ import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLO
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { DrawContext, MenuItems } from "./Drawable"
 
 
@@ -16,13 +16,13 @@ export const SwitchedInverterDef =
             bits: typeOrUndefined(t.number),
         },
         valueDefaults: {},
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Switched inverter bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
+
         size: ({ numBits }) => ({
             gridWidth: 4,
             gridHeight: 8 + Math.max(0, numBits - 8),
@@ -140,7 +140,7 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         return [
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
     }

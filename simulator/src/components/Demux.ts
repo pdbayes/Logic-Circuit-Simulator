@@ -5,7 +5,7 @@ import { IconName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
@@ -24,12 +24,12 @@ export const DemuxDef =
             showWiring: true,
             disconnectedAsHighZ: false,
         },
-        paramDefaults: {
-            from: 4,
-            to: 8,
+        params: {
+            from: param(4, [1, 2, 4, 8, 16]),
+            to: param(8),
         },
         validateParams: ({ from, to }) => {
-            // refernce is 'from'; 'to' is clamped to be between 2*from and 16*from
+            // reference is 'from'; 'to' is clamped to be between 2*from and 16*from
             const numTo = Math.min(16 * from, Math.max(2 * from, to))
             const numGroups = Math.ceil(numTo / from)
             const numSel = Math.ceil(Math.log2(numGroups))
@@ -240,7 +240,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         })
 
         return [
-            this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from", [1, 2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from"),
             this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to", [2, 4, 8, 16].map(x => x * this.numFrom)),
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowWiringItem],

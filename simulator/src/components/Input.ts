@@ -3,18 +3,23 @@ import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLO
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown, validate } from "../utils"
+import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ClockRepr } from "./Clock"
-import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Params, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
+import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, param, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
 type InputBaseRepr = InputRepr | ClockRepr
 
-export abstract class InputBase<TRepr extends InputBaseRepr, TParams extends ExtractParams<TRepr>> extends ParametrizedComponentBase<
+export abstract class InputBase<
+    TRepr extends InputBaseRepr,
+    TParamDefs extends ExtractParamDefs<TRepr> = ExtractParamDefs<TRepr>,
+    TParams extends ExtractParams<TRepr> = ExtractParams<TRepr>
+> extends ParametrizedComponentBase<
     TRepr,
     LogicValue[],
+    TParamDefs,
     TParams,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
@@ -24,7 +29,7 @@ export abstract class InputBase<TRepr extends InputBaseRepr, TParams extends Ext
     public abstract get numBits(): number
     protected _name: ComponentName
 
-    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue[]>, SomeParamCompDef], saved?: TRepr) {
+    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue[]>, SomeParamCompDef<TParamDefs>], saved?: TRepr) {
         super(editor, SubclassDef, saved)
         this._name = saved?.name ?? undefined
     }
@@ -214,6 +219,8 @@ export abstract class InputBase<TRepr extends InputBaseRepr, TParams extends Ext
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 
@@ -240,13 +247,12 @@ export const InputDef =
             isPushButton: false,
             isConstant: false,
         },
-        paramDefaults: {
-            bits: 1,
+        params: {
+            bits: param(1, [1, 2, 3, 4, 7, 8, 16, 32]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 7, 8, 16, 32], defaults.bits, "Input bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => {
             if (numBits === 1) {
                 const d = INPUT_OUTPUT_DIAMETER / GRID_STEP
@@ -287,7 +293,7 @@ export type InputRepr = Repr<typeof InputDef>
 export type InputParams = ResolvedParams<typeof InputDef>
 
 
-export class Input extends InputBase<InputRepr, Params<typeof InputDef>> {
+export class Input extends InputBase<InputRepr> {
 
     public readonly numBits: number
     private _isPushButton: boolean
@@ -439,7 +445,7 @@ export class Input extends InputBase<InputRepr, Params<typeof InputDef>> {
             ["mid", makeItemBehaveAs(s.ToggleButton, false)],
             ["mid", makeItemBehaveAs(s.PushButton, true)],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ["mid", ContextMenuData.sep()],
 
         ]

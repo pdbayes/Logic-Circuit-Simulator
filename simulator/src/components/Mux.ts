@@ -4,7 +4,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
@@ -21,12 +21,12 @@ export const MuxDef =
         valueDefaults: {
             showWiring: true,
         },
-        paramDefaults: {
-            from: 8,
-            to: 4,
+        params: {
+            to: param(4, [1, 2, 4, 8, 16]),
+            from: param(8),
         },
         validateParams: ({ from, to }) => {
-            // refernce is 'to'; 'from' is clamped to be between 2*to and 16*to
+            // reference is 'to'; 'from' is clamped to be between 2*to and 16*to
             const numFrom = Math.min(16 * to, Math.max(2 * to, from))
             const numGroups = Math.ceil(numFrom / to)
             const numSel = Math.ceil(Math.log2(numGroups))
@@ -207,7 +207,7 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
         })
 
         return [
-            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to", [1, 2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to"),
             this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from", [2, 4, 8, 16].map(x => x * this.numTo)),
             ["mid", ContextMenuData.sep()],
             ["mid", toggleShowWiringItem],

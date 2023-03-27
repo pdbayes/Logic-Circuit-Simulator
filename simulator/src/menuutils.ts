@@ -5,7 +5,7 @@ import { AdderArrayDef } from "./components/AdderArray"
 import { ALUDef } from "./components/ALU"
 import { ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
-import { ComponentCategory, ParametrizedComponentDef } from "./components/Component"
+import { ComponentCategory, ParamDef, ParametrizedComponentDef, ParamsFromDefs } from "./components/Component"
 import { CounterDef } from "./components/Counter"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
@@ -44,8 +44,11 @@ import { deepObjectEquals, isDefined, isString, isUndefined } from "./utils"
 
 export type ComponentKey = Strings["ComponentBar"]["Components"]["type"]
 
-export type DefAndParams<TParams extends Record<string, unknown>> = {
-    def: ParametrizedComponentDef<any, any, any, any, any, TParams, any, any>,
+export type DefAndParams<
+    TParamDefs extends Record<string, ParamDef<unknown>>,
+    TParams extends ParamsFromDefs<TParamDefs>
+> = {
+    def: ParametrizedComponentDef<any, any, any, any, any, any, any, any, TParams>,
     params: TParams
 }
 
@@ -56,7 +59,7 @@ const ifShowOnly = "ifShowOnly"
 export type LibraryItem = {
     category: ComponentCategory
     type?: string
-    params?: Branded<DefAndParams<any>, "params">
+    params?: Branded<DefAndParams<any, any>, "params">
     visual: ComponentKey & ImageName | [ComponentKey, ImageName]
     compat?: string // for compatibility with old URL params
     width: number
@@ -148,7 +151,7 @@ const componentsMenu: Array<Section> = [{
         HalfAdderDef.button("HalfAdder"),
         AdderDef.button("Adder"),
         ComparatorDef.button("Comparator", { visible: withButton }),
-        
+
         AdderArrayDef.button({ bits: 4 }, "AdderArray"),
         ALUDef.button({ bits: 4 }, "ALU"),
 

@@ -172,7 +172,7 @@ class _ComponentFactory {
         const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
         return maker?.make(editor, params)
 
-        // TODO:further general component customisation based on editor options
+        // TODO further general component customisation based on editor options
         // const classId = compDataset.componentId
         // if (isUndefined(classId)) {
         //     console.warn("No class ID linked to elem " + elem.outerHTML)

@@ -3,8 +3,8 @@ import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { DrawContext, MenuItems } from "./Drawable"
 import { SwitchedInverterDef } from "./SwitchedInverter"
 
@@ -17,13 +17,12 @@ export const TriStateBufferArrayDef =
             bits: typeOrUndefined(t.number),
         },
         valueDefaults: {},
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Tri-state buffer array bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: SwitchedInverterDef.size,
         makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
@@ -132,7 +131,7 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         return [
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
     }

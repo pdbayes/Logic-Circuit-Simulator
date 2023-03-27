@@ -3,9 +3,9 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, typeOrUndefined, validate } from "../utils"
+import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
 import { doALUOp } from "./ALU"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
 import { DrawContext, MenuItems } from "./Drawable"
 import { GateArrayDef } from "./GateArray"
 
@@ -18,13 +18,12 @@ export const AdderArrayDef =
             bits: typeOrUndefined(t.number),
         },
         valueDefaults: {},
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Adder array bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 4, // constant
             gridHeight: GateArrayDef.size({ numBits }).gridHeight, // mimic GateArray
@@ -153,7 +152,7 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         return [
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
     }

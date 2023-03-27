@@ -37,7 +37,7 @@ export const ClockDef =
 
 export type ClockRepr = Repr<typeof ClockDef>
 
-export class Clock extends InputBase<ClockRepr, {}> {
+export class Clock extends InputBase<ClockRepr> {
 
     public get numBits() { return 1 }
     private _period: number

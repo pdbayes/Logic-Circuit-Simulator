@@ -3,8 +3,8 @@ import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, validate, wordFromBinaryOrHexRepr } from "../utils"
-import { defineAbstractParametrizedComponent, defineParametrizedComponent, ExtractParams, groupVertical, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
+import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
+import { defineAbstractParametrizedComponent, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, NodesIn, NodesOut, param, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
 import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
@@ -24,13 +24,12 @@ export const RegisterBaseDef =
             showContent: true,
             trigger: EdgeTrigger.rising,
         },
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [4, 8, 16], defaults.bits, "Register bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 7,
             gridHeight: Math.max(16, 5 + numBits),
@@ -64,9 +63,13 @@ export const RegisterBaseDef =
 export type RegisterBaseRepr = Repr<typeof RegisterBaseDef>
 export type RegisterBaseParams = ResolvedParams<typeof RegisterBaseDef>
 
-export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends ParametrizedComponentBase<
+export abstract class RegisterBase<
+    TRepr extends RegisterBaseRepr,
+    TParamDefs extends ExtractParamDefs<TRepr> = ExtractParamDefs<TRepr>,
+> extends ParametrizedComponentBase<
     TRepr,
     LogicValue[],
+    TParamDefs,
     ExtractParams<TRepr>,
     NodesIn<TRepr>,
     NodesOut<TRepr>,
@@ -217,7 +220,7 @@ export abstract class RegisterBase<TRepr extends RegisterBaseRepr> extends Param
             () => this.doSetShowContent(!this._showContent))
 
         return [
-            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumBits, this.numBits, "bits", [4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("outputs", s.ParamNumBits, this.numBits, "bits"),
             ["mid", ContextMenuData.sep()],
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],

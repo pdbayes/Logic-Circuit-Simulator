@@ -3,8 +3,8 @@ import { COLOR_COMPONENT_BORDER, COLOR_NODE_MOUSE_OVER, COLOR_UNKNOWN, drawWireL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined, validate } from "../utils"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
@@ -30,13 +30,12 @@ export const PassthroughDef =
         valueDefaults: {
             slant: Slant.none,
         },
-        paramDefaults: {
-            bits: 1,
+        params: {
+            bits: param(1, [1, 2, 3, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [1, 2, 3, 4, 8, 16], defaults.bits, "Passthrough width")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 2,
             gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
@@ -223,7 +222,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
                 makeItemSetSlant(s.SlantLeft, Slant.up),
             ])],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [1, 2, 3, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
         ]
     }
 

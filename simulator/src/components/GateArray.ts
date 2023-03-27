@@ -3,9 +3,9 @@ import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COL
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, Mode, typeOrUndefined, Unknown, validate } from "../utils"
+import { ArrayFillWith, LogicValue, Mode, typeOrUndefined, Unknown } from "../utils"
 import { ALUDef } from "./ALU"
-import { defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
@@ -23,13 +23,12 @@ export const GateArrayDef =
             subtype: "AND" as GateNType,
             showAsUnknown: false,
         },
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "Gate array bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 4, // constant
             gridHeight: ALUDef.size({ numBits }).gridHeight, // mimic ALU
@@ -301,7 +300,7 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
 
         items.push(
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true)
         )
 

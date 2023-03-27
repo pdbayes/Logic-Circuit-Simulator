@@ -3,8 +3,8 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, validate } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { ArrayFillWith, HighImpedance, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
 
@@ -19,13 +19,12 @@ export const ALUDef =
         valueDefaults: {
             showOp: true,
         },
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [2, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [2, 4, 8, 16], defaults.bits, "ALU bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 6, // always enough
             gridHeight: 19 + Math.max(0, numBits - 8) * 2,
@@ -254,7 +253,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         return [
             ["mid", toggleShowOpItem],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [2, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ["mid", ContextMenuData.sep()],
             ...this.makeForceOutputsContextMenuItem(),
         ]

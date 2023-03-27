@@ -3,8 +3,8 @@ import { colorComps, colorForFraction, ColorString, COLOR_COMPONENT_BORDER, COLO
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUnknown, Mode, typeOrUndefined, Unknown, validate } from "../utils"
-import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { isDefined, isUnknown, Mode, typeOrUndefined, Unknown } from "../utils"
+import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
@@ -21,13 +21,12 @@ export const OutputDisplayDef =
             radix: 10,
             showAsUnknown: false,
         },
-        paramDefaults: {
-            bits: 4,
+        params: {
+            bits: param(4, [3, 4, 8, 16]),
         },
-        validateParams: ({ bits }, defaults) => {
-            const numBits = validate(bits, [3, 4, 8, 16], defaults.bits, "Display bits")
-            return { numBits }
-        },
+        validateParams: ({ bits }) => ({
+            numBits: bits,
+        }),
         size: ({ numBits }) => ({
             gridWidth: 2 + Math.ceil(numBits / 2),
             gridHeight: useCompact(numBits) ? numBits : 2 * numBits,
@@ -137,10 +136,6 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
             }
 
             const isVertical = Orientation.isVertical(this.orient)
-
-            // TODO: quite some centering issues with 8 bits... To check in all orientations
-            const textXShift = 0 //isVertical ? GRID_STEP / 2 : 0
-
             const backColorComps = colorComps(backColor)
             const textColor = ColorString(backColorComps[0] + backColorComps[1] + backColorComps[2] > 3 * 127 ? 0 : 0xFF)
             g.fillStyle = textColor
@@ -150,7 +145,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
             if (!this.showAsUnknown) {
                 const [hasSpaces, spacedStringRep] = insertSpaces(binaryStringRep, this._radix)
                 g.font = `${hasSpaces ? 9 : 10}px sans-serif`
-                g.fillText(spacedStringRep, this.posX + textXShift, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+                g.fillText(spacedStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
             }
 
             const mainSize = this.numBits === 4 && this._radix === 8 ? 16 : 18
@@ -158,7 +153,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
 
             const stringRep = this.showAsUnknown ? Unknown
                 : formatWithRadix(value, this._radix, this.numBits)
-            g.fillText(stringRep, this.posX + textXShift, this.posY + (isVertical ? 6 : 0))
+            g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
         })
     }
 
@@ -219,7 +214,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
             ["mid", makeItemShowRadix(16, s.DisplayAsHexadecimal)],
             ["mid", makeItemShowAs(s.DisplayAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
             ["mid", ContextMenuData.sep()],
-            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits", [3, 4, 8, 16]),
+            this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ["mid", ContextMenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
@@ -228,6 +223,8 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 

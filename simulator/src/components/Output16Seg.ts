@@ -269,6 +269,8 @@ export class Output16Seg extends ComponentBase<Output16SegRepr> {
     public override keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
+        } else {
+            super.keyDown(e)
         }
     }
 

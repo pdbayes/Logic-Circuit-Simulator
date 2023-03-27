@@ -401,10 +401,6 @@ export class LogicEditor extends HTMLElement {
             return false
         }
 
-        // TODO clear all redrawmanager
-        // TODO add initial reason to redraw
-        // draw
-
         this.cursorMovementMgr.registerCanvasListenersOn(this.html.mainCanvas)
         if (LogicEditor._allConnectedEditors.length === 0) {
             // set lang on first instance of editor on the page
