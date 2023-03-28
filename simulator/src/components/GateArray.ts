@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { circle, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { circle, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -104,158 +104,131 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
     }
 
     protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        let top = this.posY - height / 2
-        let bottom = this.posY + height / 2
-
-        // inputs
-        for (const input of this.inputs._all) {
-            drawWireLineToComponent(g, input, left, input.posYInParentTransform)
-        }
-        // outputs
-        for (const output of this.outputs._all) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform)
-        }
-
-
-        // outline
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
-
-        if (this._showAsUnknown) {
-            ctx.inNonTransformedFrame(() => {
-                g.fillStyle = COLOR_UNKNOWN
-                g.textAlign = "center"
-                g.font = "bold 20px sans-serif"
-                g.fillText('?', this.posX, this.posY)
-            })
-        } else {
-            // draw gate type
-            g.lineWidth = 2
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-            g.beginPath()
-
-            top = this.posY - GRID_STEP
-            bottom = this.posY + GRID_STEP
-            let gateLeft = left + 10
-            const gateRight = right - 10
-            const pi2 = Math.PI / 2
-            const type = this._subtype
-
-            const drawRightCircle = () => {
-                g.beginPath()
-                circle(g, gateRight + 3, this.posY, 5)
-                g.stroke()
-            }
-            const drawLeftCircle = (up: boolean) => {
-                g.beginPath()
-                circle(g, gateLeft - 3, this.posY - (up ? 1 : -1) * 4, 5)
-                g.stroke()
-            }
-
-
-            switch (type) {
-                case "AND":
-                case "NAND":
-                case "NIMPLY":
-                case "RNIMPLY": {
-                    g.moveTo(this.posX, bottom)
-                    g.lineTo(gateLeft, bottom)
-                    g.lineTo(gateLeft, top)
-                    g.lineTo(this.posX, top)
-                    g.arc(this.posX, this.posY, GRID_STEP, -pi2, pi2)
-                    g.closePath()
-                    g.stroke()
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            drawInside: ({left, right}) => {
+                if (this._showAsUnknown) {
+                    ctx.inNonTransformedFrame(() => {
+                        g.fillStyle = COLOR_UNKNOWN
+                        g.textAlign = "center"
+                        g.font = "bold 20px sans-serif"
+                        g.fillText('?', this.posX, this.posY)
+                    })
+                } else {
+                    // draw gate type
+                    g.lineWidth = 2
+                    g.strokeStyle = COLOR_COMPONENT_BORDER
                     g.beginPath()
-                    if (type.startsWith("NAND")) {
-                        drawRightCircle()
-                    }
-                    if (type === "NIMPLY") {
-                        drawLeftCircle(false)
-                    } else if (type === "RNIMPLY") {
-                        drawLeftCircle(true)
-                    }
-                    break
-                }
 
+                    const top = this.posY - GRID_STEP
+                    const bottom = this.posY + GRID_STEP
+                    let gateLeft = left + 10
+                    const gateRight = right - 10
+                    const pi2 = Math.PI / 2
+                    const type = this._subtype
 
-
-                case "OR":
-                case "NOR":
-                case "XOR":
-                case "XNOR":
-                case "IMPLY":
-                case "RIMPLY": {
-                    g.beginPath()
-                    g.moveTo(gateLeft, top)
-                    g.lineTo(this.posX - 5, top)
-                    g.bezierCurveTo(this.posX + 2, top, gateRight - 5, this.posY - 8,
-                        gateRight, this.posY)
-                    g.bezierCurveTo(gateRight - 5, this.posY + 8, this.posX + 2, bottom,
-                        this.posX - 5, bottom)
-                    g.lineTo(gateLeft, bottom)
-                    g.quadraticCurveTo(this.posX - 4, this.posY, gateLeft, top)
-                    g.closePath()
-                    g.stroke()
-                    const savedGateLeft = gateLeft
-                    gateLeft += 2
-                    if (type.startsWith("NOR") || type.startsWith("XNOR")) {
-                        drawRightCircle()
-                    }
-                    if (type === "IMPLY") {
-                        drawLeftCircle(true)
-                    } else if (type === "RIMPLY") {
-                        drawLeftCircle(false)
-                    }
-                    if (type.startsWith("X")) {
+                    const drawRightCircle = () => {
                         g.beginPath()
-                        g.moveTo(savedGateLeft - 4, bottom)
-                        g.quadraticCurveTo(this.posX - 8, this.posY, savedGateLeft - 4, top)
+                        circle(g, gateRight + 3, this.posY, 5)
                         g.stroke()
                     }
-                    break
-                }
-
-                case "TXA":
-                case "TXNA": {
-                    g.beginPath()
-                    g.moveTo(gateLeft, bottom)
-                    g.lineTo(gateLeft, top)
-                    g.lineTo(gateRight, this.posY)
-                    g.lineTo(gateLeft + 2, this.posY)
-                    g.stroke()
-                    if (type === "TXNA") {
-                        drawLeftCircle(true)
+                    const drawLeftCircle = (up: boolean) => {
+                        g.beginPath()
+                        circle(g, gateLeft - 3, this.posY - (up ? 1 : -1) * 4, 5)
+                        g.stroke()
                     }
-                    break
-                }
 
-                case "TXB":
-                case "TXNB": {
-                    g.beginPath()
-                    g.moveTo(gateLeft, top)
-                    g.lineTo(gateLeft, bottom)
-                    g.lineTo(gateRight, this.posY)
-                    g.lineTo(gateLeft + 2, this.posY)
-                    g.stroke()
-                    if (type === "TXNB") {
-                        drawLeftCircle(false)
+                    switch (type) {
+                        case "AND":
+                        case "NAND":
+                        case "NIMPLY":
+                        case "RNIMPLY": {
+                            g.moveTo(this.posX, bottom)
+                            g.lineTo(gateLeft, bottom)
+                            g.lineTo(gateLeft, top)
+                            g.lineTo(this.posX, top)
+                            g.arc(this.posX, this.posY, GRID_STEP, -pi2, pi2)
+                            g.closePath()
+                            g.stroke()
+                            g.beginPath()
+                            if (type.startsWith("NAND")) {
+                                drawRightCircle()
+                            }
+                            if (type === "NIMPLY") {
+                                drawLeftCircle(false)
+                            } else if (type === "RNIMPLY") {
+                                drawLeftCircle(true)
+                            }
+                            break
+                        }
+
+                        case "OR":
+                        case "NOR":
+                        case "XOR":
+                        case "XNOR":
+                        case "IMPLY":
+                        case "RIMPLY": {
+                            g.beginPath()
+                            g.moveTo(gateLeft, top)
+                            g.lineTo(this.posX - 5, top)
+                            g.bezierCurveTo(this.posX + 2, top, gateRight - 5, this.posY - 8,
+                                gateRight, this.posY)
+                            g.bezierCurveTo(gateRight - 5, this.posY + 8, this.posX + 2, bottom,
+                                this.posX - 5, bottom)
+                            g.lineTo(gateLeft, bottom)
+                            g.quadraticCurveTo(this.posX - 4, this.posY, gateLeft, top)
+                            g.closePath()
+                            g.stroke()
+                            const savedGateLeft = gateLeft
+                            gateLeft += 2
+                            if (type.startsWith("NOR") || type.startsWith("XNOR")) {
+                                drawRightCircle()
+                            }
+                            if (type === "IMPLY") {
+                                drawLeftCircle(true)
+                            } else if (type === "RIMPLY") {
+                                drawLeftCircle(false)
+                            }
+                            if (type.startsWith("X")) {
+                                g.beginPath()
+                                g.moveTo(savedGateLeft - 4, bottom)
+                                g.quadraticCurveTo(this.posX - 8, this.posY, savedGateLeft - 4, top)
+                                g.stroke()
+                            }
+                            break
+                        }
+
+                        case "TXA":
+                        case "TXNA": {
+                            g.beginPath()
+                            g.moveTo(gateLeft, bottom)
+                            g.lineTo(gateLeft, top)
+                            g.lineTo(gateRight, this.posY)
+                            g.lineTo(gateLeft + 2, this.posY)
+                            g.stroke()
+                            if (type === "TXNA") {
+                                drawLeftCircle(true)
+                            }
+                            break
+                        }
+
+                        case "TXB":
+                        case "TXNB": {
+                            g.beginPath()
+                            g.moveTo(gateLeft, top)
+                            g.lineTo(gateLeft, bottom)
+                            g.lineTo(gateRight, this.posY)
+                            g.lineTo(gateLeft + 2, this.posY)
+                            g.stroke()
+                            if (type === "TXNB") {
+                                drawLeftCircle(false)
+                            }
+                            break
+                        }
                     }
-                    break
                 }
-            }
-        }
-
+            },
+        })
     }
 
     private doSetSubtype(newSubtype: GateNType) {
