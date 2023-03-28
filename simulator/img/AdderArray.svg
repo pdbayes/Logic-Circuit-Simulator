@@ -1,25 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:none;stroke:#000000;stroke-width:3;stroke-linecap:square;}
-	.st1{fill:none;stroke:#000000;stroke-width:2;}
-	.st2{stroke:#000000;stroke-width:6;stroke-miterlimit:10;}
-</style>
-<path class="st0" d="M29.9,2.6h41.8v93.5H29.9V2.6z"/>
-<line class="st1" x1="29.2" y1="6" x2="13.2" y2="6"/>
-<line class="st1" x1="29.2" y1="38.4" x2="13.2" y2="38.4"/>
-<line class="st1" x1="29.2" y1="27.3" x2="13.2" y2="27.3"/>
-<line class="st1" x1="29.2" y1="16.1" x2="13.2" y2="16.1"/>
-<line class="st1" x1="88.4" y1="33.2" x2="72.4" y2="33.2"/>
-<line class="st1" x1="88.4" y1="65.6" x2="72.4" y2="65.6"/>
-<line class="st1" x1="88.4" y1="54.4" x2="72.4" y2="54.4"/>
-<line class="st1" x1="88.4" y1="43.2" x2="72.4" y2="43.2"/>
-<line class="st1" x1="29.2" y1="60.2" x2="13.2" y2="60.2"/>
-<line class="st1" x1="29.2" y1="92.6" x2="13.2" y2="92.6"/>
-<line class="st1" x1="29.2" y1="81.4" x2="13.2" y2="81.4"/>
-<line class="st1" x1="29.2" y1="70.3" x2="13.2" y2="70.3"/>
-<line class="st2" x1="50.6" y1="36.5" x2="50.6" y2="64"/>
-<line class="st2" x1="37.5" y1="50.3" x2="65.1" y2="50.3"/>
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve" fill="currentColor">
+	<path d="M88.4,34.2v-2H73.2V1.1H28.4V5H13.2v2h15.2v8.1H13.2v2h15.2v9.2H13.2v2h15.2v9.1H13.2v2h15.2v19.8H13.2v2h15.2v8.1H13.2v2
+		h15.2v9.1H13.2v2h15.2v9.2H13.2v2h15.2v4h44.8v-31h15.2v-2H73.2v-9.2h15.2v-2H73.2v-9.2h15.2v-2H73.2v-8H88.4z M70.2,94.6H31.4V4.1
+		h38.8V94.6z" />
+	<polygon points="47.6,64 53.6,64 53.6,53.3 65.1,53.3 65.1,47.3 53.6,47.3 53.6,36.5 47.6,36.5 47.6,47.3 37.5,47.3 37.5,53.3 
+		47.6,53.3 	" />
 </svg>

@@ -4,7 +4,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { EdgeTrigger, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineAbstractComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 
 
 export const FlipflopOrLatchDef =
@@ -80,7 +80,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
             background: this._isInInvalidState ? COLOR_BACKGROUND_INVALID : undefined,
             drawLabels: () => {
                 if (this._showContent && !this.editor.options.hideMemoryContent) {
-                    FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, Orientation.isVertical(this.orient))
+                    FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, false)
                 }
             },
         })

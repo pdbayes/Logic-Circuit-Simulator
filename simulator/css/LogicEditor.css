@@ -359,3 +359,23 @@ i.svgicon svg {
 i.svgicon path {
   fill: currentColor;
 }
+
+
+
+i.svgimg svg {
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  font-style: normal;
+}
+
+i.svgimg {
+  color: black;
+}
+
+.dark i.svgimg {
+  color: rgb(230,230,230);
+}
+
+.dark .gate-label {
+  color: rgb(200,200,200);
+}

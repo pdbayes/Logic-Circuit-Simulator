@@ -9,7 +9,7 @@ import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { clampZoom, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, setColors, strokeSingleLine } from "./drawutils"
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
-import { IconName, inlineSvgFor, isIconName, makeIcon } from "./images"
+import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
@@ -2012,7 +2012,7 @@ const template = (() => {
         const iconElem = _iconElem as HTMLElement
         const iconName = iconElem.dataset.icon ?? "question"
         if (isIconName(iconName)) {
-            iconElem.innerHTML = inlineSvgFor(iconName)
+            iconElem.innerHTML = inlineIconSvgFor(iconName)
         } else {
             console.log(`Unknown icon name '${iconName}'`)
         }

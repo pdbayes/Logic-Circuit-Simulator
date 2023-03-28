@@ -32,7 +32,6 @@
       * only with sessionstorage
 
 
-
 ## Low priority
 
  * Allow repeating deletions with Cmd+Y
@@ -48,6 +47,7 @@
 
 ### DONE
 
+ * Make left buttons honor dark mode
  * Generic shared drawing code
  * Move width and height computation to component's def
  * 8-bit counter

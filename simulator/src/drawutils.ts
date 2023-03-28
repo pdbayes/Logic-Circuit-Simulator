@@ -170,7 +170,7 @@ function doSetColors(darkMode: boolean) {
 
     } else {
         // Dark Theme
-        COLOR_BACKGROUND = ColorString([19, 20, 22])
+        COLOR_BACKGROUND = ColorString(30)
         COLOR_OFF_BACKGROUND = ColorString(60)
         COLOR_BACKGROUND_INVALID = ColorString([0xA8, 0x14, 0x14])
         COLOR_BACKGROUND_UNUSED_REGION = ColorString(55)
@@ -179,7 +179,7 @@ function doSetColors(darkMode: boolean) {
         COLOR_GRID_LINES_GUIDES = ColorString(45)
         COLOR_LABEL_OFF = ColorString(185)
         COLOR_LABEL_ON = COLOR_BACKGROUND
-        COLORCOMP_COMPONENT_BORDER = 200
+        COLORCOMP_COMPONENT_BORDER = 220
         COLOR_COMPONENT_INNER_LABELS = ColorString(0x8B)
         COLOR_GROUP_SPAN = ColorString([128, 128, 128, 0.13])
         COLOR_WIRE_BORDER = ColorString(175)

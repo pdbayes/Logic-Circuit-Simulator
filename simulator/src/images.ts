@@ -233,15 +233,17 @@ export function isImageName(name: string): name is ImageName {
     return name in images
 }
 
-export function makeImage(name: ImageName, width?: number, height?: number): HTMLImageElement {
-    const htmlImg = new Image(width, height)
-    htmlImg.src = images[name]
-    return htmlImg
+export function makeImage(name: ImageName, width?: number, height?: number): HTMLElement {
+    return makeSvgHolder("svgimg", images, name, width, height)
 }
 
 export function makeIcon(name: IconName, width?: number, height?: number): HTMLElement {
+    return makeSvgHolder("svgicon", icons, name, width, height)
+}
+
+function makeSvgHolder<TImages extends Record<string, string>>(className: string, svgData: TImages, name: string & keyof TImages, width?: number, height?: number): HTMLElement {
     const elem = document.createElement('i')
-    elem.classList.add("svgicon")
+    elem.classList.add(className)
     if (isDefined(width)) {
         elem.style.width = `${width}px`
     }
@@ -249,10 +251,16 @@ export function makeIcon(name: IconName, width?: number, height?: number): HTMLE
         elem.style.height = `${height}px`
     }
     elem.dataset.icon = name
-    elem.innerHTML = inlineSvgFor(name)
+    elem.innerHTML = inlineSvgFor(svgData, name)
     return elem
 }
 
-export function inlineSvgFor(name: IconName): string {
-    return icons[name]
+function inlineSvgFor<TImages extends Record<string, string>>(svgData: TImages, name: keyof TImages): string {
+    return svgData[name]
 }
+
+export function inlineIconSvgFor(name: IconName): string {
+    return inlineSvgFor(icons, name)
+}
+
+
