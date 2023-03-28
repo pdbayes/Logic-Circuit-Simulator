@@ -26,7 +26,7 @@ export const RAMDef =
         },
         params: {
             bits: param(4, [4, 8, 16, 32]),
-            lines: param(16, [8, 16, 32, 64, 128, 256]),
+            lines: param(16, [8, 16, 32, 64, 128, 256, 512, 1024, 2048]),
         },
         validateParams: ({ bits, lines }) => {
             const numAddressBits = Math.ceil(Math.log2(lines))
@@ -240,7 +240,8 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
                 g.textBaseline = "middle"
                 g.fillText("RAM", this.posX, this.posY - 6)
                 g.font = `11px sans-serif`
-                g.fillText(`${this.numWords} × ${this.numDataBits} bits`, this.posX, this.posY + 12)
+                const numWordsStr = this.numWords >= 1024 ? `${this.numWords / 1024}k` : this.numWords.toString()
+                g.fillText(`${numWordsStr} × ${this.numDataBits} bits`, this.posX, this.posY + 12)
             } else {
                 const mem = this.value.mem
                 const addr = this.currentAddress()
