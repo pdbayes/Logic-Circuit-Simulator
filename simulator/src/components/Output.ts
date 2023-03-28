@@ -4,8 +4,9 @@ import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { InputDef } from "./Input"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
@@ -18,9 +19,7 @@ export const OutputDef =
             name: ComponentNameRepr,
         },
         valueDefaults: {},
-        params: {
-            bits: param(1, [1, 2, 3, 4, 7, 8, 16, 32]),
-        },
+        params: InputDef.paramDefs,
         validateParams: ({ bits }) => ({
             numBits: bits,
         }),
@@ -127,24 +126,24 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
     }
 
     private doDrawMulti(g: CanvasRenderingContext2D, ctx: DrawContext, inputs: NodeIn[]) {
+        const bounds = this.bounds()
+        const { left, top, width } = bounds
+        const outline = bounds.outline
+
+        // background
         g.fillStyle = COLOR_BACKGROUND
-        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
-        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+        g.fill(outline)
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const top = this.posY - height / 2
-        // const bottom = this.posY + height
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
+        // inputs
+        for (const input of inputs) {
+            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform, true)
+        }
 
         const displayValues = this.editor.options.hideOutputColors ? ArrayFillWith(Unknown, this.numBits) : this.value
 
+        // cells
+        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
         for (let i = 0; i < this.numBits; i++) {
@@ -156,10 +155,11 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             g.stroke()
         }
 
-        for (const input of inputs) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform, true)
-        }
+        // outline
+        g.lineWidth = 3
+        g.stroke(outline)
 
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
                 const valueString = displayValues.map(toLogicValueRepr).join("")

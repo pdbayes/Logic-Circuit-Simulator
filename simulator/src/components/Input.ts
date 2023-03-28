@@ -118,26 +118,25 @@ export abstract class InputBase<
     }
 
     private doDrawMulti(g: CanvasRenderingContext2D, ctx: DrawContext, outputs: NodeOut[]) {
+        const bounds = this.bounds()
+        const { left, top, width, right } = bounds
+        const outline = bounds.outline
 
+        // background
         g.fillStyle = COLOR_BACKGROUND
-        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
-        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+        g.fill(outline)
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-        const top = this.posY - height / 2
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
+        // outputs
+        for (const output of outputs) {
+            drawWireLineToComponent(g, output, right + 3, output.posYInParentTransform, true)
+        }
 
         const displayValues = this.editor.options.hideInputColors
             ? ArrayFillWith(Unknown, this.numBits) : this.value
 
+        // cells
+        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
         for (let i = 0; i < this.numBits; i++) {
@@ -149,10 +148,11 @@ export abstract class InputBase<
             g.stroke()
         }
 
-        for (const output of outputs) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform, true)
-        }
+        // outline
+        g.lineWidth = 3
+        g.stroke(outline)
 
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
                 const valueString = displayValues.map(toLogicValueRepr).join("")
@@ -248,7 +248,7 @@ export const InputDef =
             isConstant: false,
         },
         params: {
-            bits: param(1, [1, 2, 3, 4, 7, 8, 16, 32]),
+            bits: param(1, [1, 2, 3, 4, 8, 16, 32]),
         },
         validateParams: ({ bits }) => ({
             numBits: bits,
