@@ -108,7 +108,9 @@ export class Clock extends InputBase<ClockRepr> {
         const [value, nextTick] = this.currentClockValue(theoreticalTime)
         this.doSetValue([value])
         if (this.state !== ComponentState.DEAD) {
-            this.editor.timeline.scheduleAt(nextTick, "next tick for clock value " + (!value), time => this.tickCallback(time))
+            this.editor.timeline.scheduleAt(nextTick, "next tick for clock value " + (!value),
+                time => this.tickCallback(time)
+            )
         }
     }
 
