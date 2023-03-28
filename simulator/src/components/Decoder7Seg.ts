@@ -1,10 +1,10 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { FixedArray, FixedArrayFillWith, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent, group, Repr } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { MenuItems } from "./Drawable"
 
 export const Decoder7SegDef =
     defineComponent("ic", "decoder-7seg", {
@@ -92,44 +92,6 @@ export class Decoder7Seg extends ComponentBase<Decoder7SegRepr> {
 
     protected override propagateValue(newValue: FixedArray<LogicValue, 7>) {
         this.outputValues(this.outputs.Out, newValue)
-    }
-
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        for (const input of this.inputs._all) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
-        }
-
-        for (const output of this.outputs._all) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
-        }
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            this.inputs._all.forEach(input => {
-                drawLabel(ctx, this.orient, input.name, "w", left, input)
-            })
-            this.outputs._all.forEach(output => {
-                drawLabel(ctx, this.orient, output.name, "e", right, output)
-            })
-
-        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

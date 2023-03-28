@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -78,82 +78,70 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         return displayValuesFromArray(values, false)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        for (const input of this.inputs.Z) {
-            drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
+        let mainText: string
+        let mainTextFont: string
+        let mainTextStyle = COLOR_COMPONENT_BORDER
+        if (isUnknown(value) || this.showAsUnknown) {
+            mainTextFont = "bold 18px sans-serif"
+            if (this.showAsUnknown) {
+                mainTextStyle = COLOR_UNKNOWN
+            }
+            mainText = "?"
+        } else {
+            mainText = OutputAscii.numberToAscii(value)
+            if (value < 32) {
+                // non-printable
+                mainTextFont = "16px sans-serif"
+            } else {
+                mainTextFont = "bold 18px sans-serif"
+            }
         }
 
-        ctx.inNonTransformedFrame(ctx => {
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            name: [this._name, mainText, true],
+            drawLabels: (ctx, { width, height }) => {
+                const isVertical = Orientation.isVertical(this.orient)
+                const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
+                let mainTextPosY = this.posY + (isVertical ? 4 : 0)
 
-            const isVertical = Orientation.isVertical(this.orient)
-            const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
-            let mainTextPosY = this.posY + (isVertical ? 4 : 0)
+                g.font = "9px sans-serif"
+                g.fillStyle = COLOR_COMPONENT_BORDER
 
-            g.font = "9px sans-serif"
-            g.fillStyle = COLOR_COMPONENT_BORDER
-
-            if (!this.showAsUnknown) {
-                if (isVertical && hasAdditionalRepresentation) {
-                    // upper left corner
-                    g.textAlign = "start"
-                    g.fillText(binaryStringRep, this.posX - height / 2 + 3, this.posY - width / 2 + 8)
-                    g.textAlign = "center"
-                } else {
-                    // upper center
-                    g.textAlign = "center"
-                    g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 8 : -height / 2 + 10))
-                }
-
-                if (hasAdditionalRepresentation) {
-                    const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10, 7)
-                    g.font = "bold 11px sans-serif"
-                    if (isVertical) {
-                        // upper right
-                        g.textAlign = "end"
-                        g.fillText(additionalRepr, this.posX + height / 2 - 3, this.posY - width / 2 + 9)
+                if (!this.showAsUnknown) {
+                    if (isVertical && hasAdditionalRepresentation) {
+                        // upper left corner
+                        g.textAlign = "start"
+                        g.fillText(binaryStringRep, this.posX - height / 2 + 3, this.posY - width / 2 + 8)
                         g.textAlign = "center"
                     } else {
-                        // center, below bin repr
-                        g.fillText(additionalRepr, this.posX, this.posY - height / 2 + 22)
-                        mainTextPosY += 8 // shift main repr a bit
+                        // upper center
+                        g.textAlign = "center"
+                        g.fillText(binaryStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 8 : -height / 2 + 10))
+                    }
+
+                    if (hasAdditionalRepresentation) {
+                        const additionalRepr = formatWithRadix(value, this._additionalReprRadix ?? 10, 7)
+                        g.font = "bold 11px sans-serif"
+                        if (isVertical) {
+                            // upper right
+                            g.textAlign = "end"
+                            g.fillText(additionalRepr, this.posX + height / 2 - 3, this.posY - width / 2 + 9)
+                            g.textAlign = "center"
+                        } else {
+                            // center, below bin repr
+                            g.fillText(additionalRepr, this.posX, this.posY - height / 2 + 22)
+                            mainTextPosY += 8 // shift main repr a bit
+                        }
                     }
                 }
-            }
 
-            let mainText: string
-            if (isUnknown(value) || this.showAsUnknown) {
-                g.font = "bold 18px sans-serif"
-                if (this.showAsUnknown) {
-                    g.fillStyle = COLOR_UNKNOWN
-                }
-                mainText = "?"
-            } else {
-                mainText = OutputAscii.numberToAscii(value)
-                if (value < 32) {
-                    // non-printable
-                    g.font = "16px sans-serif"
-                } else {
-                    g.font = "bold 18px sans-serif"
-                }
-            }
-            g.fillText(mainText, this.posX, mainTextPosY)
-
-            if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, mainText, this, true)
-            }
+                g.font = mainTextFont
+                g.fillStyle = mainTextStyle
+                g.fillText(mainText, this.posX, mainTextPosY)
+            },
         })
     }
 

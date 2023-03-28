@@ -1,9 +1,9 @@
 import * as t from "io-ts"
-import { colorComps, colorForFraction, ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, displayValuesFromArray, drawComponentName, drawWireLineToComponent, formatWithRadix, useCompact } from "../drawutils"
+import { colorComps, colorForFraction, ColorString, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUnknown, Mode, typeOrUndefined, Unknown } from "../utils"
+import { isUnknown, Mode, typeOrUndefined, Unknown } from "../utils"
 import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 
@@ -106,54 +106,36 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
         return displayValuesFromArray(this.inputValues(this.inputs.In), false)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
-
         const maxValue = (1 << this.inputs.In.length) - 1
-        const backColor = isUnknown(value) || this.showAsUnknown ? COLOR_UNKNOWN : colorForFraction(value / maxValue)
-        g.fillStyle = backColor
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+        const background = isUnknown(value) || this.showAsUnknown ? COLOR_UNKNOWN : colorForFraction(value / maxValue)
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const top = this.posY - height / 2
-        // const bottom = top + height
+        this.doDrawDefault(g, ctx, {
+            background,
+            skipLabels: true,
+            name: [this._name, value, true],
+            drawLabels: (ctx, { width, height }) => {
+                const isVertical = Orientation.isVertical(this.orient)
+                const backColorComps = colorComps(background)
+                const textColor = ColorString(backColorComps[0] + backColorComps[1] + backColorComps[2] > 3 * 127 ? 0 : 0xFF)
+                g.fillStyle = textColor
 
-        g.beginPath()
-        g.rect(this.posX - width / 2, top, width, height)
-        g.fill()
-        g.stroke()
+                g.textAlign = "center"
 
-        for (const input of this.inputs.In) {
-            drawWireLineToComponent(g, input, this.posX - width / 2 - 2, input.posYInParentTransform)
-        }
+                if (!this.showAsUnknown) {
+                    const [hasSpaces, spacedStringRep] = insertSpaces(binaryStringRep, this._radix)
+                    g.font = `${hasSpaces ? 9 : 10}px sans-serif`
+                    g.fillText(spacedStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
+                }
 
-        ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(this._name)) {
-                drawComponentName(g, ctx, this._name, value, this, true)
-            }
+                const mainSize = this.numBits === 4 && this._radix === 8 ? 16 : 18
+                g.font = `bold ${mainSize}px sans-serif`
 
-            const isVertical = Orientation.isVertical(this.orient)
-            const backColorComps = colorComps(backColor)
-            const textColor = ColorString(backColorComps[0] + backColorComps[1] + backColorComps[2] > 3 * 127 ? 0 : 0xFF)
-            g.fillStyle = textColor
-
-            g.textAlign = "center"
-
-            if (!this.showAsUnknown) {
-                const [hasSpaces, spacedStringRep] = insertSpaces(binaryStringRep, this._radix)
-                g.font = `${hasSpaces ? 9 : 10}px sans-serif`
-                g.fillText(spacedStringRep, this.posX, this.posY + (isVertical ? -width / 2 + 7 : -height / 2 + 8))
-            }
-
-            const mainSize = this.numBits === 4 && this._radix === 8 ? 16 : 18
-            g.font = `bold ${mainSize}px sans-serif`
-
-            const stringRep = this.showAsUnknown ? Unknown
-                : formatWithRadix(value, this._radix, this.numBits)
-            g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
+                const stringRep = this.showAsUnknown ? Unknown
+                    : formatWithRadix(value, this._radix, this.numBits)
+                g.fillText(stringRep, this.posX, this.posY + (isVertical ? 6 : 0))
+            },
         })
     }
 

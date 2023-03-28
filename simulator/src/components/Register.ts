@@ -1,12 +1,12 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
+import { allBooleans, ArrayFillWith, binaryStringRepr, EdgeTrigger, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
 import { defineAbstractParametrizedComponent, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, NodesIn, NodesOut, param, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
+import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
 
@@ -42,9 +42,9 @@ export const RegisterBaseDef =
 
             return {
                 ins: {
-                    Clock: [-5, clockYOffset, "w", () => s.InputClockDesc, true],
-                    Preset: [0, topOffset, "n", () => s.InputPresetDesc, true],
-                    Clear: [0, bottomOffset, "s", () => s.InputClearDesc, true],
+                    Clock: [-5, clockYOffset, "w", s.InputClockDesc, { isClock: true }],
+                    Pre: [0, topOffset, "n", s.InputPresetDesc, { prefersSpike: true }],
+                    Clr: [0, bottomOffset, "s", s.InputClearDesc, { prefersSpike: true }],
                 },
                 outs: {
                     Q: groupVertical("e", 5, 0, numBits),
@@ -117,8 +117,8 @@ export abstract class RegisterBase<
         const clock = this._lastClock = this.inputs.Clock.value
         const { isInInvalidState, newState } =
             Flipflop.doRecalcValueForSyncComponent(this, prevClock, clock,
-                this.inputs.Preset.value,
-                this.inputs.Clear.value)
+                this.inputs.Pre.value,
+                this.inputs.Clr.value)
         this._isInInvalidState = isInInvalidState
         return newState
     }
@@ -147,56 +147,13 @@ export abstract class RegisterBase<
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        // inputs/outputs
-        for (const output of this.outputs.Q) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
-        }
-
-        drawWireLineToComponent(g, this.inputs.Preset, this.inputs.Preset.posXInParentTransform, top, false)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom, false)
-        this.doDrawSpecificInputs(g, left)
-
-        // background
-        const outline = new Path2D()
-        outline.rect(left, top, width, height)
-        g.fillStyle = this._isInInvalidState ? COLOR_BACKGROUND_INVALID : COLOR_BACKGROUND
-        g.fill(outline)
-
-        // clock input
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-
-        // outline
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-        g.stroke(outline)
-
-        // labels
-        ctx.inNonTransformedFrame(ctx => {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, (ctx) => {
             if (this._showContent && !this.editor.options.hideMemoryContent) {
                 RegisterBase.drawStoredValues(g, ctx, this.outputs.Q, this.posX, Orientation.isVertical(this.orient))
             } else {
                 this.doDrawGenericCaption(g)
             }
-
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "Pre", "n", this.inputs.Preset, top)
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
-
-            g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs.Q)
-
-
-            this.doDrawSpecificLabels(g, ctx, left)
         })
     }
 
@@ -207,11 +164,7 @@ export abstract class RegisterBase<
         }
     }
 
-    protected abstract doDrawSpecificInputs(g: CanvasRenderingContext2D, left: number): void
-
     protected abstract doDrawGenericCaption(g: CanvasRenderingContext2D): void
-
-    protected abstract doDrawSpecificLabels(g: CanvasRenderingContext2D, ctx: DrawContextExt, left: number): void
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Generic.contextMenu
@@ -275,12 +228,6 @@ export class Register extends RegisterBase<RegisterRepr> {
         return this.inputValues(this.inputs.D)
     }
 
-    protected override doDrawSpecificInputs(g: CanvasRenderingContext2D, left: number) {
-        for (const input of this.inputs.D) {
-            drawWireLineToComponent(g, input, left, input.posYInParentTransform, false)
-        }
-    }
-
     protected override doDrawGenericCaption(g: CanvasRenderingContext2D) {
         g.font = `bold 15px sans-serif`
         g.fillStyle = COLOR_COMPONENT_BORDER
@@ -289,11 +236,6 @@ export class Register extends RegisterBase<RegisterRepr> {
         g.fillText("Reg.", this.posX, this.posY - 8)
         g.font = `11px sans-serif`
         g.fillText(`${this.numBits} bits`, this.posX, this.posY + 10)
-    }
-
-    protected override doDrawSpecificLabels(g: CanvasRenderingContext2D, ctx: DrawContextExt, left: number) {
-        g.font = "bold 12px sans-serif"
-        drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
     }
 
 }

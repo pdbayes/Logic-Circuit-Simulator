@@ -1,12 +1,12 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawComponentName, drawLabel, drawWireLineToComponent, useCompact } from "../drawutils"
+import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, isDefined, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, isDefined, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
+import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
 
@@ -41,7 +41,7 @@ export const InputRandomDef =
             const clockY = gridHeight / 2 - 1
             return {
                 ins: {
-                    Clock: [-3, clockY, "w", () => s.InputClockDesc, true],
+                    Clock: [-3, clockY, "w", s.InputClockDesc, { isClock: true }],
                 },
                 outs: {
                     Out: groupVertical("e", 3, 0, numBits),
@@ -116,71 +116,47 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
         this.outputValues(this.outputs.Out, newValue)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        const outputValues = this.value
+        const [__, value] = displayValuesFromArray(outputValues, false)
 
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
-
-        for (const output of this.outputs.Out) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
-        }
-        drawWireLineToComponent(g, this.inputs.Clock, left, this.inputs.Clock.posYInParentTransform, false)
-
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-
-
-        ctx.inNonTransformedFrame(ctx => {
-            const outputValues = this.value
-
-            if (this.numBits === 1) {
-                const output = this.outputs.Out[0]
-                FlipflopOrLatch.drawStoredValue(g, output.value, ...ctx.rotatePoint(this.posX, output.posYInParentTransform), 26, false)
-            } else {
-                RegisterBase.drawStoredValues(g, ctx, this.outputs.Out, this.posX, Orientation.isVertical(this.orient))
-            }
-
-            if (this._showProb) {
-                const isVertical = Orientation.isVertical(this.orient)
-
-                g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-                g.font = "9px sans-serif"
-                g.textAlign = "center"
-                g.textBaseline = "middle"
-                const probTextLastPart = String(Math.round(this._prob1 * 100) / 100).substring(1)
-                const probTextParts = ["P(1)", "=", probTextLastPart]
-                if (isVertical) {
-                    let currentOffset = -10
-                    let offset = Math.abs(currentOffset)
-                    if (this.orient === "s") {
-                        currentOffset = -currentOffset
-                        offset = -offset
-                    }
-                    for (const part of probTextParts) {
-                        drawLabel(ctx, this.orient, part, "n", this.posX - currentOffset, top - 1, undefined)
-                        currentOffset += offset
-                    }
+        this.doDrawDefault(g, ctx, {
+            name: [this._name, value, false],
+            skipLabels: true,
+            drawLabels: (ctx, { top }) => {
+                if (this.numBits === 1) {
+                    const output = this.outputs.Out[0]
+                    FlipflopOrLatch.drawStoredValue(g, output.value, ...ctx.rotatePoint(this.posX, output.posYInParentTransform), 26, false)
                 } else {
-                    const probText = probTextParts.join(" ")
-                    drawLabel(ctx, this.orient, probText, "n", this.posX, top, undefined)
+                    RegisterBase.drawStoredValues(g, ctx, this.outputs.Out, this.posX, Orientation.isVertical(this.orient))
                 }
-            }
 
+                if (this._showProb) {
+                    const isVertical = Orientation.isVertical(this.orient)
 
-            if (isDefined(this._name)) {
-                const [__, value] = displayValuesFromArray(outputValues, false)
-                drawComponentName(g, ctx, this._name, value, this, false)
-            }
+                    g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+                    g.font = "9px sans-serif"
+                    g.textAlign = "center"
+                    g.textBaseline = "middle"
+                    const probTextLastPart = String(Math.round(this._prob1 * 100) / 100).substring(1)
+                    const probTextParts = ["P(1)", "=", probTextLastPart]
+                    if (isVertical) {
+                        let currentOffset = -10
+                        let offset = Math.abs(currentOffset)
+                        if (this.orient === "s") {
+                            currentOffset = -currentOffset
+                            offset = -offset
+                        }
+                        for (const part of probTextParts) {
+                            drawLabel(ctx, this.orient, part, "n", this.posX - currentOffset, top - 1, undefined)
+                            currentOffset += offset
+                        }
+                    } else {
+                        const probText = probTextParts.join(" ")
+                        drawLabel(ctx, this.orient, probText, "n", this.posX, top, undefined)
+                    }
+                }
+            },
         })
     }
 

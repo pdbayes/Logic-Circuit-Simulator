@@ -4,7 +4,7 @@ import { RectangleColor } from "./components/LabelRect"
 import { Node, WireColor } from "./components/Node"
 import { LedColor } from "./components/OutputBar"
 import { LogicEditor } from "./LogicEditor"
-import { isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { EdgeTrigger, isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 
 
 //
@@ -38,6 +38,39 @@ export function inRect(centerX: number, centerY: number, width: number, height: 
         pointY >= centerY - h2 && pointY < centerY + h2
 }
 
+export class DrawingRect {
+
+    public readonly width: number
+    public readonly height: number
+
+    public readonly top: number
+    public readonly left: number
+    public readonly bottom: number
+    public readonly right: number
+
+    public constructor(comp: Component) {
+        this.width = comp.unrotatedWidth
+        this.height = comp.unrotatedHeight
+
+        this.top = comp.posY - this.height / 2
+        this.left = comp.posX - this.width / 2
+        this.bottom = this.top + this.height
+        this.right = this.left + this.width
+    }
+
+    private _outline: Path2D | undefined
+
+    public get outline(): Path2D {
+        if (isUndefined(this._outline)) {
+            const path = new Path2D()
+            path.rect(this.left, this.top, this.width, this.height)
+            this._outline = path
+        }
+        return this._outline
+    }
+
+}
+
 
 //
 // COLORS
@@ -60,6 +93,7 @@ export let COLOR_LABEL_ON: ColorString
 export let COLORCOMP_COMPONENT_BORDER: ColorGreyLevel
 export let COLOR_COMPONENT_BORDER: ColorString
 export let COLOR_COMPONENT_INNER_LABELS: ColorString
+export let COLOR_GROUP_SPAN: ColorString
 export let COLOR_WIRE_BORDER: ColorString
 export let COLOR_MOUSE_OVER: ColorString
 export let COLOR_MOUSE_OVER_NORMAL: ColorString
@@ -108,6 +142,7 @@ function doSetColors(darkMode: boolean) {
         COLOR_LABEL_ON = ColorString(0)
         COLORCOMP_COMPONENT_BORDER = 0x00
         COLOR_COMPONENT_INNER_LABELS = ColorString(0xAA)
+        COLOR_GROUP_SPAN = ColorString([128, 128, 128, 0.13])
         COLOR_WIRE_BORDER = ColorString(80)
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
@@ -146,6 +181,7 @@ function doSetColors(darkMode: boolean) {
         COLOR_LABEL_ON = COLOR_BACKGROUND
         COLORCOMP_COMPONENT_BORDER = 200
         COLOR_COMPONENT_INNER_LABELS = ColorString(0x8B)
+        COLOR_GROUP_SPAN = ColorString([128, 128, 128, 0.13])
         COLOR_WIRE_BORDER = ColorString(175)
         COLOR_MOUSE_OVER_NORMAL = ColorString([0, 0x7B, 0xFF])
         COLOR_MOUSE_OVER_DANGER = ColorString([194, 34, 14])
@@ -332,6 +368,7 @@ export function shouldShowNode(nodeOrArray: Node | readonly Node[]): boolean {
     return true
 }
 
+
 export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
     if (!shouldShowNode(node)) {
         return
@@ -348,14 +385,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
             // vertical line
             const pointsDown = (node.isOutput && y1 <= y0) || (!node.isOutput && y0 <= y1)
             if (pointsDown) {
-                const shift = node.isOutput ? 2 : -1
+                const shift = node.isOutput ? 1 : 0
                 triangle(g,
                     x1 - 3, y1 - 2 + shift,
                     x1 + 3, y1 - 2 + shift,
                     x1, y1 + 1 + shift,
                 )
             } else {
-                const shift = node.isOutput ? -2 : -1
+                const shift = node.isOutput ? -3 : -4
                 triangle(g,
                     x1 - 3, y1 - 2 - shift,
                     x1 + 3, y1 - 2 - shift,
@@ -364,7 +401,7 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
             }
         } else if (y0 === y1) {
             // horizontal line
-            const shift = node.isOutput ? 2 : -1
+            const shift = node.isOutput ? 1 : 0
             const pointsRight = (node.isOutput && x1 <= x0) || (!node.isOutput && x0 <= x1)
             if (pointsRight) {
                 triangle(g,
@@ -469,13 +506,40 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
+export function drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: Node, trigger: EdgeTrigger) {
+    const clockY = clockNode.posYInParentTransform
+    const clockLineOffset = 1
+    g.strokeStyle = COLOR_COMPONENT_BORDER
+    g.lineWidth = 2
+
+    // if (trigger === EdgeTrigger.falling) {
+    //     clockLineOffset += 7
+    //     g.beginPath()
+    //     circle(g, left - 5, clockY, 6)
+    //     g.fillStyle = COLOR_BACKGROUND
+    //     g.fill()
+    //     g.stroke()
+    // }
+    g.beginPath()
+    g.moveTo(left + 1, clockY - 4)
+    g.lineTo(left + 9, clockY)
+    g.lineTo(left + 1, clockY + 4)
+    g.stroke()
+    if (trigger === EdgeTrigger.falling) {
+        g.fillStyle = COLOR_COMPONENT_BORDER
+        g.closePath()
+        g.fill()
+    }
+
+    drawWireLineToComponent(g, clockNode, left - clockLineOffset, clockY, false)
+}
+
+
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: Node | ReadonlyGroupedNodeArray<Node>): void
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: Node | ReadonlyGroupedNodeArray<Node>, y: number): void
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: number, referenceNode: Node | ReadonlyGroupedNodeArray<Node> | undefined): void
 
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node | ReadonlyGroupedNodeArray<Node>, y: number | Node | ReadonlyGroupedNodeArray<Node>, referenceNode?: Node | ReadonlyGroupedNodeArray<Node>) {
-    // TODO get the name from the node? Check if that always works
-    // TODO make it bold if it's a group with len > 1
     if (isUndefined(text)) {
         return
     }
@@ -519,10 +583,6 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.textAlign = halign
     g.textBaseline = valign
     g.fillText(text, finalX + dx, finalY + dy)
-
-    if (isNodeArray(referenceNode) && referenceNode.length > 1) {
-        // TODO draw light bracket indicating that this is a group
-    }
 }
 
 export function drawValueTextCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {

@@ -83,7 +83,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         return this.inputValues(this.inputs.In)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         if (this.numBits === 1) {
             this.doDrawSingle(g, ctx, this.inputs.In[0])
         } else {
@@ -183,8 +183,8 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             let group
             if (isDefined(group = outNode.group) && group.nodes.length === 1) {
                 this.doSetName(group.name)
-            } else if (isUndefined(this._name) && isDefined(outNode.name)) {
-                this.doSetName(outNode.name)
+            } else if (isUndefined(this._name)) {
+                this.doSetName(outNode.fullName)
             }
         }
 

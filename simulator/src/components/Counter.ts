@@ -1,12 +1,12 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_LABEL_OFF, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, formatWithRadix, useCompact } from "../drawutils"
+import { COLOR_EMPTY, COLOR_LABEL_OFF, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillWith, EdgeTrigger, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
-import { EdgeTrigger, Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
+import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
 
 export const CounterDef =
@@ -45,8 +45,8 @@ export const CounterDef =
 
             return {
                 ins: {
-                    Clock: [-outX, clockVY, "w", () => s.InputClockDesc, true],
-                    Clear: [0, clearY, "s", () => s.InputClearDesc, true],
+                    Clock: [-outX, clockVY, "w", s.InputClockDesc, { isClock: true }],
+                    Clr: [0, clearY, "s", s.InputClearDesc, { prefersSpike: true }],
                 },
                 outs: {
                     Q: groupQ,
@@ -124,7 +124,7 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
     }
 
     protected doRecalcValue(): readonly [LogicValue[], LogicValue] {
-        const clear = this.inputs.Clear.value
+        const clear = this.inputs.Clr.value
         if (clear === true) {
             return Counter.emptyValue(this.numBits)
         }
@@ -161,46 +161,8 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        // background
-        const outline = new Path2D()
-        outline.rect(left, top, width, height)
-        g.fillStyle = COLOR_BACKGROUND
-        g.fill(outline)
-
-        // inputs/outputs
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom, false)
-
-        for (const output of this.outputs._all) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
-        }
-
-        // outline
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-        g.stroke(outline)
-
-        // labels
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
-
-            drawLabel(ctx, this.orient, "V", "e", right, this.outputs.V)
-            g.font = "bold 12px sans-serif"
-
-            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs.Q)
-
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, (ctx, { width }) => {
             if (isDefined(this._displayRadix)) {
                 g.font = "bold 20px sans-serif"
                 const [__, currentCount] = displayValuesFromArray(this.value[0], false)
@@ -217,7 +179,6 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
                 g.fillStyle = COLOR_LABEL_OFF
                 g.fillText(stringRep, ...valueCenter)
             }
-
         })
     }
 

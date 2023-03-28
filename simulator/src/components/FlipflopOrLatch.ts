@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawValueText, drawWireLineToComponent } from "../drawutils"
+import { colorForBoolean, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, drawValueText } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { EdgeTrigger, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineAbstractComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
-import { NodeIn } from "./Node"
 
 
 export const FlipflopOrLatchDef =
@@ -25,7 +24,7 @@ export const FlipflopOrLatchDef =
             return {
                 outs: {
                     Q: [+4, -2, "e", s.OutputQDesc],
-                    Qb: [+4, 2, "e", s.OutputQBarDesc],
+                    Q̅: [+4, 2, "e", s.OutputQBarDesc],
                 },
             }
         },
@@ -68,7 +67,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
 
     protected override propagateValue(newValue: [LogicValue, LogicValue]) {
         this.outputs.Q.value = newValue[0]
-        this.outputs.Qb.value = newValue[1]
+        this.outputs.Q̅.value = newValue[1]
     }
 
     protected doSetShowContent(showContent: boolean) {
@@ -76,49 +75,16 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         this.setNeedsRedraw("show content changed")
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-
-        g.fillStyle = this._isInInvalidState ? COLOR_BACKGROUND_INVALID : COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(left, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-        g.fillStyle = COLOR_BACKGROUND
-
-        drawWireLineToComponent(g, this.outputs.Q, right + 2, this.outputs.Q.posYInParentTransform, false)
-        drawWireLineToComponent(g, this.outputs.Qb, right + 2, this.outputs.Qb.posYInParentTransform, false)
-
-        this.doDrawLatchOrFlipflop(g, ctx, width, height, left, right)
-
-        ctx.inNonTransformedFrame(ctx => {
-            if (this._showContent && !this.editor.options.hideMemoryContent) {
-                FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, Orientation.isVertical(this.orient))
-            }
-
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs.Q)
-            drawLabel(ctx, this.orient, "Q̅", "e", right, this.outputs.Qb)
-
-            // TODO bar placement is not great
-            // const [qbarCenterX, qbarCenterY] = ctx.rotatePoint(right - 7, this.outputs[OUTPUT.Qb].posYInParentTransform)
-            // const barY = qbarCenterY - 8
-            // g.strokeStyle = g.fillStyle
-            // strokeSingleLine(g, qbarCenterX - 4, barY, qbarCenterX + 3, barY)
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            background: this._isInInvalidState ? COLOR_BACKGROUND_INVALID : undefined,
+            drawLabels: () => {
+                if (this._showContent && !this.editor.options.hideMemoryContent) {
+                    FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, Orientation.isVertical(this.orient))
+                }
+            },
         })
-
     }
-
-    protected abstract doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number): void
 
 
     public static drawStoredValueFrame(g: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, swapHeightWidth: boolean) {
@@ -144,15 +110,6 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
 
 // Flip-flop base class
 
-export const EdgeTrigger = {
-    rising: "rising",
-    falling: "falling",
-    both: "both",
-} as const
-
-export type EdgeTrigger = keyof typeof EdgeTrigger
-
-
 export const FlipflopBaseDef =
     defineAbstractComponent({
         button: FlipflopOrLatchDef.button,
@@ -170,9 +127,9 @@ export const FlipflopBaseDef =
             const s = S.Components.Generic
             return {
                 ins: {
-                    Clock: [-4, clockYOffset, "w", s.InputClockDesc, true],
-                    Preset: [0, -4, "n", s.InputPresetDesc, true],
-                    Clear: [0, +4, "s", s.InputClearDesc, true],
+                    Clock: [-4, clockYOffset, "w", s.InputClockDesc, { isClock: true }],
+                    Pre: [0, -4, "n", s.InputPresetDesc, { prefersSpike: true }],
+                    Clr: [0, +4, "s", s.InputClearDesc, { prefersSpike: true }],
                 },
                 outs: base.outs,
             }
@@ -247,8 +204,8 @@ export abstract class Flipflop<
         const clock = this._lastClock = this.inputs.Clock.value
         const { isInInvalidState, newState } =
             Flipflop.doRecalcValueForSyncComponent(this, prevClock, clock,
-                this.inputs.Preset.value,
-                this.inputs.Clear.value)
+                this.inputs.Pre.value,
+                this.inputs.Clr.value)
         this._isInInvalidState = isInInvalidState
         return newState
     }
@@ -270,53 +227,6 @@ export abstract class Flipflop<
     protected doSetTrigger(trigger: EdgeTrigger) {
         this._trigger = trigger
         this.setNeedsRedraw("trigger changed")
-    }
-
-    public static drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: NodeIn, trigger: EdgeTrigger) {
-        const clockY = clockNode.posYInParentTransform
-        const clockLineOffset = 1
-        g.strokeStyle = COLOR_COMPONENT_BORDER
-        g.lineWidth = 2
-
-        // if (trigger === EdgeTrigger.falling) {
-        //     clockLineOffset += 7
-        //     g.beginPath()
-        //     circle(g, left - 5, clockY, 6)
-        //     g.fillStyle = COLOR_BACKGROUND
-        //     g.fill()
-        //     g.stroke()
-        // }
-        g.beginPath()
-        g.moveTo(left + 1, clockY - 4)
-        g.lineTo(left + 9, clockY)
-        g.lineTo(left + 1, clockY + 4)
-        g.stroke()
-        if (trigger === EdgeTrigger.falling) {
-            g.fillStyle = COLOR_COMPONENT_BORDER
-            g.closePath()
-            g.fill()
-        }
-
-        drawWireLineToComponent(g, clockNode, left - clockLineOffset, clockY, false)
-    }
-
-    protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
-
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-
-        drawWireLineToComponent(g, this.inputs.Preset, this.inputs.Preset.posXInParentTransform, top - 2, false)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom + 2, false)
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "11px sans-serif"
-
-            drawLabel(ctx, this.orient, "Pre", "n", this.inputs.Preset, top)
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
-        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

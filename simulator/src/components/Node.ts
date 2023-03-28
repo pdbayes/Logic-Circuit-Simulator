@@ -41,9 +41,11 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         nodeSpec: InputNodeRepr | OutputNodeRepr,
         public readonly parent: NodeParent,
         public readonly group: NodeGroup<N> | undefined,
-        public readonly name: string,
+        public readonly shortName: string,
+        public readonly fullName: string,
         private _gridOffsetX: number,
         private _gridOffsetY: number,
+        public readonly hasTriangle: boolean,
         relativePosition: Orientation,
     ) {
         super(editor)
@@ -71,6 +73,8 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     public get isOutput(): boolean {
         return Node.isOutput(this.asNode)
     }
+
+    public abstract get isClock(): boolean
 
     public get unrotatedWidth() {
         return WAYPOINT_DIAMETER
@@ -296,6 +300,7 @@ export class NodeIn extends NodeBase<NodeIn> {
 
     private _incomingWire: Wire | null = null
     public prefersSpike = false
+    public isClock = false
 
     public get incomingWire() {
         return this._incomingWire
@@ -349,6 +354,10 @@ export class NodeOut extends NodeBase<NodeOut> {
     public readonly _tag = "_nodeout"
 
     private readonly _outgoingWires: Wire[] = []
+
+    public get isClock() {
+        return false
+    }
 
     public addOutgoingWire(wire: Wire) {
         // don't add the same wire twice

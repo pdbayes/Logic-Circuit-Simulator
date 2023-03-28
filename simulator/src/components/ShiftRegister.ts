@@ -1,10 +1,9 @@
-import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { defineParametrizedComponent, Repr, ResolvedParams } from "./Component"
-import { DrawContextExt } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
@@ -18,7 +17,7 @@ export const ShiftRegisterDef =
                 ins: {
                     ...base.ins,
                     D: [-5, 0, "w"],
-                    LR: [-5, lrYOffset, "w"],
+                    L̅R: [-5, lrYOffset, "w"],
                 },
                 outs: base.outs,
             }
@@ -51,7 +50,7 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
     }
 
     public makeStateAfterClock(): LogicValue[] {
-        const dirIsRight = this.inputs.LR.value
+        const dirIsRight = this.inputs.L̅R.value
         if (isUnknown(dirIsRight) || isHighImpedance(dirIsRight)) {
             return this.makeStateFromMainValue(Unknown)
         }
@@ -61,25 +60,14 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
         return next
     }
 
-    protected override doDrawSpecificInputs(g: CanvasRenderingContext2D, left: number) {
-        drawWireLineToComponent(g, this.inputs.D, left, this.inputs.D.posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs.LR, left, this.inputs.LR.posYInParentTransform, false)
-    }
-
     protected override doDrawGenericCaption(g: CanvasRenderingContext2D) {
-        g.font = `bold 15px sans-serif`
+        g.font = `bold 13px sans-serif`
         g.fillStyle = COLOR_COMPONENT_BORDER
         g.textAlign = "center"
         g.textBaseline = "middle"
-        g.fillText("Shift Reg.", this.posX, this.posY - 8)
+        g.fillText("Shift R.", this.posX, this.posY - 8)
         g.font = `11px sans-serif`
         g.fillText(`${this.numBits} bits`, this.posX, this.posY + 10)
-    }
-
-    protected override doDrawSpecificLabels(g: CanvasRenderingContext2D, ctx: DrawContextExt, left: number) {
-        g.font = "12px sans-serif"
-        drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
-        drawLabel(ctx, this.orient, "L̅R", "w", left, this.inputs.LR)
     }
 
 }

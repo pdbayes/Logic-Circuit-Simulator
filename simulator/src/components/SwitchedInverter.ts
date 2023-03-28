@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent } from "../drawutils"
+import { circle, colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -87,55 +87,31 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
         this.outputValues(this.outputs.O, newValue)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            drawInside: ({ top, left, right }) => {
+                const invert = this.inputs.S.value
 
-        const invert = this.inputs.S.value
+                g.lineWidth = 2
+                g.strokeStyle = colorForBoolean(invert)
+                g.beginPath()
+                g.moveTo(this.posX, top)
+                g.lineTo(this.posX, this.posY - 4)
+                g.stroke()
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-        const top = this.posY - height / 2
-        // const bottom = top + height
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        g.lineWidth = 2
-        g.strokeStyle = colorForBoolean(invert)
-        g.beginPath()
-        g.moveTo(this.posX, top + 3)
-        g.lineTo(this.posX, this.posY - 4)
-        g.stroke()
-
-        g.strokeStyle = invert === true ? COLOR_COMPONENT_BORDER : COLOR_UNKNOWN
-        g.beginPath()
-        g.moveTo(left + 12, this.posY - 8)
-        g.lineTo(right - 13, this.posY)
-        g.lineTo(left + 12, this.posY + 8)
-        g.closePath()
-        g.stroke()
-        g.beginPath()
-        circle(g, right - 10, this.posY, 5)
-        g.stroke()
-
-
-        for (const input of this.inputs.I) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
-        }
-
-        drawWireLineToComponent(g, this.inputs.S, this.inputs.S.posXInParentTransform, top - 2)
-
-
-        for (const output of this.outputs.O) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
-        }
+                g.strokeStyle = invert === true ? COLOR_COMPONENT_BORDER : COLOR_UNKNOWN
+                g.beginPath()
+                g.moveTo(left + 12, this.posY - 8)
+                g.lineTo(right - 13, this.posY)
+                g.lineTo(left + 12, this.posY + 8)
+                g.closePath()
+                g.stroke()
+                g.beginPath()
+                circle(g, right - 10, this.posY, 5)
+                g.stroke()
+            },
+        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

@@ -1,34 +1,28 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { FixedArray, FixedArrayFillWith, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, group, Repr } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { ComponentBase, defineComponent, group, groupVertical, Repr } from "./Component"
+import { MenuItems } from "./Drawable"
 
 
 export const DecoderBCD4Def =
     defineComponent("ic", "decoder-bcd4", {
         button: { imgWidth: 50 },
         valueDefaults: {},
-        size: { gridWidth: 5, gridHeight: 12 },
+        size: { gridWidth: 5, gridHeight: 10 },
         makeNodes: () => ({
             ins: {
                 I: group("w", [
-                    [-4, -3, "D"],
-                    [-4, -1, "C"],
-                    [-4, +1, "B"],
-                    [-4, +3, "A"],
+                    [-4, -3, "A"],
+                    [-4, -1, "B"],
+                    [-4, +1, "C"],
+                    [-4, +3, "D"],
                 ]),
             },
             outs: {
-                Z: group("e", [
-                    [+4, -5],
-                    [+4, -3],
-                    [+4, -1],
-                    [+4, +1],
-                    [+4, +5],
-                ]),
+                Z: groupVertical("e", 4, 0, 5, 2),
             },
         }),
         initialValue: () => FixedArrayFillWith(false as LogicValue, 5),
@@ -91,44 +85,6 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
 
     protected override propagateValue(newValue: LogicValue[]) {
         this.outputValues(this.outputs.Z, newValue, true)
-    }
-
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        for (const input of this.inputs._all) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
-        }
-
-        for (const output of this.outputs._all) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
-        }
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            this.inputs._all.forEach(input => {
-                drawLabel(ctx, this.orient, input.name, "w", left, input)
-            })
-            this.outputs._all.forEach(output => {
-                drawLabel(ctx, this.orient, output.name, "e", right, output)
-            })
-
-        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

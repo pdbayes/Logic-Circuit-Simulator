@@ -69,7 +69,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         return 2
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         g.font = this._font
         g.lineWidth = 3

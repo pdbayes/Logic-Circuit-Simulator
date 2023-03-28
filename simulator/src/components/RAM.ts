@@ -1,12 +1,12 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_EMPTY, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent, strokeSingleLine } from "../drawutils"
+import { colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_EMPTY, displayValuesFromArray, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
+import { allBooleans, ArrayFillWith, binaryStringRepr, EdgeTrigger, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
-import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
+import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 
 export const RAMDef =
@@ -45,9 +45,9 @@ export const RAMDef =
 
             return {
                 ins: {
-                    Clock: [-7, clockYOffset, "w", () => s.InputClockDesc, true],
-                    WriteEnable: [-2, bottomOffset, "s", () => s.InputWriteEnableDesc],
-                    Clear: [+2, bottomOffset, "s", () => s.InputClearDesc, true],
+                    Clock: [-7, clockYOffset, "w", s.InputClockDesc, { isClock: true }],
+                    WE: [-2, bottomOffset, "s", s.InputWriteEnableDesc],
+                    Clr: [+2, bottomOffset, "s", s.InputClearDesc, { prefersSpike: true }],
                     D: groupVertical("w", -7, 0, numDataBits),
                     Addr: groupHorizontal("n", 0, addrTopOffset, numAddressBits),
                 },
@@ -157,7 +157,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
 
 
     protected doRecalcValue(): RAMValue {
-        const clear = this.inputs.Clear.value
+        const clear = this.inputs.Clr.value
         const numWords = this.numWords
         if (clear === true) {
             // clear is true, preset is false, set output to 0
@@ -172,7 +172,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
 
         // handle normal operation
         const oldState = this.value
-        const we = this.inputs.WriteEnable.value
+        const we = this.inputs.WE.value
         if (we !== true || !Flipflop.isClockTrigger(this.trigger, prevClock, clock)) {
             // nothing to write, just update output
             const out = isUnknown(addr) ? ArrayFillWith(Unknown, this.numDataBits) : oldState.mem[addr]
@@ -231,41 +231,8 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
     }
 
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        // background
-        const outline = new Path2D()
-        outline.rect(left, top, width, height)
-        g.fillStyle = COLOR_BACKGROUND
-        g.fill(outline)
-
-        // inputs/outputs
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-        drawWireLineToComponent(g, this.inputs.WriteEnable, this.inputs.WriteEnable.posXInParentTransform, bottom, false)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom, false)
-        for (const input of this.inputs.D) {
-            drawWireLineToComponent(g, input, left, input.posYInParentTransform, false)
-        }
-        for (const input of this.inputs.Addr) {
-            drawWireLineToComponent(g, input, input.posXInParentTransform, top, false)
-        }
-        for (const output of this.outputs.Q) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform, false)
-        }
-
-        // outline
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-        g.stroke(outline)
-
-        // labels
-        ctx.inNonTransformedFrame(ctx => {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, (ctx, { width, height }) => {
             if (!this._showContent || !this.canShowContent() || this.editor.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
@@ -300,19 +267,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
                 }
 
             }
-
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "WE", "s", this.inputs.WriteEnable, bottom)
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
-
-            g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Addr", "n", this.inputs.Addr, top)
-            drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
-            drawLabel(ctx, this.orient, "Q", "e", right, this.outputs.Q)
         })
-
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

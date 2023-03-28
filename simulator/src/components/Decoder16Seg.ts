@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -95,41 +95,23 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
         this.outputValues(this.outputs.Out, newValue)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            drawInside: bounds => {
+                this.drawGroupBox(g, this.inputs.I.group, bounds)
+            },
+            drawLabels: (ctx, { left, right }) => {
+                g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+                g.font = "bold 11px sans-serif"
 
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
+                drawLabel(ctx, this.orient, "C", "w", left, this.inputs.I)
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        for (const input of this.inputs._all) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
-        }
-
-        for (const output of this.outputs._all) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
-        }
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "bold 12px sans-serif"
-
-            drawLabel(ctx, this.orient, "C", "w", left, this.inputs.I)
-
-            g.font = "7px sans-serif"
-            this.outputs._all.forEach(output => {
-                drawLabel(ctx, this.orient, output.name, "e", right, output)
-            })
-
+                g.font = "7px sans-serif"
+                this.outputs._all.forEach(output => {
+                    drawLabel(ctx, this.orient, output.shortName, "e", right, output)
+                })
+            },
         })
     }
 

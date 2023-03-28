@@ -162,7 +162,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
     }
 
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = 3
         const height = this.unrotatedHeight
         const top = this.posY - height / 2

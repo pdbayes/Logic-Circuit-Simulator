@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -92,62 +92,14 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
         this.outputs.Cout.value = newValue.cout
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        // inputs
-        for (const input of this.inputs.A) {
-            drawWireLineToComponent(g, input, left, input.posYInParentTransform)
-        }
-        for (const input of this.inputs.B) {
-            drawWireLineToComponent(g, input, left, input.posYInParentTransform)
-        }
-        drawWireLineToComponent(g, this.inputs.Cin, this.inputs.Cin.posXInParentTransform, top)
-
-        // outputs
-        for (const output of this.outputs.S) {
-            drawWireLineToComponent(g, output, right, output.posYInParentTransform)
-        }
-        drawWireLineToComponent(g, this.outputs.Cout, this.outputs.Cout.posXInParentTransform, bottom)
-
-
-        // outline
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-
-            // non-bold input/output labels
-            g.font = "12px sans-serif"
-            drawLabel(ctx, this.orient, "Cout", "s", this.outputs.Cout.posXInParentTransform, bottom, this.outputs.Cout)
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform, top, this.outputs.Cout)
-
-            // inputs
-            g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "S", "e", right, this.outputs.S)
-            drawLabel(ctx, this.orient, "A", "w", left, this.inputs.A)
-            drawLabel(ctx, this.orient, "B", "w", left, this.inputs.B)
-
-            // right outputs
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, (ctx) => {
             g.font = `bold 25px sans-serif`
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.textAlign = "center"
             g.textBaseline = "middle"
             g.fillText("+", ...ctx.rotatePoint(this.posX - 4, this.posY))
         })
-
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

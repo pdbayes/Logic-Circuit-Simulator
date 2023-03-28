@@ -146,7 +146,7 @@ export abstract class GateBase<
         )
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const gateType = this._showAsUnknown
             ? Unknown
             : this.poseAs ?? this.type

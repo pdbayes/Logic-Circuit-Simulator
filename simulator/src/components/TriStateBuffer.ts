@@ -65,7 +65,7 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
         this.outputs.Out.value = newValue
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

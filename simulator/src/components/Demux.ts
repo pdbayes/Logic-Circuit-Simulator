@@ -134,14 +134,8 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         this.outputValues(this.outputs._all, newValues)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        const { top, left, bottom, right } = this.bounds()
         const dy = (right - left) / 3
 
         // inputs
@@ -206,11 +200,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
         // outline
         g.lineWidth = 3
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-        }
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
         g.stroke(outline)
 
     }

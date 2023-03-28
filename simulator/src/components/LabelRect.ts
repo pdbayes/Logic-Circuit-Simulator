@@ -130,7 +130,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         return 0
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const width = this._w
         const height = this._h
         const left = this.posX - width / 2

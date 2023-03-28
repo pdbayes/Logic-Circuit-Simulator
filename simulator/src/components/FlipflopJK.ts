@@ -1,10 +1,8 @@
-import { COLOR_COMPONENT_INNER_LABELS, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { LogicValue } from "../utils"
 import { defineComponent, Repr } from "./Component"
-import { DrawContext } from "./Drawable"
 import { Flipflop, FlipflopBaseDef } from "./FlipflopOrLatch"
 
 
@@ -64,21 +62,6 @@ export class FlipflopJK extends Flipflop<FlipflopJKRepr> {
         } else {
             return q
         }
-    }
-
-    protected override doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, right: number) {
-        super.doDrawLatchOrFlipflop(g, ctx, width, height, left, right)
-
-        drawWireLineToComponent(g, this.inputs.J, left - 2, this.inputs.J.posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs.K, left - 2, this.inputs.K.posYInParentTransform, false)
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "J", "w", left, this.inputs.J)
-            drawLabel(ctx, this.orient, "K", "w", left, this.inputs.K)
-        })
     }
 
 }

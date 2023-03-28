@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, drawWireLineToComponent } from "../drawutils"
+import { colorForBoolean, COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -82,51 +82,28 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
         this.outputValues(this.outputs.O, newValue)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const enable = this.inputs.E.value
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            drawInside: ({ top, left, right }) => {
+                const enable = this.inputs.E.value
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = left + width
-        const top = this.posY - height / 2
-        // const bottom = top + height
+                g.lineWidth = 2
+                g.strokeStyle = colorForBoolean(enable)
+                g.beginPath()
+                g.moveTo(this.posX, top)
+                g.lineTo(this.posX, this.posY - 4)
+                g.stroke()
 
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        g.lineWidth = 2
-        g.strokeStyle = colorForBoolean(enable)
-        g.beginPath()
-        g.moveTo(this.posX, top + 3)
-        g.lineTo(this.posX, this.posY - 4)
-        g.stroke()
-
-        g.strokeStyle = COLOR_COMPONENT_BORDER
-        g.beginPath()
-        g.moveTo(left + 12, this.posY - 8)
-        g.lineTo(right - 13, this.posY)
-        g.lineTo(left + 12, this.posY + 8)
-        g.closePath()
-        g.stroke()
-
-
-        for (const input of this.inputs.I) {
-            drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform)
-        }
-
-        drawWireLineToComponent(g, this.inputs.E, this.inputs.E.posXInParentTransform, top - 2)
-
-
-        for (const output of this.outputs.O) {
-            drawWireLineToComponent(g, output, right + 2, output.posYInParentTransform)
-        }
+                g.strokeStyle = COLOR_COMPONENT_BORDER
+                g.beginPath()
+                g.moveTo(left + 12, this.posY - 8)
+                g.lineTo(right - 13, this.posY)
+                g.lineTo(left + 12, this.posY + 8)
+                g.closePath()
+                g.stroke()
+            },
+        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

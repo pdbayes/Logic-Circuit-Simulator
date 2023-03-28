@@ -115,27 +115,27 @@ export class OutputBar extends ComponentBase<OutputBarRepr> {
         return this.inputs.I.value
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-        const input = this.inputs.I
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        const bounds = this.bounds()
+        const outline = bounds.outline
+
+        // background
         const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
-
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 4
-
         const backColor = ledColorForLogicValue(valueToShow, this._color)
-
         g.fillStyle = backColor
-        const [w, h] = this.getWidthAndHeight()
-        g.beginPath()
-        g.rect(this.posX - w / 2, this.posY - h / 2, w, h)
-        g.closePath()
         if (!this._transparent || valueToShow !== false) {
-            g.fill()
+            g.fill(outline)
         }
-        g.stroke()
 
-        drawWireLineToComponent(g, input, this.posX - w / 2 - 2, this.posY)
+        // input
+        drawWireLineToComponent(g, this.inputs.I, bounds.left, this.posY)
 
+        // outline
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.lineWidth = 3
+        g.stroke(outline)
+
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
                 drawComponentName(g, ctx, this._name, toLogicValueRepr(valueToShow), this, true)

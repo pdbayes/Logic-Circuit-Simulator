@@ -1,10 +1,9 @@
-import { COLOR_COMPONENT_BORDER, drawLabel, drawWireLineToComponent } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { LogicValue } from "../utils"
 import { defineComponent, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { ContextMenuData, MenuItems } from "./Drawable"
 import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
@@ -16,8 +15,8 @@ export const LatchSRDef =
             const s = S.Components.Generic
             return {
                 ins: {
-                    Set: [-4, -2, "w", s.InputSetDesc, true],
-                    Reset: [-4, 2, "w", s.InputResetDesc, true],
+                    S: [-4, -2, "w", s.InputSetDesc, { prefersSpike: true }],
+                    R: [-4, 2, "w", s.InputResetDesc, { prefersSpike: true }],
                 },
                 outs: base.outs,
             }
@@ -47,8 +46,8 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
     }
 
     protected doRecalcValue(): [LogicValue, LogicValue] {
-        const s = this.inputs.Set.value
-        const r = this.inputs.Reset.value
+        const s = this.inputs.S.value
+        const r = this.inputs.R.value
 
         // assume this state is valid
         this._isInInvalidState = false
@@ -71,20 +70,6 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
         // no change
         const q = this.outputs.Q.value
         return [q, LogicValue.invert(q)]
-    }
-
-    protected doDrawLatchOrFlipflop(g: CanvasRenderingContext2D, ctx: DrawContext, width: number, height: number, left: number, __right: number) {
-
-        drawWireLineToComponent(g, this.inputs.Set, left - 2, this.inputs.Set.posYInParentTransform, false)
-        drawWireLineToComponent(g, this.inputs.Reset, left - 2, this.inputs.Reset.posYInParentTransform, false)
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_BORDER
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "S", "w", left, this.inputs.Set)
-            drawLabel(ctx, this.orient, "R", "w", left, this.inputs.Reset)
-        })
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

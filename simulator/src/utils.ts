@@ -184,6 +184,12 @@ export function isArray(arg: unknown): arg is Array<any> {
     return Array.isArray(arg)
 }
 
+// NO: TypeScript is not smart enough to infer the type of the function,
+// so just use `typeof arg === "function"` instead
+// export function isFunction(arg: unknown): arg is ((...args: any[]) => any) {
+//     return typeof arg === "function"
+// }
+
 export function isEmpty(container: { length: number } | { size: number }): boolean {
     return ("length" in container ? container.length : container.size) === 0
 }
@@ -364,6 +370,16 @@ export const InteractionResult = defineADTStatics(InteractionResultCases, {
 })
 
 export type InteractionResult = ADTWith<typeof InteractionResultCases>
+
+
+// Reused types across several components
+
+export const EdgeTrigger = {
+    rising: "rising",
+    falling: "falling",
+} as const
+
+export type EdgeTrigger = keyof typeof EdgeTrigger
 
 
 // More general-purpose utility functions

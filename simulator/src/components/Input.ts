@@ -66,7 +66,7 @@ export abstract class InputBase<
         return true
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         if (this.numBits === 1) {
             this.doDrawSingle(g, ctx, this.outputs.Out[0])
         } else {
@@ -175,8 +175,8 @@ export abstract class InputBase<
             if (inNode.prefersSpike) {
                 this.doSetIsPushButton(true) // will do nothing for clocks
             }
-            if (isUndefined(this._name) && isDefined(inNode.name)) {
-                this.doSetName(inNode.name)
+            if (isUndefined(this._name)) {
+                this.doSetName(inNode.fullName)
             }
         }
         if (outNode.orient !== "e") {

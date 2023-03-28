@@ -1,12 +1,12 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, displayValuesFromArray, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { EdgeTrigger, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
-import { EdgeTrigger, Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
+import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
 
@@ -55,8 +55,8 @@ export const OutputShiftBufferDef =
             const s = S.Components.Generic
             return {
                 ins: {
-                    Clock: [-14, +1, "w", s.InputClockDesc, true],
-                    Clear: [-10, +3, "s", s.InputClearDesc, true],
+                    Clock: [-14, +1, "w", s.InputClockDesc, { isClock: true }],
+                    Clr: [-10, +3, "s", s.InputClearDesc, { prefersSpike: true }],
                     D: [-14, -1, "w", s.InputDataDesc],
                 },
             }
@@ -130,7 +130,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     protected doRecalcValue(): OutputShiftBufferState {
-        if (this.inputs.Clear.value === true) {
+        if (this.inputs.Clr.value === true) {
             return { incoming: [], decoded: [] }
         }
         const prevClock = this._lastClock
@@ -166,58 +166,34 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            drawInside: () => {
+                const drawContents = () => {
+                    const text = this.makeRepresentationString()
+                    let toDraw
+                    if (isUndefined(text)) {
+                        g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+                        g.font = "15px sans-serif"
+                        toDraw = S.Components.OutputShiftBuffer.EmptyCaption
+                    } else {
+                        g.fillStyle = COLOR_COMPONENT_BORDER
+                        g.font = "bold 16px sans-serif"
+                        toDraw = text
+                    }
+                    g.fillText(toDraw, this.posX, this.posY)
+                }
 
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
-        g.lineWidth = 3
-
-        g.beginPath()
-        g.rect(left, top, width, height)
-        g.fill()
-        g.stroke()
-        g.fillStyle = COLOR_BACKGROUND
-
-        Flipflop.drawClockInput(g, left, this.inputs.Clock, this._trigger)
-        drawWireLineToComponent(g, this.inputs.Clear, this.inputs.Clear.posXInParentTransform, bottom + 2, false)
-        drawWireLineToComponent(g, this.inputs.D, left - 2, this.inputs.D.posYInParentTransform, false)
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
-
-            drawLabel(ctx, this.orient, "Clr", "s", this.inputs.Clear, bottom)
-            drawLabel(ctx, this.orient, "D", "w", left, this.inputs.D)
+                g.textAlign = "center"
+                g.textBaseline = "middle"
+                if (this.orient === "w") {
+                    // avoid text upside down
+                    ctx.inNonTransformedFrame(drawContents)
+                } else {
+                    drawContents()
+                }
+            },
         })
-
-        const drawContents = () => {
-            const text = this.makeRepresentationString()
-            let toDraw
-            if (isUndefined(text)) {
-                g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-                g.font = "15px sans-serif"
-                toDraw = S.Components.OutputShiftBuffer.EmptyCaption
-            } else {
-                g.fillStyle = COLOR_COMPONENT_BORDER
-                g.font = "bold 16px sans-serif"
-                toDraw = text
-            }
-            g.fillText(toDraw, this.posX, this.posY)
-        }
-
-        g.textAlign = "center"
-        g.textBaseline = "middle"
-        if (this.orient === "w") {
-            ctx.inNonTransformedFrame(drawContents)
-        } else {
-            drawContents()
-        }
     }
 
     private makeRepresentationString() {

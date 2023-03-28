@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { GRID_STEP, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, COLOR_MOUSE_OVER, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, shouldShowNode, useCompact } from "../drawutils"
 import { IconName, ImageName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, DrawContext, DrawContextExt, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
@@ -96,8 +96,10 @@ export function isNodeArray<TNode extends Node>(obj: undefined | number | Node |
 
 export class NodeGroup<TNode extends Node> {
 
+    private _orient: Orientation = "e" // default changed when nodes are added
     private _nodes: GroupedNodeArray<TNode>
     private _avgGridOffets: [number, number] | undefined = undefined
+    public hasNameOverrides: boolean = false
 
     public constructor(
         public readonly parent: Component,
@@ -116,6 +118,7 @@ export class NodeGroup<TNode extends Node> {
             console.warn("Adding nodes to a group after the group's position has been used")
         }
         this._nodes.push(node)
+        this._orient = node.orient
     }
 
     private get avgGridOffsets(): [number, number] {
@@ -130,6 +133,10 @@ export class NodeGroup<TNode extends Node> {
             this._avgGridOffets = [x / len, y / len]
         }
         return this._avgGridOffets
+    }
+
+    public get orient(): Orientation {
+        return this._orient
     }
 
     public get posXInParentTransform() {
@@ -201,11 +208,10 @@ export const ComponentNameRepr = typeOrUndefined(
     ])
 )
 
-export type NodeName = string | (() => string)
-export type NodeOutDesc = readonly [x: number, y: number, orient: Orientation, name?: NodeName]
-export type NodeInDesc = readonly [x: number, y: number, orient: Orientation, name?: NodeName, prefersSpike?: boolean]
+export type NodeOutDesc = readonly [x: number, y: number, orient: Orientation, fullName?: string, opts?: { hasTriangle?: boolean, labelName?: string }]
+export type NodeInDesc = readonly [x: number, y: number, orient: Orientation, fullName?: string, opts?: { hasTriangle?: boolean, labelName?: string, prefersSpike?: boolean, isClock?: boolean }]
 export type NodeDesc = NodeOutDesc | NodeInDesc
-export type NodeDescInGroup = readonly [x: number, y: number, name?: NodeName]
+export type NodeDescInGroup = readonly [x: number, y: number, shortNameOverride?: string]
 export type NodeGroupDesc<D extends NodeDesc> = ReadonlyArray<D>
 export type NodeGroupMultiDesc<D extends NodeDesc> = ReadonlyArray<NodeGroupDesc<D>>
 export type NodeRec<D extends NodeDesc> = Record<string, D | NodeGroupDesc<D> | NodeGroupMultiDesc<D>>
@@ -380,9 +386,11 @@ export abstract class ComponentBase<
             nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
             group: NodeGroup<TNode> | undefined,
-            name: string,
+            shortName: string,
+            fullName: string,
             _gridOffsetX: number,
             _gridOffsetY: number,
+            hasTriangle: boolean,
             orient: Orientation,
         ) => TNode) {
 
@@ -391,23 +399,37 @@ export abstract class ComponentBase<
         const nodeGroups: Map<string, NodeGroup<TNode>> = new Map()
 
         if (isDefined(nodeRec)) {
-            const makeNode = (group: NodeGroup<TNode> | undefined, defaultName: string, desc: TDesc) => {
+            const makeNode = (group: NodeGroup<TNode> | undefined, shortName: string, desc: TDesc) => {
                 const spec = specs[nextSpecIndex++]
-                const [offsetX, offsetY, orient, nameOverride, prefersSpike] = desc
-                const name = isUndefined(nameOverride) ? defaultName : isString(nameOverride) ? nameOverride : nameOverride()
+                const [offsetX, offsetY, orient, nameOverride, options_] = desc
+                const options = options_ as NodeInDesc[4] // bleh
+                const isClock = options?.isClock ?? false
+                const prefersSpike = options?.prefersSpike ?? false
+                const hasTriangle = options?.hasTriangle ?? false
+                if (isDefined(group) && isDefined(nameOverride)) {
+                    // names in groups are considered short names to be used as labels
+                    shortName = nameOverride
+                    group.hasNameOverrides = true
+                } else if (isDefined(options?.labelName)) {
+                    shortName = options!.labelName
+                }
+                const fullName = isUndefined(nameOverride) ? shortName : nameOverride
                 const newNode = new node(
                     this.editor,
                     spec,
                     this,
                     group,
-                    name,
+                    shortName,
+                    fullName,
                     offsetX,
                     offsetY,
+                    hasTriangle,
                     orient,
                 )
-                if (prefersSpike ?? false) {
+                if (prefersSpike || isClock) {
                     if (newNode instanceof NodeIn) {
-                        newNode.prefersSpike = true
+                        newNode.prefersSpike = true // clock also prefers spike
+                        newNode.isClock = isClock
                     } else {
                         console.warn(`prefersSpike is only supported for inputs, can't set it for ${name}`)
                     }
@@ -646,6 +668,15 @@ export abstract class ComponentBase<
         }
     }
 
+    public *allNodeGroups() {
+        for (const group of this.inputGroups.values()) {
+            yield group
+        }
+        for (const group of this.outputGroups.values()) {
+            yield group
+        }
+    }
+
     public get value(): TValue {
         return this._value
     }
@@ -699,6 +730,149 @@ export abstract class ComponentBase<
     private updateNodePositions() {
         for (const node of this.allNodes()) {
             node.updatePositionFromParent()
+        }
+    }
+
+    protected bounds(): DrawingRect {
+        return new DrawingRect(this)
+        // use with:
+        // const bounds = this.bounds()
+        // const { top, left, bottom, right, width, height } = bounds
+    }
+
+    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+        this.doDrawDefault(g, ctx)
+    }
+
+    protected doDrawDefault(
+        g: CanvasRenderingContext2D, ctx: DrawContext,
+        opts_?: ((ctx: DrawContextExt, bounds: DrawingRect) => void) | {
+            drawLabels?: (ctx: DrawContextExt, bounds: DrawingRect) => void,
+            drawInside?: (bounds: DrawingRect) => void,
+            skipLabels?: boolean,
+            labelSize?: number,
+            background?: string,
+            name?: [name: ComponentName, value: string | number, onRight: boolean]
+        }
+    ) {
+        const bounds = this.bounds()
+        const opts = typeof opts_ !== "function" ? opts_ : { drawLabels: opts_ }
+
+        // background
+        g.fillStyle = opts?.background ?? COLOR_BACKGROUND
+        g.fill(bounds.outline)
+
+        // inputs/outputs lines
+        for (const node of this.allNodes()) {
+            this.drawWireLineTo(g, node, bounds)
+        }
+
+        // group boxes
+        const drawLabels = !(opts?.skipLabels ?? false)
+        if (drawLabels) {
+            for (const group of this.allNodeGroups()) {
+                if (!group.hasNameOverrides) {
+                    this.drawGroupBox(g, group, bounds)
+                }
+            }
+        }
+
+        // additional inside drawing
+        opts?.drawInside?.(bounds)
+
+        // outline
+        g.lineWidth = 3
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.stroke(bounds.outline)
+
+        // labels
+        ctx.inNonTransformedFrame(ctx => {
+            if (isDefined(opts?.name?.[0])) {
+                const [name, value, onRight] = opts!.name!
+                drawComponentName(g, ctx, name, value, this, onRight)
+            }
+
+            if (drawLabels) {
+                const labelSize = opts?.labelSize ?? 11
+                g.fillStyle = COLOR_COMPONENT_INNER_LABELS
+                g.textAlign = "center"
+
+                g.font = `bold ${labelSize}px sans-serif`
+                for (const group of this.allNodeGroups()) {
+                    if (!group.hasNameOverrides) {
+                        this.drawGroupLabel(ctx, group, bounds)
+                    }
+                }
+
+                g.font = `${labelSize}px sans-serif`
+                for (const node of this.allNodes()) {
+                    if (isUndefined(node.group) || node.group.hasNameOverrides) {
+                        this.drawNodeLabel(ctx, node, bounds)
+                    }
+                }
+            }
+
+            opts?.drawLabels?.(ctx, bounds)
+        })
+    }
+
+    protected drawWireLineTo(g: CanvasRenderingContext2D, node: Node, bounds: DrawingRect) {
+        if (node.isClock) {
+            drawClockInput(g, bounds.left, node, (this as any)["_trigger"] ?? EdgeTrigger.rising)
+            return
+        }
+
+        const offset = node.hasTriangle ? 3 : 0
+        drawWireLineToComponent(g, node, ...this.anchorFor(node, bounds, offset), node.hasTriangle)
+    }
+
+    protected drawGroupBox(g: CanvasRenderingContext2D, group: NodeGroup<Node>, bounds: DrawingRect) {
+        if (!shouldShowNode(group.nodes)) {
+            return
+        }
+
+        const groupWidth = Orientation.isVertical(Orientation.add(this.orient, group.orient)) ? 8 : 6
+        const first = group.nodes[0]
+        const last = group.nodes[group.nodes.length - 1]
+        const beforeAfterMargin = 2
+
+        g.beginPath()
+        switch (group.orient) {
+            case "e":
+                g.rect(bounds.right - groupWidth, first.posYInParentTransform - beforeAfterMargin, groupWidth, last.posYInParentTransform - first.posYInParentTransform + 2 * beforeAfterMargin)
+                break
+            case "w":
+                g.rect(bounds.left, first.posYInParentTransform - beforeAfterMargin, groupWidth, last.posYInParentTransform - first.posYInParentTransform + 2 * beforeAfterMargin)
+                break
+            case "n":
+                g.rect(last.posXInParentTransform - beforeAfterMargin, bounds.top, first.posXInParentTransform - last.posXInParentTransform + 2 * beforeAfterMargin, groupWidth)
+                break
+            case "s":
+                g.rect(last.posXInParentTransform - beforeAfterMargin, bounds.bottom - groupWidth, first.posXInParentTransform - last.posXInParentTransform + 2 * beforeAfterMargin, groupWidth)
+                break
+        }
+
+        g.fillStyle = COLOR_GROUP_SPAN
+        g.fill()
+    }
+
+    protected drawNodeLabel(ctx: DrawContextExt, node: Node, bounds: DrawingRect): void {
+        if (node.isClock) {
+            return
+        }
+        drawLabel(ctx, this.orient, node.shortName, node.orient, ...this.anchorFor(node, bounds, 1), node)
+    }
+
+    protected drawGroupLabel(ctx: DrawContextExt, group: NodeGroup<Node>, bounds: DrawingRect): void {
+        drawLabel(ctx, this.orient, group.name, group.orient, ...this.anchorFor(group, bounds, 1), group.nodes)
+    }
+
+    private anchorFor(elem: Node | NodeGroup<Node>, bounds: DrawingRect, offset: number): [number, number] {
+        switch (elem.orient) {
+            case "e": return [bounds.right + offset, elem.posYInParentTransform]
+            case "w": return [bounds.left - offset, elem.posYInParentTransform]
+            case "n": return [elem.posXInParentTransform, bounds.top - offset]
+            case "s": return [elem.posXInParentTransform, bounds.bottom + offset]
         }
     }
 
@@ -911,7 +1085,7 @@ export abstract class ComponentBase<
             items.push(["mid", ContextMenuData.submenu("force", s.ForceOutputMultiple, [
                 ...this.outputs._all.map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
-                    return ContextMenuData.submenu(icon, s.Output + " " + out.name,
+                    return ContextMenuData.submenu(icon, s.Output + " " + out.fullName,
                         makeOutputItems(out)
                     )
                 }),
@@ -1031,7 +1205,7 @@ export abstract class ParametrizedComponentBase<
                 const group = node.group
                 const wires = getWires(node)
                 if (isUndefined(group)) {
-                    savedWires.set(node.name, wires)
+                    savedWires.set(node.shortName, wires)
                 } else {
                     let groupSavedNodes = savedWires.get(group.name) as TWires[]
                     if (!isArray(groupSavedNodes)) {
@@ -1065,7 +1239,7 @@ export abstract class ParametrizedComponentBase<
             for (const node of nodes) {
                 const group = node.group
                 if (isUndefined(group)) {
-                    const wires = savedWires.get(node.name) as TWires
+                    const wires = savedWires.get(node.shortName) as TWires
                     setWires(wires, node)
                 } else {
                     const wiresArray = savedWires.get(group.name) as TWires[]
@@ -1154,12 +1328,12 @@ export function group<TDescArr extends readonly NodeDescInGroup[]>(orient: Orien
     return FixedArrayMap(nodes, ([x, y, name]) => [x, y, orient, name] as const)
 }
 
-export function groupVertical(orient: "e" | "w", x: number, yCenter: number, num: number) {
-    const spacing = useCompact(num) ? 1 : 2
-    const span = (num - 1) * spacing
+export function groupVertical(orient: "e" | "w", x: number, yCenter: number, num: number, spacing?: number) {
+    const spacing_ = spacing ?? (useCompact(num) ? 1 : 2)
+    const span = (num - 1) * spacing_
     const yTop = yCenter - span / 2
     return group(orient,
-        ArrayFillUsing(i => [x, yTop + i * spacing], num)
+        ArrayFillUsing(i => [x, yTop + i * spacing_], num)
     )
 }
 
@@ -1174,12 +1348,12 @@ export function groupVerticalMulti(orient: "e" | "w", x: number, yCenter: number
     ), numOuter)
 }
 
-export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, num: number) {
-    const spacing = useCompact(num) ? 1 : 2
-    const span = (num - 1) * spacing
+export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, num: number, spacing?: number) {
+    const spacing_ = spacing ?? (useCompact(num) ? 1 : 2)
+    const span = (num - 1) * spacing_
     const xRight = xCenter + span / 2
     return group(orient,
-        ArrayFillUsing(i => [xRight - i * spacing, y], num)
+        ArrayFillUsing(i => [xRight - i * spacing_, y], num)
     )
 }
 

@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -38,13 +38,13 @@ export const ALUDef =
                     A: groupVertical("w", -4, -inputCenterY, numBits),
                     B: groupVertical("w", -4, inputCenterY, numBits),
                     Op: groupHorizontal("n", 1, top, 2),
-                    Cin: [-2, top, "n", () => `Cin (${S.Components.ALU.InputCinDesc})`],
+                    Cin: [-2, top, "n", `Cin (${S.Components.ALU.InputCinDesc})`],
                 },
                 outs: {
                     S: groupVertical("e", 4, 0, numBits),
                     V: [0, bottom, "s", "V (oVerflow)"],
                     Z: [2, bottom, "s", "Z (Zero)"],
-                    Cout: [-2, bottom, "s", () => `Cout (${S.Components.ALU.OutputCoutDesc})`],
+                    Cout: [-2, bottom, "s", `Cout (${S.Components.ALU.OutputCoutDesc})`],
                 },
             }
         },
@@ -153,14 +153,9 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         this.outputs.Cout.value = newValue.cout
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-        const left = this.posX - width / 2
-        const right = this.posX + width / 2
-        const top = this.posY - height / 2
-        const bottom = this.posY + height / 2
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        const bounds = this.bounds()
+        const { left, top, right, bottom } = bounds
 
         // inputs
         for (const input of this.inputs.A) {
@@ -181,15 +176,10 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         drawWireLineToComponent(g, this.outputs.V, this.outputs.V.posXInParentTransform, bottom - 9)
         drawWireLineToComponent(g, this.outputs.Cout, this.outputs.Cout.posXInParentTransform, bottom - 3)
 
-
         // outline
         g.fillStyle = COLOR_BACKGROUND
         g.lineWidth = 3
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-        }
+        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
 
         g.beginPath()
         g.moveTo(left, top)
@@ -203,24 +193,41 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         g.fill()
         g.stroke()
 
+        // groups
+        this.drawGroupBox(g, this.inputs.A.group, bounds)
+        this.drawGroupBox(g, this.inputs.B.group, bounds)
+        this.drawGroupBox(g, this.outputs.S.group, bounds)
+        // special Op group
+        g.beginPath()
+        const opGroupLeft = this.inputs.Op[1].posXInParentTransform - 2
+        const opGroupRight = this.inputs.Op[0].posXInParentTransform + 2
+        g.moveTo(opGroupLeft, top + 9)
+        g.lineTo(opGroupLeft, top + 17)
+        g.lineTo(opGroupRight, top + 25)
+        g.lineTo(opGroupRight, top + 19)
+        g.closePath()
+        g.fillStyle = COLOR_GROUP_SPAN
+        g.fill()
+
+        // labels
         ctx.inNonTransformedFrame(ctx => {
             g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.font = "12px sans-serif"
+            g.font = "11px sans-serif"
 
             // bottom outputs
             const carryHOffsetF = Orientation.isVertical(this.orient) ? 0 : 1
-            drawLabel(ctx, this.orient, "Z", "s", this.outputs.Z, bottom - 17)
-            drawLabel(ctx, this.orient, "V", "s", this.outputs.V.posXInParentTransform + carryHOffsetF * 2, bottom - 11, this.outputs.V)
-            drawLabel(ctx, this.orient, "Cout", "s", this.outputs.Cout.posXInParentTransform + carryHOffsetF * 4, bottom - 8, this.outputs.Cout)
+            drawLabel(ctx, this.orient, "Z", "s", this.outputs.Z, bottom - 16)
+            drawLabel(ctx, this.orient, "V", "s", this.outputs.V.posXInParentTransform + carryHOffsetF * 2, bottom - 10, this.outputs.V)
+            drawLabel(ctx, this.orient, "Cout", "s", this.outputs.Cout.posXInParentTransform + carryHOffsetF * 4, bottom - 7, this.outputs.Cout)
 
             // top inputs
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform + carryHOffsetF * 2, top + 5, this.inputs.Cin)
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform + carryHOffsetF * 2, top + 4, this.inputs.Cin)
 
-            g.font = "bold 12px sans-serif"
-            drawLabel(ctx, this.orient, "Op", "n", this.inputs.Op, top + 15)
+            g.font = "bold 11px sans-serif"
+            drawLabel(ctx, this.orient, "Op", "n", this.inputs.Op, top + 14)
 
             // left inputs
-            g.font = "bold 14px sans-serif"
+            g.font = "bold 12px sans-serif"
             drawLabel(ctx, this.orient, "A", "w", left, this.inputs.A)
             drawLabel(ctx, this.orient, "B", "w", left, this.inputs.B)
 

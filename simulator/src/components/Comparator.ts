@@ -1,4 +1,4 @@
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_MOUSE_OVER, drawLabel, drawWireLineToComponent } from "../drawutils"
+import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -13,13 +13,13 @@ export const ComparatorDef =
         size: { gridWidth: 5, gridHeight: 7 },
         makeNodes: () => ({
             ins: {
-                A: [-4, 2, "w"],
-                B: [-4, -2, "w"],
-                E: [0, 5, "s"],
+                A: [-4, 2, "w", "A", { hasTriangle: true }],
+                B: [-4, -2, "w", "B", { hasTriangle: true }],
+                E: [0, 5, "s", "E", { hasTriangle: true }],
             },
             outs: {
-                G: [4, 0, "e"],
-                Eq: [0, -5, "n"],
+                G: [4, 0, "e", ">", { hasTriangle: true, labelName: ">" }],
+                Eq: [0, -5, "n", "=", { hasTriangle: true, labelName: "=" }],
             },
         }),
         initialValue: () => ({
@@ -74,50 +74,8 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
         this.outputs.Eq.value = newValue.eq
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
-
-        const width = this.unrotatedWidth
-        const height = this.unrotatedHeight
-
-        g.fillStyle = COLOR_BACKGROUND
-        g.lineWidth = 3
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-        }
-
-        g.beginPath()
-        g.rect(this.posX - width / 2, this.posY - height / 2, width, height)
-        g.fill()
-        g.stroke()
-
-        drawWireLineToComponent(g, this.inputs.A, this.posX - width / 2 - 2, this.inputs.A.posYInParentTransform, true)
-        drawWireLineToComponent(g, this.inputs.B, this.posX - width / 2 - 2, this.inputs.B.posYInParentTransform, true)
-        drawWireLineToComponent(g, this.inputs.E, this.inputs.E.posXInParentTransform, this.posY + height / 2 + 6, true)
-
-
-        drawWireLineToComponent(g, this.outputs.G, this.posX + width / 2 + 2, this.outputs.G.posYInParentTransform, true)
-        drawWireLineToComponent(g, this.outputs.Eq, this.outputs.Eq.posXInParentTransform, this.posY - height / 2 - 2, true)
-
-
-        ctx.inNonTransformedFrame(ctx => {
-            g.fillStyle = COLOR_COMPONENT_INNER_LABELS
-            g.textAlign = "center"
-            g.font = "11px sans-serif"
-
-            const top = this.posY - height / 2
-            const bottom = this.posY + height / 2
-            const right = this.posX + width / 2
-            const left = this.posX - width / 2
-
-            drawLabel(ctx, this.orient, "A", "w", left, this.inputs.A)
-            drawLabel(ctx, this.orient, "B", "w", left, this.inputs.B)
-            drawLabel(ctx, this.orient, "E", "s", this.inputs.E, bottom)
-
-            drawLabel(ctx, this.orient, ">", "e", right, this.outputs.G)
-            drawLabel(ctx, this.orient, "=", "n", this.outputs.Eq, top)
-
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, () => {
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 11px sans-serif"
             g.textAlign = "center"
