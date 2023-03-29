@@ -876,6 +876,77 @@ export abstract class ComponentBase<
         }
     }
 
+    protected replaceWithComponent(newComp: Component): Component {
+        // any component will work, but only inputs and outputs with
+        // the same names will be reconnected and others will be lost
+
+        const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => TWires): Map<string, TWires | TWires[]> => {
+            const savedWires: Map<string, TWires | TWires[]> = new Map()
+            for (const node of nodes) {
+                const group = node.group
+                const wires = getWires(node)
+                if (isUndefined(group)) {
+                    savedWires.set(node.shortName, wires)
+                } else {
+                    let groupSavedNodes = savedWires.get(group.name) as TWires[]
+                    if (!isArray(groupSavedNodes)) {
+                        groupSavedNodes = new Array(group.nodes.length)
+                        savedWires.set(group.name, groupSavedNodes)
+                    }
+                    groupSavedNodes[group.nodes.indexOf(node)] = wires
+                }
+            }
+            return savedWires
+        }
+
+        const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
+        const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
+
+        newComp.setPosition(this.posX, this.posY)
+        newComp.setSpawned()
+
+        const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
+            for (const node of nodes) {
+                const group = node.group
+                if (isUndefined(group)) {
+                    const wires = savedWires.get(node.shortName) as TWires
+                    setWires(wires, node)
+                } else {
+                    const wiresArray = savedWires.get(group.name) as TWires[]
+                    const wires = wiresArray[group.nodes.indexOf(node)]
+                    setWires(wires, node)
+                }
+            }
+        }
+
+        restoreNodes(savedWiresIn, newComp.inputs._all, (wire, node) => {
+            if (wire === null || isUndefined(wire)) {
+                return
+            }
+            wire.setSecondNode(node)
+        })
+        const now = this.editor.timeline.adjustedTime()
+        restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
+            if (isUndefined(wires) || wires.length === 0) {
+                return
+            }
+            for (const wire of [...wires]) {
+                wire.changeStartNode(node, now)
+            }
+        })
+
+        const editor = this.editor
+        const deleted = editor.tryDeleteDrawable(this)
+        if (!deleted) {
+            console.warn("Could not delete old component")
+        }
+
+        editor.undoMgr.takeSnapshot()
+        editor.redrawMgr.addReason("component replaced", newComp)
+
+        return newComp
+    }
+
     public override mouseDown(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT && !e.shiftKey) {
             // try clearing selection
@@ -1199,28 +1270,6 @@ export abstract class ParametrizedComponentBase<
     }
 
     protected replaceWithNewParams(newParams: Partial<TParams>): Component | undefined {
-        const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => TWires): Map<string, TWires | TWires[]> => {
-            const savedWires: Map<string, TWires | TWires[]> = new Map()
-            for (const node of nodes) {
-                const group = node.group
-                const wires = getWires(node)
-                if (isUndefined(group)) {
-                    savedWires.set(node.shortName, wires)
-                } else {
-                    let groupSavedNodes = savedWires.get(group.name) as TWires[]
-                    if (!isArray(groupSavedNodes)) {
-                        groupSavedNodes = new Array(group.nodes.length)
-                        savedWires.set(group.name, groupSavedNodes)
-                    }
-                    groupSavedNodes[group.nodes.indexOf(node)] = wires
-                }
-            }
-            return savedWires
-        }
-
-        const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
-        const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
-
         const currentRepr = this.toJSON()
         const newRepr = { ...currentRepr, ...newParams }
         delete (newRepr as ComponentRepr<true, true>).in
@@ -1232,48 +1281,8 @@ export abstract class ParametrizedComponentBase<
             console.warn("Could not create component variant")
             return undefined
         }
-        newComp.setPosition(this.posX, this.posY)
-        newComp.setSpawned()
 
-        const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
-            for (const node of nodes) {
-                const group = node.group
-                if (isUndefined(group)) {
-                    const wires = savedWires.get(node.shortName) as TWires
-                    setWires(wires, node)
-                } else {
-                    const wiresArray = savedWires.get(group.name) as TWires[]
-                    const wires = wiresArray[group.nodes.indexOf(node)]
-                    setWires(wires, node)
-                }
-            }
-        }
-
-        restoreNodes(savedWiresIn, newComp.inputs._all, (wire, node) => {
-            if (wire === null || isUndefined(wire)) {
-                return
-            }
-            wire.setSecondNode(node)
-        })
-        restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
-            if (isUndefined(wires) || wires.length === 0) {
-                return
-            }
-            for (const wire of [...wires]) {
-                wire.changeStartNode(node)
-            }
-        })
-
-        const editor = this.editor
-        const deleted = editor.tryDeleteDrawable(this)
-        if (!deleted) {
-            console.warn("Could not delete old component")
-        }
-
-        editor.undoMgr.takeSnapshot()
-        editor.redrawMgr.addReason("component replaced", newComp)
-
-        return newComp
+        return this.replaceWithComponent(newComp)
     }
 
     public override keyDown(e: KeyboardEvent): void {

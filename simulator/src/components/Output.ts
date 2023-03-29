@@ -184,7 +184,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             if (isDefined(group = outNode.group) && group.nodes.length === 1) {
                 this.doSetName(group.name)
             } else if (isUndefined(this._name)) {
-                this.doSetName(outNode.fullName)
+                this.doSetName(outNode.shortName)
             }
         }
 

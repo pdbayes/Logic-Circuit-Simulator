@@ -11,7 +11,6 @@
  * Lock position
  * Prevent click event if right-click and when dragging
  * More consistently set things dirty
- * Replace input with clock and conversely
 
 
 ## Medium priority
@@ -47,6 +46,7 @@
 
 ### DONE
 
+ * Replace input with clock and conversely
  * Make left buttons honor dark mode
  * Generic shared drawing code
  * Move width and height computation to component's def

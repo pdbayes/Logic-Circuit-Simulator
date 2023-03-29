@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { isDefined, LogicValue, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, defineComponent, Repr } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
-import { InputBase } from "./Input"
+import { InputBase, InputDef } from "./Input"
 
 export const ClockDef =
     defineComponent("in", "clock", {
@@ -177,10 +177,17 @@ export class Clock extends InputBase<ClockRepr> {
             return ContextMenuData.item(icon, desc, () => this.doSetPeriod(period))
         }
 
+        const replaceWithInputItem =
+            ContextMenuData.item("replace", s.ReplaceWithInput, () => {
+                this.replaceWithComponent(InputDef.make(this.editor, { bits: 1 }))
+            })
+
         return [
             ...super.makeComponentSpecificContextMenuItems(),
             ["mid", ContextMenuData.sep()],
             ["mid", ContextMenuData.submenu("timer", s.Period, periodPresets.map(makeItemSetPeriod))],
+            ["mid", ContextMenuData.sep()],
+            ["mid", replaceWithInputItem],
         ]
     }
 

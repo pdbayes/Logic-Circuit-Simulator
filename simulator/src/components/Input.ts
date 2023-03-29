@@ -4,7 +4,7 @@ import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ClockRepr } from "./Clock"
+import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, param, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
@@ -176,7 +176,7 @@ export abstract class InputBase<
                 this.doSetIsPushButton(true) // will do nothing for clocks
             }
             if (isUndefined(this._name)) {
-                this.doSetName(inNode.fullName)
+                this.doSetName(inNode.shortName)
             }
         }
         if (outNode.orient !== "e") {
@@ -451,14 +451,20 @@ export class Input extends InputBase<InputRepr> {
         ]
 
         if (this.numBits === 1) {
-            // TODO allow constants for arrays, too?
             const makeToggleConstantItem = () => {
                 const icon = this._isConstant ? "check" : "none"
                 const action = () => this.doSetIsConstant(!this._isConstant)
                 return ContextMenuData.item(icon, s.LockValue + ` (${toLogicValueRepr(this.value[0])})`, action)
             }
+            const replaceWithClockItem =
+                ContextMenuData.item("timer", s.ReplaceWithClock, () => {
+                    this.replaceWithComponent(ClockDef.make(this.editor))
+                })
+
             newItems.push(
                 ["mid", makeToggleConstantItem()],
+                ["mid", ContextMenuData.sep()],
+                ["mid", replaceWithClockItem],
                 ["mid", ContextMenuData.sep()],
             )
         }

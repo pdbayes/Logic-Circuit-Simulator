@@ -322,7 +322,7 @@ export class CursorMovementManager {
         canvas.addEventListener("mouseup", editor.wrapHandler((e) => {
             // console.log("mouseup %o, composedPath = %o", e, e.composedPath())
             this._mouseUpTouchEnd(e)
-            this.updateMouseOver([e.offsetX, e.offsetY])
+            this.updateMouseOver(this.editor.offsetXY(e))
             this.editor.updateCursor()
         }))
 

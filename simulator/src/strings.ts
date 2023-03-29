@@ -272,6 +272,7 @@ const Strings_fr = {
             },
             contextMenu: {
                 Period: "Période",
+                ReplaceWithInput: "Remplacer par entrée",
             },
         },
         Comparator: {
@@ -386,6 +387,7 @@ const Strings_fr = {
                 LockValue: "Verrouiller cette valeur",
                 PushButton: "Poussoir",
                 ToggleButton: "Commutateur",
+                ReplaceWithClock: "Remplacer par horloge",
             },
         },
         InputRandom: {
@@ -899,6 +901,7 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 Period: "Period",
+                ReplaceWithInput: "Replace with Input",
             },
         },
         Comparator: {
@@ -1012,6 +1015,7 @@ const Strings_en: Strings = {
                 LockValue: "Lock This Value",
                 PushButton: "Push Button",
                 ToggleButton: "Toggle Button",
+                ReplaceWithClock: "Replace With Clock",
             },
         },
         InputRandom: {

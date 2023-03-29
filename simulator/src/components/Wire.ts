@@ -246,7 +246,7 @@ export class Wire extends Drawable {
         this._endNode.doSetColor(this._startNode.color)
     }
 
-    public changeStartNode(startNode: NodeOut) {
+    public changeStartNode(startNode: NodeOut, now: Timestamp) {
         if (Node.isOutput(this._startNode)) {
             this._startNode.removeOutgoingWire(this)
         } else {
@@ -256,6 +256,7 @@ export class Wire extends Drawable {
 
         this._startNode = startNode
         this._startNode.addOutgoingWire(this)
+        this.propageNewValue(this._startNode.value, now)
     }
 
     public propageNewValue(newValue: LogicValue, now: Timestamp) {
