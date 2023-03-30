@@ -15,7 +15,12 @@
 
 ## Medium priority
 
+ * Draw n-x-1 mux/demux compactly
+ * Incrementable register
+ * Load/save RAM/ROM contents via file and editor
  * ROM
+ * Show selected RAM contents
+ * Mnemonic in context menu
  * Undo/redo as buttons
  * Custom component creation
  * (Address) decoder: 2, 3, 4 bit versions
@@ -33,6 +38,7 @@
 
 ## Low priority
 
+ * Alternative representation for push or toggle buttons
  * Allow repeating deletions with Cmd+Y
  * Edge detector?
  * Highlight only nodes when dragging
