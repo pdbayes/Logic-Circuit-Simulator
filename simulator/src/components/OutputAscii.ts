@@ -101,7 +101,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
-            name: [this._name, mainText, true],
+            componentName: [this._name, true, mainText],
             drawLabels: (ctx, { width, height }) => {
                 const isVertical = Orientation.isVertical(this.orient)
                 const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)

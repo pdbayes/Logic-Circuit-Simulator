@@ -86,7 +86,7 @@ export class Output16Seg extends ComponentBase<Output16SegRepr> {
     protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             labelSize: 7,
-            name: [this._name, this.value.map(toLogicValueRepr).join(""), true],
+            componentName: [this._name, true, () => this.value.map(toLogicValueRepr).reverse().join("")],
             drawInside: ({ left, right, top, bottom }) => {
                 const [a1, a2, b, c, d2, d1, e, f, g1, g2, h, i, j, k, l, m, p] = this.value
 

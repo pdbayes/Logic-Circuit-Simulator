@@ -155,7 +155,7 @@ export abstract class InputBase<
         // labels
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                const valueString = displayValues.map(toLogicValueRepr).join("")
+                const valueString = displayValues.map(toLogicValueRepr).reverse().join("")
                 drawComponentName(g, ctx, this._name, valueString, this, false)
             }
 

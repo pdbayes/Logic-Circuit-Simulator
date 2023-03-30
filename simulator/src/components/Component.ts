@@ -752,7 +752,7 @@ export abstract class ComponentBase<
             skipLabels?: boolean,
             labelSize?: number,
             background?: string,
-            name?: [name: ComponentName, value: string | number, onRight: boolean]
+            componentName?: [name: ComponentName, onRight: boolean, value: string | number | (() => string | number)]
         }
     ) {
         const bounds = this.bounds()
@@ -787,9 +787,10 @@ export abstract class ComponentBase<
 
         // labels
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(opts?.name?.[0])) {
-                const [name, value, onRight] = opts!.name!
-                drawComponentName(g, ctx, name, value, this, onRight)
+            if (isDefined(opts?.componentName?.[0])) {
+                const [name, onRight, value] = opts!.componentName!
+                const val = isNumber(value) || isString(value) ? value : value()
+                drawComponentName(g, ctx, name, val, this, onRight)
             }
 
             if (drawLabels) {

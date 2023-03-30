@@ -75,7 +75,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
     public override makeTooltip() {
         const s = S.Components.Output.tooltip
-        return tooltipContent(undefined, mods(s.title.expand({ numBits: 1 })))
+        return tooltipContent(undefined, mods(s.title.expand({ numBits: this.numBits })))
     }
 
     protected doRecalcValue(): LogicValue[] {
@@ -162,7 +162,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         // labels
         ctx.inNonTransformedFrame(ctx => {
             if (isDefined(this._name)) {
-                const valueString = displayValues.map(toLogicValueRepr).join("")
+                const valueString = displayValues.map(toLogicValueRepr).reverse().join("")
                 drawComponentName(g, ctx, this._name, valueString, this, true)
             }
 

@@ -670,9 +670,9 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
     } else {
         // dynamic name
         if (value in name) {
-            displayName = `${value}: ${name[value]}`
+            displayName = `${name[value]}`
         } else if ("default" in name) {
-            displayName = `${value}: ${name.default}`
+            displayName = `${name.default}`
         } else if (isUnknown(value)) {
             displayName = Unknown
         } else {
