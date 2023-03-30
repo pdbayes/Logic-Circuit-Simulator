@@ -15,11 +15,9 @@
 
 ## Medium priority
 
- * Draw n-x-1 mux/demux compactly
  * Incrementable register
  * Load/save RAM/ROM contents via file and editor
  * ROM
- * Show selected RAM contents
  * Mnemonic in context menu
  * Undo/redo as buttons
  * Custom component creation
@@ -52,6 +50,8 @@
 
 ### DONE
 
+ * Show selected RAM contents
+ * Draw n-x-1 mux/demux compactly
  * Remove stale tooltips when deleting components
  * Replace input with clock and conversely
  * Make left buttons honor dark mode

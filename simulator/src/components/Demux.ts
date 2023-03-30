@@ -37,7 +37,7 @@ export const DemuxDef =
         },
         size: ({ numFrom, numTo, numGroups, numSel }) => {
             const gridWidth = 2 * numSel
-            const spacing = useCompact(numFrom) ? 1 : 2
+            const spacing = useCompact(numFrom === 1 ? numTo : numFrom) ? 1 : 2
             const addByGroupSep = numFrom > 1 ? 1 : 0
             const numLeftSlots = numTo + (numGroups - 1) * addByGroupSep
             const gridHeight = spacing * numLeftSlots

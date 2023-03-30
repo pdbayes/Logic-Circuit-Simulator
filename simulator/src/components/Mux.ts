@@ -34,7 +34,7 @@ export const MuxDef =
         },
         size: ({ numFrom, numTo, numGroups, numSel }) => {
             const gridWidth = 2 * numSel
-            const spacing = useCompact(numTo) ? 1 : 2
+            const spacing = useCompact(numTo === 1 ? numFrom : numTo) ? 1 : 2
             const addByGroupSep = numTo > 1 ? 1 : 0
             const numLeftSlots = numFrom + (numGroups - 1) * addByGroupSep
             const gridHeight = 1 + spacing * numLeftSlots

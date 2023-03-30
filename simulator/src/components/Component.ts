@@ -1348,7 +1348,7 @@ export function groupVertical(orient: "e" | "w", x: number, yCenter: number, num
 }
 
 export function groupVerticalMulti(orient: "e" | "w", x: number, yCenter: number, numOuter: number, numInner: number) {
-    const innerSpacing = useCompact(numInner) ? 1 : 2
+    const innerSpacing = useCompact(numInner === 1 ? numOuter : numInner) ? 1 : 2
     const groupSpacing = numInner === 1 ? innerSpacing : innerSpacing * 2
     const groupOffset = (numInner - 1) * innerSpacing + groupSpacing
     const span = numOuter * (numInner - 1) * innerSpacing + (numOuter - 1) * groupSpacing
