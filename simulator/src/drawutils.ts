@@ -128,6 +128,10 @@ export function setColors(darkMode: boolean) {
     }
 }
 
+export function isDarkMode() {
+    return _currentModeIsDark
+}
+
 function doSetColors(darkMode: boolean) {
     if (!darkMode) {
         // Light Theme
