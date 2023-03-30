@@ -529,6 +529,8 @@ const Strings_fr = {
             },
             contextMenu: {
                 DisplayAs: "Afficher",
+                DisplayNone: "Aucun",
+                DisplayAsBinary: "en binaire (base 2)",
                 DisplayAsDecimal: "en décimal (base 10)",
                 DisplayAsSignedDecimal: "en décimal signé",
                 DisplayAsOctal: "en octal (base 8)",
@@ -588,6 +590,9 @@ const Strings_fr = {
             tooltip: {
                 title: "RAM (mémoire vive)",
                 desc: template("Stocke ${numWords} lignes de ${numDataBits} bits."),
+            },
+            contextMenu: {
+                SelectedDataDisplay: "Affichage des données addressées",
             },
         },
         Register: {
@@ -1158,6 +1163,8 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 DisplayAs: "Display as",
+                DisplayNone: "None",
+                DisplayAsBinary: "Binary (Base 2)",
                 DisplayAsDecimal: "Decimal (Base 10)",
                 DisplayAsSignedDecimal: "Signed Decimal",
                 DisplayAsOctal: "Octal (Base 8)",
@@ -1217,6 +1224,9 @@ const Strings_en: Strings = {
             tooltip: {
                 title: "RAM",
                 desc: template("Stores ${numWords} rows of ${numDataBits} bits."),
+            },
+            contextMenu: {
+                SelectedDataDisplay: "Addressed Data Display",
             },
         },
         Register: {

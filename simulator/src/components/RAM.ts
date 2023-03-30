@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_EMPTY, displayValuesFromArray, strokeSingleLine } from "../drawutils"
+import { colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_EMPTY, displayValuesFromArray, formatWithRadix, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, EdgeTrigger, hexStringRepr, isAllZeros, isArray, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
+import { allBooleans, ArrayFillWith, binaryStringRepr, EdgeTrigger, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 
 
@@ -17,11 +17,13 @@ export const RAMDef =
             bits: typeOrUndefined(t.number),
             lines: typeOrUndefined(t.number),
             showContent: typeOrUndefined(t.boolean),
+            displayRadix: typeOrUndefined(t.number),
             trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
             content: typeOrUndefined(t.union([t.string, t.array(t.string)])),
         },
         valueDefaults: {
             showContent: true,
+            displayRadix: undefined as number | undefined,
             trigger: EdgeTrigger.rising,
         },
         params: {
@@ -101,6 +103,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
     public readonly numAddressBits: number
     public readonly numWords: number
     private _showContent: boolean
+    private _displayRadix: number | undefined
     private _trigger: EdgeTrigger = RAMDef.aults.trigger
     private _lastClock: LogicValue = Unknown
 
@@ -112,6 +115,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
         this.numWords = params.numWords
 
         this._showContent = saved?.showContent ?? (!this.canShowContent() ? false : RAMDef.aults.showContent)
+        this._displayRadix = saved?.displayRadix ?? RAMDef.aults.displayRadix
         this._trigger = saved?.trigger ?? RAMDef.aults.trigger
     }
 
@@ -122,6 +126,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
             lines: this.numWords === RAMDef.aults.lines ? undefined : this.numWords,
             ...super.toJSONBase(),
             showContent: (!this.canShowContent()) ? undefined : (this._showContent !== RAMDef.aults.showContent) ? this._showContent : undefined,
+            displayRadix: this._displayRadix !== RAMDef.aults.displayRadix ? this._displayRadix : undefined,
             trigger: (this._trigger !== RAMDef.aults.trigger) ? this._trigger : undefined,
             content: this.contentRepr(),
         }
@@ -233,6 +238,11 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
 
     protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx, { width, height }) => {
+
+            const mem = this.value.mem
+            const addr = this.currentAddress()
+            let contentBottom, labelCenter
+
             if (!this._showContent || !this.canShowContent() || this.editor.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
@@ -242,51 +252,88 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
                 g.font = `11px sans-serif`
                 const numWordsStr = this.numWords >= 1024 ? `${this.numWords / 1024}k` : this.numWords.toString()
                 g.fillText(`${numWordsStr} × ${this.numDataBits} bits`, this.posX, this.posY + 12)
+                labelCenter = this.posX
+                contentBottom = this.posY + 25
             } else {
-                const mem = this.value.mem
-                const addr = this.currentAddress()
                 const isVertical = Orientation.isVertical(this.orient)
                 const canUseTwoCols = isVertical
-                const [availWidth, availHeight] = isVertical
-                    ? [height - 66, width - 35]
-                    : [width - 42, height - 40]
+                const addressedContentHeight = isDefined(this._displayRadix) ? 12 : 0
+                const contentCenterY = this.posY - addressedContentHeight / 2
+                const [availWidth, availHeight] = !isVertical
+                    ? [width - 42, height - 30 - addressedContentHeight]
+                    : [height - 66, width - 30 - addressedContentHeight]
                 const arrowWidth = 10
 
                 let useTwoCols = false
-                let cellHeight = Math.floor(availHeight * 2 / this.numWords) / 2
+                let cellHeight = Math.floor((availHeight - addressedContentHeight) * 2 / this.numWords) / 2
                 if (cellHeight <= 2 && canUseTwoCols) {
                     useTwoCols = true
-                    cellHeight = Math.floor(availHeight * 4 / this.numWords) / 2
+                    cellHeight = Math.floor((availHeight - addressedContentHeight) * 4 / this.numWords) / 2
                 }
                 if (!useTwoCols) {
                     const cellWidth = Math.floor((availWidth - arrowWidth) * 2 / this.numDataBits) / 2
-                    drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords, this.posX + 3, this.posY, cellWidth, cellHeight)
+                    labelCenter = this.posX + 3
+                    contentBottom = drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords, labelCenter, contentCenterY, cellWidth, cellHeight)
                 } else {
                     const cellWidth = Math.floor((availWidth / 2 - 2 * arrowWidth) * 2 / this.numDataBits) / 2
-                    drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords / 2, this.posX + 2 - 38, this.posY, cellWidth, cellHeight)
-                    drawMemoryCells(g, mem, this.numDataBits, addr, this.numWords / 2, this.numWords, this.posX + 2 + 38, this.posY, cellWidth, cellHeight)
+                    labelCenter = this.posX
+                    contentBottom = drawMemoryCells(g, mem, this.numDataBits, addr, 0, this.numWords / 2, this.posX + 2 - 38, contentCenterY, cellWidth, cellHeight)
+                    drawMemoryCells(g, mem, this.numDataBits, addr, this.numWords / 2, this.numWords, this.posX + 2 + 38, contentCenterY, cellWidth, cellHeight)
                 }
+            }
 
+            if (isDefined(this._displayRadix)) {
+                g.textAlign = "center"
+                g.textBaseline = "top"
+                const word = isUnknown(addr) ? Unknown : displayValuesFromArray(mem[addr], false)[1]
+                const repr = formatWithRadix(word, this._displayRadix, this.numDataBits, true)
+                g.fillStyle = COLOR_COMPONENT_BORDER
+                g.fillText(`${repr}`, labelCenter, contentBottom + 3)
             }
         })
     }
 
+    private doSetDisplayRadix(additionalReprRadix: number | undefined) {
+        this._displayRadix = additionalReprRadix
+        this.setNeedsRedraw("additional display radix changed")
+    }
+
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
-        const s = S.Components.Generic.contextMenu
+        const s = S.Components.RAM.contextMenu
+        const sg = S.Components.Generic.contextMenu
+        const ss = S.Components.OutputDisplay.contextMenu
+
+        const makeItemShowRadix = (radix: number | undefined, desc: string) => {
+            const icon = this._displayRadix === radix ? "check" : "none"
+            return ContextMenuData.item(icon, desc, () => this.doSetDisplayRadix(radix))
+        }
+
+        const additionalDisplayItems: [ContextMenuItemPlacement, ContextMenuItem] =
+            ["mid", ContextMenuData.submenu("eye", s.SelectedDataDisplay, [
+                makeItemShowRadix(undefined, ss.DisplayNone),
+                ContextMenuData.sep(),
+                makeItemShowRadix(2, ss.DisplayAsBinary),
+                makeItemShowRadix(16, ss.DisplayAsHexadecimal),
+                makeItemShowRadix(10, ss.DisplayAsDecimal),
+                makeItemShowRadix(-10, ss.DisplayAsSignedDecimal),
+                makeItemShowRadix(8, ss.DisplayAsOctal),
+            ])]
+
 
         const icon = this._showContent ? "check" : "none"
         const toggleShowContentItems: MenuItems =
             !this.canShowContent() ? [] : [
-                ["mid", ContextMenuData.item(icon, s.ShowContent,
+                ["mid", ContextMenuData.item(icon, sg.ShowContent,
                     () => this.doSetShowContent(!this._showContent))],
-                ["mid", ContextMenuData.sep()],
             ]
 
         return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
             ...toggleShowContentItems,
-            this.makeChangeParamsContextMenuItem("memlines", s.ParamNumWords, this.numWords, "lines"),
+            additionalDisplayItems,
+            ["mid", ContextMenuData.sep()],
+            this.makeChangeParamsContextMenuItem("memlines", sg.ParamNumWords, this.numWords, "lines"),
             this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numDataBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]
@@ -296,7 +343,7 @@ export class RAM extends ParametrizedComponentBase<RAMRepr, RAMValue> {
 RAMDef.impl = RAM
 
 
-function drawMemoryCells(g: CanvasRenderingContext2D, mem: LogicValue[][], numDataBits: number, addr: number | Unknown, start: number, end: number, centerX: number, centerY: number, cellWidth: number, cellHeight: number,) {
+function drawMemoryCells(g: CanvasRenderingContext2D, mem: LogicValue[][], numDataBits: number, addr: number | Unknown, start: number, end: number, centerX: number, centerY: number, cellWidth: number, cellHeight: number): number {
     const numCellsToDraw = end - start
     const contentTop = centerY - numCellsToDraw / 2 * cellHeight
     const contentLeft = centerX - numDataBits / 2 * cellWidth
@@ -344,4 +391,6 @@ function drawMemoryCells(g: CanvasRenderingContext2D, mem: LogicValue[][], numDa
         g.fillStyle = COLOR_COMPONENT_BORDER
         g.fill()
     }
+
+    return contentBottom
 }

@@ -213,7 +213,6 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
                 makeItemShowRadix(16, s.DisplayHex),
                 ContextMenuData.sep(),
                 ContextMenuData.text(s.ChangeDisplayDesc),
-
             ])],
             ["mid", makeItemShowAs(S.Components.Generic.contextMenu.ShowAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
             ["mid", ContextMenuData.sep()],
