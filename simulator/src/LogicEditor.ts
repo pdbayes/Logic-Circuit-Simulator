@@ -1370,6 +1370,7 @@ export class LogicEditor extends HTMLElement {
     public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
         const numDeleted = this.components.tryDeleteWhere(cond, onlyOne)
         if (numDeleted > 0) {
+            this.cursorMovementMgr.clearPopperIfNecessary()
             this.redrawMgr.addReason("component(s) deleted", null)
         }
         return numDeleted

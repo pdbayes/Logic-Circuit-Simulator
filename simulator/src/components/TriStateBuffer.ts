@@ -23,8 +23,6 @@ export const TriStateBufferDef =
         initialValue: () => HighImpedance as LogicValue,
     })
 
-
-
 type TriStateBufferRepr = Repr<typeof TriStateBufferDef>
 
 export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {

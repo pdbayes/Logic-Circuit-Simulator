@@ -46,6 +46,7 @@
 
 ### DONE
 
+ * Remove stale tooltips when deleting components
  * Replace input with clock and conversely
  * Make left buttons honor dark mode
  * Generic shared drawing code

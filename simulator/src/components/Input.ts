@@ -359,7 +359,7 @@ export class Input extends InputBase<InputRepr> {
 
     public override makeTooltip() {
         const s = S.Components.Input.tooltip
-        return tooltipContent(undefined, mods(s.title.expand({ numBits: 1 })))
+        return tooltipContent(undefined, mods(s.title.expand({ numBits: this.numBits })))
     }
 
     protected override shouldDrawBorder() {
