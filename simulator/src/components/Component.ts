@@ -1252,9 +1252,7 @@ export abstract class ParametrizedComponentBase<
             const isCurrent = currentValue === val
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => {
-                const newParams: Partial<TParams> = {}
-                newParams[fieldName] = val
-                this.replaceWithNewParams(newParams)
+                this.replaceWithNewParams({ [fieldName]: val } as Partial<TParams>)
             }
             return ContextMenuData.item(icon, itemCaption.expand({ val }), action)
         }
@@ -1263,6 +1261,19 @@ export abstract class ParametrizedComponentBase<
             values = (this._def.paramDefs[fieldName] as ParamDef<TVal>).range
         }
         return ["mid", ContextMenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
+    }
+
+    protected makeChangeBooleanParamsContextMenuItem<
+        TField extends (keyof TParams & keyof TParamDefs),
+    >(
+        caption: string,
+        currentValue: boolean,
+        fieldName: TField,
+    ): [ContextMenuItemPlacement, ContextMenuItem] {
+        const icon = currentValue ? "check" : "none"
+        return ["mid", ContextMenuData.item(icon, caption, () => {
+            this.replaceWithNewParams({ [fieldName]: !currentValue } as Partial<TParams>)
+        })]
     }
 
     protected replaceWithNewParams(newParams: Partial<TParams>): Component | undefined {

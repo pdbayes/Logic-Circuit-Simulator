@@ -1,8 +1,8 @@
 import { Branded } from "io-ts"
 import { ButtonDataset } from "./ComponentFactory"
+import { ALUDef } from "./components/ALU"
 import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
-import { ALUDef } from "./components/ALU"
 import { ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
 import { ComponentCategory, ParamDef, ParametrizedComponentDef, ParamsFromDefs } from "./components/Component"
@@ -163,7 +163,7 @@ const componentsMenu: Array<Section> = [{
         FlipflopTDef.button("FlipflopT", { visible: withButton }),
         FlipflopDDef.button("FlipflopD"),
 
-        RegisterDef.button({ bits: 4 }, "Register"),
+        RegisterDef.button({ bits: 4, inc: false }, "Register"),
         ShiftRegisterDef.button({ bits: 4 }, "ShiftRegister"),
         CounterDef.button({ bits: 4 }, "Counter"),
 

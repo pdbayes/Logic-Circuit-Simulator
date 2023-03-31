@@ -1,10 +1,10 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_EMPTY, COLOR_LABEL_OFF, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, EdgeTrigger, isDefined, isUndefined, isUnknown, LogicValue, typeOrNull, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, isUndefined, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
@@ -28,7 +28,6 @@ export const CounterDef =
         },
         validateParams: ({ bits }) => ({
             numBits: bits,
-            resetValue: Math.pow(2, bits),
         }),
         size: ({ numBits }) => ({
             gridWidth: numBits <= 6 ? 5 : numBits <= 8 ? 6 : 7,
@@ -54,11 +53,11 @@ export const CounterDef =
                 },
             }
         },
-        initialValue: (saved, { numBits, resetValue }) => {
+        initialValue: (saved, { numBits }) => {
             if (isUndefined(saved) || isUndefined(saved.count)) {
                 return Counter.emptyValue(numBits)
             }
-            return [Counter.decimalToNBits(saved.count, numBits, resetValue), false] as const
+            return [Counter.decimalToNBits(saved.count, numBits), false] as const
         },
     })
 
@@ -71,8 +70,7 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         return [ArrayFillWith<LogicValue>(false, numBits), false as LogicValue] as const
     }
 
-    public static decimalToNBits(value: number, width: number, resetValue: number): LogicValue[] {
-        value = value % resetValue
+    public static decimalToNBits(value: number, width: number): LogicValue[] {
         const binStr = value.toString(2).padStart(width, "0")
         const asBits = ArrayFillWith(false, width)
         for (let i = 0; i < width; i++) {
@@ -82,7 +80,6 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
     }
 
     public readonly numBits: number
-    public readonly resetValue: number
     private _trigger: EdgeTrigger
     private _lastClock: LogicValue = Unknown
     private _displayRadix: number | undefined
@@ -91,7 +88,6 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         super(editor, CounterDef.with(params), saved)
 
         this.numBits = params.numBits
-        this.resetValue = params.resetValue
 
         this._trigger = saved?.trigger ?? CounterDef.aults.trigger
         this._displayRadix = isUndefined(saved?.displayRadix) ? CounterDef.aults.displayRadix
@@ -136,14 +132,14 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         if (Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
             const [__, value] = displayValuesFromArray(this.value[0], false)
             if (isUnknown(value)) {
-                return [[Unknown, Unknown, Unknown, Unknown], Unknown]
+                return [ArrayFillWith(Unknown, this.numBits), Unknown]
             }
             const newValue = value + 1
-            if (newValue >= this.resetValue) {
+            if (newValue >= Math.pow(2, this.numBits)) {
                 return [ArrayFillWith(false, this.numBits), activeOverflowValue]
             }
 
-            return [Counter.decimalToNBits(newValue, this.numBits, this.resetValue), !activeOverflowValue]
+            return [Counter.decimalToNBits(newValue, this.numBits), !activeOverflowValue]
 
         } else {
             return [this.value[0], !activeOverflowValue]

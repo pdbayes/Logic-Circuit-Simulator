@@ -699,7 +699,7 @@ export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextE
 // DATA CONVERSIONS FOR DISPLAY PURPOSES
 //
 
-export function displayValuesFromArray(values: readonly LogicValue[], mostSignificantFirst: boolean): [string, number | Unknown] {
+export function displayValuesFromArray(values: readonly LogicValue[], mostSignificantFirst: boolean): [binaryStringRep: string, value: number | Unknown] {
     // lowest significant bit is the first bit
     let binaryStringRep = ""
     let hasUnset = false

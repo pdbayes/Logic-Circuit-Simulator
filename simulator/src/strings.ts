@@ -601,6 +601,9 @@ const Strings_fr = {
                 title: "Registre",
                 desc: template("Stocke ${numBits} bits."),
             },
+            contextMenu: {
+                ParamHasIncDec: "Avec incrémentaiton",
+            },
         },
         ShiftRegister: {
             tooltip: {
@@ -1235,6 +1238,9 @@ const Strings_en: Strings = {
             tooltip: {
                 title: "Register",
                 desc: template("Stores ${numBits} bits."),
+            },
+            contextMenu: {
+                ParamHasIncDec: "With Increment/Decrement",
             },
         },
         ShiftRegister: {

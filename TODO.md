@@ -3,7 +3,6 @@
 
 ## High priority
 
- * Incrementable register
  * Get key events also when multiple editors are on the same page
  * Copy-paste
  * Hide mouseover when mouse leaves web component boundaries
@@ -35,6 +34,7 @@
 
 ## Low priority
 
+ * Incrementable register
  * Alternative representation for push or toggle buttons
  * Allow repeating deletions with Cmd+Y
  * Edge detector?

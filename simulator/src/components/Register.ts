@@ -1,10 +1,11 @@
 import * as t from "io-ts"
-import { COLOR_COMPONENT_BORDER, GRID_STEP, useCompact } from "../drawutils"
-import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, GRID_STEP, displayValuesFromArray, useCompact } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { allBooleans, ArrayFillWith, binaryStringRepr, EdgeTrigger, hexStringRepr, isAllZeros, isUndefined, LogicValue, typeOrUndefined, Unknown, wordFromBinaryOrHexRepr } from "../utils"
-import { defineAbstractParametrizedComponent, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, NodesIn, NodesOut, param, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams } from "./Component"
+import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
+import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { Counter } from "./Counter"
 import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
@@ -35,7 +36,7 @@ export const RegisterBaseDef =
             gridHeight: Math.max(16, 5 + numBits),
         }),
         makeNodes: ({ numBits, gridHeight }) => {
-            const bottomOffset = Math.ceil((gridHeight + 1) / 2)
+            const bottomOffset = (gridHeight + 1) / 2
             const clockYOffset = bottomOffset - 2
             const topOffset = -bottomOffset
             const s = S.Components.Generic
@@ -83,7 +84,7 @@ export abstract class RegisterBase<
     protected _lastClock: LogicValue = Unknown
 
     protected constructor(editor: LogicEditor, SubclassDef: typeof RegisterDef | typeof ShiftRegisterDef, params: RegisterBaseParams, saved?: TRepr) {
-        super(editor, SubclassDef.with(params) as any /* TODO */, saved)
+        super(editor, SubclassDef.with(params as any) as any /* TODO */, saved)
 
         this.numBits = params.numBits
 
@@ -174,6 +175,7 @@ export abstract class RegisterBase<
 
         return [
             this.makeChangeParamsContextMenuItem("outputs", s.ParamNumBits, this.numBits, "bits"),
+            ...this.makeRegisterSpecificContextMenuItems(),
             ["mid", ContextMenuData.sep()],
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
             ["mid", ContextMenuData.sep()],
@@ -182,18 +184,41 @@ export abstract class RegisterBase<
         ]
     }
 
+    protected makeRegisterSpecificContextMenuItems(): MenuItems {
+        return []
+    }
+
 }
 
 export const RegisterDef =
     defineParametrizedComponent("ic", "register", true, true, {
         variantName: ({ bits }) => `register-${bits}`,
         ...RegisterBaseDef,
+        repr: {
+            ...RegisterBaseDef.repr,
+            inc: typeOrUndefined(t.boolean),
+        },
+        params: {
+            bits: RegisterBaseDef.params.bits,
+            inc: param(false, [false, true]),
+        },
+        validateParams: ({ bits, inc }) => ({
+            numBits: bits,
+            hasIncDec: inc,
+        }),
         makeNodes: (params, defaults) => {
             const base = RegisterBaseDef.makeNodes(params, defaults)
+            const baseClear = base.ins.Clr
+            const bottomOffset = base.ins.Clr[1]
             return {
                 ins: {
                     ...base.ins,
                     D: groupVertical("w", -5, 0, params.numBits),
+                    ...(!params.hasIncDec ? {} : {
+                        Clr: [2, bottomOffset, "s", baseClear[3], baseClear[4]], // move Clr to the right
+                        Inc: [-2, bottomOffset, "s"],
+                        Dec: [0, bottomOffset, "s"],
+                    }),
                 },
                 outs: base.outs,
             }
@@ -205,13 +230,17 @@ export type RegisterParams = ResolvedParams<typeof RegisterDef>
 
 export class Register extends RegisterBase<RegisterRepr> {
 
+    public readonly hasIncDec: boolean
+
     public constructor(editor: LogicEditor, params: RegisterParams, saved?: RegisterRepr) {
         super(editor, RegisterDef, params, saved)
+        this.hasIncDec = params.hasIncDec
     }
 
     public toJSON() {
         return {
             type: "register" as const,
+            inc: this.hasIncDec === RegisterDef.aults.inc ? undefined : this.hasIncDec,
             ...this.toJSONBase(),
         }
     }
@@ -225,6 +254,41 @@ export class Register extends RegisterBase<RegisterRepr> {
     }
 
     public makeStateAfterClock(): LogicValue[] {
+        const inc = this.inputs.Inc?.value ?? false
+        const dec = this.inputs.Dec?.value ?? false
+        if (isUnknown(inc) || isUnknown(dec) || isHighImpedance(inc) || isHighImpedance(dec)) {
+            return ArrayFillWith(false, this.numBits)
+        }
+        if (inc || dec) {
+            if (inc && dec) {
+                // no change
+                return this.value
+            }
+
+            // inc or dec
+            const [__, val] = displayValuesFromArray(this.value, false)
+            if (isUnknown(val)) {
+                return ArrayFillWith(Unknown, this.numBits)
+            }
+
+            let newVal: number
+            if (inc) {
+                // increment
+                newVal = val + 1
+                if (newVal >= 2 ** this.numBits) {
+                    return ArrayFillWith(false, this.numBits)
+                }
+            } else {
+                // decrement
+                newVal = val - 1
+                if (newVal < 0) {
+                    return ArrayFillWith(true, this.numBits)
+                }
+            }
+            return Counter.decimalToNBits(newVal, this.numBits)
+        }
+
+        // else, just a regular load from D
         return this.inputValues(this.inputs.D)
     }
 
@@ -236,6 +300,13 @@ export class Register extends RegisterBase<RegisterRepr> {
         g.fillText("Reg.", this.posX, this.posY - 8)
         g.font = `11px sans-serif`
         g.fillText(`${this.numBits} bits`, this.posX, this.posY + 10)
+    }
+
+    protected override makeRegisterSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.Register.contextMenu
+        return [
+            this.makeChangeBooleanParamsContextMenuItem(s.ParamHasIncDec, this.hasIncDec, "inc"),
+        ]
     }
 
 }
