@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle, useCompact } from "../drawutils"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -93,13 +93,8 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
     private doDrawSingle(g: CanvasRenderingContext2D, ctx: DrawContext, input: NodeIn) {
         drawWireLineToComponent(g, input, this.posX, this.posY)
 
-        if (ctx.isMouseOver) {
-            g.strokeStyle = COLOR_MOUSE_OVER
-            g.fillStyle = COLOR_MOUSE_OVER
-        } else {
-            g.strokeStyle = COLOR_COMPONENT_BORDER
-            g.fillStyle = COLOR_COMPONENT_BORDER
-        }
+        g.strokeStyle = ctx.borderColor
+        g.fillStyle = ctx.borderColor
         g.beginPath()
         triangle(g,
             this.posX - INPUT_OUTPUT_DIAMETER / 2 - 5, this.posY - 5,
@@ -143,7 +138,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
         // cells
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
-        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.strokeStyle = drawMouseOver ? ctx.borderColor : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
         for (let i = 0; i < this.numBits; i++) {

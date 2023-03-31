@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, PATTERN_STRIPED_GRAY } from "../drawutils"
+import { circle, ColorString, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, PATTERN_STRIPED_GRAY } from "../drawutils"
 import { asValue, b, cls, div, emptyMod, Modifier, ModifierObject, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -168,7 +168,7 @@ export abstract class GateBase<
             const frameWidth = 2
             const frameMargin = 2
             g.lineWidth = frameWidth
-            g.strokeStyle = COLOR_MOUSE_OVER
+            g.strokeStyle = ctx.borderColor
             g.beginPath()
             g.rect(
                 left - frameWidth - frameMargin,

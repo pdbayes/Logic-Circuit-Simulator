@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, inRect, triangle, useCompact } from "../drawutils"
+import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, inRect, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
@@ -84,8 +84,8 @@ export abstract class InputBase<
             const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
 
             if (drawMouseOver) {
-                g.strokeStyle = COLOR_MOUSE_OVER
-                g.fillStyle = COLOR_MOUSE_OVER
+                g.strokeStyle = ctx.borderColor
+                g.fillStyle = ctx.borderColor
             } else {
                 g.strokeStyle = COLOR_COMPONENT_BORDER
                 g.fillStyle = COLOR_COMPONENT_BORDER
@@ -136,7 +136,7 @@ export abstract class InputBase<
 
         // cells
         const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
-        g.strokeStyle = drawMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.strokeStyle = drawMouseOver ? ctx.borderColor : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
         for (let i = 0; i < this.numBits; i++) {

@@ -107,6 +107,7 @@ export type DrawParams = {
     currentSelection: EditorSelection | undefined,
     highlightedItems: HighlightedItems | undefined,
     highlightColor: string | undefined,
+    anythingMoving: boolean,
 }
 export class LogicEditor extends HTMLElement {
 
@@ -1908,6 +1909,7 @@ export class LogicEditor extends HTMLElement {
             highlightedItems,
             highlightColor,
             currentSelection: undefined,
+            anythingMoving: this.moveMgr.areDrawablesMoving(),
         }
         const currentSelection = this.cursorMovementMgr.currentSelection
         drawParams.currentSelection = currentSelection

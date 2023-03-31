@@ -1,6 +1,6 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { GRID_STEP, inRect } from "../drawutils"
+import { ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
@@ -11,6 +11,7 @@ export interface DrawContext {
     g: CanvasRenderingContext2D
     drawParams: DrawParams
     isMouseOver: boolean
+    borderColor: ColorString
     inNonTransformedFrame(f: (ctx: DrawContextExt) => unknown): void
 }
 
@@ -54,6 +55,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
         public readonly g: CanvasRenderingContext2D,
         public readonly drawParams: DrawParams,
         public readonly isMouseOver: boolean,
+        public readonly borderColor: ColorString,
     ) {
         this.entranceTransform = g.getTransform()
         this.entranceTransformInv = this.entranceTransform.inverse()
@@ -104,7 +106,14 @@ export abstract class Drawable {
 
     public draw(g: CanvasRenderingContext2D, drawParams: DrawParams): void {
         const inSelectionRect = drawParams.currentSelection?.isSelected(this) ?? false
-        const ctx = new _DrawContextImpl(this, g, drawParams, this === drawParams.currentMouseOverComp || inSelectionRect)
+        const isMouseOver = this === drawParams.currentMouseOverComp || inSelectionRect
+        const borderColor = !isMouseOver
+            ? COLOR_COMPONENT_BORDER
+            : drawParams.anythingMoving && this.lockPos
+                ? COLOR_MOUSE_OVER_DANGER
+                : COLOR_MOUSE_OVER
+
+        const ctx = new _DrawContextImpl(this, g, drawParams, isMouseOver, borderColor)
         this.doDraw(g, ctx)
         ctx.exit()
     }
@@ -118,6 +127,10 @@ export abstract class Drawable {
     public abstract isOver(x: number, y: number): boolean
 
     public abstract isInRect(rect: DOMRect): boolean
+
+    public get lockPos(): boolean {
+        return false
+    }
 
     public get cursorWhenMouseover(): string | undefined {
         return undefined
@@ -312,7 +325,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._posY
     }
 
-    public get lockPos() {
+    public override get lockPos() {
         return this._lockPos
     }
 

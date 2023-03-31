@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
 import { LogicEditor } from "../LogicEditor"
@@ -200,7 +200,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
         // outline
         g.lineWidth = 3
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.strokeStyle = ctx.borderColor
         g.stroke(outline)
 
     }
