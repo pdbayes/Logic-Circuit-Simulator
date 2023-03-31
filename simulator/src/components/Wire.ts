@@ -1,13 +1,13 @@
 import { Bezier, Offset } from "bezier-js"
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, NodeStyle, strokeAsWireLine, WAYPOINT_DIAMETER, WIRE_WIDTH } from "../drawutils"
-import { span, style, title } from "../htmlgen"
 import { DrawParams, LogicEditor } from "../LogicEditor"
-import { S } from "../strings"
 import { Timestamp } from "../Timeline"
-import { InteractionResult, isArray, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
+import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
+import { span, style, title } from "../htmlgen"
+import { S } from "../strings"
+import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
-import { ContextMenuData, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, DrawContext, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
+import { ContextMenuData, DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 import { Passthrough, PassthroughDef } from "./Passthrough"
 
@@ -522,8 +522,7 @@ export class Wire extends Drawable {
         if (isDefined(this._waypointBeingDragged)) {
             this._waypointBeingDragged.mouseDragged(e)
         } else {
-            const selectionSize = this.editor.cursorMovementMgr.currentSelection?.previouslySelectedElements.size ?? 0
-            if (selectionSize === 0) {
+            if (this.editor.cursorMovementMgr.currentSelectionEmpty()) {
                 const waypoint = this.addWaypointFrom(e)
                 this._waypointBeingDragged = waypoint
                 waypoint.mouseDown(e)

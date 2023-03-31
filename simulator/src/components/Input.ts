@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, inRect, triangle, useCompact } from "../drawutils"
-import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, triangle, useCompact } from "../drawutils"
+import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayClampOrPad, ArrayFillWith, HighImpedance, isArray, isDefined, isNumber, isUndefined, LogicValue, LogicValueRepr, Mode, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
+import { ArrayClampOrPad, ArrayFillWith, HighImpedance, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
-import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, ExtractParamDefs, ExtractParams, groupVertical, InstantiatedComponentDef, NodesIn, NodesOut, param, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef } from "./Component"
+import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -408,6 +408,7 @@ export class Input extends InputBase<InputRepr> {
         if (this.editor.mode !== Mode.STATIC
             && this._isPushButton
             && !this._isConstant
+            && this.editor.cursorMovementMgr.currentSelectionEmpty()
             && (i = this.clickedBitIndex(e)) !== -1) {
             this.doSetValueChangingBit(i, v)
         }
