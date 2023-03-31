@@ -1329,7 +1329,7 @@ export abstract class ParametrizedComponentBase<
 // Node definition helpers
 //
 
-export function group<TDescArr extends readonly NodeDescInGroup[]>(orient: Orientation, nodes: TDescArr) {
+export function group<const TDescArr extends readonly NodeDescInGroup[]>(orient: Orientation, nodes: TDescArr) {
     return FixedArrayMap(nodes, ([x, y, name]) => [x, y, orient, name] as const)
 }
 
