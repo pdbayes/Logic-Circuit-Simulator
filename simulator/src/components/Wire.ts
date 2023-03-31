@@ -17,7 +17,9 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
     public static get Repr() {
         return t.union([
-            t.tuple([t.number, t.number, t.keyof(Orientations_)]), // alternative with more fields first
+            // alternatives with more fields first
+            t.tuple([t.number, t.number, t.keyof(Orientations_), t.partial({ lockPos: t.boolean })]),
+            t.tuple([t.number, t.number, t.keyof(Orientations_)]),
             t.tuple([t.number, t.number]),
         ], "Wire")
     }
@@ -28,6 +30,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         }
         return {
             pos: [saved[0], saved[1]],
+            lockPos: saved[3]?.lockPos,
             orient: saved[2],
             ref: undefined,
         }
@@ -42,11 +45,13 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public toJSON(): WaypointRepr {
-        if (this.orient === Orientation.default) {
-            return [this.posX, this.posY]
-        } else {
+        if (this.lockPos) {
+            return [this.posX, this.posY, this.orient, { lockPos: true }]
+        }
+        if (this.orient !== Orientation.default) {
             return [this.posX, this.posY, this.orient]
         }
+        return [this.posX, this.posY]
     }
 
     public get unrotatedWidth(): number {
@@ -62,7 +67,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public override get cursorWhenMouseover() {
-        return "grab"
+        return this.lockPos ? undefined : "grab"
     }
 
     public getPrevAndNextAnchors(): [DrawableWithPosition, DrawableWithPosition] {
@@ -105,7 +110,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
     public override makeContextMenu(): ContextMenuData {
         return [
-            this.makeChangeOrientationContextMenuItem(),
+            ...this.makeOrientationAndPosMenuItems().map(it => it[1]),
             ContextMenuData.sep(),
             ContextMenuData.item("trash", "Supprimer", () => {
                 this.removeFromParent()

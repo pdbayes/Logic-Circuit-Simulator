@@ -3,20 +3,19 @@
 
 ## High priority
 
+ * Incrementable register
  * Get key events also when multiple editors are on the same page
  * Copy-paste
  * Hide mouseover when mouse leaves web component boundaries
- * High-Z bus logic
  * Adder orientation
- * Lock position
  * Prevent click event if right-click and when dragging
  * More consistently set things dirty
 
 
 ## Medium priority
 
- * Incrementable register
  * Load/save RAM/ROM contents via file and editor
+ * High-Z bus logic
  * ROM
  * Mnemonic in context menu
  * Undo/redo as buttons
@@ -50,6 +49,7 @@
 
 ### DONE
 
+ * Lock position
  * Show selected RAM contents
  * Draw n-x-1 mux/demux compactly
  * Remove stale tooltips when deleting components

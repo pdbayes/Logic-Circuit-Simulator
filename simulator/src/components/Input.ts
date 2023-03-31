@@ -345,7 +345,7 @@ export class Input extends InputBase<InputRepr> {
             return "not-allowed"
         }
         if (this._isConstant) {
-            if (mode >= Mode.DESIGN) {
+            if (mode >= Mode.DESIGN && !this.lockPos) {
                 // we can still move it
                 return "grab"
             } else {

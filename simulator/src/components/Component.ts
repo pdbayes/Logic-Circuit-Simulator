@@ -1,5 +1,5 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, COLOR_MOUSE_OVER, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, shouldShowNode, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, shouldShowNode, useCompact } from "../drawutils"
 import { IconName, ImageName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
@@ -782,7 +782,7 @@ export abstract class ComponentBase<
 
         // outline
         g.lineWidth = 3
-        g.strokeStyle = ctx.isMouseOver ? COLOR_MOUSE_OVER : COLOR_COMPONENT_BORDER
+        g.strokeStyle = !ctx.isMouseOver ? COLOR_COMPONENT_BORDER : (this.lockPos && this.editor.moveMgr.areDrawablesMoving()) ? COLOR_MOUSE_OVER_DANGER : COLOR_MOUSE_OVER
         g.stroke(bounds.outline)
 
         // labels
@@ -1041,7 +1041,7 @@ export abstract class ComponentBase<
     }
 
     public override get cursorWhenMouseover(): string | undefined {
-        return "grab"
+        return this.lockPos ? undefined : "grab"
     }
 
     public override makeContextMenu(): ContextMenuData {
@@ -1083,13 +1083,8 @@ export abstract class ComponentBase<
                 ["end", ContextMenuData.sep()],
             ]
 
-        const rotateItems: MenuItems =
-            !this.canRotate() ? [] : [
-                ["start", this.makeChangeOrientationContextMenuItem()],
-            ]
-
         return [
-            ...rotateItems,
+            ...this.makeOrientationAndPosMenuItems(),
             ...setRefItems,
             ["end", this.makeDeleteContextMenuItem()],
         ]

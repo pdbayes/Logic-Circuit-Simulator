@@ -190,6 +190,7 @@ const Strings_fr = {
 
                 Orientation: "Orientation",
                 ChangeOrientationDesc: "Changez l’orientation avec Commande + double-clic sur le composant",
+                LockPosition: "Verrouiller la position",
                 ShowAsUnknown: "Afficher comme inconnu",
 
                 ForceOutputSingle: "Forcer la sortie",
@@ -824,6 +825,7 @@ const Strings_en: Strings = {
 
                 Orientation: "Orientation",
                 ChangeOrientationDesc: "Change the orientation with Command + double click on the component",
+                LockPosition: "Lock Position",
                 ShowAsUnknown: "Show As Unknown",
 
                 ForceOutputSingle: "Force Output",

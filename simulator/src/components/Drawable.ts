@@ -258,6 +258,7 @@ export const Orientation = {
 // for compact JSON repr, pos is an array
 export const PositionSupportRepr = t.type({
     pos: t.readonly(t.tuple([t.number, t.number])),
+    lockPos: typeOrUndefined(t.boolean),
     orient: typeOrUndefined(t.keyof(Orientations_)),
     ref: typeOrUndefined(t.string),
 })
@@ -269,6 +270,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     private _posX: number
     private _posY: number
+    private _lockPos: boolean
     private _orient: Orientation
 
     protected constructor(editor: LogicEditor, saved?: PositionSupportRepr) {
@@ -282,11 +284,13 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             this.ref = saved.ref
             this._posX = saved.pos[0]
             this._posY = saved.pos[1]
+            this._lockPos = saved.lockPos ?? false
             this._orient = saved.orient ?? Orientation.default
         } else {
             // creating new object
             this._posX = Math.max(0, this.editor.mouseX)
             this._posY = this.editor.mouseY
+            this._lockPos = false
             this._orient = Orientation.default
         }
     }
@@ -294,6 +298,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     protected toJSONBase(): PositionSupportRepr {
         return {
             pos: [this.posX, this.posY] as const,
+            lockPos: !this._lockPos ? undefined : true,
             orient: this.orient === Orientation.default ? undefined : this.orient,
             ref: this.ref,
         }
@@ -307,6 +312,10 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return this._posY
     }
 
+    public get lockPos() {
+        return this._lockPos
+    }
+
     public isInRect(rect: DOMRect) {
         return this._posX >= rect.left && this._posX <= rect.right && this._posY >= rect.top && this._posY <= rect.bottom
     }
@@ -317,6 +326,15 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public canRotate() {
         return true
+    }
+
+    public canLockPos() {
+        return true
+    }
+
+    public doSetLockPos(lockPos: boolean) {
+        this._lockPos = lockPos
+        // no need to redraw
     }
 
     public doSetOrient(newOrient: Orientation) {
@@ -370,21 +388,33 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         return undefined
     }
 
-    protected makeChangeOrientationContextMenuItem(): ContextMenuItem {
+    protected makeOrientationAndPosMenuItems(): MenuItems {
         const s = S.Components.Generic.contextMenu
-        return ContextMenuData.submenu("direction", s.Orientation, [
-            ...Orientations.values.map(orient => {
-                const isCurrent = this._orient === orient
-                const icon = isCurrent ? "check" : "none"
-                const caption = S.Orientations[orient]
-                const action = isCurrent ? () => undefined : () => {
-                    this.doSetOrient(orient)
-                }
-                return ContextMenuData.item(icon, caption, action)
-            }),
-            ContextMenuData.sep(),
-            ContextMenuData.text(s.ChangeOrientationDesc),
-        ])
+
+        const rotateItem: MenuItems = !this.canRotate() ? [] : [
+            ["start", ContextMenuData.submenu("direction", s.Orientation, [
+                ...Orientations.values.map(orient => {
+                    const isCurrent = this._orient === orient
+                    const icon = isCurrent ? "check" : "none"
+                    const caption = S.Orientations[orient]
+                    const action = isCurrent ? () => undefined : () => {
+                        this.doSetOrient(orient)
+                    }
+                    return ContextMenuData.item(icon, caption, action)
+                }),
+                ContextMenuData.sep(),
+                ContextMenuData.text(s.ChangeOrientationDesc),
+            ])],
+        ]
+
+        const lockPosItem: MenuItems = !this.canLockPos() ? [] : [
+            ["start", ContextMenuData.item(this.lockPos ? "check" : "none", s.LockPosition, () => {
+                this.doSetLockPos(!this.lockPos)
+            })],
+        ]
+
+        return [...rotateItem, ...lockPosItem]
+
     }
 
 }
@@ -411,6 +441,9 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     protected tryStartMoving(e: MouseEvent | TouchEvent) {
+        if (this.lockPos) {
+            return
+        }
         if (isUndefined(this._isMovingWithContext)) {
             const [offsetX, offsetY] = this.editor.offsetXY(e)
             this._isMovingWithContext = {
@@ -423,6 +456,9 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     protected updateWhileMoving(e: MouseEvent | TouchEvent) {
+        if (this.lockPos) {
+            return
+        }
         this.updatePositionIfNeeded(e)
         this.editor.moveMgr.setDrawableMoving(this)
     }
