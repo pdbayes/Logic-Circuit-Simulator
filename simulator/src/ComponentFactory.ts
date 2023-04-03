@@ -1,9 +1,9 @@
 import { LogicEditor } from "./LogicEditor"
 import { isDefined, isString, isUndefined } from "./utils"
 
+import { ALUDef } from "./components/ALU"
 import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
-import { ALUDef } from "./components/ALU"
 import { ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
 import { Component, ComponentCategory, Params } from "./components/Component"
@@ -34,6 +34,7 @@ import { OutputDisplayDef } from "./components/OutputDisplay"
 import { OutputShiftBufferDef } from "./components/OutputShiftBuffer"
 import { PassthroughDef } from "./components/Passthrough"
 import { RAMDef } from "./components/RAM"
+import { ROMDef } from "./components/ROM"
 import { RegisterDef } from "./components/Register"
 import { ShiftRegisterDef } from "./components/ShiftRegister"
 import { SwitchedInverterDef } from "./components/SwitchedInverter"
@@ -118,6 +119,7 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     FlipflopDDef,
     RegisterDef,
     ShiftRegisterDef,
+    ROMDef,
     RAMDef,
     CounterDef,
     Decoder7SegDef,

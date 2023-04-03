@@ -124,6 +124,7 @@ const Strings_fr = {
             Register: ["Registre", "Registre"],
             ShiftRegister: ["Registre à décalage", "Reg. déc."],
             RAM: ["RAM (mémoire vive)", "RAM"],
+            ROM: ["ROM (mémoire morte)", "ROM"],
 
             Counter: ["Compteur 4 bits", "Compteur"],
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
@@ -594,6 +595,14 @@ const Strings_fr = {
             },
             contextMenu: {
                 SelectedDataDisplay: "Affichage des données addressées",
+                EditContent: "Éditer le contenu…",
+                EditContentPrompt: "Tapez le nouveau contenu de la mémoire en séparant les lignes par des espaces. S’il y a autant de caractères que de bits, les données sont lues comme étant du binaire, sinon, comme de l'hexadécimal.",
+            },
+        },
+        ROM: {
+            tooltip: {
+                title: "ROM (mémoire morte)",
+                desc: template("Stocke ${numWords} lignes de ${numDataBits} bits."),
             },
         },
         Register: {
@@ -762,6 +771,7 @@ const Strings_en: Strings = {
             Register: ["Register", "Register"],
             ShiftRegister: ["Shift Register", "Shift Reg."],
             RAM: ["RAM Module", "RAM"],
+            ROM: ["ROM Module", "ROM"],
 
             Counter: ["4-Bit Counter", "Counter"],
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
@@ -1227,11 +1237,20 @@ const Strings_en: Strings = {
         },
         RAM: {
             tooltip: {
-                title: "RAM",
+                title: "RAM (Random-Access Memory)",
                 desc: template("Stores ${numWords} rows of ${numDataBits} bits."),
             },
             contextMenu: {
                 SelectedDataDisplay: "Addressed Data Display",
+                EditContent: "Edit Content…",
+                EditContentPrompt: "Type in the new memory content, separating lines with spaces. If there are as many characters as bits, the input is parsed as a binary string, and otherwise as a hexadecimal string.",
+
+            },
+        },
+        ROM: {
+            tooltip: {
+                title: "ROM (Read-Only Memory)",
+                desc: template("Stores ${numWords} rows of ${numDataBits} bits."),
             },
         },
         Register: {

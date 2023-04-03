@@ -20,6 +20,7 @@ import font from '../img/icons/font.icon.svg'; // @ts-ignore
 import force from '../img/icons/force.icon.svg'; // @ts-ignore
 import inputs from '../img/icons/inputs.icon.svg'; // @ts-ignore
 import link from '../img/icons/link.icon.svg'; // @ts-ignore
+import memcontent from '../img/icons/memcontent.icon.svg'; // @ts-ignore
 import memlines from '../img/icons/memlines.icon.svg'; // @ts-ignore
 import move from '../img/icons/move.icon.svg'; // @ts-ignore
 import none from '../img/icons/none.icon.svg'; // @ts-ignore
@@ -46,12 +47,12 @@ import wirestyle from '../img/icons/wirestyle.icon.svg'; // @ts-ignore
 
 
 // images
-import Adder from '../img/Adder.svg'; // @ts-ignore
-import AdderArray from '../img/AdderArray.svg'; // @ts-ignore
 import ALU from '../img/ALU.svg'; // @ts-ignore
 import AND from '../img/AND.svg'; // @ts-ignore
 import AND3 from '../img/AND3.svg'; // @ts-ignore
 import AND4 from '../img/AND4.svg'; // @ts-ignore
+import Adder from '../img/Adder.svg'; // @ts-ignore
+import AdderArray from '../img/AdderArray.svg'; // @ts-ignore
 import BUF from '../img/BUF.svg'; // @ts-ignore
 import Clock from '../img/Clock.svg'; // @ts-ignore
 import Comparator from '../img/Comparator.svg'; // @ts-ignore
@@ -98,12 +99,13 @@ import OutputShiftBuffer from '../img/OutputShiftBuffer.svg'; // @ts-ignore
 import Passthrough1 from '../img/Passthrough1.svg'; // @ts-ignore
 import PassthroughN from '../img/PassthroughN.svg'; // @ts-ignore
 import RAM from '../img/RAM.svg'; // @ts-ignore
+import ROM from '../img/ROM.svg'; // @ts-ignore
 import Register from '../img/Register.svg'; // @ts-ignore
 import ShiftRegister from '../img/ShiftRegister.svg'; // @ts-ignore
 import SwitchedInverter from '../img/SwitchedInverter.svg'; // @ts-ignore
 import TRI from '../img/TRI.svg'; // @ts-ignore
-import TriStateBufferArray from '../img/TriStateBufferArray.svg'; // @ts-ignore
 import TXA from '../img/TXA.svg'; // @ts-ignore
+import TriStateBufferArray from '../img/TriStateBufferArray.svg'; // @ts-ignore
 import XNOR from '../img/XNOR.svg'; // @ts-ignore
 import XNOR3 from '../img/XNOR3.svg'; // @ts-ignore
 import XNOR4 from '../img/XNOR4.svg'; // @ts-ignore
@@ -130,6 +132,7 @@ const icons = {
     force,
     inputs,
     link,
+    memcontent,
     memlines,
     move,
     none,
@@ -209,6 +212,7 @@ const images = {
     Passthrough1,
     PassthroughN,
     RAM,
+    ROM,
     Register,
     ShiftRegister,
     SwitchedInverter,

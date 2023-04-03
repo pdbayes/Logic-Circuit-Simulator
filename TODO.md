@@ -13,9 +13,9 @@
 
 ## Medium priority
 
+ * Swap ROM for RAM and inversely
  * Load/save RAM/ROM contents via file and editor
  * High-Z bus logic
- * ROM
  * Mnemonic in context menu
  * Undo/redo as buttons
  * Custom component creation
@@ -49,6 +49,7 @@
 
 ### DONE
 
+ * ROM
  * Lock position
  * Show selected RAM contents
  * Draw n-x-1 mux/demux compactly

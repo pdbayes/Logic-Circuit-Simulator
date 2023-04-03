@@ -32,6 +32,7 @@ import { OutputDisplayDef } from "./components/OutputDisplay"
 import { OutputShiftBufferDef } from "./components/OutputShiftBuffer"
 import { PassthroughDef } from "./components/Passthrough"
 import { RAMDef } from "./components/RAM"
+import { ROMDef } from "./components/ROM"
 import { RegisterDef } from "./components/Register"
 import { ShiftRegisterDef } from "./components/ShiftRegister"
 import { SwitchedInverterDef } from "./components/SwitchedInverter"
@@ -168,6 +169,7 @@ const componentsMenu: Array<Section> = [{
         CounterDef.button({ bits: 4 }, "Counter"),
 
         RAMDef.button({ lines: 16, bits: 4 }, "RAM"),
+        ROMDef.button({ lines: 16, bits: 4 }, "ROM", { visible: withButton }),
 
         Decoder7SegDef.button("Decoder7Seg"),
         Decoder16SegDef.button("Decoder16Seg", { visible: withButton }),
