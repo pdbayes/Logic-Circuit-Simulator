@@ -249,10 +249,14 @@ const Strings_fr = {
             },
         },
         ALU: {
-            add: tuple("+", "Addition"),
-            sub: tuple("–", "Soustraction"),
-            and: tuple("ET", "ET"),
-            or: tuple("OU", "OU"),
+            ADD: tuple("+", "Addition"),
+            SUB: tuple("–", "Soustraction"),
+            AND: tuple("ET", "ET"),
+            OR: tuple("OU", "OU"),
+            "A+1": tuple("A+1", "A + 1"),
+            "A-1": tuple("A–1", "A – 1"),
+            XOR: tuple("OU-X", "OU-Exclusif"),
+            NOT: tuple("NOT", "Inverseur de A"),
             InputCinDesc: "retenue d’entrée",
             OutputCoutDesc: "retenue de sortie",
             tooltip: {
@@ -263,6 +267,7 @@ const Strings_fr = {
             },
             contextMenu: {
                 toggleShowOp: "Afficher l’opération",
+                ParamUseExtendedOpcode: "Utiliser opérations étendues",
             },
         },
         Clock: {
@@ -896,10 +901,14 @@ const Strings_en: Strings = {
             },
         },
         ALU: {
-            add: tuple("+", "Addition"),
-            sub: tuple("–", "Subtraction"),
-            and: tuple("AND", "AND"),
-            or: tuple("OR", "OR"),
+            ADD: tuple("+", "Addition"),
+            SUB: tuple("–", "Subtraction"),
+            AND: tuple("AND", "AND"),
+            OR: tuple("OR", "OR"),
+            "A+1": tuple("A+1", "A + 1"),
+            "A-1": tuple("A–1", "A – 1"),
+            XOR: tuple("XOR", "Exclusive-OR"),
+            NOT: tuple("NOT", "Inverter for A"),
             InputCinDesc: "input carry",
             OutputCoutDesc: "output carry",
             tooltip: {
@@ -910,6 +919,7 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 toggleShowOp: "Show Operation",
+                ParamUseExtendedOpcode: "Use Extended Opcode",
             },
         },
         Clock: {

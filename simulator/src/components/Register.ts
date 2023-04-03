@@ -4,7 +4,7 @@ import { COLOR_COMPONENT_BORDER, GRID_STEP, displayValuesFromArray, useCompact }
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
-import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param, paramBool } from "./Component"
 import { Counter } from "./Counter"
 import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
@@ -200,7 +200,7 @@ export const RegisterDef =
         },
         params: {
             bits: RegisterBaseDef.params.bits,
-            inc: param(false, [false, true]),
+            inc: paramBool(),
         },
         validateParams: ({ bits, inc }) => ({
             numBits: bits,

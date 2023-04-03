@@ -31,7 +31,7 @@ export const GateArrayDef =
         }),
         size: ({ numBits }) => ({
             gridWidth: 4, // constant
-            gridHeight: ALUDef.size({ numBits }).gridHeight, // mimic ALU
+            gridHeight: ALUDef.size({ numBits, usesExtendedOpcode: false }).gridHeight, // mimic ALU
         }),
         makeNodes: ({ numBits }) => {
             const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)

@@ -20,7 +20,7 @@
  * Undo/redo as buttons
  * Custom component creation
  * (Address) decoder: 2, 3, 4 bit versions
- * Add mouseovers to new components
+ * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
     * standalone
       * no long term storage

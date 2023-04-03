@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
 import { doALUOp } from "./ALU"
-import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { ParametrizedComponentBase, Repr, ResolvedParams, Value, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, MenuItems } from "./Drawable"
 import { GateArrayDef } from "./GateArray"
 
@@ -84,7 +84,7 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
         const a = this.inputValues(this.inputs.A)
         const b = this.inputValues(this.inputs.B)
         const cin = this.inputs.Cin.value
-        return doALUOp("add", a, b, cin)
+        return doALUOp("ADD", a, b, cin)
     }
 
     protected override propagateValue(newValue: AdderArrayValue) {

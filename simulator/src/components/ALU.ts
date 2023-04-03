@@ -1,11 +1,12 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
+import { ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { Gate1Types, Gate2toNTypes } from "./GateTypes"
 
 
 export const ALUDef =
@@ -14,6 +15,7 @@ export const ALUDef =
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
+            ext: typeOrUndefined(t.boolean),
             showOp: typeOrUndefined(t.boolean),
         },
         valueDefaults: {
@@ -21,27 +23,31 @@ export const ALUDef =
         },
         params: {
             bits: param(4, [2, 4, 8, 16]),
+            ext: paramBool(), // has the extended opcode
         },
-        validateParams: ({ bits }) => ({
+        validateParams: ({ bits, ext }) => ({
             numBits: bits,
+            usesExtendedOpcode: ext,
         }),
         size: ({ numBits }) => ({
-            gridWidth: 6, // always enough
+            gridWidth: 7, // always enough
             gridHeight: 19 + Math.max(0, numBits - 8) * 2,
         }),
-        makeNodes: ({ numBits, gridHeight }) => {
+        makeNodes: ({ numBits, usesExtendedOpcode, gridHeight }) => {
             const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
             const bottom = (gridHeight + 1) / 2
             const top = -bottom
+            const cinX = usesExtendedOpcode ? -3 : -2
+            const numOpBits = usesExtendedOpcode ? 3 : 2
             return {
                 ins: {
-                    A: groupVertical("w", -4, -inputCenterY, numBits),
-                    B: groupVertical("w", -4, inputCenterY, numBits),
-                    Op: groupHorizontal("n", 1, top, 2),
-                    Cin: [-2, top, "n", `Cin (${S.Components.ALU.InputCinDesc})`],
+                    A: groupVertical("w", -4.5, -inputCenterY, numBits),
+                    B: groupVertical("w", -4.5, inputCenterY, numBits),
+                    Op: groupHorizontal("n", 1, top, numOpBits),
+                    Cin: [cinX, top, "n", `Cin (${S.Components.ALU.InputCinDesc})`],
                 },
                 outs: {
-                    S: groupVertical("e", 4, 0, numBits),
+                    S: groupVertical("e", 4.5, 0, numBits),
                     V: [0, bottom, "s", "V (oVerflow)"],
                     Z: [2, bottom, "s", "Z (Zero)"],
                     Cout: [-2, bottom, "s", `Cout (${S.Components.ALU.OutputCoutDesc})`],
@@ -59,7 +65,9 @@ export type ALUParams = ResolvedParams<typeof ALUDef>
 
 type ALUValue = Value<typeof ALUDef>
 
-export type ALUOp = "add" | "sub" | "and" | "or"
+const ALUOps = ["ADD", "SUB", "OR", "AND", "A+1", "A-1", "XOR", "NOT"] as const
+//               000    001   010    011    100    101    110    111
+export type ALUOp = typeof ALUOps[number]
 export const ALUOp = {
     shortName(op: ALUOp): string {
         return S.Components.ALU[op][0]
@@ -72,12 +80,14 @@ export const ALUOp = {
 export class ALU extends ParametrizedComponentBase<ALURepr> {
 
     public readonly numBits: number
+    public readonly usesExtendedOpcode: boolean
     private _showOp: boolean
 
     public constructor(editor: LogicEditor, params: ALUParams, saved?: ALURepr) {
         super(editor, ALUDef.with(params), saved)
 
         this.numBits = params.numBits
+        this.usesExtendedOpcode = params.usesExtendedOpcode
 
         this._showOp = saved?.showOp ?? ALUDef.aults.showOp
     }
@@ -86,6 +96,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         return {
             type: "alu" as const,
             bits: this.numBits === ALUDef.aults.bits ? undefined : this.numBits,
+            ext: this.usesExtendedOpcode === ALUDef.aults.ext ? undefined : this.usesExtendedOpcode,
             ...this.toJSONBase(),
             showOp: (this._showOp !== ALUDef.aults.showOp) ? this._showOp : undefined,
         }
@@ -101,35 +112,8 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     }
 
     public get op(): ALUOp | Unknown {
-        const op1 = this.inputs.Op[1].value
-        const op0 = this.inputs.Op[0].value
-        switch (op1) {
-            case false: // arithmetic
-                switch (op0) {
-                    case false: // 00
-                        return "add"
-                    case true: // 01
-                        return "sub"
-                    case Unknown:
-                    case HighImpedance:
-                        return Unknown
-                }
-                break
-            case true: // logic
-                switch (op0) {
-                    case false: // 10
-                        return "or" // opcode logic: "only one 1 needed"
-                    case true: // 11
-                        return "and"// opcode logic: "two 1s needed"
-                    case Unknown:
-                    case HighImpedance:
-                        return Unknown
-                }
-                break
-            case Unknown:
-            case HighImpedance:
-                return Unknown
-        }
+        const opIndex = displayValuesFromArray(this.inputValues(this.inputs.Op), false)[1]
+        return isUnknown(opIndex) ? Unknown : ALUOps[opIndex]
     }
 
     protected doRecalcValue(): ALUValue {
@@ -156,6 +140,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         const bounds = this.bounds()
         const { left, top, right, bottom } = bounds
+        const lowerTop = top + 2 * GRID_STEP
 
         // inputs
         for (const input of this.inputs.A) {
@@ -164,9 +149,10 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         for (const input of this.inputs.B) {
             drawWireLineToComponent(g, input, left, input.posYInParentTransform)
         }
-        drawWireLineToComponent(g, this.inputs.Op[1], this.inputs.Op[1].posXInParentTransform, top + 9)
-        drawWireLineToComponent(g, this.inputs.Op[0], this.inputs.Op[0].posXInParentTransform, top + 17)
-        drawWireLineToComponent(g, this.inputs.Cin, this.inputs.Cin.posXInParentTransform, top + 3)
+        for (const input of this.inputs.Op) {
+            drawWireLineToComponent(g, input, input.posXInParentTransform, lowerTop)
+        }
+        drawWireLineToComponent(g, this.inputs.Cin, this.inputs.Cin.posXInParentTransform, lowerTop)
 
         // outputs
         for (const output of this.outputs.S) {
@@ -183,7 +169,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
 
         g.beginPath()
         g.moveTo(left, top)
-        g.lineTo(right, top + 2 * GRID_STEP)
+        g.lineTo(right, lowerTop)
         g.lineTo(right, bottom - 2 * GRID_STEP)
         g.lineTo(left, bottom)
         g.lineTo(left, this.posY + 1 * GRID_STEP)
@@ -199,12 +185,17 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         this.drawGroupBox(g, this.outputs.S.group, bounds)
         // special Op group
         g.beginPath()
-        const opGroupLeft = this.inputs.Op[1].posXInParentTransform - 2
+        const opGroupHeight = 8
+        const opGroupLeft = this.inputs.Op[this.inputs.Op.length - 1].posXInParentTransform - 2
         const opGroupRight = this.inputs.Op[0].posXInParentTransform + 2
-        g.moveTo(opGroupLeft, top + 9)
-        g.lineTo(opGroupLeft, top + 17)
-        g.lineTo(opGroupRight, top + 25)
-        g.lineTo(opGroupRight, top + 19)
+        const [opGroupLeftTop, opGroupRightTop] = this.usesExtendedOpcode
+            ? [top + 8, top + 20]
+            : [top + 11, top + 18]
+
+        g.moveTo(opGroupLeft, opGroupLeftTop)
+        g.lineTo(opGroupRight, opGroupRightTop)
+        g.lineTo(opGroupRight, opGroupRightTop + opGroupHeight)
+        g.lineTo(opGroupLeft, opGroupLeftTop + opGroupHeight)
         g.closePath()
         g.fillStyle = COLOR_GROUP_SPAN
         g.fill()
@@ -215,13 +206,16 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
             g.font = "11px sans-serif"
 
             // bottom outputs
-            const carryHOffsetF = Orientation.isVertical(this.orient) ? 0 : 1
+            const isVertical = Orientation.isVertical(this.orient)
+            const carryHOffsetF = isVertical ? 0 : 1
             drawLabel(ctx, this.orient, "Z", "s", this.outputs.Z, bottom - 16)
             drawLabel(ctx, this.orient, "V", "s", this.outputs.V.posXInParentTransform + carryHOffsetF * 2, bottom - 10, this.outputs.V)
             drawLabel(ctx, this.orient, "Cout", "s", this.outputs.Cout.posXInParentTransform + carryHOffsetF * 4, bottom - 7, this.outputs.Cout)
 
             // top inputs
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform + carryHOffsetF * 2, top + 4, this.inputs.Cin)
+            const usesExtF = Number(this.usesExtendedOpcode)
+            const cinXOffset = isVertical ? 3 * usesExtF : 4 + usesExtF
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform + cinXOffset, top + 5 - 2 * Number(this.usesExtendedOpcode), this.inputs.Cin)
 
             g.font = "bold 11px sans-serif"
             drawLabel(ctx, this.orient, "Op", "n", this.inputs.Op, top + 14)
@@ -252,8 +246,9 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        const s = S.Components.ALU.contextMenu
         const icon = this._showOp ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, S.Components.ALU.contextMenu.toggleShowOp, () => {
+        const toggleShowOpItem = ContextMenuData.item(icon, s.toggleShowOp, () => {
             this.doSetShowOp(!this._showOp)
         })
 
@@ -261,6 +256,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
             ["mid", toggleShowOpItem],
             ["mid", ContextMenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
+            this.makeChangeBooleanParamsContextMenuItem(s.ParamUseExtendedOpcode, this.usesExtendedOpcode, "ext"),
             ["mid", ContextMenuData.sep()],
             ...this.makeForceOutputsContextMenuItem(),
         ]
@@ -290,7 +286,11 @@ export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicVa
     let cout: LogicValue = Unknown
 
     switch (op) {
-        case "add": {
+        // @ts-expect-error fallthrough
+        case "A+1":
+            b = [true, ...ArrayFillWith(false, width - 1)]
+        // fallthrough
+        case "ADD": {
             const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
                 const asNumber = (v: LogicValue) => v === true ? 1 : 0
                 const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
@@ -322,7 +322,11 @@ export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicVa
             break
         }
 
-        case "sub": {
+        // @ts-expect-error fallthrough
+        case "A-1":
+            b = [true, ...ArrayFillWith(false, b.length - 1)]
+        // fallthrough
+        case "SUB": {
             const toInt = (vs: readonly LogicValue[]): number | undefined => {
                 let s = 0
                 let col = 1
@@ -369,32 +373,25 @@ export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicVa
             break
         }
 
-        // below, we need the '=== true' and '=== false' parts
-        // to distinguish also the Unset case
-        case "and": {
+        case "NOT": {
+            // ignores b
+            const not = Gate1Types.props["NOT"].out
             for (let i = 0; i < width; i++) {
-                if (a[i] === false || b[i] === false) {
-                    y[i] = false
-                } else if (a[i] === true && b[i] === true) {
-                    y[i] = true
-                } else {
-                    y[i] = Unknown
-                }
+                y[i] = not([a[i]])
             }
             cout = false
             v = false
             break
         }
 
-        case "or": {
+        // below, we need the '=== true' and '=== false' parts
+        // to distinguish also the Unset case
+        case "AND":
+        case "OR":
+        case "XOR": {
+            const func = Gate2toNTypes.props[op].out
             for (let i = 0; i < width; i++) {
-                if (a[i] === true || b[i] === true) {
-                    y[i] = true
-                } else if (a[i] === false && b[i] === false) {
-                    y[i] = false
-                } else {
-                    y[i] = Unknown
-                }
+                y[i] = func([a[i], b[i]])
             }
             cout = false
             v = false

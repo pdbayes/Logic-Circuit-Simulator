@@ -154,7 +154,7 @@ const componentsMenu: Array<Section> = [{
         ComparatorDef.button("Comparator", { visible: withButton }),
 
         AdderArrayDef.button({ bits: 4 }, "AdderArray"),
-        ALUDef.button({ bits: 4 }, "ALU"),
+        ALUDef.button({ bits: 4, ext: false }, "ALU"),
 
         MuxDef.button({ from: 4, to: 2 }, "Mux"),
         DemuxDef.button({ from: 2, to: 4 }, "Demux"),

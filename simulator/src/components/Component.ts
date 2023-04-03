@@ -4,7 +4,7 @@ import { IconName, ImageName } from "../images"
 import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
 import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, DrawContext, DrawContextExt, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -1644,6 +1644,10 @@ export function param<T>(defaultValue: T, range?: T[]): ParamDef<T> {
         return new ParamDef(defaultValue, [], () => true)
     }
     return new ParamDef(defaultValue, range, val => range.includes(val as T))
+}
+
+export function paramBool(): ParamDef<boolean> {
+    return new ParamDef(false, [false, true], isBoolean)
 }
 
 export type ParamsFromDefs<TDefs extends Record<string, ParamDef<unknown>>> = {
