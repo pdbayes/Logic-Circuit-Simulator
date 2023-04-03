@@ -14,5 +14,7 @@ declare global {
         highlight(ref: string | string[] | undefined): void
         adjustedTime(): Timestamp
         formatString(str: string, ...varargs: any[]): string
+        decompress(str: string): string | null
+        decodeOld(str: string): string
     }
 }

@@ -2,24 +2,24 @@ import dialogPolyfill from 'dialog-polyfill'
 import * as LZString from "lz-string"
 import * as pngMeta from 'png-metadata-writer'
 import { ComponentList, DrawZIndex } from "./ComponentList"
-import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
-import { LabelRect, LabelRectDef } from "./components/LabelRect"
-import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
-import { clampZoom, COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
-import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
-import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
-import { makeComponentMenuInto } from "./menuutils"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager, Workspace } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
-import { DefaultLang, isLang, S, setLang } from "./strings"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager } from './UndoManager'
-import { copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, KeysOfByType, RichStringEnum, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { Component, ComponentBase, ComponentState } from "./components/Component"
+import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { LabelRect, LabelRectDef } from "./components/LabelRect"
+import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
+import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
+import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
+import { makeComponentMenuInto } from "./menuutils"
+import { DefaultLang, S, isLang, setLang } from "./strings"
+import { KeysOfByType, RichStringEnum, copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -1091,6 +1091,9 @@ export class LogicEditor extends HTMLElement {
             return
         }
 
+        window.decompress = LZString.decompressFromEncodedURIComponent
+        window.decodeOld = LogicEditor.decodeFromURLOld
+
         window.formatString = formatString
 
         // make gallery available globally
@@ -1301,12 +1304,16 @@ export class LogicEditor extends HTMLElement {
             let decodedData
             try {
                 decodedData = LZString.decompressFromEncodedURIComponent(this._initialData.str)
+                if (this._initialData.str.length !== 0 && (decodedData?.length ?? 0) === 0) {
+                    throw new Error("zero decoded length")
+                }
             } catch (err) {
                 error = String(err) + " (LZString)"
 
                 // try the old, uncompressed way of storing the data in the URL
                 try {
-                    decodedData = decodeURIComponent(atob(this._initialData.str.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "=")))
+                    decodedData = LogicEditor.decodeFromURLOld(this._initialData.str)
+                    error = undefined
                 } catch (e) {
                     // swallow error from old format
                 }
@@ -1979,6 +1986,10 @@ export class LogicEditor extends HTMLElement {
             this.recalcPropagateAndDrawIfNeeded()
             return result
         }
+    }
+
+    public static decodeFromURLOld(str: string) {
+        return decodeURIComponent(atob(str.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "=")))
     }
 }
 

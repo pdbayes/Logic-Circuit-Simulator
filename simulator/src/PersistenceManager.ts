@@ -40,7 +40,8 @@ class _PersistenceManager {
             try {
                 parsedContents = JSON.parse(content)
             } catch (err) {
-                return "can't load this JSON - error " + err
+                console.error(err)
+                return "can't load this JSON - error “" + err + `”, length = ${content.length}, JSON:\n` + content
             }
         }
         // console.log("BEFORE:\n" + content)
