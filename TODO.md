@@ -31,11 +31,8 @@
 
 ## Low priority
 
- * Incrementable register
  * Alternative representation for push or toggle buttons
- * Allow repeating deletions with Cmd+Y
  * Edge detector?
- * Highlight only nodes when dragging
  * Don't store Z in memory cells, but unknown instead
  * Add rich HTML annotations
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
@@ -46,7 +43,10 @@
 
 ### DONE
 
+ * Allow repeating deletions with Cmd+Y
+ * Highlight only nodes when dragging
  * (Address) decoder: 2, 3, 4 bit versions
+ * Incrementable register
  * Swap ROM for RAM and inversely
  * Load/save RAM/ROM contents via file and editor
  * ROM

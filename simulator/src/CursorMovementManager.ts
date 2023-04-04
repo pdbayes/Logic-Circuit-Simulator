@@ -169,7 +169,7 @@ export class CursorMovementManager {
         return this.currentSelection === undefined || this.currentSelection.previouslySelectedElements.size === 0
     }
 
-    public updateMouseOver([x, y]: [number, number]) {
+    public updateMouseOver([x, y]: [number, number], pullingWire: boolean) {
         const findMouseOver: () => Drawable | null = () => {
             // easy optimization: maybe we're still over the
             // same component as before, so quickly check this
@@ -181,9 +181,11 @@ export class CursorMovementManager {
             }
 
             // overlays
-            for (const comp of this.editor.components.withZIndex(DrawZIndex.Overlay)) {
-                if (comp.isOver(x, y)) {
-                    return comp
+            if (!pullingWire) {
+                for (const comp of this.editor.components.withZIndex(DrawZIndex.Overlay)) {
+                    if (comp.isOver(x, y)) {
+                        return comp
+                    }
                 }
             }
 
@@ -196,30 +198,32 @@ export class CursorMovementManager {
                         break
                     }
                 }
-                if (nodeOver !== null) {
+                if (nodeOver !== null && (!pullingWire || this.editor.wireMgr.isValidMouseUp(nodeOver))) {
                     return nodeOver
                 }
-                if (comp.isOver(x, y)) {
+                if (!pullingWire && comp.isOver(x, y)) {
                     return comp
                 }
             }
 
-            // wires
-            for (const wire of this.editor.wireMgr.wires) {
-                for (const waypoint of wire.waypoints) {
-                    if (waypoint.isOver(x, y)) {
-                        return waypoint
+            if (!pullingWire) {
+                // wires
+                for (const wire of this.editor.wireMgr.wires) {
+                    for (const waypoint of wire.waypoints) {
+                        if (waypoint.isOver(x, y)) {
+                            return waypoint
+                        }
+                    }
+                    if (wire.isOver(x, y)) {
+                        return wire
                     }
                 }
-                if (wire.isOver(x, y)) {
-                    return wire
-                }
-            }
 
-            // background elems
-            for (const comp of this.editor.components.withZIndex(DrawZIndex.Background)) {
-                if (comp.isOver(x, y)) {
-                    return comp
+                // background elems
+                for (const comp of this.editor.components.withZIndex(DrawZIndex.Background)) {
+                    if (comp.isOver(x, y)) {
+                        return comp
+                    }
                 }
             }
 
@@ -326,7 +330,7 @@ export class CursorMovementManager {
         canvas.addEventListener("mouseup", editor.wrapHandler((e) => {
             // console.log("mouseup %o, composedPath = %o", e, e.composedPath())
             this._mouseUpTouchEnd(e)
-            this.updateMouseOver(this.editor.offsetXY(e))
+            this.updateMouseOver(this.editor.offsetXY(e), false)
             this.editor.updateCursor()
         }))
 
@@ -344,7 +348,7 @@ export class CursorMovementManager {
         this.clearPopperIfNecessary()
         if (this._currentMouseDownData === null) {
             const xy = this.editor.offsetXY(e)
-            this.updateMouseOver(xy)
+            this.updateMouseOver(xy, false)
             if (this._currentMouseOverComp !== null) {
                 // mouse down on component
                 const { wantsDragEvents } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
@@ -413,8 +417,8 @@ export class CursorMovementManager {
                 }
             }
         } else {
-            // moving mouse or dragging without a locked component 
-            this.updateMouseOver(this.editor.offsetXY(e))
+            // moving mouse or dragging without a locked component
+            this.updateMouseOver(this.editor.offsetXY(e), this.editor.wireMgr.isAddingWire)
         }
     }
 
@@ -441,18 +445,17 @@ export class CursorMovementManager {
                     const handled = this._currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
                     if (!handled) {
                         // no double click handler, so we trigger a normal click
-                        shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e) || shouldTakeSnapshot
+                        shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e).isChange || shouldTakeSnapshot
                     } else {
                         shouldTakeSnapshot = true
                     }
                 } else {
-                    shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e) || shouldTakeSnapshot
+                    shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e).isChange || shouldTakeSnapshot
                 }
             }
 
             if (shouldTakeSnapshot) {
-                const repeatAction = mainChange._tag === "RepeatableChange" ? mainChange.repeat : undefined
-                this.editor.undoMgr.takeSnapshot(repeatAction)
+                this.editor.undoMgr.takeSnapshot(mainChange)
             }
 
         } else {
@@ -553,8 +556,8 @@ abstract class ToolHandlers {
     public mouseUpOn(__comp: Drawable, __e: MouseEvent | TouchEvent): InteractionResult {
         return InteractionResult.NoChange
     }
-    public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent) {
-        return false // false means no change in model
+    public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): InteractionResult {
+        return InteractionResult.NoChange
     }
     public mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means no change in model
@@ -663,7 +666,8 @@ class EditHandlers extends ToolHandlers {
                     case "item": {
                         const but = mkButton(item, item.danger ?? false).render()
                         but.addEventListener("click", this.editor.wrapHandler((itemEvent: MouseEvent | TouchEvent) => {
-                            item.action(itemEvent, e)
+                            const result = item.action(itemEvent, e)
+                            this.editor.undoMgr.takeSnapshot(result as Exclude<typeof result, void>)
                         }))
                         return li(cls("menu-item"), but).render()
                     }

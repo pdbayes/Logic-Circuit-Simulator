@@ -106,8 +106,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
             const wireMgr = this.editor.wireMgr
             for (const [nodeOut, nodeIns] of savedWireEnds) {
                 for (const [nodeIn, style] of nodeIns) {
-                    wireMgr.addNode(nodeOut)
-                    const wire = wireMgr.addNode(nodeIn)
+                    const wire = wireMgr.addWire(nodeOut, nodeIn, false)
                     if (isUndefined(wire)) {
                         console.error("Failed to add wire back")
                         continue

@@ -388,16 +388,16 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
         g.beginPath()
         if (x0 === x1) {
             // vertical line
-            const pointsDown = (node.isOutput && y1 <= y0) || (!node.isOutput && y0 <= y1)
+            const pointsDown = (node.isOutput() && y1 <= y0) || (!node.isOutput() && y0 <= y1)
             if (pointsDown) {
-                const shift = node.isOutput ? 1 : 0
+                const shift = node.isOutput() ? 1 : 0
                 triangle(g,
                     x1 - 3, y1 - 2 + shift,
                     x1 + 3, y1 - 2 + shift,
                     x1, y1 + 1 + shift,
                 )
             } else {
-                const shift = node.isOutput ? -3 : -4
+                const shift = node.isOutput() ? -3 : -4
                 triangle(g,
                     x1 - 3, y1 - 2 - shift,
                     x1 + 3, y1 - 2 - shift,
@@ -406,8 +406,8 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
             }
         } else if (y0 === y1) {
             // horizontal line
-            const shift = node.isOutput ? 1 : 0
-            const pointsRight = (node.isOutput && x1 <= x0) || (!node.isOutput && x0 <= x1)
+            const shift = node.isOutput() ? 1 : 0
+            const pointsRight = (node.isOutput() && x1 <= x0) || (!node.isOutput() && x0 <= x1)
             if (pointsRight) {
                 triangle(g,
                     x1 - 2 + shift, y1 - 3,

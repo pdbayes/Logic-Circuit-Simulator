@@ -70,7 +70,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return this as unknown as Node
     }
 
-    public get isOutput(): boolean {
+    public isOutput(): this is NodeOut {
         return Node.isOutput(this.asNode)
     }
 
@@ -100,7 +100,6 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
 
     public override isOver(x: number, y: number) {
         return this.editor.mode >= Mode.CONNECT
-            && this.acceptsMoreConnections
             && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
@@ -240,56 +239,19 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     public override mouseDown(__: MouseEvent | TouchEvent) {
-        this.editor.wireMgr.addNode(this.asNode)
+        this.editor.wireMgr.startDraggingFrom(this.asNode)
         return { wantsDragEvents: false }
     }
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
-        const newWire = this.editor.wireMgr.addNode(this.asNode)
+        const newWire = this.editor.wireMgr.stopDraggingOn(this.asNode)
         if (isUndefined(newWire)) {
             return InteractionResult.NoChange
         }
-        return this.tryMakeRepeatableConnection(newWire)
-    }
-
-    private tryMakeRepeatableConnection(newWire: Wire) {
-        // if we just connected a group, we can repeat if there are
-        // more free nodes in the group
-        const startGroup = newWire.startNode.group
-        const endGroup = newWire.endNode?.group
-        if (isUndefined(startGroup) || isUndefined(endGroup)) {
-            return InteractionResult.SimpleChange
-        }
-
-        const startNodeIndex = startGroup.indexOf(newWire.startNode)
-        const endNodeIndex = endGroup.indexOf(newWire.endNode!)
-
-        const wireMgr = this.editor.wireMgr
-        const makeRepeatFunction = function makeRepeatFunction(startNodeIndex: number, endNodeIndex: number): RepeatFunction | undefined {
-            if (startNodeIndex >= startGroup.nodes.length - 1 ||
-                !startGroup.nodes[startNodeIndex + 1].acceptsMoreConnections ||
-                endNodeIndex >= endGroup.nodes.length - 1 ||
-                !endGroup.nodes[endNodeIndex + 1].acceptsMoreConnections) {
-                return undefined
-            }
-
-            return () => {
-                wireMgr.addNode(startGroup.nodes[startNodeIndex + 1])
-                const newWire = wireMgr.addNode(endGroup.nodes[endNodeIndex + 1])
-                if (isUndefined(newWire)) {
-                    return undefined
-                }
-                return makeRepeatFunction(startNodeIndex + 1, endNodeIndex + 1)
-            }
-
-        }
-
-        const repeat = makeRepeatFunction(startNodeIndex, endNodeIndex)
-        if (isUndefined(repeat)) {
-            return InteractionResult.SimpleChange
-        }
-
-        return InteractionResult.RepeatableChange(repeat)
+        return tryMakeRepeatableNodeAction(newWire.startNode, newWire.endNode, (startNode, endNode) => {
+            const newWire = this.editor.wireMgr.addWire(startNode, endNode, true)
+            return isDefined(newWire)
+        })
     }
 
 }
@@ -414,7 +376,7 @@ export class NodeOut extends NodeBase<NodeOut> {
 
     protected override propagateColor(color: WireColor) {
         for (const wire of this._outgoingWires) {
-            wire.endNode?.doSetColor(color)
+            wire.endNode.doSetColor(color)
         }
     }
 
@@ -438,7 +400,7 @@ export class NodeOut extends NodeBase<NodeOut> {
         if (super.mouseDoubleClicked(e)) {
             return true // already handled
         }
-        if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput && this.parent.allowsForcedOutputs) {
+        if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput() && this.parent.allowsForcedOutputs) {
             this.forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unknown
@@ -459,4 +421,40 @@ export const Node = {
     isOutput(node: Node): node is NodeOut {
         return node._tag === "_nodeout"
     },
+}
+
+export function tryMakeRepeatableNodeAction(startNode: NodeOut, endNode: NodeIn, handleNodes: (startNode: NodeOut, endNode: NodeIn) => boolean): InteractionResult {
+    // if we just connected a group, we can repeat if there are
+    // more free nodes in the group
+    const startGroup = startNode.group
+    const endGroup = endNode.group
+    if (isUndefined(startGroup) || isUndefined(endGroup)) {
+        return InteractionResult.SimpleChange
+    }
+
+    const startNodeIndex = startGroup.indexOf(startNode)
+    const endNodeIndex = endGroup.indexOf(endNode!)
+
+    const makeRepeatFunction = function makeRepeatFunction(startNodeIndex: number, endNodeIndex: number): RepeatFunction | undefined {
+        if (startNodeIndex >= startGroup.nodes.length - 1 ||
+            endNodeIndex >= endGroup.nodes.length - 1) {
+            return undefined
+        }
+
+        return () => {
+            const success = handleNodes(startGroup.nodes[startNodeIndex + 1], endGroup.nodes[endNodeIndex + 1])
+            if (success) {
+                return makeRepeatFunction(startNodeIndex + 1, endNodeIndex + 1)
+            }
+            return undefined
+        }
+
+    }
+
+    const repeat = makeRepeatFunction(startNodeIndex, endNodeIndex)
+    if (isUndefined(repeat)) {
+        return InteractionResult.SimpleChange
+    }
+
+    return InteractionResult.RepeatableChange(repeat)
 }

@@ -34,7 +34,7 @@ import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, isLang, setLang } from "./strings"
-import { KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
 
 
@@ -548,16 +548,15 @@ export class LogicEditor extends HTMLElement {
                         if (isDefined(selComp = this.cursorMovementMgr.currentSelection?.previouslySelectedElements) && selComp.size !== 0) {
                             let anyDeleted = false
                             for (const comp of selComp) {
-                                anyDeleted = this.tryDeleteDrawable(comp) || anyDeleted
+                                anyDeleted = this.tryDeleteDrawable(comp).isChange || anyDeleted
                             }
                             if (anyDeleted) {
                                 this.undoMgr.takeSnapshot()
                             }
                         } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
-                            const deleted = this.tryDeleteDrawable(selComp)
-                            if (deleted) {
-                                this.undoMgr.takeSnapshot()
-                            }
+                            const result = this.tryDeleteDrawable(selComp)
+                            console.error(`result=${result._tag}`)
+                            this.undoMgr.takeSnapshot(result)
                         }
                         e.preventDefault()
                         return
@@ -1361,18 +1360,17 @@ export class LogicEditor extends HTMLElement {
         this.html.rootDiv.classList.toggle("dark", dark)
     }
 
-    public tryDeleteDrawable(comp: Drawable): boolean {
+    public tryDeleteDrawable(comp: Drawable): InteractionResult {
         if (comp instanceof ComponentBase) {
             const numDeleted = this.tryDeleteComponentsWhere(c => c === comp, true)
-            return numDeleted !== 0
+            return InteractionResult.fromBoolean(numDeleted !== 0)
         } else if (comp instanceof Wire) {
-            this.wireMgr.deleteWire(comp)
-            return true
+            return this.wireMgr.deleteWire(comp)
         } else if (comp instanceof Waypoint) {
             comp.removeFromParent()
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     public trySetCurrentComponentOrientation(orient: Orientation, e: Event) {

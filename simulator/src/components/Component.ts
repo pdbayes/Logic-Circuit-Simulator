@@ -934,7 +934,7 @@ export abstract class ComponentBase<
             if (wire === null || isUndefined(wire)) {
                 return
             }
-            wire.setSecondNode(node)
+            wire.setEndNode(node)
         })
         const now = this.editor.timeline.adjustedTime()
         restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
@@ -942,13 +942,13 @@ export abstract class ComponentBase<
                 return
             }
             for (const wire of [...wires]) {
-                wire.changeStartNode(node, now)
+                wire.setStartNode(node, now)
             }
         })
 
         const editor = this.editor
-        const deleted = editor.tryDeleteDrawable(this)
-        if (!deleted) {
+        const result = editor.tryDeleteDrawable(this)
+        if (!result.isChange) {
             console.warn("Could not delete old component")
         }
 
@@ -1018,9 +1018,9 @@ export abstract class ComponentBase<
     public override mouseClicked(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT && e.shiftKey) {
             this.editor.cursorMovementMgr.toggleSelect(this)
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
@@ -1106,7 +1106,7 @@ export abstract class ComponentBase<
 
     protected makeDeleteContextMenuItem(): MenuItem {
         return MenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
-            this.editor.tryDeleteDrawable(this)
+            return this.editor.tryDeleteDrawable(this)
         }, true)
     }
 

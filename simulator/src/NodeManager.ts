@@ -61,8 +61,8 @@ export class NodeManager {
                         if (other.posX === nodeX && other.posY === nodeY) {
                             // the wire manager will take care of determining whether
                             // they can actually be connected or not
-                            wireMgr.addNode(node)
-                            const wire = wireMgr.addNode(other)
+                            wireMgr.startDraggingFrom(node)
+                            const wire = wireMgr.stopDraggingOn(other)
                             if (isDefined(wire)) {
                                 addedConnections.push([node, other.parent as Component, other])
                             }

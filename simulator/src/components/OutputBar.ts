@@ -262,7 +262,7 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
         const makeItemShowAs = (desc: string, display: OutputBarType) => {
             const isCurrent = this._display === display
             const icon = isCurrent ? "check" : "none"
-            const action = isCurrent ? () => undefined : () => this.doSetDisplay(display)
+            const action = isCurrent ? () => undefined : () => { this.doSetDisplay(display) }
             return MenuData.item(icon, desc, action)
         }
 

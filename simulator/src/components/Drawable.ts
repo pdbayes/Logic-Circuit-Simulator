@@ -22,7 +22,7 @@ export interface DrawContextExt extends DrawContext {
 export type MenuItem =
     | { _tag: "sep" }
     | { _tag: "text", caption: Modifier }
-    | { _tag: "item", icon: IconName | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown }
+    | { _tag: "item", icon: IconName | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void }
     | { _tag: "submenu", icon: IconName | undefined, caption: Modifier, items: MenuData }
 
 export type MenuData = MenuItem[]
@@ -33,7 +33,7 @@ export const MenuData = {
     text(caption: Modifier): MenuItem {
         return { _tag: "text", caption }
     },
-    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): MenuItem {
+    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void, danger?: boolean): MenuItem {
         return { _tag: "item", icon, caption, action, danger }
     },
     submenu(icon: IconName | undefined, caption: Modifier, items: MenuData): MenuItem {
@@ -187,9 +187,9 @@ export abstract class Drawable {
 
     // Return true to indicate it was handled and had an effect
     // (and presumably doesn't need to be handled any more)
-    public mouseClicked(__: MouseEvent | TouchEvent): boolean {
+    public mouseClicked(__: MouseEvent | TouchEvent): InteractionResult {
         // empty default implementation
-        return false
+        return InteractionResult.NoChange
     }
 
     // Return true to indicate it was handled and had an effect

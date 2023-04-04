@@ -120,9 +120,8 @@ class _PersistenceManager {
             const [nodeID1, nodeID2, wireOptions] = wireData
             const node1 = nodeMgr.findNode(nodeID1)
             const node2 = nodeMgr.findNode(nodeID2)
-            if (!isUndefined(node1) && !isUndefined(node2)) {
-                wireMgr.addNode(node1)
-                const completedWire = wireMgr.addNode(node2)
+            if (!isUndefined(node1) && !isUndefined(node2) && node1.isOutput() && !node2.isOutput()) {
+                const completedWire = wireMgr.addWire(node1, node2, false)
                 if (isDefined(completedWire) && isDefined(wireOptions)) {
                     completedWire.ref = wireOptions.ref
                     if (isDefined(wireOptions.via)) {

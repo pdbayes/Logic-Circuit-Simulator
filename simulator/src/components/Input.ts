@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayClampOrPad, ArrayFillWith, HighImpedance, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ArrayClampOrPad, ArrayFillWith, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
@@ -367,19 +367,21 @@ export class Input extends InputBase<InputRepr> {
     }
 
     public override mouseClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseClicked(e)) {
-            return true
+        let result
+        if ((result = super.mouseClicked(e)).isChange) {
+            return result
         }
 
         if (this.editor.mode === Mode.STATIC || this._isPushButton || this._isConstant) {
-            return false
+            return InteractionResult.NoChange
         }
 
         const i = this.clickedBitIndex(e)
         if (i !== -1) {
+            // TODO return some repeatable action?
             this.doSetValueChangingBit(i, nextValue(this.value[i], this.editor.mode, e.altKey))
         }
-        return true
+        return InteractionResult.SimpleChange
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {

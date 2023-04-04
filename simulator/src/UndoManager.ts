@@ -1,6 +1,6 @@
 import { LogicEditor } from "./LogicEditor"
 import { PersistenceManager } from "./PersistenceManager"
-import { isDefined, RepeatFunction } from "./utils"
+import { InteractionResult, isDefined, isUndefined, RepeatFunction } from "./utils"
 
 const MAX_UNDO_SNAPSHOTS = 100
 
@@ -30,10 +30,21 @@ export class UndoManager {
                 isDefined(this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction))
     }
 
-    public takeSnapshot(repeatAction?: RepeatFunction) {
+    public takeSnapshot(interactionResult?: InteractionResult) {
+        const isChange = interactionResult?.isChange ?? true
+        if (!isChange) {
+            return
+        }
+
+        const repeatAction = isUndefined(interactionResult) ? undefined
+            : interactionResult._tag === "RepeatableChange" ? interactionResult.repeat : undefined
+        this.doTakeSnapshot(repeatAction)
+    }
+
+    private doTakeSnapshot(repeatAction?: RepeatFunction) {
         const now = Date.now()
         // const nowStr = new Date(now).toISOString()
-        // console.log("Taking snapshot at " + nowStr)
+        // console.log("Taking snapshot at " + nowStr + " (repeatAction=" + repeatAction + ")")
 
         const workspace = this.editor.save()
         const workspaceStr = PersistenceManager.stringifyWorkspace(workspace, true)
@@ -72,7 +83,7 @@ export class UndoManager {
             const repeatAction = this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction
             if (isDefined(repeatAction)) {
                 const newRepeatAction = repeatAction()
-                this.takeSnapshot(newRepeatAction)
+                this.doTakeSnapshot(newRepeatAction)
             }
         }
         // this.dump()
