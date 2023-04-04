@@ -3,7 +3,7 @@ import { circle, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, GRID_STEP } from "../dra
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, Mode, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { ALUDef } from "./ALU"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
@@ -86,17 +86,9 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
 
     protected doRecalcValue(): LogicValue[] {
         const out = GateNTypes.props[this._subtype].out
-
         const a = this.inputValues(this.inputs.A)
         const b = this.inputValues(this.inputs.B)
-
-        const s = ArrayFillWith(Unknown as LogicValue, this.numBits)
-        for (let i = 0; i < this.numBits; i++) {
-            const ai = a[i]
-            const bi = b[i]
-            s[i] = out([ai, bi])
-        }
-        return s
+        return ArrayFillUsing(i => out([a[i], b[i]]), this.numBits)
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
@@ -106,7 +98,7 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
     protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
-            drawInside: ({left, right}) => {
+            drawInside: ({ left, right }) => {
                 if (this._showAsUnknown) {
                     ctx.inNonTransformedFrame(() => {
                         g.fillStyle = COLOR_UNKNOWN

@@ -4,7 +4,7 @@ import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
-import { doALUOp } from "./ALU"
+import { doALUAdd } from "./ALU"
 import { ParametrizedComponentBase, Repr, ResolvedParams, Value, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, MenuItems } from "./Drawable"
 import { GateArrayDef } from "./GateArray"
@@ -84,7 +84,7 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
         const a = this.inputValues(this.inputs.A)
         const b = this.inputValues(this.inputs.B)
         const cin = this.inputs.Cin.value
-        return doALUOp("ADD", a, b, cin)
+        return doALUAdd(a, b, cin)
     }
 
     protected override propagateValue(newValue: AdderArrayValue) {

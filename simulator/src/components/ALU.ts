@@ -3,10 +3,10 @@ import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS,
 import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
-import { Gate1Types, Gate2toNTypes } from "./GateTypes"
+import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
 
 
 export const ALUDef =
@@ -30,24 +30,30 @@ export const ALUDef =
             usesExtendedOpcode: ext,
         }),
         size: ({ numBits }) => ({
-            gridWidth: 7, // always enough
+            gridWidth: 7,
             gridHeight: 19 + Math.max(0, numBits - 8) * 2,
         }),
-        makeNodes: ({ numBits, usesExtendedOpcode, gridHeight }) => {
+        makeNodes: ({ numBits, usesExtendedOpcode, gridWidth, gridHeight }) => {
             const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
+            const outputX = gridWidth / 2 + 1
             const bottom = (gridHeight + 1) / 2
             const top = -bottom
-            const cinX = usesExtendedOpcode ? -3 : -2
-            const numOpBits = usesExtendedOpcode ? 3 : 2
+            const topGroupBits = usesExtendedOpcode ? 5 : 3
+            // top group is built together
+            const topGroup = groupHorizontal("n", 0, top, topGroupBits)
+            const cin = topGroup.pop()!
+            // extracted to be mapped correctly when switching between reduced/extended opcodes
+            const opM = topGroup.pop()!
             return {
                 ins: {
-                    A: groupVertical("w", -4.5, -inputCenterY, numBits),
-                    B: groupVertical("w", -4.5, inputCenterY, numBits),
-                    Op: groupHorizontal("n", 1, top, numOpBits),
-                    Cin: [cinX, top, "n", `Cin (${S.Components.ALU.InputCinDesc})`],
+                    A: groupVertical("w", -outputX, -inputCenterY, numBits),
+                    B: groupVertical("w", -outputX, inputCenterY, numBits),
+                    Op: topGroup,
+                    OpM: opM,
+                    Cin: [cin[0], cin[1], "n", `Cin (${S.Components.ALU.InputCinDesc})`],
                 },
                 outs: {
-                    S: groupVertical("e", 4.5, 0, numBits),
+                    S: groupVertical("e", outputX, 0, numBits),
                     V: [0, bottom, "s", "V (oVerflow)"],
                     Z: [2, bottom, "s", "Z (Zero)"],
                     Cout: [-2, bottom, "s", `Cout (${S.Components.ALU.OutputCoutDesc})`],
@@ -56,7 +62,7 @@ export const ALUDef =
         },
         initialValue: (saved, { numBits }) => {
             const false_ = false as LogicValue
-            return { s: ArrayFillWith(false_, numBits), v: false_, z: false_, cout: false_ }
+            return { s: ArrayFillWith(false_, numBits), v: false_, cout: false_ }
         },
     })
 
@@ -65,8 +71,6 @@ export type ALUParams = ResolvedParams<typeof ALUDef>
 
 type ALUValue = Value<typeof ALUDef>
 
-const ALUOps = ["ADD", "SUB", "OR", "AND", "A+1", "A-1", "XOR", "NOT"] as const
-//               000    001   010    011    100    101    110    111
 export type ALUOp = typeof ALUOps[number]
 export const ALUOp = {
     shortName(op: ALUOp): string {
@@ -76,6 +80,26 @@ export const ALUOp = {
         return S.Components.ALU[op][1]
     },
 }
+
+
+
+export const ALUOps = [
+    "A+B", "A-B", "A+1", "A-1",
+    //0000  0001   0010   0011
+    "-A", "B-A", "A*2", "A/2",
+    //0100 0101   0110   0111
+    "A|B", "A&B", "A|~B", "A&~B",
+    //1000  1001   1010    1011
+    "~A", "A^B", "A<<", "A>>",
+    //1100 1101   1110   1111
+] as const
+
+const ALUOpsReduced: readonly ALUOp[] = ["A+B", "A-B", "A|B", "A&B"]
+//                                         00     01    10     11
+// Used to lookup the ALUOp from the reduced opcode, which is compatible with the extended
+// opcode, provided the extra control bits are inserted between the leftmost and the
+// rightmost bits of the reduced opcode. Reason for this is to keep the leftmost bit
+// acting as a "mode" bit switching between arithmetic (0) and logic (1) operations.
 
 export class ALU extends ParametrizedComponentBase<ALURepr> {
 
@@ -112,15 +136,17 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     }
 
     public get op(): ALUOp | Unknown {
-        const opIndex = displayValuesFromArray(this.inputValues(this.inputs.Op), false)[1]
-        return isUnknown(opIndex) ? Unknown : ALUOps[opIndex]
+        const opValues = this.inputValues(this.inputs.Op)
+        opValues.push(this.inputs.OpM.value)
+        const opIndex = displayValuesFromArray(opValues, false)[1]
+        return isUnknown(opIndex) ? Unknown : (this.usesExtendedOpcode ? ALUOps : ALUOpsReduced)[opIndex]
     }
 
     protected doRecalcValue(): ALUValue {
         const op = this.op
 
         if (isUnknown(op)) {
-            return { s: ArrayFillWith(Unknown, this.numBits), v: Unknown, z: Unknown, cout: Unknown }
+            return { s: ArrayFillWith(Unknown, this.numBits), v: Unknown, cout: Unknown }
         }
 
         const a = this.inputValues(this.inputs.A)
@@ -133,7 +159,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     protected override propagateValue(newValue: ALUValue) {
         this.outputValues(this.outputs.S, newValue.s)
         this.outputs.V.value = newValue.v
-        this.outputs.Z.value = newValue.z
+        this.outputs.Z.value = allZeros(newValue.s)
         this.outputs.Cout.value = newValue.cout
     }
 
@@ -152,6 +178,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         for (const input of this.inputs.Op) {
             drawWireLineToComponent(g, input, input.posXInParentTransform, lowerTop)
         }
+        drawWireLineToComponent(g, this.inputs.OpM, this.inputs.OpM.posXInParentTransform, lowerTop)
         drawWireLineToComponent(g, this.inputs.Cin, this.inputs.Cin.posXInParentTransform, lowerTop)
 
         // outputs
@@ -186,7 +213,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         // special Op group
         g.beginPath()
         const opGroupHeight = 8
-        const opGroupLeft = this.inputs.Op[this.inputs.Op.length - 1].posXInParentTransform - 2
+        const opGroupLeft = this.inputs.OpM.posXInParentTransform - 2
         const opGroupRight = this.inputs.Op[0].posXInParentTransform + 2
         const [opGroupLeftTop, opGroupRightTop] = this.usesExtendedOpcode
             ? [top + 8, top + 20]
@@ -213,12 +240,10 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
             drawLabel(ctx, this.orient, "Cout", "s", this.outputs.Cout.posXInParentTransform + carryHOffsetF * 4, bottom - 7, this.outputs.Cout)
 
             // top inputs
-            const usesExtF = Number(this.usesExtendedOpcode)
-            const cinXOffset = isVertical ? 3 * usesExtF : 4 + usesExtF
-            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform + cinXOffset, top + 5 - 2 * Number(this.usesExtendedOpcode), this.inputs.Cin)
+            drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform, top + 4, this.inputs.Cin)
 
             g.font = "bold 11px sans-serif"
-            drawLabel(ctx, this.orient, "Op", "n", this.inputs.Op, top + 14)
+            drawLabel(ctx, this.orient, "Op", "n", (opGroupLeft + opGroupRight) / 2, top + 14, this.inputs.Op)
 
             // left inputs
             g.font = "bold 12px sans-serif"
@@ -230,12 +255,12 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
 
             if (this._showOp) {
                 const opName = isUnknown(this.op) ? "??" : ALUOp.shortName(this.op)
-                const size = opName.length === 1 ? 25 : 13
+                const size = opName.length === 1 ? 25 : opName.length === 2 ? 17 : 13
                 g.font = `bold ${size}px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
                 g.textBaseline = "middle"
-                g.fillText(opName, ...ctx.rotatePoint(this.posX + 4, this.posY))
+                g.fillText(opName, ...ctx.rotatePoint(this.posX + 5, this.posY))
             }
         })
     }
@@ -263,143 +288,148 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     }
 
 }
+ALUDef.impl = ALU
+
+function allZeros(vals: LogicValue[]): LogicValue {
+    for (const v of vals) {
+        if (isUnknown(v) || isHighImpedance(v)) {
+            return Unknown
+        }
+        if (v === true) {
+            return false
+        }
+    }
+    return true
+}
 
 
 export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicValue[], cin: LogicValue):
     ALUValue {
-
-    function allZeros(vals: LogicValue[]): LogicValue {
-        for (const v of vals) {
-            if (isUnknown(v) || isHighImpedance(v)) {
-                return Unknown
-            }
-            if (v === true) {
-                return false
-            }
-        }
-        return true
-    }
-
-    const width = a.length
-    const y: LogicValue[] = ArrayFillWith(Unknown, width)
-    let v: LogicValue = Unknown
-    let cout: LogicValue = Unknown
-
+    const numBits = a.length
     switch (op) {
-        // @ts-expect-error fallthrough
-        case "A+1":
-            b = [true, ...ArrayFillWith(false, width - 1)]
-        // fallthrough
-        case "ADD": {
-            const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
-                const asNumber = (v: LogicValue) => v === true ? 1 : 0
-                const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
-                const sum = asNumber(a) + asNumber(b) + asNumber(c)
+        // arithmetic
+        case "A+B": return doALUAdd(a, b, cin)
+        case "A*2": return doALUAdd(a, a, cin)
+        case "A+1": return doALUAdd(a, [true, ...ArrayFillWith(false, numBits - 1)], cin)
+        case "A/2": return doALUSub([...a.slice(1), a[numBits - 1]], ArrayFillWith(false, numBits), cin)
+        case "A-1": return doALUSub(a, [true, ...ArrayFillWith(false, numBits - 1)], cin)
+        case "A-B": return doALUSub(a, b, cin)
+        case "B-A": return doALUSub(b, a, cin)
+        case "-A": return doALUSub(ArrayFillWith(false, numBits), a, cin)
 
-                if (numUnset === 0) {
-                    // we know exactly
-                    return [sum % 2 === 1, sum >= 2]
+        // logic
+        default: {
+            let cout: LogicValue = false
+            const s: LogicValue[] = (() => {
+                switch (op) {
+                    case "A|B": return doALUBinOp("OR", a, b)
+                    case "A&B": return doALUBinOp("AND", a, b)
+                    case "A^B": return doALUBinOp("XOR", a, b)
+                    case "A|~B": return doALUBinOp("OR", a, doALUNot(b))
+                    case "A&~B": return doALUBinOp("AND", a, doALUNot(b))
+                    case "~A": return doALUNot(a)
+                    case "A>>": return [...a.slice(1), cin]
+                    case "A<<":
+                        cout = a[a.length - 1]
+                        return [cin, ...a.slice(0, a.length - 1)]
                 }
-                if (numUnset === 1 && sum >= 2) {
-                    // carry will always be set
-                    return [Unknown, true]
-                }
-                // At this point, could be anything
-                return [Unknown, Unknown]
-
-            }
-            const cins: LogicValue[] = ArrayFillWith(Unknown, width + 1)
-            cins[0] = cin
-            for (let i = 0; i < width; i++) {
-                const [s, cout] = sum3bits(cins[i], a[i], b[i])
-                y[i] = s
-                cins[i + 1] = cout
-            }
-            cout = cins[width]
-            if (isBoolean(cout) && isBoolean(cins[width - 2])) {
-                v = cout !== cins[width - 1]
-            }
-            break
+            })()
+            return { s, v: false, cout }
         }
 
-        // @ts-expect-error fallthrough
-        case "A-1":
-            b = [true, ...ArrayFillWith(false, b.length - 1)]
-        // fallthrough
-        case "SUB": {
-            const toInt = (vs: readonly LogicValue[]): number | undefined => {
-                let s = 0
-                let col = 1
-                for (const v of vs) {
-                    if (isUnknown(v)) {
-                        return undefined
-                    }
-                    s += Number(v) * col
-                    col *= 2
-                }
-                return s
-            }
+    }
+}
 
-            const aInt = toInt(a)
-            const bInt = toInt(b)
-            if (!isUndefined(aInt) && !isUndefined(bInt) && isBoolean(cin)) {
-                // otherwise, stick with default Unset values everywhere
-                let yInt = aInt - bInt - (cin ? 1 : 0)
-                // console.log(`${aInt} - ${bInt} = ${yInt}`)
-                // we can get anything from (max - (-min)) = 7 - (-8) = 15
-                // to (min - max) = -8 - 7 = -15
-                if (yInt < 0) {
-                    yInt += Math.pow(2, width)
-                }
-                // now we have everything between 0 and 15
-                const yBinStr = (yInt >>> 0).toString(2).padStart(width, '0')
-                const lastIdx = width - 1
-                for (let i = 0; i < width; i++) {
-                    y[i] = yBinStr[lastIdx - i] === '1'
-                }
+export function doALUAdd(a: readonly LogicValue[], b: readonly LogicValue[], cin: LogicValue): ALUValue {
+    const numBits = a.length
+    const sum3bits = (a: LogicValue, b: LogicValue, c: LogicValue): [LogicValue, LogicValue] => {
+        const asNumber = (v: LogicValue) => v === true ? 1 : 0
+        const numUnset = (isUnknown(a) || isHighImpedance(a) ? 1 : 0) + (isUnknown(b) || isHighImpedance(a) ? 1 : 0) + (isUnknown(c) || isHighImpedance(a) ? 1 : 0)
+        const sum = asNumber(a) + asNumber(b) + asNumber(c)
 
-                cout = bInt > (aInt - (cin ? 1 : 0))
-
-                const aNeg = a[lastIdx] === true // NOT redundant comparison
-                const bNeg = b[lastIdx] === true
-                const yNeg = y[lastIdx] === true
-
-                // see https://stackoverflow.com/a/34547815/390581
-                // Signed integer overflow of the expression x-y-c (where c is again 0 or 1)
-                // occurs if and only if x and y have opposite signs, and the sign of the 
-                // result is opposite to that of x (or, equivalently, the same as that of y).
-                v = aNeg !== bNeg && aNeg !== yNeg
-            }
-            break
+        if (numUnset === 0) {
+            // we know exactly
+            return [sum % 2 === 1, sum >= 2]
         }
-
-        case "NOT": {
-            // ignores b
-            const not = Gate1Types.props["NOT"].out
-            for (let i = 0; i < width; i++) {
-                y[i] = not([a[i]])
-            }
-            cout = false
-            v = false
-            break
+        if (numUnset === 1 && sum >= 2) {
+            // carry will always be set
+            return [Unknown, true]
         }
-
-        // below, we need the '=== true' and '=== false' parts
-        // to distinguish also the Unset case
-        case "AND":
-        case "OR":
-        case "XOR": {
-            const func = Gate2toNTypes.props[op].out
-            for (let i = 0; i < width; i++) {
-                y[i] = func([a[i], b[i]])
-            }
-            cout = false
-            v = false
-            break
-        }
+        // At this point, could be anything
+        return [Unknown, Unknown]
     }
 
-    const z = allZeros(y)
-    return { s: y, v, z, cout }
+    const s: LogicValue[] = ArrayFillWith(Unknown, numBits)
+    const cins: LogicValue[] = ArrayFillWith(Unknown, numBits + 1)
+    cins[0] = cin
+    for (let i = 0; i < numBits; i++) {
+        const [ss, cout] = sum3bits(cins[i], a[i], b[i])
+        s[i] = ss
+        cins[i + 1] = cout
+    }
+    const cout = cins[numBits]
+    const v = !isBoolean(cout) || !isBoolean(cins[numBits - 2]) ? Unknown : cout !== cins[numBits - 1]
+    return { s, cout, v }
 }
-ALUDef.impl = ALU
+
+export function doALUSub(a: readonly LogicValue[], b: readonly LogicValue[], cin: LogicValue): ALUValue {
+    const numBits = a.length
+    const s: LogicValue[] = ArrayFillWith(Unknown, numBits)
+    const toInt = (vs: readonly LogicValue[]): number | undefined => {
+        let s = 0
+        let col = 1
+        for (const v of vs) {
+            if (isUnknown(v)) {
+                return undefined
+            }
+            s += Number(v) * col
+            col *= 2
+        }
+        return s
+    }
+
+    const aInt = toInt(a)
+    const bInt = toInt(b)
+    let cout: LogicValue = Unknown
+    let v: LogicValue = Unknown
+    if (!isUndefined(aInt) && !isUndefined(bInt) && isBoolean(cin)) {
+        // otherwise, stick with default Unset values everywhere
+        let yInt = aInt - bInt - (cin ? 1 : 0)
+        // console.log(`${aInt} - ${bInt} = ${yInt}`)
+        // we can get anything from (max - (-min)) = 7 - (-8) = 15
+        // to (min - max) = -8 - 7 = -15
+        if (yInt < 0) {
+            yInt += Math.pow(2, numBits)
+        }
+        // now we have everything between 0 and 15
+        const yBinStr = (yInt >>> 0).toString(2).padStart(numBits, '0')
+        const lastIdx = numBits - 1
+        for (let i = 0; i < numBits; i++) {
+            s[i] = yBinStr[lastIdx - i] === '1'
+        }
+
+        cout = bInt > (aInt - (cin ? 1 : 0))
+
+        const aNeg = a[lastIdx] === true // NOT redundant comparison
+        const bNeg = b[lastIdx] === true
+        const yNeg = s[lastIdx] === true
+
+        // see https://stackoverflow.com/a/34547815/390581
+        // Signed integer overflow of the expression x-y-c (where c is again 0 or 1)
+        // occurs if and only if x and y have opposite signs, and the sign of the 
+        // result is opposite to that of x (or, equivalently, the same as that of y).
+        v = aNeg !== bNeg && aNeg !== yNeg
+    }
+
+    return { s, cout, v }
+}
+
+function doALUNot(a: readonly LogicValue[]): LogicValue[] {
+    const not = Gate1Types.props["NOT"].out
+    return ArrayFillUsing(i => not([a[i]]), a.length)
+}
+
+function doALUBinOp(op: Gate2toNType, a: readonly LogicValue[], b: readonly LogicValue[]) {
+    const func = Gate2toNTypes.props[op].out
+    return ArrayFillUsing(i => func([a[i], b[i]]), a.length)
+}

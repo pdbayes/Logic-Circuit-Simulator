@@ -1,9 +1,9 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, drawValueText } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, colorForBoolean, drawValueText } from "../drawutils"
 import { S } from "../strings"
-import { EdgeTrigger, isUndefined, LogicValue, LogicValueRepr, toLogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineAbstractComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
+import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, isUndefined, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ComponentBase, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineAbstractComponent } from "./Component"
 import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
 
 
