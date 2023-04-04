@@ -8,6 +8,7 @@ import { ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
 import { Component, ComponentCategory, Params } from "./components/Component"
 import { CounterDef } from "./components/Counter"
+import { DecoderDef } from "./components/Decoder"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
 import { DecoderBCD4Def } from "./components/DecoderBCD4"
@@ -122,6 +123,7 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     ROMDef,
     RAMDef,
     CounterDef,
+    DecoderDef,
     Decoder7SegDef,
     Decoder16SegDef,
     DecoderBCD4Def,

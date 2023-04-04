@@ -7,6 +7,7 @@ import { ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
 import { ComponentCategory, ParamDef, ParametrizedComponentDef, ParamsFromDefs } from "./components/Component"
 import { CounterDef } from "./components/Counter"
+import { DecoderDef } from "./components/Decoder"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
 import { DecoderBCD4Def } from "./components/DecoderBCD4"
@@ -171,6 +172,7 @@ const componentsMenu: Array<Section> = [{
         RAMDef.button({ lines: 16, bits: 4 }, "RAM"),
         ROMDef.button({ lines: 16, bits: 4 }, "ROM", { visible: withButton }),
 
+        DecoderDef.button({ bits: 2 }, "Decoder"),
         Decoder7SegDef.button("Decoder7Seg"),
         Decoder16SegDef.button("Decoder16Seg", { visible: withButton }),
         DecoderBCD4Def.button("DecoderBCD4", { visible: withButton }),

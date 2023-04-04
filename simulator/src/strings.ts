@@ -127,6 +127,7 @@ const Strings_fr = {
             ROM: ["ROM (mémoire morte)", "ROM"],
 
             Counter: ["Compteur 4 bits", "Compteur"],
+            Decoder: ["Décodeur binaire vers 1-sur-n", "Décodeur"],
             Decoder7Seg: ["Décodeur 7 segments", "Déc. 7 seg."],
             Decoder16Seg: ["Décodeur ASCII vers 16 segments", "Déc. 16 seg."],
             DecoderBCD4: ["Décodeur 4 bits vers BCD sur 5 bits", "Déc. BCD"],
@@ -307,6 +308,12 @@ const Strings_fr = {
                 DisplayNone: "absent",
                 DisplayDecimal: "décimal",
                 DisplayHex: "hexadécimal",
+            },
+        },
+        Decoder: {
+            tooltip: {
+                title: "Décodeur binaire",
+                desc: template("Ce décodeur prend en entrée un nombre binaire codé sur ${numFrom} bits et active la sortie correspondante parmi ${numTo} (actuellement, ${n})."),
             },
         },
         Decoder7Seg: {
@@ -791,6 +798,7 @@ const Strings_en: Strings = {
             ROM: ["ROM Module", "ROM"],
 
             Counter: ["4-Bit Counter", "Counter"],
+            Decoder: ["Binary to One-of-N Decoder", "Decoder"],
             Decoder7Seg: ["7-Segment Decoder", "7-Seg. Dec."],
             Decoder16Seg: ["ASCII-to-16-Segment Decoder", "16-Seg. Dec."],
             DecoderBCD4: ["4-Bit-to-BCD Decoder", "BCD Dec."],
@@ -971,6 +979,12 @@ const Strings_en: Strings = {
                 DisplayNone: "No",
                 DisplayDecimal: "Decimal",
                 DisplayHex: "Hexadecimal",
+            },
+        },
+        Decoder: {
+            tooltip: {
+                title: "Binary Decoder",
+                desc: template("Takes as input a binary number coded on ${numFrom} bits and activates the corresponding output among ${numTo} (currently, ${n})."),
             },
         },
         Decoder7Seg: {

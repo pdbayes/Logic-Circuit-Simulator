@@ -13,13 +13,10 @@
 
 ## Medium priority
 
- * Swap ROM for RAM and inversely
- * Load/save RAM/ROM contents via file and editor
  * High-Z bus logic
  * Mnemonic in context menu
  * Undo/redo as buttons
  * Custom component creation
- * (Address) decoder: 2, 3, 4 bit versions
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
     * standalone
@@ -49,6 +46,9 @@
 
 ### DONE
 
+ * (Address) decoder: 2, 3, 4 bit versions
+ * Swap ROM for RAM and inversely
+ * Load/save RAM/ROM contents via file and editor
  * ROM
  * Lock position
  * Show selected RAM contents

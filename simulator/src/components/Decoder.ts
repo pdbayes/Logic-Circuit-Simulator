@@ -1,0 +1,108 @@
+import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, displayValuesFromArray } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
+import { S } from "../strings"
+import { ArrayFillWith, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { DrawContext, MenuItems } from "./Drawable"
+
+
+export const DecoderDef =
+    defineParametrizedComponent("ic", "decoder", true, true, {
+        variantName: ({ bits }) => `decoder-${bits}`,
+        button: { imgWidth: 50 },
+        repr: {
+            bits: typeOrUndefined(t.number),
+        },
+        valueDefaults: {},
+        params: {
+            bits: param(2, [2, 3, 4, 5]),
+        },
+        validateParams: ({ bits }) => ({
+            numFrom: bits,
+            numTo: 2 ** bits,
+        }),
+        size: ({ numTo }) => ({
+            gridWidth: 4,
+            gridHeight: Math.max(8, 1 + numTo),
+        }),
+        makeNodes: ({ numFrom, numTo }) => ({
+            ins: {
+                I: groupVertical("w", -3, 0, numFrom),
+            },
+            outs: {
+                D: groupVertical("e", 3, 0, numTo),
+            },
+        }),
+        initialValue: (saved, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
+    })
+
+export type DecoderRepr = Repr<typeof DecoderDef>
+export type DecoderParams = ResolvedParams<typeof DecoderDef>
+
+export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
+
+    public readonly numFrom: number
+    public readonly numTo: number
+
+    public constructor(editor: LogicEditor, params: DecoderParams, saved?: DecoderRepr) {
+        super(editor, DecoderDef.with(params), saved)
+        this.numFrom = params.numFrom
+        this.numTo = params.numTo
+    }
+
+    public toJSON() {
+        return {
+            type: "decoder" as const,
+            bits: this.numFrom === DecoderDef.aults.bits ? undefined : this.numFrom,
+            ...this.toJSONBase(),
+        }
+    }
+
+    public override makeTooltip() {
+        const s = S.Components.Decoder.tooltip
+        return tooltipContent(s.title, mods(
+            div(s.desc.expand({ numFrom: this.numFrom, numTo: this.numTo, n: this.currentAddr() }))
+        ))
+    }
+
+    public currentAddr() {
+        const addrArr = this.inputValues(this.inputs.I)
+        return displayValuesFromArray(addrArr, false)[1]
+    }
+
+    protected doRecalcValue(): LogicValue[] {
+        const addr = this.currentAddr()
+        if (isUnknown(addr)) {
+            return ArrayFillWith<LogicValue>(Unknown, this.numTo)
+        }
+
+        const output = ArrayFillWith<LogicValue>(false, this.numTo)
+        output[addr] = true
+        return output
+    }
+
+    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+        this.doDrawDefault(g, ctx, {
+            skipLabels: true,
+            drawLabels: () => {
+                g.font = `bold 14px sans-serif`
+                g.textAlign = "center"
+                g.textBaseline = "middle"
+                g.fillStyle = COLOR_COMPONENT_BORDER
+                g.fillText("Dec.", this.posX, this.posY)
+            },
+        })
+    }
+
+    protected override propagateValue(newValue: LogicValue[]) {
+        this.outputValues(this.outputs.D, newValue)
+    }
+
+    protected override makeComponentSpecificContextMenuItems(): MenuItems {
+        return this.makeForceOutputsContextMenuItem()
+    }
+
+}
+DecoderDef.impl = Decoder
