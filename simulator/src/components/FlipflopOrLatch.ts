@@ -4,7 +4,7 @@ import { COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, colorForBoolean, draw
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, isUndefined, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineAbstractComponent } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 
 
 export const FlipflopOrLatchDef =
@@ -232,12 +232,12 @@ export abstract class Flipflop<
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
         const icon = this._showContent ? "check" : "none"
-        const toggleShowContentItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
+        const toggleShowContentItem = MenuData.item(icon, S.Components.Generic.contextMenu.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
         return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", toggleShowContentItem],
             ...this.makeForceOutputsContextMenuItem(true),
         ]
@@ -255,7 +255,7 @@ export function makeTriggerItems(currentTrigger: EdgeTrigger, handler: (trigger:
         const caption = s.TriggerOn + " " + desc
         const action = isCurrent ? () => undefined :
             () => handler(trigger)
-        return ContextMenuData.item(icon, caption, action)
+        return MenuData.item(icon, caption, action)
     }
 
     return [

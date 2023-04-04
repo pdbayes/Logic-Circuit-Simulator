@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { EdgeTrigger, isUndefined, isUnknown, LogicValue, repeatString, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUndefined, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ComponentBase, Repr, defineComponent } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
@@ -272,19 +272,19 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         const makeItemDecodeAs = (decoder: ShiftBufferDecoder, desc: string) => {
             const isCurrent = this._decodeAs === decoder
             const icon = isCurrent ? "check" : "none"
-            return ContextMenuData.item(icon, desc, () => this.doSetDecodeAs(decoder))
+            return MenuData.item(icon, desc, () => this.doSetDecodeAs(decoder))
         }
 
         const makeItemGroupEvery = (groupEvery: number | undefined, desc: string) => {
             const isCurrent = this._groupEvery === groupEvery
             const icon = isCurrent ? "check" : "none"
-            return ContextMenuData.item(icon, desc, () => this.doSetGroupEvery(groupEvery))
+            return MenuData.item(icon, desc, () => this.doSetGroupEvery(groupEvery))
         }
 
         return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
-            ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("eye", s.Decoding, [
+            ["mid", MenuData.sep()],
+            ["mid", MenuData.submenu("eye", s.Decoding, [
                 makeItemDecodeAs("raw", s.DecodingNone),
                 makeItemDecodeAs("octal", s.DecodingOctal),
                 makeItemDecodeAs("hex", s.DecodingHex),
@@ -296,12 +296,12 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
                 makeItemDecodeAs("int8", s.DecodingInt8),
                 makeItemDecodeAs("uint16", s.DecodingUint16),
                 makeItemDecodeAs("int16", s.DecodingInt16),
-                ContextMenuData.sep(),
-                ContextMenuData.text(s.DecodingChangeWarning),
+                MenuData.sep(),
+                MenuData.text(s.DecodingChangeWarning),
             ])],
-            ["mid", ContextMenuData.submenu("regroup", s.Grouping, [
+            ["mid", MenuData.submenu("regroup", s.Grouping, [
                 makeItemGroupEvery(undefined, s.GroupingNone),
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 makeItemGroupEvery(2, s.GroupBy.expand({ n: 2 })),
                 makeItemGroupEvery(3, s.GroupBy.expand({ n: 3 })),
                 makeItemGroupEvery(4, s.GroupBy.expand({ n: 4 })),

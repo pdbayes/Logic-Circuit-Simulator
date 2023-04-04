@@ -7,7 +7,7 @@ import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
-import { ContextMenuData, DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
+import { DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, MenuData, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor } from "./Node"
 import { Passthrough, PassthroughDef } from "./Passthrough"
 
@@ -108,11 +108,11 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return InteractionResult.fromBoolean(this.tryStopMoving())
     }
 
-    public override makeContextMenu(): ContextMenuData {
+    public override makeContextMenu(): MenuData {
         return [
             ...this.makeOrientationAndPosMenuItems().map(it => it[1]),
-            ContextMenuData.sep(),
-            ContextMenuData.item("trash", "Supprimer", () => {
+            MenuData.sep(),
+            MenuData.item("trash", "Supprimer", () => {
                 this.removeFromParent()
             }, true),
         ]
@@ -540,7 +540,7 @@ export class Wire extends Drawable {
         return InteractionResult.NoChange
     }
 
-    public override makeContextMenu(): ContextMenuData {
+    public override makeContextMenu(): MenuData {
 
         const s = S.Components.Wire.contextMenu
         const currentPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
@@ -550,7 +550,7 @@ export class Wire extends Drawable {
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this._startNode.doSetColor(color)
             const cssColor = COLOR_WIRE[color]
-            return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: ${WIRE_WIDTH}px; background-color: ${cssColor}; margin-right: 8px`)), action)
+            return MenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: ${WIRE_WIDTH}px; background-color: ${cssColor}; margin-right: 8px`)), action)
         }
 
 
@@ -558,14 +558,14 @@ export class Wire extends Drawable {
             const isCurrent = this.style === style
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetStyle(style)
-            return ContextMenuData.item(icon, desc, action)
+            return MenuData.item(icon, desc, action)
         }
 
 
         const setWireOptionsItems =
             this.editor.mode < Mode.DESIGN ? [] : [
-                ContextMenuData.sep(),
-                ContextMenuData.item("timer", s.CustomPropagationDelay.expand({ current: currentPropDelayStr }), (__itemEvent) => {
+                MenuData.sep(),
+                MenuData.item("timer", s.CustomPropagationDelay.expand({ current: currentPropDelayStr }), (__itemEvent) => {
                     const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
                     const defaultDelay = String(this.editor.options.propagationDelay)
                     const message = s.CustomPropagationDelayDesc.expand({ current: defaultDelay })
@@ -581,7 +581,7 @@ export class Wire extends Drawable {
                         }
                     }
                 }),
-                ContextMenuData.submenu("palette", s.WireColor, [
+                MenuData.submenu("palette", s.WireColor, [
                     makeItemUseColor(s.WireColorBlack, WireColor.black),
                     makeItemUseColor(s.WireColorRed, WireColor.red),
                     makeItemUseColor(s.WireColorBlue, WireColor.blue),
@@ -589,9 +589,9 @@ export class Wire extends Drawable {
                     makeItemUseColor(s.WireColorGreen, WireColor.green),
                     makeItemUseColor(s.WireColorWhite, WireColor.white),
                 ]),
-                ContextMenuData.submenu("wirestyle", s.WireStyle, [
+                MenuData.submenu("wirestyle", s.WireStyle, [
                     makeItemDisplayStyle(s.WireStyleDefault, undefined),
-                    ContextMenuData.sep(),
+                    MenuData.sep(),
                     makeItemDisplayStyle(s.WireStyleAuto, WireStyles.auto),
                     makeItemDisplayStyle(s.WireStyleStraight, WireStyles.straight),
                     makeItemDisplayStyle(s.WireStyleCurved, WireStyles.bezier),
@@ -600,21 +600,21 @@ export class Wire extends Drawable {
 
         const setRefItems =
             this.editor.mode < Mode.FULL ? [] : [
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 this.makeSetRefContextMenuItem(),
             ]
 
         return [
-            ContextMenuData.item("add", s.AddMiddlePoint, (__itemEvent, contextEvent) => {
+            MenuData.item("add", s.AddMiddlePoint, (__itemEvent, contextEvent) => {
                 this.addWaypointFrom(contextEvent)
             }),
-            ContextMenuData.item("add", s.AddPassthrough, (__itemEvent, contextEvent) => {
+            MenuData.item("add", s.AddPassthrough, (__itemEvent, contextEvent) => {
                 this.addPassthroughFrom(contextEvent)
             }),
             ...setWireOptionsItems,
             ...setRefItems,
-            ContextMenuData.sep(),
-            ContextMenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
+            MenuData.sep(),
+            MenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
                 this.editor.wireMgr.deleteWire(this)
             }, true),
         ]

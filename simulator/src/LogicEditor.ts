@@ -1,4 +1,18 @@
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import LogicEditorCSS from "../css/LogicEditor.css"
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
+
 import dialogPolyfill from 'dialog-polyfill'
+import { saveAs } from 'file-saver'
 import * as LZString from "lz-string"
 import * as pngMeta from 'png-metadata-writer'
 import { ComponentList, DrawZIndex } from "./ComponentList"
@@ -15,25 +29,14 @@ import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawab
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
+import { gallery } from './gallery'
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, isLang, setLang } from "./strings"
-import { KeysOfByType, RichStringEnum, copyToClipboard, downloadBlob as downloadDataUrl, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import LogicEditorTemplate from "../html/LogicEditorTemplate.html"
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import LogicEditorCSS from "../css/LogicEditor.css"
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-polyfill.css"
-import { gallery } from './gallery'
 
 enum Mode {
     STATIC,  // cannot interact in any way
@@ -301,6 +304,17 @@ export class LogicEditor extends HTMLElement {
         return set ? nonDefaultOpts : undefined
     }
 
+    public runFileChooser(accept: string, callback: (file: File) => void) {
+        const chooser = this.html.fileChooser
+        chooser.setAttribute("accept", accept)
+        chooser.addEventListener("change", __ => {
+            const files = this.html.fileChooser.files
+            if (files !== null && files.length > 0) {
+                callback(files[0])
+            }
+        }, { once: true })
+        chooser.click()
+    }
 
     public setActiveTool(toolElement: HTMLElement) {
         const tool = toolElement.getAttribute("tool")
@@ -327,7 +341,9 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (tool === "open") {
-            this.html.fileChooser.click()
+            this.runFileChooser("text/plain|image/png|application/json", file => {
+                this.tryLoadFromFile(file)
+            })
             return
         }
 
@@ -873,13 +889,6 @@ export class LogicEditor extends HTMLElement {
         //     const filename = (this.options.name ?? "circuit") + "_qrcode.png"
         //     downloadDataUrl(dataUrl, filename)
         // })
-
-        this.html.fileChooser.addEventListener("change", __ => {
-            let files
-            if ((files = this.html.fileChooser.files) !== null && files.length > 0) {
-                this.tryLoadFromFile(files[0])
-            }
-        })
 
         const selectAllListener = (e: Event) => {
             const textArea = e.target as HTMLTextAreaElement
@@ -1699,8 +1708,7 @@ export class LogicEditor extends HTMLElement {
         const pngCompletedBlob = new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
 
         const filename = (this.options.name ?? "circuit") + ".png"
-        const url = URL.createObjectURL(pngCompletedBlob)
-        downloadDataUrl(url, filename)
+        saveAs(pngCompletedBlob, filename)
     }
 
 

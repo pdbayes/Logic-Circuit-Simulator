@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_TRANSPARENT, COLOR_UNKNOWN, COLOR_WIRE_BORDER, GRID_STEP, pxToGrid } from "../drawutils"
-import { asValue, Modifier, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_TRANSPARENT, COLOR_UNKNOWN, COLOR_WIRE_BORDER, GRID_STEP, pxToGrid } from "../drawutils"
+import { Modifier, asValue, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { HighImpedance, isHighImpedance, isUnknown, LogicValue, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, InstantiatedComponentDef, NodesIn, NodesOut, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { HighImpedance, LogicValue, Unknown, isHighImpedance, isUnknown, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineComponent } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { Output16SegRepr } from "./Output16Seg"
 import { Output7SegRepr } from "./Output7Seg"
 
@@ -91,21 +91,21 @@ export abstract class OutputBarBase<TRepr extends OutputBarBaseRepr, TValue> ext
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetColor(color)
             const cssColor = COLOR_LED_ON[color]
-            return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 16px; background-color: ${cssColor}; margin-right: 8px`)), action)
+            return MenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 16px; background-color: ${cssColor}; margin-right: 8px`)), action)
         }
 
-        const itemTransparent = ContextMenuData.item(
+        const itemTransparent = MenuData.item(
             this._transparent ? "check" : "none",
             s.TransparentWhenOff,
             () => this.doSetTransparent(!this._transparent)
         )
 
         return [
-            ["mid", ContextMenuData.submenu("palette", s.Color, [
+            ["mid", MenuData.submenu("palette", s.Color, [
                 makeItemUseColor(s.ColorGreen, "green"),
                 makeItemUseColor(s.ColorRed, "red"),
                 makeItemUseColor(s.ColorYellow, "yellow"),
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 itemTransparent,
             ])],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
@@ -263,17 +263,17 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
             const isCurrent = this._display === display
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetDisplay(display)
-            return ContextMenuData.item(icon, desc, action)
+            return MenuData.item(icon, desc, action)
         }
 
         return [
-            ["mid", ContextMenuData.submenu("eye", s.Display, [
+            ["mid", MenuData.submenu("eye", s.Display, [
                 makeItemShowAs(s.DisplayVerticalBar, "v"),
                 makeItemShowAs(s.DisplayHorizontalBar, "h"),
                 makeItemShowAs(s.DisplaySmallSquare, "px"),
                 makeItemShowAs(s.DisplayLargeSquare, "PX"),
-                ContextMenuData.sep(),
-                ContextMenuData.text(s.DisplayChangeDesc),
+                MenuData.sep(),
+                MenuData.text(s.DisplayChangeDesc),
             ])],
             ...super.makeComponentSpecificContextMenuItems(),
         ]

@@ -2,7 +2,7 @@ import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 import { ComponentFactory } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
-import { ContextMenuItem, Drawable, DrawableWithPosition } from "./components/Drawable"
+import { Drawable, DrawableWithPosition, MenuItem } from "./components/Drawable"
 import { Node } from "./components/Node"
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
@@ -634,9 +634,9 @@ class EditHandlers extends ToolHandlers {
 
         hideMenu()
 
-        const contextMenuData = comp.makeContextMenu()
-        // console.log("asking for menu: %o got: %o", comp, contextMenuData)
-        if (isDefined(contextMenuData)) {
+        const MenuData = comp.makeContextMenu()
+        // console.log("asking for menu: %o got: %o", comp, MenuData)
+        if (isDefined(MenuData)) {
 
             // console.log("setting triggered")
             const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
@@ -644,9 +644,9 @@ class EditHandlers extends ToolHandlers {
                 currentMouseDownData.triggeredContextMenu = true
             }
 
-            // console.log("building menu for %o", contextMenuData)
+            // console.log("building menu for %o", MenuData)
 
-            const defToElem = (item: ContextMenuItem): HTMLElement => {
+            const defToElem = (item: MenuItem): HTMLElement => {
                 function mkButton(spec: { icon?: IconName | undefined, caption: Modifier }, danger: boolean) {
                     return button(type("button"), cls(`menu-btn${(danger ? " danger" : "")}`),
                         isUndefined(spec.icon)
@@ -678,7 +678,7 @@ class EditHandlers extends ToolHandlers {
                 }
             }
 
-            const items = contextMenuData.map(defToElem)
+            const items = MenuData.map(defToElem)
 
             const mainContextMenu = this.editor.html.mainContextMenu
             applyModifiersTo(mainContextMenu, items)

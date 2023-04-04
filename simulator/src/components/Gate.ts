@@ -5,7 +5,7 @@ import { Modifier, ModifierObject, asValue, b, cls, div, emptyMod, mods, table, 
 import { S } from "../strings"
 import { ArrayFillUsing, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
 import { ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { ContextMenuData, ContextMenuItem, DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, MenuData, MenuItem, MenuItems } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
 
 type GateRepr = Gate1Repr | GateNRepr
@@ -426,43 +426,43 @@ export abstract class GateBase<
         return items
     }
 
-    private makeReplaceByMenuItem(): ContextMenuItem {
+    private makeReplaceByMenuItem(): MenuItem {
         const gateTypes = this.gateTypes(this.numBits)
         const s = S.Components.Gate.contextMenu
         const otherTypes = gateTypes.values.filter(t => t !== this._type && gateTypes.props[t].includeInContextMenu)
-        return ContextMenuData.submenu("replace", s.ReplaceBy, [
+        return MenuData.submenu("replace", s.ReplaceBy, [
             ...otherTypes.map(newType => {
                 const gateProps = gateTypes.props[newType]
-                return ContextMenuData.item(undefined, s.GateTempl.expand({ type: gateProps.fullShortDesc()[0] }), () => {
+                return MenuData.item(undefined, s.GateTempl.expand({ type: gateProps.fullShortDesc()[0] }), () => {
                     this.doSetType(newType)
                 })
             }),
-            ContextMenuData.sep(),
-            ContextMenuData.text(s.VariantChangeDesc),
+            MenuData.sep(),
+            MenuData.text(s.VariantChangeDesc),
         ])
     }
 
-    private makePoseAsMenuItem(): ContextMenuItem {
+    private makePoseAsMenuItem(): MenuItem {
         const gateTypes = this.gateTypes(this.numBits)
         const s = S.Components.Gate.contextMenu
         const otherTypes = gateTypes.values.filter(t => t !== this._type && gateTypes.props[t].includeInPoseAs)
         const currentShowAsUnknown = this._showAsUnknown
         const currentPoseAs = this.poseAs
-        return ContextMenuData.submenu("questioncircled", s.ShowAs, [
-            ContextMenuData.item(!currentShowAsUnknown && isUndefined(currentPoseAs) ? "check" : "none",
+        return MenuData.submenu("questioncircled", s.ShowAs, [
+            MenuData.item(!currentShowAsUnknown && isUndefined(currentPoseAs) ? "check" : "none",
                 s.NormalGateTempl.expand({ type: gateTypes.props[this._type].fullShortDesc()[0] }), () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(false)
                 }),
-            ContextMenuData.item(currentShowAsUnknown ? "check" : "none",
+            MenuData.item(currentShowAsUnknown ? "check" : "none",
                 s.UnknownGate, () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(true)
                 }),
-            ContextMenuData.sep(),
+            MenuData.sep(),
             ...otherTypes.map(newType => {
                 const gateProps = gateTypes.props[newType]
-                return ContextMenuData.item(!currentShowAsUnknown && newType === currentPoseAs ? "check" : "none",
+                return MenuData.item(!currentShowAsUnknown && newType === currentPoseAs ? "check" : "none",
                     s.GateTempl.expand({ type: gateProps.fullShortDesc()[0] }), () => {
                         this.doSetShowAsUnknown(false)
                         this.poseAs = newType
@@ -627,7 +627,7 @@ export class GateN extends GateBase<GateNRepr> {
 
         const changeBitsItems: MenuItems = Gate2OnlyTypes.includes(this.type) ? [] : [
             this.makeChangeParamsContextMenuItem("inputs", s.ParamNumInputs, this.numBits, "bits"),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
         ]
 
         return [

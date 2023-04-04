@@ -1,12 +1,12 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -220,19 +220,19 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
         const s = S.Components.MuxDemux.contextMenu
         let icon: IconName = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, s.ShowWiring, () => {
+        const toggleShowWiringItem = MenuData.item(icon, s.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 
         icon = this._disconnectedAsHighZ ? "check" : "none"
-        const toggleUseHighZItem = ContextMenuData.item(icon, s.UseZForDisconnected, () => {
+        const toggleUseHighZItem = MenuData.item(icon, s.UseZForDisconnected, () => {
             this.doSetDisconnectedAsHighZ(!this._disconnectedAsHighZ)
         })
 
         return [
             this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from"),
             this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to", [2, 4, 8, 16].map(x => x * this.numFrom)),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", toggleShowWiringItem],
             ["mid", toggleUseHighZItem],
             ...this.makeForceOutputsContextMenuItem(true),

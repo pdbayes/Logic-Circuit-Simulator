@@ -1,11 +1,11 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { ColorString, COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, GRID_STEP, inRect } from "../drawutils"
+import { DrawParams, LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, ColorString, GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
-import { DrawParams, LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { Expand, InteractionResult, isDefined, isUndefined, Mode, RichStringEnum, typeOrUndefined } from "../utils"
+import { Expand, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
 
 export interface DrawContext {
     g: CanvasRenderingContext2D
@@ -19,30 +19,30 @@ export interface DrawContextExt extends DrawContext {
     rotatePoint(x: number, y: number): readonly [x: number, y: number]
 }
 
-export type ContextMenuItem =
+export type MenuItem =
     | { _tag: "sep" }
     | { _tag: "text", caption: Modifier }
     | { _tag: "item", icon: IconName | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown }
-    | { _tag: "submenu", icon: IconName | undefined, caption: Modifier, items: ContextMenuData }
+    | { _tag: "submenu", icon: IconName | undefined, caption: Modifier, items: MenuData }
 
-export type ContextMenuData = ContextMenuItem[]
-export const ContextMenuData = {
-    sep(): ContextMenuItem {
+export type MenuData = MenuItem[]
+export const MenuData = {
+    sep(): MenuItem {
         return { _tag: "sep" }
     },
-    text(caption: Modifier): ContextMenuItem {
+    text(caption: Modifier): MenuItem {
         return { _tag: "text", caption }
     },
-    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): ContextMenuItem {
+    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => unknown, danger?: boolean): MenuItem {
         return { _tag: "item", icon, caption, action, danger }
     },
-    submenu(icon: IconName | undefined, caption: Modifier, items: ContextMenuData): ContextMenuItem {
+    submenu(icon: IconName | undefined, caption: Modifier, items: MenuData): MenuItem {
         return { _tag: "submenu", icon, caption, items }
     },
 }
 
-export type ContextMenuItemPlacement = "start" | "mid" | "end" // where to insert items created by components
-export type MenuItems = Array<[ContextMenuItemPlacement, ContextMenuItem]>
+export type MenuItemPlacement = "start" | "mid" | "end" // where to insert items created by components
+export type MenuItems = Array<[MenuItemPlacement, MenuItem]>
 
 class _DrawContextImpl implements DrawContext, DrawContextExt {
 
@@ -148,15 +148,15 @@ export abstract class Drawable {
         return undefined
     }
 
-    public makeContextMenu(): ContextMenuData | undefined {
+    public makeContextMenu(): MenuData | undefined {
         return undefined
     }
 
-    protected makeSetRefContextMenuItem(): ContextMenuItem {
+    protected makeSetRefContextMenuItem(): MenuItem {
         const currentRef = this.ref
         const s = S.Components.Generic.contextMenu
         const caption: Modifier = isUndefined(currentRef) ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
-        return ContextMenuData.item("ref", caption, () => {
+        return MenuData.item("ref", caption, () => {
             const newRef = window.prompt(s.SetIdentifierPrompt, currentRef)
             if (newRef !== null) {
                 // OK button pressed
@@ -405,7 +405,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         const s = S.Components.Generic.contextMenu
 
         const rotateItem: MenuItems = !this.canRotate() ? [] : [
-            ["start", ContextMenuData.submenu("direction", s.Orientation, [
+            ["start", MenuData.submenu("direction", s.Orientation, [
                 ...Orientations.values.map(orient => {
                     const isCurrent = this._orient === orient
                     const icon = isCurrent ? "check" : "none"
@@ -413,15 +413,15 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
                     const action = isCurrent ? () => undefined : () => {
                         this.doSetOrient(orient)
                     }
-                    return ContextMenuData.item(icon, caption, action)
+                    return MenuData.item(icon, caption, action)
                 }),
-                ContextMenuData.sep(),
-                ContextMenuData.text(s.ChangeOrientationDesc),
+                MenuData.sep(),
+                MenuData.text(s.ChangeOrientationDesc),
             ])],
         ]
 
         const lockPosItem: MenuItems = !this.canLockPos() ? [] : [
-            ["start", ContextMenuData.item(this.lockPos ? "check" : "none", s.LockPosition, () => {
+            ["start", MenuData.item(this.lockPos ? "check" : "none", s.LockPosition, () => {
                 this.doSetLockPos(!this.lockPos)
             })],
         ]

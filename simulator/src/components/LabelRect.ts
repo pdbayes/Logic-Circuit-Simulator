@@ -1,12 +1,12 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { span, style, title } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isDefined, isUndefined, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, Drawable, DrawableWithPosition, DrawContext, MenuItems } from "./Drawable"
+import { ComponentBase, Repr, defineComponent } from "./Component"
+import { DrawContext, Drawable, DrawableWithPosition, MenuData, MenuItems } from "./Drawable"
 
 export const RectangleColor = {
     grey: "grey",
@@ -253,12 +253,12 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.LabelRect.contextMenu
         const currentSizeStr = this.makeCurrentSizeString()
-        const setSizeItem = ContextMenuData.item("dimensions", s.Size + ` (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))
+        const setSizeItem = MenuData.item("dimensions", s.Size + ` (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))
 
         const makeSetStrokeWidthItem = (strokeWidth: number, desc: string) => {
             const isCurrent = this._strokeWidth === strokeWidth
             const icon = isCurrent ? "check" : "none"
-            return ContextMenuData.item(icon, desc, () => this.doSetStrokeWidth(strokeWidth))
+            return MenuData.item(icon, desc, () => this.doSetStrokeWidth(strokeWidth))
         }
 
         const makeItemUseColor = (desc: string, color: RectangleColor) => {
@@ -269,50 +269,50 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
                 const fillColorProp = this._noFill ? "" : `background-color: ${COLOR_RECTANGLE_BACKGROUND[color]}; `
                 const roundedProp = !this._rounded ? "" : "border-radius: 4px; "
                 const borderColor = COLOR_RECTANGLE_BORDER[color]
-                return ContextMenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 18px; ${fillColorProp}${roundedProp}margin-right: 8px; border: 2px solid ${borderColor}`)), action)
+                return MenuData.item(icon, span(title(desc), style(`display: inline-block; width: 140px; height: 18px; ${fillColorProp}${roundedProp}margin-right: 8px; border: 2px solid ${borderColor}`)), action)
             } else {
-                return ContextMenuData.item(icon, desc, action)
+                return MenuData.item(icon, desc, action)
             }
         }
 
-        const toggleRoundedItem = ContextMenuData.item(this._rounded ? "check" : "none", s.Rounded, () => {
+        const toggleRoundedItem = MenuData.item(this._rounded ? "check" : "none", s.Rounded, () => {
             this._rounded = !this._rounded
             this.setNeedsRedraw("rounded changed")
         })
 
-        const toggleNoFillItem = ContextMenuData.item(!this._noFill ? "check" : "none", s.WithBackgroundColor, () => {
+        const toggleNoFillItem = MenuData.item(!this._noFill ? "check" : "none", s.WithBackgroundColor, () => {
             this._noFill = !this._noFill
             this.setNeedsRedraw("nofill changed")
         })
 
         const setCaptionItemName = isDefined(this._caption) ? s.ChangeTitle : s.SetTitle
-        const setCaptionItem = ContextMenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog())
+        const setCaptionItem = MenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog())
 
         const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
             const isCurrent = this._captionPos === placement
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetCaptionPos(placement)
-            return ContextMenuData.item(icon, desc, action)
+            return MenuData.item(icon, desc, action)
         }
 
         const toggleCaptionInsideItems = this._captionPos === "c" ? [] : [
-            ContextMenuData.item(this._captionInside ? "check" : "none", s.InsideFrame, () => {
+            MenuData.item(this._captionInside ? "check" : "none", s.InsideFrame, () => {
                 this._captionInside = !this._captionInside
                 this.setNeedsRedraw("caption inside changed")
             }),
-            ContextMenuData.sep(),
+            MenuData.sep(),
         ]
 
-        const setFontItem = ContextMenuData.item("font", s.Font, () => {
+        const setFontItem = MenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelRectDef.aults.font, this.doSetFont.bind(this))
         })
 
 
         return [
             ["mid", setSizeItem],
-            ["mid", ContextMenuData.submenu("palette", s.Color, [
+            ["mid", MenuData.submenu("palette", s.Color, [
                 toggleNoFillItem,
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 makeItemUseColor(s.ColorYellow, RectangleColor.yellow),
                 makeItemUseColor(s.ColorRed, RectangleColor.red),
                 makeItemUseColor(s.ColorGreen, RectangleColor.green),
@@ -320,9 +320,9 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
                 makeItemUseColor(s.ColorTurquoise, RectangleColor.turquoise),
                 makeItemUseColor(s.ColorGrey, RectangleColor.grey),
             ])],
-            ["mid", ContextMenuData.submenu("strokewidth", s.Border, [
+            ["mid", MenuData.submenu("strokewidth", s.Border, [
                 makeSetStrokeWidthItem(0, s.BorderNone),
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 makeSetStrokeWidthItem(1, s.Border1px),
                 makeSetStrokeWidthItem(2, s.Border2px),
                 makeSetStrokeWidthItem(3, s.Border3px),
@@ -330,10 +330,10 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
                 makeSetStrokeWidthItem(10, s.Border10px),
             ])],
             ["mid", toggleRoundedItem],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", setCaptionItem],
             ["mid", setFontItem],
-            ["mid", ContextMenuData.submenu("placement", s.TitlePlacement, [
+            ["mid", MenuData.submenu("placement", s.TitlePlacement, [
                 ...toggleCaptionInsideItems,
                 makeItemSetPlacement(s.PlacementTop, CaptionPosition.n),
                 makeItemSetPlacement(s.PlacementTopLeft, CaptionPosition.nw),

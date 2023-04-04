@@ -5,7 +5,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, isUndefined, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
 
@@ -191,16 +191,16 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
             const icon = this._displayRadix === displayRadix ? "check" : "none"
             const caption = s.DisplayTempl.expand({ desc })
             const action = () => this.doSetDisplayRadix(displayRadix)
-            return ContextMenuData.item(icon, caption, action)
+            return MenuData.item(icon, caption, action)
         }
 
         return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", makeItemShowRadix(undefined, s.DisplayNone)],
             ["mid", makeItemShowRadix(10, s.DisplayDecimal)],
             ["mid", makeItemShowRadix(16, s.DisplayHex)],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),
         ]

@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillWith, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { ArrayFillWith, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -192,14 +192,14 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.MuxDemux.contextMenu
         const icon = this._showWiring ? "check" : "none"
-        const toggleShowWiringItem = ContextMenuData.item(icon, s.ShowWiring, () => {
+        const toggleShowWiringItem = MenuData.item(icon, s.ShowWiring, () => {
             this.doSetShowWiring(!this._showWiring)
         })
 
         return [
             this.makeChangeParamsContextMenuItem("outputs", s.ParamNumTo, this.numTo, "to"),
             this.makeChangeParamsContextMenuItem("inputs", s.ParamNumFrom, this.numFrom, "from", [2, 4, 8, 16].map(x => x * this.numTo)),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", toggleShowWiringItem],
             ...this.makeForceOutputsContextMenuItem(true),
         ]

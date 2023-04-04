@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayClampOrPad, ArrayFillWith, HighImpedance, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
@@ -439,15 +439,15 @@ export class Input extends InputBase<InputRepr> {
             const isCurrent = this._isPushButton === value
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetIsPushButton(value)
-            return ContextMenuData.item(icon, desc, action)
+            return MenuData.item(icon, desc, action)
         }
 
         const newItems: MenuItems = [
             ["mid", makeItemBehaveAs(s.ToggleButton, false)],
             ["mid", makeItemBehaveAs(s.PushButton, true)],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
 
         ]
 
@@ -455,18 +455,18 @@ export class Input extends InputBase<InputRepr> {
             const makeToggleConstantItem = () => {
                 const icon = this._isConstant ? "check" : "none"
                 const action = () => this.doSetIsConstant(!this._isConstant)
-                return ContextMenuData.item(icon, s.LockValue + ` (${toLogicValueRepr(this.value[0])})`, action)
+                return MenuData.item(icon, s.LockValue + ` (${toLogicValueRepr(this.value[0])})`, action)
             }
             const replaceWithClockItem =
-                ContextMenuData.item("timer", s.ReplaceWithClock, () => {
+                MenuData.item("timer", s.ReplaceWithClock, () => {
                     this.replaceWithComponent(ClockDef.make(this.editor))
                 })
 
             newItems.push(
                 ["mid", makeToggleConstantItem()],
-                ["mid", ContextMenuData.sep()],
+                ["mid", MenuData.sep()],
                 ["mid", replaceWithClockItem],
-                ["mid", ContextMenuData.sep()],
+                ["mid", MenuData.sep()],
             )
         }
 

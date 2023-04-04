@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
 
 
@@ -273,16 +273,16 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.ALU.contextMenu
         const icon = this._showOp ? "check" : "none"
-        const toggleShowOpItem = ContextMenuData.item(icon, s.toggleShowOp, () => {
+        const toggleShowOpItem = MenuData.item(icon, s.toggleShowOp, () => {
             this.doSetShowOp(!this._showOp)
         })
 
         return [
             ["mid", toggleShowOpItem],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             this.makeChangeBooleanParamsContextMenuItem(s.ParamUseExtendedOpcode, this.usesExtendedOpcode, "ext"),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ...this.makeForceOutputsContextMenuItem(),
         ]
     }

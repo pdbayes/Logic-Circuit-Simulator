@@ -4,7 +4,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
-import { ContextMenuData } from "./Drawable"
+import { MenuData } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { ROMRAMBase, ROMRAMDef, ROMRAMValue } from "./ROM"
 
@@ -131,7 +131,7 @@ export class RAM extends ROMRAMBase<RAMRepr> {
         return [
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
 
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
         ]
     }
 

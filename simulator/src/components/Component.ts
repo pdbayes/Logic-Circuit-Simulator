@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
 import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawableWithDraggablePosition, DrawContext, DrawContextExt, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { DrawableWithDraggablePosition, DrawContext, DrawContextExt, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
@@ -366,6 +366,16 @@ export abstract class ComponentBase<
     }
 
     public abstract toJSON(): TRepr
+
+    protected toNodelessJSON(): TRepr {
+        // useful to clone a component without its node numbers,
+        // which will be reobtained when the new component is created
+        const repr = this.toJSON()
+        delete (repr as ComponentRepr<true, true>).in
+        delete (repr as ComponentRepr<true, true>).out
+        delete (repr as ComponentRepr<true, false>).id
+        return repr
+    }
 
     // typically used by subclasses to provide only their specific JSON,
     // splatting in the result of super.toJSONBase() in the object
@@ -910,11 +920,11 @@ export abstract class ComponentBase<
             for (const node of nodes) {
                 const group = node.group
                 if (isUndefined(group)) {
-                    const wires = savedWires.get(node.shortName) as TWires
+                    const wires = savedWires.get(node.shortName) as TWires | undefined
                     setWires(wires, node)
                 } else {
-                    const wiresArray = savedWires.get(group.name) as TWires[]
-                    const wires = wiresArray[group.nodes.indexOf(node)]
+                    const wiresArray = savedWires.get(group.name) as TWires[] | undefined
+                    const wires = wiresArray?.[group.nodes.indexOf(node)]
                     setWires(wires, node)
                 }
             }
@@ -1044,17 +1054,17 @@ export abstract class ComponentBase<
         return this.lockPos ? undefined : "grab"
     }
 
-    public override makeContextMenu(): ContextMenuData {
-        const menuItems: ContextMenuData = []
+    public override makeContextMenu(): MenuData {
+        const menuItems: MenuData = []
 
         const baseItems = this.makeBaseContextMenu()
         const specificItems = this.makeComponentSpecificContextMenuItems()
 
         let lastWasSep = true
-        function addItemsAt(placement: ContextMenuItemPlacement, items: MenuItems, insertSep = false) {
+        function addItemsAt(placement: MenuItemPlacement, items: MenuItems, insertSep = false) {
             if (insertSep) {
                 if (!lastWasSep) {
-                    menuItems.push(ContextMenuData.sep())
+                    menuItems.push(MenuData.sep())
                 }
                 lastWasSep = true
             }
@@ -1080,7 +1090,7 @@ export abstract class ComponentBase<
         const setRefItems: MenuItems =
             this.editor.mode < Mode.FULL ? [] : [
                 ["end", this.makeSetRefContextMenuItem()],
-                ["end", ContextMenuData.sep()],
+                ["end", MenuData.sep()],
             ]
 
         return [
@@ -1094,8 +1104,8 @@ export abstract class ComponentBase<
         return []
     }
 
-    protected makeDeleteContextMenuItem(): ContextMenuItem {
-        return ContextMenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
+    protected makeDeleteContextMenuItem(): MenuItem {
+        return MenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
             this.editor.tryDeleteDrawable(this)
         }, true)
     }
@@ -1109,10 +1119,10 @@ export abstract class ComponentBase<
 
         const s = S.Components.Generic.contextMenu
 
-        function makeOutputItems(out: NodeOut): ContextMenuItem[] {
+        function makeOutputItems(out: NodeOut): MenuItem[] {
             const currentForceValue = out.forceValue
             const items = [undefined, Unknown, true, false, HighImpedance]
-                .map(newForceValue => ContextMenuData.item(
+                .map(newForceValue => MenuData.item(
                     currentForceValue === newForceValue ? "check" : "none",
                     (() => {
                         switch (newForceValue) {
@@ -1129,30 +1139,30 @@ export abstract class ComponentBase<
                 ))
 
             // insert separator
-            items.splice(1, 0, ContextMenuData.sep())
+            items.splice(1, 0, MenuData.sep())
             return items
         }
 
         const footerItems = [
-            ContextMenuData.sep(),
-            ContextMenuData.text(s.ForceOutputDesc),
+            MenuData.sep(),
+            MenuData.text(s.ForceOutputDesc),
         ]
 
         const items: MenuItems = []
         if (withSepBefore) {
-            items.push(["mid", ContextMenuData.sep()])
+            items.push(["mid", MenuData.sep()])
         }
         if (numOutputs === 1) {
-            items.push(["mid", ContextMenuData.submenu("force", s.ForceOutputSingle, [
+            items.push(["mid", MenuData.submenu("force", s.ForceOutputSingle, [
                 ...makeOutputItems(this.outputs._all[0]!),
                 ...footerItems,
             ])])
 
         } else {
-            items.push(["mid", ContextMenuData.submenu("force", s.ForceOutputMultiple, [
+            items.push(["mid", MenuData.submenu("force", s.ForceOutputMultiple, [
                 ...this.outputs._all.map((out) => {
                     const icon = isDefined(out.forceValue) ? "force" : "none"
-                    return ContextMenuData.submenu(icon, s.Output + " " + out.fullName,
+                    return MenuData.submenu(icon, s.Output + " " + out.fullName,
                         makeOutputItems(out)
                     )
                 }),
@@ -1163,10 +1173,10 @@ export abstract class ComponentBase<
         return items
     }
 
-    protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): ContextMenuItem {
+    protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): MenuItem {
         const s = S.Components.Generic.contextMenu
         const caption = isUndefined(currentName) ? s.SetName : s.ChangeName
-        return ContextMenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
+        return MenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
     }
 
     protected runSetNameDialog(currentName: ComponentName, handler: (newName: ComponentName) => void): void {
@@ -1247,20 +1257,20 @@ export abstract class ParametrizedComponentBase<
         currentValue: TVal,
         fieldName: TField,
         values?: readonly TVal[],
-    ): [ContextMenuItemPlacement, ContextMenuItem] {
+    ): [MenuItemPlacement, MenuItem] {
         const makeChangeValueItem = (val: TVal) => {
             const isCurrent = currentValue === val
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => {
                 this.replaceWithNewParams({ [fieldName]: val } as Partial<TParams>)
             }
-            return ContextMenuData.item(icon, itemCaption.expand({ val }), action)
+            return MenuData.item(icon, itemCaption.expand({ val }), action)
         }
 
         if (isUndefined(values)) {
             values = (this._def.paramDefs[fieldName] as ParamDef<TVal>).range
         }
-        return ["mid", ContextMenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
+        return ["mid", MenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
     }
 
     protected makeChangeBooleanParamsContextMenuItem<
@@ -1269,19 +1279,16 @@ export abstract class ParametrizedComponentBase<
         caption: string,
         currentValue: boolean,
         fieldName: TField,
-    ): [ContextMenuItemPlacement, ContextMenuItem] {
+    ): [MenuItemPlacement, MenuItem] {
         const icon = currentValue ? "check" : "none"
-        return ["mid", ContextMenuData.item(icon, caption, () => {
+        return ["mid", MenuData.item(icon, caption, () => {
             this.replaceWithNewParams({ [fieldName]: !currentValue } as Partial<TParams>)
         })]
     }
 
     protected replaceWithNewParams(newParams: Partial<TParams>): Component | undefined {
-        const currentRepr = this.toJSON()
+        const currentRepr = this.toNodelessJSON()
         const newRepr = { ...currentRepr, ...newParams }
-        delete (newRepr as ComponentRepr<true, true>).in
-        delete (newRepr as ComponentRepr<true, true>).out
-        delete (newRepr as ComponentRepr<true, false>).id
 
         const newComp = this._def.makeFromJSON(this.editor, newRepr)
         if (isUndefined(newComp)) {

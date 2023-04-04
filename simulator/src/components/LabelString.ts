@@ -1,11 +1,11 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { S } from "../strings"
 import { isUndefined, typeOrUndefined } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { ComponentBase, Repr, defineComponent } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 
 export const LabelStringDef =
     defineComponent("label", undefined, {
@@ -106,9 +106,9 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.LabelString.contextMenu
-        const setTextItem = ContextMenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
+        const setTextItem = MenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
 
-        const setFontItem = ContextMenuData.item("font", s.Font, () => {
+        const setFontItem = MenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelStringDef.aults.font, this.doSetFont.bind(this))
         })
 

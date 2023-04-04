@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { ALUDef } from "./ALU"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
@@ -237,24 +237,24 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.GateArray.contextMenu
 
-        const typeItems: ContextMenuData = []
+        const typeItems: MenuData = []
         for (const subtype of ["AND", "OR", "XOR", "NAND", "NOR", "XNOR", "-", "IMPLY", "RIMPLY", "NIMPLY", "RNIMPLY"] as const) {
             if (subtype === "-") {
-                typeItems.push(ContextMenuData.sep())
+                typeItems.push(MenuData.sep())
             } else {
                 const icon = this._subtype === subtype ? "check" : "none"
-                typeItems.push(ContextMenuData.item(icon, subtype, () => {
+                typeItems.push(MenuData.item(icon, subtype, () => {
                     this.doSetSubtype(subtype)
                 }))
             }
         }
 
         const items: MenuItems = [
-            ["mid", ContextMenuData.submenu("settings", s.Type, typeItems)],
+            ["mid", MenuData.submenu("settings", s.Type, typeItems)],
         ]
 
         if (this.editor.mode >= Mode.FULL) {
-            const showAsUnknownItem = ContextMenuData.item(this._showAsUnknown ? "check" : "none", s.ShowAsUnknown, () => {
+            const showAsUnknownItem = MenuData.item(this._showAsUnknown ? "check" : "none", s.ShowAsUnknown, () => {
                 this.doSetShowAsUnknown(!this._showAsUnknown)
             })
 
@@ -264,7 +264,7 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
         }
 
         items.push(
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true)
         )

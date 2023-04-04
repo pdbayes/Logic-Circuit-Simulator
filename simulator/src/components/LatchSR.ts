@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { LogicValue } from "../utils"
 import { defineComponent, Repr } from "./Component"
-import { ContextMenuData, MenuItems } from "./Drawable"
+import { MenuData, MenuItems } from "./Drawable"
 import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
@@ -74,7 +74,7 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const icon = this._showContent ? "check" : "none"
-        const toggleShowContentItem = ContextMenuData.item(icon, S.Components.Generic.contextMenu.ShowContent, () => {
+        const toggleShowContentItem = MenuData.item(icon, S.Components.Generic.contextMenu.ShowContent, () => {
             this.doSetShowContent(!this._showContent)
         })
 

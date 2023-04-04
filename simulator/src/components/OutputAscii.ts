@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, isUnknown, Mode, typeOrUndefined } from "../utils"
-import { ComponentBase, ComponentName, ComponentNameRepr, defineComponent, groupVertical, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
+import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent, groupVertical } from "./Component"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 
 
 export const OutputAsciiDef =
@@ -196,7 +196,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
             const icon = isCurrent ? "check" : "none"
-            return ContextMenuData.item(icon, desc, handler)
+            return MenuData.item(icon, desc, handler)
         }
 
         const makeItemShowRadix = (radix: number | undefined, desc: string) => {
@@ -207,15 +207,15 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         }
 
         return [
-            ["mid", ContextMenuData.submenu("eye", s.AdditionalDisplay, [
+            ["mid", MenuData.submenu("eye", s.AdditionalDisplay, [
                 makeItemShowRadix(undefined, s.DisplayNone),
                 makeItemShowRadix(10, s.DisplayDecimal),
                 makeItemShowRadix(16, s.DisplayHex),
-                ContextMenuData.sep(),
-                ContextMenuData.text(s.ChangeDisplayDesc),
+                MenuData.sep(),
+                MenuData.text(s.ChangeDisplayDesc),
             ])],
             ["mid", makeItemShowAs(S.Components.Generic.contextMenu.ShowAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }

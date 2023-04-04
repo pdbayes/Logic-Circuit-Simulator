@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver'
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_EMPTY, colorForBoolean, displayValuesFromArray, formatWithRadix, strokeSingleLine } from "../drawutils"
@@ -5,7 +6,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupHorizontal, groupVertical, param } from "./Component"
-import { ContextMenuData, ContextMenuItem, ContextMenuItemPlacement, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
 import { RAM, RAMDef } from "./RAM"
 
 
@@ -84,7 +85,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
     }
 
     public static contentsFromString(stringRep: string | string[], numDataBits: number, numWords: number) {
-        const splitContent = isArray(stringRep) ? stringRep : stringRep.split(" ")
+        const splitContent = isArray(stringRep) ? stringRep : stringRep.split(/\s+/)
         const mem: LogicValue[][] = new Array(numWords)
         for (let i = 0; i < numWords; i++) {
             const row = i >= splitContent.length
@@ -119,11 +120,11 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
             ...super.toJSONBase(),
             showContent: (!this.canShowContent()) ? undefined : (this._showContent !== RAMDef.aults.showContent) ? this._showContent : undefined,
             displayRadix: this._displayRadix !== RAMDef.aults.displayRadix ? this._displayRadix : undefined,
-            content: this.contentRepr(true),
+            content: this.contentRepr(" ", true),
         }
     }
 
-    private contentRepr(trimEnd: boolean): string | undefined {
+    private contentRepr<TrimEnd extends boolean>(delim: string, trimEnd: TrimEnd): TrimEnd extends false ? string : string | undefined {
         const cells: string[] = []
         const useHex = this.numDataBits >= 8
         const hexWidth = Math.ceil(this.numDataBits / 4)
@@ -146,7 +147,8 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
                 cells.splice(this.numWords - numToSkip, numToSkip)
             }
         }
-        return cells.length === 0 ? undefined : cells.join(" ")
+        const result: string | undefined = cells.length === 0 ? undefined : cells.join(delim)
+        return result as any
     }
 
     protected currentAddress(): number | Unknown {
@@ -245,22 +247,51 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
 
         const makeItemShowRadix = (radix: number | undefined, desc: string) => {
             const icon = this._displayRadix === radix ? "check" : "none"
-            return ContextMenuData.item(icon, desc, () => this.doSetDisplayRadix(radix))
+            return MenuData.item(icon, desc, () => this.doSetDisplayRadix(radix))
         }
 
-        const editContentItem: [ContextMenuItemPlacement, ContextMenuItem] =
-            ["mid", ContextMenuData.item("memcontent", s.EditContent, () => {
-                const current = this.contentRepr(false)
+        const editContentItem: [MenuItemPlacement, MenuItem] =
+            ["mid", MenuData.item("memcontent", s.EditContent, () => {
+                const current = this.contentRepr(" ", false)
                 const promptReturnValue = window.prompt(s.EditContentPrompt, current)
                 if (promptReturnValue !== null) {
                     this.doSetMem(RAM.contentsFromString(promptReturnValue, this.numDataBits, this.numWords))
                 }
             })]
 
-        const additionalDisplayItems: [ContextMenuItemPlacement, ContextMenuItem] =
-            ["mid", ContextMenuData.submenu("eye", s.SelectedDataDisplay, [
+        const saveContentItem: [MenuItemPlacement, MenuItem] =
+            ["mid", MenuData.item("download", s.SaveContent, () => {
+                const blob = new Blob([this.contentRepr("\n", false)], { type: "text/plain" })
+                const filename = (this.editor.options.name ?? "circuit") + "." + (this.ref ?? this.moduleName.toLowerCase()) + "-content.txt"
+                saveAs(blob, filename)
+            })]
+
+        const loadContentItem: [MenuItemPlacement, MenuItem] =
+            ["mid", MenuData.item("open", s.LoadContent, () => {
+                this.editor.runFileChooser("text/plain", async file => {
+                    const content = await file.text()
+                    this.doSetMem(RAM.contentsFromString(content, this.numDataBits, this.numWords))
+                })
+            })]
+
+        const swapROMRAMItem: [MenuItemPlacement, MenuItem] =
+            ["mid", MenuData.item("replace", s.SwapROMRAM, () => {
+                const isROM = this instanceof ROM
+                const repr = this.toNodelessJSON();
+                (repr as any).type = isROM ? "ram" : "rom"
+                const otherDef = isROM ? RAMDef : ROMDef
+                const newComp = otherDef.makeFromJSON(this.editor, repr)
+                if (isUndefined(newComp)) {
+                    console.warn("Could not swap ROM/RAM from repr:", repr)
+                    return
+                }
+                this.replaceWithComponent(newComp)
+            })]
+
+        const additionalDisplayItems: [MenuItemPlacement, MenuItem] =
+            ["mid", MenuData.submenu("eye", s.SelectedDataDisplay, [
                 makeItemShowRadix(undefined, ss.DisplayNone),
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 makeItemShowRadix(2, ss.DisplayAsBinary),
                 makeItemShowRadix(16, ss.DisplayAsHexadecimal),
                 makeItemShowRadix(10, ss.DisplayAsDecimal),
@@ -272,16 +303,21 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
         const icon = this._showContent ? "check" : "none"
         const toggleShowContentItems: MenuItems =
             !this.canShowContent() ? [] : [
-                ["mid", ContextMenuData.item(icon, sg.ShowContent,
+                ["mid", MenuData.item(icon, sg.ShowContent,
                     () => this.doSetShowContent(!this._showContent))],
             ]
 
         return [
             ...this.makeSpecificROMRAMItems(),
-            editContentItem,
-            ...toggleShowContentItems,
             additionalDisplayItems,
-            ["mid", ContextMenuData.sep()],
+            ...toggleShowContentItems,
+            ["mid", MenuData.sep()],
+            editContentItem,
+            saveContentItem,
+            loadContentItem,
+            ["mid", MenuData.sep()],
+            swapROMRAMItem,
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("memlines", sg.ParamNumWords, this.numWords, "lines"),
             this.makeChangeParamsContextMenuItem("outputs", S.Components.Generic.contextMenu.ParamNumBits, this.numDataBits, "bits"),
             ...this.makeForceOutputsContextMenuItem(true),

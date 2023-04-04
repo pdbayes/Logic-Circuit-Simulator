@@ -611,6 +611,9 @@ const Strings_fr = {
                 SelectedDataDisplay: "Affichage des données addressées",
                 EditContent: "Éditer le contenu…",
                 EditContentPrompt: "Tapez le nouveau contenu de la mémoire en séparant les lignes par des espaces. S’il y a autant de caractères que de bits, les données sont lues comme étant du binaire, sinon, comme de l'hexadécimal.",
+                SaveContent: "Sauvegarder le contenu",
+                LoadContent: "Charger le contenu…",
+                SwapROMRAM: "Échanger ROM et RAM",
             },
         },
         ROM: {
@@ -1272,7 +1275,9 @@ const Strings_en: Strings = {
                 SelectedDataDisplay: "Addressed Data Display",
                 EditContent: "Edit Content…",
                 EditContentPrompt: "Type in the new memory content, separating lines with spaces. If there are as many characters as bits, the input is parsed as a binary string, and otherwise as a hexadecimal string.",
-
+                SaveContent: "Save Content",
+                LoadContent: "Load Content…",
+                SwapROMRAM: "Swap ROM/RAM",
             },
         },
         ROM: {

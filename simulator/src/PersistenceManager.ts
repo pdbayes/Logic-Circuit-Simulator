@@ -1,7 +1,8 @@
+import { saveAs } from 'file-saver'
 import { ComponentFactory } from "./ComponentFactory"
+import { LogicEditor } from "./LogicEditor"
 import { ComponentCategories, JsonFieldComponent, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { Wire } from "./components/Wire"
-import { LogicEditor } from "./LogicEditor"
 import { stringifySmart } from "./stringifySmart"
 import { binaryStringRepr, isAllZeros, isArray, isDefined, isString, isUndefined, keysOf, toLogicValue, validateJson } from "./utils"
 
@@ -259,21 +260,7 @@ class _PersistenceManager {
         const workspaceJsonStr = this.stringifyWorkspace(this.buildWorkspace(editor), false)
         const blob = new Blob([workspaceJsonStr], { type: 'application/json' })
         const filename = (editor.options.name ?? "circuit") + ".json"
-
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-
-        const clickHandler = () => {
-            setTimeout(() => {
-                URL.revokeObjectURL(url)
-                a.removeEventListener('click', clickHandler)
-            }, 150)
-        }
-
-        a.addEventListener('click', clickHandler, false)
-        a.click()
+        saveAs(blob, filename)
     }
 
 }

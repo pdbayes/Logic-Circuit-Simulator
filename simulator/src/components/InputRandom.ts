@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, isDefined, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, typeOrUndefined } from "../utils"
+import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
@@ -172,14 +172,14 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.InputRandom.contextMenu
         const icon = this._showProb ? "check" : "none"
-        const toggleShowProbItem = ContextMenuData.item(icon, s.ShowProb,
+        const toggleShowProbItem = MenuData.item(icon, s.ShowProb,
             () => this.doSetShowProb(!this._showProb))
 
         return [
             ["mid", toggleShowProbItem],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }

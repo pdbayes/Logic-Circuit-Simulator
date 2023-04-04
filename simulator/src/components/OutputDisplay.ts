@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { colorComps, colorForFraction, ColorString, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
-import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_UNKNOWN, ColorString, colorComps, colorForFraction, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
+import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { isUnknown, Mode, typeOrUndefined, Unknown } from "../utils"
-import { ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { Mode, Unknown, isUnknown, typeOrUndefined } from "../utils"
+import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
     defineParametrizedComponent("out", "display", true, false, {
@@ -177,7 +177,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
             const icon = isCurrent ? "check" : "none"
             const caption = s.DisplayAs + " " + desc
             const action = isCurrent ? () => undefined : handler
-            return ContextMenuData.item(icon, caption, action)
+            return MenuData.item(icon, caption, action)
         }
 
         const makeItemShowRadix = (radix: number, desc: string) => {
@@ -195,9 +195,9 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
             ["mid", makeItemShowRadix(8, s.DisplayAsOctal)],
             ["mid", makeItemShowRadix(16, s.DisplayAsHexadecimal)],
             ["mid", makeItemShowAs(s.DisplayAsUnknown, () => this.doSetShowAsUnknown(!this._showAsUnknown), this._showAsUnknown)],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
         ]
     }

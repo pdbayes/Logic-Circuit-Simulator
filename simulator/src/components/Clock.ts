@@ -1,11 +1,11 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isDefined, LogicValue, typeOrUndefined } from "../utils"
-import { ComponentNameRepr, ComponentState, defineComponent, Repr } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { LogicValue, isDefined, typeOrUndefined } from "../utils"
+import { ComponentNameRepr, ComponentState, Repr, defineComponent } from "./Component"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { InputBase, InputDef } from "./Input"
 
 export const ClockDef =
@@ -174,19 +174,19 @@ export class Clock extends InputBase<ClockRepr> {
             const [period, desc] = data
             const isCurrent = this._period === period
             const icon = isCurrent ? "check" : "none"
-            return ContextMenuData.item(icon, desc, () => this.doSetPeriod(period))
+            return MenuData.item(icon, desc, () => this.doSetPeriod(period))
         }
 
         const replaceWithInputItem =
-            ContextMenuData.item("replace", s.ReplaceWithInput, () => {
+            MenuData.item("replace", s.ReplaceWithInput, () => {
                 this.replaceWithComponent(InputDef.make(this.editor, { bits: 1 }))
             })
 
         return [
             ...super.makeComponentSpecificContextMenuItems(),
-            ["mid", ContextMenuData.sep()],
-            ["mid", ContextMenuData.submenu("timer", s.Period, periodPresets.map(makeItemSetPeriod))],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
+            ["mid", MenuData.submenu("timer", s.Period, periodPresets.map(makeItemSetPeriod))],
+            ["mid", MenuData.sep()],
             ["mid", replaceWithInputItem],
         ]
     }

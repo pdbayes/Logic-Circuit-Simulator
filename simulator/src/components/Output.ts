@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, GRID_STEP, INPUT_OUTPUT_DIAMETER, triangle, useCompact } from "../drawutils"
-import { mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, triangle, useCompact } from "../drawutils"
+import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, toLogicValueRepr, typeOrUndefined, Unknown } from "../utils"
-import { Component, ComponentName, ComponentNameRepr, defineParametrizedComponent, groupVertical, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems, Orientation } from "./Drawable"
+import { ArrayFillWith, LogicValue, Mode, Unknown, isDefined, isUndefined, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { Component, ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
+import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 import { InputDef } from "./Input"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -214,7 +214,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
         return [
             ["mid", this.makeSetNameContextMenuItem(this._name, this.doSetName.bind(this))],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
         ]
     }

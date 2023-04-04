@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { ContextMenuData, DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
 
@@ -211,17 +211,17 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
             const isCurrent = this._slant === slant
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetSlant(slant)
-            return ContextMenuData.item(icon, desc, action)
+            return MenuData.item(icon, desc, action)
         }
 
         return [
-            ["mid", ContextMenuData.submenu("slanted", s.Slant, [
+            ["mid", MenuData.submenu("slanted", s.Slant, [
                 makeItemSetSlant(s.SlantNone, Slant.none),
-                ContextMenuData.sep(),
+                MenuData.sep(),
                 makeItemSetSlant(s.SlantRight, Slant.down),
                 makeItemSetSlant(s.SlantLeft, Slant.up),
             ])],
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             this.makeChangeParamsContextMenuItem("inputs", S.Components.Generic.contextMenu.ParamNumBits, this.numBits, "bits"),
         ]
     }

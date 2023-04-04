@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param, paramBool } from "./Component"
 import { Counter } from "./Counter"
-import { ContextMenuData, DrawContext, DrawContextExt, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawContextExt, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
@@ -170,15 +170,15 @@ export abstract class RegisterBase<
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Generic.contextMenu
         const icon = this._showContent ? "check" : "none"
-        const toggleShowContentItem = ContextMenuData.item(icon, s.ShowContent,
+        const toggleShowContentItem = MenuData.item(icon, s.ShowContent,
             () => this.doSetShowContent(!this._showContent))
 
         return [
             this.makeChangeParamsContextMenuItem("outputs", s.ParamNumBits, this.numBits, "bits"),
             ...this.makeRegisterSpecificContextMenuItems(),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ...makeTriggerItems(this._trigger, this.doSetTrigger.bind(this)),
-            ["mid", ContextMenuData.sep()],
+            ["mid", MenuData.sep()],
             ["mid", toggleShowContentItem],
             ...this.makeForceOutputsContextMenuItem(true),
         ]
