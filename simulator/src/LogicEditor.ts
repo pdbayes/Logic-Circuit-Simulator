@@ -33,7 +33,7 @@ import { gallery } from './gallery'
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
-import { DefaultLang, S, isLang, setLang } from "./strings"
+import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
 import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
 
@@ -1634,7 +1634,11 @@ export class LogicEditor extends HTMLElement {
     private fullUrlForMode(mode: Mode, compressedUriSafeJson: string): string {
         const loc = window.location
         const showOnlyParam = isUndefined(this._options.showOnly) ? "" : `&${ATTRIBUTE_NAMES.showonly}=${this._options.showOnly.join(",")}`
-        return `${loc.protocol}//${loc.host}${loc.pathname}?${ATTRIBUTE_NAMES.mode}=${Mode[mode].toLowerCase()}${showOnlyParam}&${ATTRIBUTE_NAMES.data}=${compressedUriSafeJson}`
+        const currentLang = getLang()
+        const hasCorrectLangParam = new URL(loc.href).searchParams.get(ATTRIBUTE_NAMES.lang) === currentLang
+        const langParam = !hasCorrectLangParam ? "" // no param, keep default lang
+            : `&${ATTRIBUTE_NAMES.lang}=${currentLang}` // keep currently set lang
+        return `${loc.protocol}//${loc.host}${loc.pathname}?${ATTRIBUTE_NAMES.mode}=${Mode[mode].toLowerCase()}${langParam}${showOnlyParam}&${ATTRIBUTE_NAMES.data}=${compressedUriSafeJson}`
     }
 
     private async toPNG(heightHint?: number) {

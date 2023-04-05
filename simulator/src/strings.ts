@@ -1379,8 +1379,6 @@ const langs = {
 
 export type Lang = keyof typeof langs
 
-export const DefaultLang: Lang = "en"
-
 export function isLang(lang: string): lang is Lang {
     return lang in langs
 }
@@ -1388,6 +1386,13 @@ export function isLang(lang: string): lang is Lang {
 export function setLang(l: Lang) {
     // console.log(`Setting language to '${l}'`)
     S = langs[l]
+    _lang = l
 }
 
-export let S: Strings = Strings_fr
+export function getLang(): Lang {
+    return _lang
+}
+
+export const DefaultLang: Lang = "en"
+export let S: Strings = langs[DefaultLang]
+let _lang: Lang = DefaultLang
