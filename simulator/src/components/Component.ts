@@ -166,7 +166,7 @@ export enum ComponentState {
 }
 
 // Simplified, generics-free representation of a component
-export type Component = ComponentBase<ComponentRepr<boolean, boolean>, unknown, NamedNodes<NodeIn>, NamedNodes<NodeOut>, boolean, boolean>
+export type Component = ComponentBase<any, any, NamedNodes<NodeIn>, NamedNodes<NodeOut>, any, any>
 
 export const JsonFieldsComponents = ["in", "out", "gates", "ic", "labels", "layout"] as const
 export type JsonFieldComponent = typeof JsonFieldsComponents[number]
@@ -276,6 +276,7 @@ export abstract class ComponentBase<
     THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
 > extends DrawableWithDraggablePosition {
 
+    private _def: InstantiatedComponentDef<TRepr, TValue>
     public readonly category: ComponentCategory
     private _width: number
     private _height: number
@@ -293,6 +294,7 @@ export abstract class ComponentBase<
     ) {
         super(editor, saved)
 
+        this._def = def
         this.category = def.category
         this._width = def.size.gridWidth * GRID_STEP
         this._height = def.size.gridHeight * GRID_STEP
@@ -330,8 +332,7 @@ export abstract class ComponentBase<
             this._state = ComponentState.SPAWNED
         } else {
             // newly placed
-            this._state = ComponentState.SPAWNING
-            editor.moveMgr.setDrawableMoving(this) // TODO this is BS; state (moving or not) should be determined from ctor params
+            this._state = this.setSpawning()
         }
 
         // build node specs either from scratch if new or from saved data
@@ -358,6 +359,12 @@ export abstract class ComponentBase<
         } else {
             this.setNeedsPropagate()
         }
+    }
+
+    public setSpawning() {
+        this._state = ComponentState.SPAWNING
+        this.editor.moveMgr.setDrawableMoving(this)
+        return this._state // make compiler happy for constructor
     }
 
     public setSpawned() {
@@ -958,6 +965,19 @@ export abstract class ComponentBase<
         return newComp
     }
 
+    protected override makeClone(setSpawning: boolean): DrawableWithDraggablePosition | undefined {
+        const repr = this.toNodelessJSON()
+        const newComp = this._def.makeFromJSON(this.editor, repr)
+        if (isUndefined(newComp)) {
+            console.warn("Could not create component clone")
+        } else {
+            if (setSpawning) {
+                newComp.setSpawning()
+            }
+        }
+        return newComp
+    }
+
     public override mouseDown(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.CONNECT && !e.shiftKey) {
             // try clearing selection
@@ -970,25 +990,16 @@ export abstract class ComponentBase<
             }
         }
 
-        if (this.editor.mode >= Mode.CONNECT) {
-            this.tryStartMoving(e)
-        }
-        return { wantsDragEvents: true }
+        return super.mouseDown(e)
     }
 
-    public override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT) {
-            this.updateWhileMoving(e)
-        }
-    }
-
-    public override mouseUp(__: MouseEvent | TouchEvent) {
+    public override mouseUp(e: MouseEvent | TouchEvent) {
         let wasSpawning = false
         if (this._state === ComponentState.SPAWNING) {
             this._state = ComponentState.SPAWNED
             wasSpawning = true
         }
-        const wasMoving = this.tryStopMoving()
+        const wasMoving = super.mouseUp(e).isChange
         if (wasSpawning || wasMoving) {
             const newLinks = this.editor.nodeMgr.tryConnectNodesOf(this)
             if (newLinks.length > 0) {
@@ -1047,8 +1058,18 @@ export abstract class ComponentBase<
         }
     }
 
-    public override get cursorWhenMouseover(): string | undefined {
-        return this.lockPos ? undefined : "grab"
+    public override cursorWhenMouseover(e?: MouseEvent | TouchEvent): string | undefined {
+        const mode = this.editor.mode
+        if ((e?.ctrlKey ?? false) && mode >= Mode.CONNECT) {
+            return "context-menu"
+        }
+        if ((e?.altKey ?? false) && mode >= Mode.DESIGN) {
+            return "copy"
+        }
+        if (!this.lockPos && mode >= Mode.CONNECT) {
+            return "grab"
+        }
+        return undefined
     }
 
     public override makeContextMenu(): MenuData {
@@ -1231,7 +1252,7 @@ export abstract class ParametrizedComponentBase<
     THasOut
 > {
 
-    private _def: SomeParamCompDef<TParamDefs>
+    private readonly _defP: SomeParamCompDef<TParamDefs>
 
     protected constructor(
         editor: LogicEditor,
@@ -1242,7 +1263,7 @@ export abstract class ParametrizedComponentBase<
         saved: TRepr | undefined
     ) {
         super(editor, instance, saved)
-        this._def = def
+        this._defP = def
     }
 
     protected makeChangeParamsContextMenuItem<
@@ -1265,7 +1286,7 @@ export abstract class ParametrizedComponentBase<
         }
 
         if (isUndefined(values)) {
-            values = (this._def.paramDefs[fieldName] as ParamDef<TVal>).range
+            values = (this._defP.paramDefs[fieldName] as ParamDef<TVal>).range
         }
         return ["mid", MenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
     }
@@ -1287,7 +1308,7 @@ export abstract class ParametrizedComponentBase<
         const currentRepr = this.toNodelessJSON()
         const newRepr = { ...currentRepr, ...newParams }
 
-        const newComp = this._def.makeFromJSON(this.editor, newRepr)
+        const newComp = this._defP.makeFromJSON(this.editor, newRepr)
         if (isUndefined(newComp)) {
             console.warn("Could not create component variant")
             return undefined
@@ -1311,14 +1332,14 @@ export abstract class ParametrizedComponentBase<
     }
 
     private tryChangeParam(paramIndex: number, increase: boolean): void {
-        const params = Object.keys(this._def.defaultParams)
+        const params = Object.keys(this._defP.defaultParams)
         const numParams = params.length
         if (paramIndex >= numParams) {
             return
         }
         const paramName = params[paramIndex]
         let currentParamValue = (this.toJSON() as any)[paramName]
-        const paramDef = this._def.paramDefs[paramName]
+        const paramDef = this._defP.paramDefs[paramName]
         if (isUndefined(currentParamValue)) {
             currentParamValue = paramDef.defaultValue
         }
@@ -1491,6 +1512,7 @@ export type InstantiatedComponentDef<
     size: ComponentGridSize,
     nodeRecs: InOutRecs,
     initialValue: (saved: TRepr | undefined) => TValue,
+    makeFromJSON: (editor: LogicEditor, data: Record<string, unknown>) => Component | undefined,
 }
 
 export class ComponentDef<
@@ -1721,6 +1743,7 @@ export class ParametrizedComponentDef<
             size,
             nodeRecs: nodes,
             initialValue: (saved: TRepr | undefined) => this._initialValue(saved, params),
+            makeFromJSON: this.makeFromJSON.bind(this),
         }, this]
     }
 

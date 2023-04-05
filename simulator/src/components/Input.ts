@@ -338,23 +338,18 @@ export class Input extends InputBase<InputRepr> {
         return this.value.map(toLogicValueRepr).reverse().join("")
     }
 
-    public override get cursorWhenMouseover() {
+    public override cursorWhenMouseover(e?: MouseEvent | TouchEvent) {
         const mode = this.editor.mode
         if (mode === Mode.STATIC) {
             // signal we can't switch it here
             return "not-allowed"
         }
-        if (this._isConstant) {
-            if (mode >= Mode.DESIGN && !this.lockPos) {
-                // we can still move it
-                return "grab"
-            } else {
-                // no special pointer change, it's constant and static
-                return undefined
-            }
+        const superCursor = super.cursorWhenMouseover(e)
+        if (superCursor === "grab") {
+            // override the grab cursor
+            return "pointer"
         }
-        // we can switch it
-        return "pointer"
+        return superCursor
     }
 
     public override makeTooltip() {

@@ -324,14 +324,14 @@ export class CursorMovementManager {
         canvas.addEventListener("mousemove", editor.wrapHandler((e) => {
             // console.log("mousemove %o, composedPath = %o", e, e.composedPath())
             this._mouseMoveTouchMove(e)
-            this.editor.updateCursor()
+            this.editor.updateCursor(e)
         }))
 
         canvas.addEventListener("mouseup", editor.wrapHandler((e) => {
             // console.log("mouseup %o, composedPath = %o", e, e.composedPath())
             this._mouseUpTouchEnd(e)
             this.updateMouseOver(this.editor.offsetXY(e), false)
-            this.editor.updateCursor()
+            this.editor.updateCursor(e)
         }))
 
         canvas.addEventListener("contextmenu", editor.wrapHandler((e) => {
@@ -381,7 +381,7 @@ export class CursorMovementManager {
                 }
                 this._currentHandlers.mouseDownOnBackground(e)
             }
-            this.editor.updateCursor()
+            this.editor.updateCursor(e)
         } else {
             // we got a mousedown while a component had programmatically
             // been determined as being mousedown'd; ignore

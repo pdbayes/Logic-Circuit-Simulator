@@ -66,8 +66,15 @@ export class Waypoint extends DrawableWithDraggablePosition {
         return this.editor.mode >= Mode.CONNECT && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
-    public override get cursorWhenMouseover() {
-        return this.lockPos ? undefined : "grab"
+    public override cursorWhenMouseover(e?: MouseEvent | TouchEvent) {
+        const mode = this.editor.mode
+        if ((e?.ctrlKey ?? false) && mode >= Mode.CONNECT) {
+            return "context-menu"
+        }
+        if (!this.lockPos && mode >= Mode.CONNECT) {
+            return "grab"
+        }
+        return undefined
     }
 
     public getPrevAndNextAnchors(): [DrawableWithPosition, DrawableWithPosition] {
@@ -89,23 +96,6 @@ export class Waypoint extends DrawableWithDraggablePosition {
 
         const neutral = this.editor.options.hideWireColors
         drawWaypoint(g, ctx, this.posX, this.posY, NodeStyle.WAYPOINT, this.parent.startNode.value, ctx.isMouseOver, neutral, false, false, false)
-    }
-
-    public override mouseDown(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT) {
-            this.tryStartMoving(e)
-        }
-        return { wantsDragEvents: true }
-    }
-
-    public override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT) {
-            this.updateWhileMoving(e)
-        }
-    }
-
-    public override mouseUp(__: MouseEvent | TouchEvent) {
-        return InteractionResult.fromBoolean(this.tryStopMoving())
     }
 
     public override makeContextMenu(): MenuData {

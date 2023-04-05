@@ -1409,12 +1409,12 @@ export class LogicEditor extends HTMLElement {
         this.redrawMgr.addReason("mouse action changed", null)
     }
 
-    public updateCursor() {
+    public updateCursor(e?: MouseEvent | TouchEvent) {
         this.html.canvasContainer.style.cursor =
             this.moveMgr.areDrawablesMoving()
                 ? "grabbing"
                 : this._toolCursor
-                ?? this.cursorMovementMgr.currentMouseOverComp?.cursorWhenMouseover
+                ?? this.cursorMovementMgr.currentMouseOverComp?.cursorWhenMouseover(e)
                 ?? "default"
     }
 
@@ -1862,6 +1862,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         // draw grid if moving comps
+        // this.moveMgr.dump()
         const isMovingComponent = this.moveMgr.areDrawablesMoving()
         if (isMovingComponent) {
             const widthAdjusted = width / this._actualZoomFactor

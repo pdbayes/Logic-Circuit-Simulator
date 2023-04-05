@@ -234,7 +234,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         }
     }
 
-    public override get cursorWhenMouseover() {
+    public override cursorWhenMouseover(__e?: MouseEvent | TouchEvent) {
         return "crosshair"
     }
 

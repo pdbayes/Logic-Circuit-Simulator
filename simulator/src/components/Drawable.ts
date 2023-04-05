@@ -132,7 +132,7 @@ export abstract class Drawable {
         return false
     }
 
-    public get cursorWhenMouseover(): string | undefined {
+    public cursorWhenMouseover(__e?: MouseEvent | TouchEvent): string | undefined {
         return undefined
     }
 
@@ -389,16 +389,27 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
+        const newPos = this.tryMakePosition(posX, posY, snapToGrid)
+        if (isDefined(newPos)) {
+            this.doSetPosition(newPos[0], newPos[1])
+        }
+        return newPos
+    }
+
+    protected tryMakePosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
         const roundTo = snapToGrid ? (GRID_STEP / 2) : 1
         posX = Math.round(posX / roundTo) * roundTo
         posY = Math.round(posY / roundTo) * roundTo
         if (posX !== this._posX || posY !== this.posY) {
-            this._posX = posX
-            this._posY = posY
-            this.setNeedsRedraw("position changed")
             return [posX, posY]
         }
         return undefined
+    }
+
+    protected doSetPosition(posX: number, posY: number) {
+        this._posX = posX
+        this._posY = posY
+        this.setNeedsRedraw("position changed")
     }
 
     protected makeOrientationAndPosMenuItems(): MenuItems {
@@ -438,6 +449,7 @@ interface DragContext {
     mouseOffsetToPosY: number
     lastAnchorX: number
     lastAnchorY: number
+    createdClone: DrawableWithDraggablePosition | undefined
 }
 
 
@@ -453,7 +465,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
         return isDefined(this._isMovingWithContext)
     }
 
-    protected tryStartMoving(e: MouseEvent | TouchEvent) {
+    private tryStartMoving(e: MouseEvent | TouchEvent) {
         if (this.lockPos) {
             return
         }
@@ -464,43 +476,53 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
                 mouseOffsetToPosY: offsetY - this.posY,
                 lastAnchorX: this.posX,
                 lastAnchorY: this.posY,
+                createdClone: undefined,
             }
         }
     }
 
-    protected updateWhileMoving(e: MouseEvent | TouchEvent) {
-        if (this.lockPos) {
-            return
-        }
-        this.updatePositionIfNeeded(e)
-        this.editor.moveMgr.setDrawableMoving(this)
-    }
-
-    protected tryStopMoving(): boolean {
+    private tryStopMoving(e: MouseEvent | TouchEvent): boolean {
         let wasMoving = false
         if (isDefined(this._isMovingWithContext)) {
             this._isMovingWithContext = undefined
             wasMoving = true
         }
-        this.editor.moveMgr.setDrawableStoppedMoving(this)
+        this.editor.moveMgr.setDrawableStoppedMoving(this, e)
         return wasMoving
     }
 
-    private updatePositionIfNeeded(e: MouseEvent | TouchEvent): undefined | [number, number] {
-        const [x, y] = this.editor.offsetXY(e)
-        const snapToGrid = !e.metaKey
-        const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
-        if (isDefined(newPos)) { // position changed
-            this.positionChanged()
-        }
-        return newPos
-    }
 
     public setPosition(x: number, y: number) {
-        const newPos = this.trySetPosition(x, y, false)
-        if (isDefined(newPos)) { // position changed
+        const newPos = this.tryMakePosition(x, y, false)
+        if (isDefined(newPos)) { // position would change indeed
+            this.doSetPosition(...newPos)
             this.positionChanged()
         }
+    }
+
+    public override mouseDown(e: MouseEvent | TouchEvent) {
+        if (this.editor.mode >= Mode.CONNECT) {
+            this.tryStartMoving(e)
+        }
+        return { wantsDragEvents: true }
+    }
+
+    public override mouseDragged(e: MouseEvent | TouchEvent) {
+        if (this.editor.mode >= Mode.CONNECT && !this.lockPos) {
+            const [x, y] = this.editor.offsetXY(e)
+            const snapToGrid = !e.metaKey
+            const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
+            if (isDefined(newPos)) { // position changed
+                this.positionChanged()
+                this.editor.moveMgr.setDrawableMoving(this, e)
+            }
+        }
+    }
+
+    public override mouseUp(e: MouseEvent | TouchEvent) {
+        this._isMovingWithContext?.createdClone?.mouseUp(e)
+        const result = this.tryStopMoving(e)
+        return InteractionResult.fromBoolean(result)
     }
 
     protected positionChanged() {
@@ -508,22 +530,42 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     protected updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
-        if (isDefined(this._isMovingWithContext)) {
-            const { mouseOffsetToPosX, mouseOffsetToPosY, lastAnchorX, lastAnchorY } = this._isMovingWithContext
-            let targetX = x - mouseOffsetToPosX
-            let targetY = y - mouseOffsetToPosY
-            if (e.shiftKey) {
-                // move along axis only
-                const dx = Math.abs(lastAnchorX - targetX)
-                const dy = Math.abs(lastAnchorY - targetY)
-                if (dx <= dy) {
-                    targetX = lastAnchorX
-                } else {
-                    targetY = lastAnchorY
-                }
-            }
-            return this.trySetPosition(targetX, targetY, snapToGrid)
+        if (!isDefined(this._isMovingWithContext)) {
+            return undefined
         }
+        const { mouseOffsetToPosX, mouseOffsetToPosY, lastAnchorX, lastAnchorY, createdClone } = this._isMovingWithContext
+
+        if (isDefined(createdClone)) {
+            createdClone.mouseDragged(e)
+            return undefined
+        }
+
+        let targetX = x - mouseOffsetToPosX
+        let targetY = y - mouseOffsetToPosY
+        if (e.shiftKey) {
+            // move along axis only
+            const dx = Math.abs(lastAnchorX - targetX)
+            const dy = Math.abs(lastAnchorY - targetY)
+            if (dx <= dy) {
+                targetX = lastAnchorX
+            } else {
+                targetY = lastAnchorY
+            }
+        }
+        const newPos = this.tryMakePosition(targetX, targetY, snapToGrid)
+        if (isDefined(newPos)) {
+            let clone
+            if (e.altKey && isDefined((clone = this.makeClone(true)))) {
+                this._isMovingWithContext.createdClone = clone
+                this.editor.cursorMovementMgr.setCurrentMouseOverComp(clone)
+            } else {
+                this.doSetPosition(...newPos)
+            }
+        }
+        return newPos
+    }
+
+    protected makeClone(__setSpawning: boolean): DrawableWithDraggablePosition | undefined {
         return undefined
     }
 
