@@ -3,7 +3,7 @@ import { DrawZIndex } from "../ComponentList"
 import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { S } from "../strings"
-import { isUndefined, typeOrUndefined } from "../utils"
+import { InteractionResult, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, MenuData, MenuItems } from "./Drawable"
 
@@ -118,13 +118,15 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         ]
     }
 
-    private runSetTextDialog() {
+    private runSetTextDialog(): InteractionResult {
         const promptReturnValue = window.prompt(S.Components.LabelString.contextMenu.ChangeTextPrompt, this._text)
         if (promptReturnValue !== null) {
             // OK button pressed
             const newText = promptReturnValue.length === 0 ? LabelStringDef.aults.text : promptReturnValue
             this.doSetText(newText)
+            return InteractionResult.SimpleChange
         }
+        return InteractionResult.NoChange
     }
 
     public override keyDown(e: KeyboardEvent): void {
@@ -136,11 +138,11 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
-        this.runSetTextDialog()
-        return true
+        return this.runSetTextDialog()
     }
 
 }

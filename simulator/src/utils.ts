@@ -356,7 +356,7 @@ export function showModal(dlog: HTMLDialogElement): boolean {
 // It can also be a RepeatableChange to allow to redos acting as
 // repetitions of the last change.
 
-export type RepeatFunction = () => RepeatFunction | undefined
+export type RepeatFunction = () => boolean | RepeatFunction
 
 const InteractionResultCases = {
     NoChange: { _tag: "NoChange" as const, isChange: false as const },
@@ -367,6 +367,21 @@ const InteractionResultCases = {
 export const InteractionResult = defineADTStatics(InteractionResultCases, {
     fromBoolean: (changed: boolean) =>
         changed ? InteractionResult.SimpleChange : InteractionResult.NoChange,
+
+    merge: (r0: InteractionResult, r1: InteractionResult): InteractionResult => {
+        // keeps the most informative result
+        if (r0._tag === "NoChange") {
+            return r1
+        }
+        if (r0._tag === "RepeatableChange") {
+            return r0
+        }
+        // r0 is SimpleChange
+        if (r1._tag === "RepeatableChange") {
+            return r1
+        }
+        return r0
+    },
 })
 
 export type InteractionResult = ADTWith<typeof InteractionResultCases>

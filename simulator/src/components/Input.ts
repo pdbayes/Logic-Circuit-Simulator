@@ -377,11 +377,18 @@ export class Input extends InputBase<InputRepr> {
         }
 
         const i = this.clickedBitIndex(e)
-        if (i !== -1) {
-            // TODO return some repeatable action?
-            this.doSetValueChangingBit(i, nextValue(this.value[i], this.editor.mode, e.altKey))
+        if (i === -1) {
+            return InteractionResult.SimpleChange
         }
-        return InteractionResult.SimpleChange
+
+        const altKey = e.altKey // don't include event in the closure
+        const doChange = () => {
+            this.doSetValueChangingBit(i, nextValue(this.value[i], this.editor.mode, altKey))
+            return true
+        }
+
+        doChange()
+        return InteractionResult.RepeatableChange(doChange)
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {

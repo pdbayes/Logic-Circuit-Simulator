@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_TRANSPARENT, COLOR_UNKNOWN, COLOR_WIRE_BORDER, GRID_STEP, pxToGrid } from "../drawutils"
 import { Modifier, asValue, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { HighImpedance, LogicValue, Unknown, isHighImpedance, isUnknown, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { HighImpedance, InteractionResult, LogicValue, Unknown, isHighImpedance, isUnknown, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineComponent } from "./Component"
 import { DrawContext, MenuData, MenuItems } from "./Drawable"
 import { Output16SegRepr } from "./Output16Seg"
@@ -226,8 +226,9 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         this.doSetDisplay((() => {
             switch (this.display) {
@@ -241,7 +242,7 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
                     return "h"
             }
         })())
-        return true
+        return InteractionResult.SimpleChange
     }
 
     private doSetDisplay(newDisplay: OutputBarType) {

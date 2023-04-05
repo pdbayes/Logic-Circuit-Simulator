@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
+import { InteractionResult, Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent, groupVertical } from "./Component"
 import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 
@@ -154,13 +154,14 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         const mode = this.editor.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
-            return true
+            return InteractionResult.SimpleChange
         } else if (mode >= Mode.DESIGN) {
             this.doSetAdditionalDisplayRadix((() => {
                 switch (this._additionalReprRadix) {
@@ -170,9 +171,9 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
                     default: return undefined
                 }
             })())
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     private doSetName(name: ComponentName) {

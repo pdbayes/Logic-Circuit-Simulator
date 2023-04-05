@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_UNKNOWN, ColorString, colorComps, colorForFraction, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { Mode, Unknown, isUnknown, typeOrUndefined } from "../utils"
+import { InteractionResult, Mode, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
 
@@ -141,18 +141,19 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
 
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         const mode = this.editor.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
-            return true
+            return InteractionResult.SimpleChange
         } else if (mode >= Mode.DESIGN) {
             this.doSetRadix(this._radix === 10 ? 16 : 10)
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     private doSetName(name: ComponentName) {

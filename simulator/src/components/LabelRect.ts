@@ -4,7 +4,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
-import { isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { InteractionResult, isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, Drawable, DrawableWithPosition, MenuData, MenuItems } from "./Drawable"
 
@@ -416,11 +416,11 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         }
     }
 
-    public override mouseDoubleClicked(__e: MouseEvent | TouchEvent): boolean {
+    public override mouseDoubleClicked(__e: MouseEvent | TouchEvent): InteractionResult {
         // TODO: implement dragging for resizing the rectangle
         // don't call super, which would rotate the rectangle, this is useless here
         this.runSetSizeDialog(this.makeCurrentSizeString())
-        return true
+        return InteractionResult.SimpleChange
     }
 
 

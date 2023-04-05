@@ -194,9 +194,9 @@ export abstract class Drawable {
 
     // Return true to indicate it was handled and had an effect
     // (and presumably doesn't need to be handled any more)
-    public mouseDoubleClicked(__: MouseEvent | TouchEvent): boolean {
+    public mouseDoubleClicked(__: MouseEvent | TouchEvent): InteractionResult {
         // empty default implementation
-        return false
+        return InteractionResult.NoChange
     }
 
     public keyDown(__: KeyboardEvent): void {

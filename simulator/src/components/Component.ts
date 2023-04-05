@@ -1015,7 +1015,7 @@ export abstract class ComponentBase<
         this.updateNodePositions()
     }
 
-    public override mouseClicked(e: MouseEvent | TouchEvent) {
+    public override mouseClicked(e: MouseEvent | TouchEvent): InteractionResult {
         if (this.editor.mode >= Mode.CONNECT && e.shiftKey) {
             this.editor.cursorMovementMgr.toggleSelect(this)
             return InteractionResult.SimpleChange
@@ -1023,19 +1023,16 @@ export abstract class ComponentBase<
         return InteractionResult.NoChange
     }
 
-    public override mouseDoubleClicked(e: MouseEvent | TouchEvent): boolean {
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent): InteractionResult {
         if (this.editor.mode >= Mode.CONNECT && e.metaKey && this.canRotate()) {
-            this.doSetOrient((() => {
-                switch (this.orient) {
-                    case "e": return "s"
-                    case "s": return "w"
-                    case "w": return "n"
-                    case "n": return "e"
-                }
-            })())
-            return true
+            const doChange = () => {
+                this.doSetOrient(Orientation.nextClockwise(this.orient))
+                return true
+            }
+            doChange()
+            return InteractionResult.RepeatableChange(doChange)
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     public override doSetOrient(orient: Orientation) {

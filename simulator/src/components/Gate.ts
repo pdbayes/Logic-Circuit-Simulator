@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_UNKNOWN, ColorString, GRID_STEP, PATTERN_STRIPED_GRAY, circle, drawWireLineToComponent } from "../drawutils"
 import { Modifier, ModifierObject, asValue, b, cls, div, emptyMod, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillUsing, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
+import { ArrayFillUsing, InteractionResult, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
 import { ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, MenuData, MenuItem, MenuItems } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
@@ -408,9 +408,9 @@ export abstract class GateBase<
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
         if (this.editor.mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return super.mouseDoubleClicked(e)
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
@@ -517,14 +517,15 @@ export class Gate1 extends GateBase<Gate1Repr> {
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         if (this.editor.mode >= Mode.DESIGN) {
             this.doSetType(this.type === "BUF" ? "NOT" : "BUF")
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
 }
@@ -593,8 +594,9 @@ export class GateN extends GateBase<GateNRepr> {
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         if (this.editor.mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant
@@ -616,10 +618,10 @@ export class GateN extends GateBase<GateNRepr> {
             })()
             if (isDefined(newType)) {
                 this.doSetType(newType)
-                return true
+                return InteractionResult.SimpleChange
             }
         }
-        return false
+        return InteractionResult.NoChange
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

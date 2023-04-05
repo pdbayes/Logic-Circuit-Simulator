@@ -396,9 +396,10 @@ export class NodeOut extends NodeBase<NodeOut> {
         return disconnected ? NodeStyle.OUT_DISCONNECTED : NodeStyle.OUT_CONNECTED
     }
 
-    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (super.mouseDoubleClicked(e)) {
-            return true // already handled
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent): InteractionResult {
+        const superChange = super.mouseDoubleClicked(e)
+        if (superChange.isChange) {
+            return superChange // already handled
         }
         if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput() && this.parent.allowsForcedOutputs) {
             this.forceValue = (() => {
@@ -410,9 +411,9 @@ export class NodeOut extends NodeBase<NodeOut> {
                     case true: return undefined
                 }
             })()
-            return true
+            return InteractionResult.SimpleChange
         }
-        return false
+        return InteractionResult.NoChange
     }
 
 }
@@ -437,10 +438,10 @@ export function tryMakeRepeatableNodeAction(startNode: NodeOut, endNode: NodeIn,
     const endIndex = endGroup.indexOf(endNode)
     const endIncrement = endIndex < endGroup.nodes.length - 1 ? 1 : -1
 
-    const makeRepeatFunction = function makeRepeatFunction(startIndex: number, endIndex: number): RepeatFunction | undefined {
+    const makeRepeatFunction = function makeRepeatFunction(startIndex: number, endIndex: number): false | RepeatFunction {
         if (startIndex >= startGroup.nodes.length || startIndex < 0
             || endIndex >= endGroup.nodes.length || endIndex < 0) {
-            return undefined
+            return false
         }
 
         return () => {
@@ -448,13 +449,13 @@ export function tryMakeRepeatableNodeAction(startNode: NodeOut, endNode: NodeIn,
             if (success) {
                 return makeRepeatFunction(startIndex + startIncrement, endIndex + endIncrement)
             }
-            return undefined
+            return false
         }
 
     }
 
     const repeat = makeRepeatFunction(startIndex + startIncrement, endIndex + endIncrement)
-    if (isUndefined(repeat)) {
+    if (repeat === false) {
         return InteractionResult.SimpleChange
     }
 

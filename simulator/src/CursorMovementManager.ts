@@ -432,30 +432,30 @@ export class CursorMovementManager {
                 clearTimeout(this._startDragTimeoutHandle)
                 this._startDragTimeoutHandle = null
             }
-            const mainChange = this._currentHandlers.mouseUpOn(mouseUpTarget, e)
-            let shouldTakeSnapshot = mainChange.isChange
+            let change = this._currentHandlers.mouseUpOn(mouseUpTarget, e)
             for (const comp of this._currentMouseDownData?.selectionComps ?? []) {
                 if (comp !== mouseUpTarget) {
-                    shouldTakeSnapshot = this._currentHandlers.mouseUpOn(comp, e).isChange || shouldTakeSnapshot
+                    const newChange = this._currentHandlers.mouseUpOn(comp, e)
+                    change = InteractionResult.merge(change, newChange)
                 }
             }
 
             if (this._currentMouseDownData?.fireMouseClickedOnFinish ?? false) {
+                let newChange
                 if (this.isDoubleClick(mouseUpTarget, e)) {
-                    const handled = this._currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
-                    if (!handled) {
+                    newChange = this._currentHandlers.mouseDoubleClickedOn(mouseUpTarget, e)
+                    if (!newChange.isChange) {
                         // no double click handler, so we trigger a normal click
-                        shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e).isChange || shouldTakeSnapshot
-                    } else {
-                        shouldTakeSnapshot = true
+                        newChange = this._currentHandlers.mouseClickedOn(mouseUpTarget, e)
                     }
                 } else {
-                    shouldTakeSnapshot = this._currentHandlers.mouseClickedOn(mouseUpTarget, e).isChange || shouldTakeSnapshot
+                    newChange = this._currentHandlers.mouseClickedOn(mouseUpTarget, e)
                 }
+                change = InteractionResult.merge(change, newChange)
             }
 
-            if (shouldTakeSnapshot) {
-                this.editor.undoMgr.takeSnapshot(mainChange)
+            if (change.isChange) {
+                this.editor.undoMgr.takeSnapshot(change)
             }
 
         } else {
@@ -559,8 +559,8 @@ abstract class ToolHandlers {
     public mouseClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): InteractionResult {
         return InteractionResult.NoChange
     }
-    public mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
-        return false // false means no change in model
+    public mouseDoubleClickedOn(__comp: Drawable, __e: MouseEvent | TouchEvent): InteractionResult {
+        return InteractionResult.NoChange
     }
     public contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means unhandled

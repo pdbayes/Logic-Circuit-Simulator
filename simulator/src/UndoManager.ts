@@ -82,7 +82,8 @@ export class UndoManager {
         } else {
             const repeatAction = this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction
             if (isDefined(repeatAction)) {
-                const newRepeatAction = repeatAction()
+                const result = repeatAction()
+                const newRepeatAction = result === false ? undefined : result === true ? repeatAction : result
                 this.doTakeSnapshot(newRepeatAction)
             }
         }
