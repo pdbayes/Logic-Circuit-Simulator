@@ -637,9 +637,9 @@ class EditHandlers extends ToolHandlers {
 
         hideMenu()
 
-        const MenuData = comp.makeContextMenu()
+        const menuData = comp.makeContextMenu()
         // console.log("asking for menu: %o got: %o", comp, MenuData)
-        if (isDefined(MenuData)) {
+        if (isDefined(menuData)) {
 
             // console.log("setting triggered")
             const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
@@ -682,7 +682,7 @@ class EditHandlers extends ToolHandlers {
                 }
             }
 
-            const items = MenuData.map(defToElem)
+            const items = menuData.map(defToElem)
 
             const mainContextMenu = this.editor.html.mainContextMenu
             applyModifiersTo(mainContextMenu, items)

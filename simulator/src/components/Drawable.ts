@@ -555,7 +555,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
         const newPos = this.tryMakePosition(targetX, targetY, snapToGrid)
         if (isDefined(newPos)) {
             let clone
-            if (e.altKey && isDefined((clone = this.makeClone(true)))) {
+            if (e.altKey && this.editor.mode >= Mode.DESIGN && isDefined((clone = this.makeClone(true)))) {
                 this._isMovingWithContext.createdClone = clone
                 this.editor.cursorMovementMgr.setCurrentMouseOverComp(clone)
             } else {

@@ -344,12 +344,23 @@ export class Input extends InputBase<InputRepr> {
             // signal we can't switch it here
             return "not-allowed"
         }
-        const superCursor = super.cursorWhenMouseover(e)
-        if (superCursor === "grab") {
-            // override the grab cursor
-            return "pointer"
+        if ((e?.ctrlKey ?? false) && mode >= Mode.CONNECT) {
+            return "context-menu"
         }
-        return superCursor
+        if ((e?.altKey ?? false) && mode >= Mode.DESIGN) {
+            return "copy"
+        }
+
+        if (this._isConstant) {
+            if (mode >= Mode.DESIGN && !this.lockPos) {
+                // we can still move it
+                return "grab"
+            } else {
+                // no special pointer change, it's constant and static
+                return undefined
+            }
+        }        // we can switch it
+        return "pointer"
     }
 
     public override makeTooltip() {
