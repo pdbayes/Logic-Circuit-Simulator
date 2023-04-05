@@ -881,12 +881,6 @@ export class WireManager {
     }
 
     public stopDraggingOn(newNode: Node): Wire | undefined {
-        const otherNode = this._wireBeingAddedFrom
-        if (isUndefined(otherNode)) {
-            console.warn("WireManager.stopDraggingOn: not dragging from a node")
-            return undefined
-        }
-
         const nodes = this.getOutInNodes(newNode)
         if (isUndefined(nodes)) {
             return undefined

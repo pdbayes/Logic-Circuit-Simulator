@@ -262,7 +262,7 @@ function createStripedPattern(background: ColorString, stripeColor: string) {
     g.fill()
     const pattern = g.createPattern(canvas, "repeat")
     if (pattern === null) {
-        console.log("Failed to create pattern")
+        console.warn("Failed to create pattern")
     }
     return pattern!
 }

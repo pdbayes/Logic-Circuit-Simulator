@@ -432,26 +432,28 @@ export function tryMakeRepeatableNodeAction(startNode: NodeOut, endNode: NodeIn,
         return InteractionResult.SimpleChange
     }
 
-    const startNodeIndex = startGroup.indexOf(startNode)
-    const endNodeIndex = endGroup.indexOf(endNode!)
+    const startIndex = startGroup.indexOf(startNode)
+    const startIncrement = startIndex < startGroup.nodes.length - 1 ? 1 : -1
+    const endIndex = endGroup.indexOf(endNode)
+    const endIncrement = endIndex < endGroup.nodes.length - 1 ? 1 : -1
 
-    const makeRepeatFunction = function makeRepeatFunction(startNodeIndex: number, endNodeIndex: number): RepeatFunction | undefined {
-        if (startNodeIndex >= startGroup.nodes.length - 1 ||
-            endNodeIndex >= endGroup.nodes.length - 1) {
+    const makeRepeatFunction = function makeRepeatFunction(startIndex: number, endIndex: number): RepeatFunction | undefined {
+        if (startIndex >= startGroup.nodes.length || startIndex < 0
+            || endIndex >= endGroup.nodes.length || endIndex < 0) {
             return undefined
         }
 
         return () => {
-            const success = handleNodes(startGroup.nodes[startNodeIndex + 1], endGroup.nodes[endNodeIndex + 1])
+            const success = handleNodes(startGroup.nodes[startIndex], endGroup.nodes[endIndex])
             if (success) {
-                return makeRepeatFunction(startNodeIndex + 1, endNodeIndex + 1)
+                return makeRepeatFunction(startIndex + startIncrement, endIndex + endIncrement)
             }
             return undefined
         }
 
     }
 
-    const repeat = makeRepeatFunction(startNodeIndex, endNodeIndex)
+    const repeat = makeRepeatFunction(startIndex + startIncrement, endIndex + endIncrement)
     if (isUndefined(repeat)) {
         return InteractionResult.SimpleChange
     }
