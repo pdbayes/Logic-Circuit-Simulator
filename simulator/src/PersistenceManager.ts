@@ -45,7 +45,7 @@ class _PersistenceManager {
                 return "can't load this JSON - error “" + err + `”, length = ${content.length}, JSON:\n` + content
             }
         }
-        // console.log("BEFORE:\n" + content)
+        // console.log("BEFORE:\n" + (isString(content) ? content : JSON.stringify(content)))
 
         let jsonVersion = parsedContents["v"] ?? 0
         const savedVersion = jsonVersion
@@ -69,11 +69,11 @@ class _PersistenceManager {
             migrate4To5(parsedContents)
             jsonVersion = 5
         }
+        delete parsedContents["v"]
         if (jsonVersion !== savedVersion) {
             console.log(`Migrated data format from v${savedVersion} to v${jsonVersion}, consider upgrading the source`)
             // console.log("AFTER:\n" + this.stringifyWorkspace(parsedContents, false))
         }
-        delete parsedContents["v"]
 
         for (const elem of components.all()) {
             elem.destroy()
@@ -284,7 +284,13 @@ function findFirstFreeId(parsedContents: Record<string, unknown>): number {
             return
         }
         if (typeof value === "number") {
-            maxId = Math.max(maxId, value)
+            if (!isNaN(value) && isFinite(value)) {
+                maxId = Math.max(maxId, value)
+            }
+        } else if (typeof value === "string") {
+            for (const val of value.split("-")) {
+                inspectValue(parseInt(val))
+            }
         } else if (isArray(value)) {
             for (const item of value) {
                 inspectValue(item)
@@ -294,7 +300,7 @@ function findFirstFreeId(parsedContents: Record<string, unknown>): number {
         }
     }
 
-    for (const jsonField of JsonFieldsComponents) {
+    for (const jsonField of Object.keys(parsedContents)) {
         const arr = parsedContents[jsonField]
         if (isDefined(arr) && isArray(arr)) {
             for (const comp of arr) {

@@ -334,10 +334,10 @@ function componentIdsFor(item: LibraryItem): string[] {
         const { def, params } = defAndParams
         if (category !== "gate" && deepObjectEquals(params, def.defaultParams)) {
             const genericId = def.type ?? def.category
-            ids.push(genericId)
+            ids.push(genericId.toLowerCase())
         }
         const specificId = def.variantName(params)
-        ids.push(specificId)
+        ids.push(specificId.toLowerCase())
         if (isDefined(item.compat)) {
             ids.push(item.compat.toLowerCase())
         }
@@ -359,6 +359,6 @@ function componentIdsFor(item: LibraryItem): string[] {
             buttonId = `${category}.${type}`
         }
     }
-    return [buttonId]
+    return [buttonId.toLowerCase()]
 }
 

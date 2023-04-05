@@ -1325,14 +1325,20 @@ export abstract class ParametrizedComponentBase<
         if (isUndefined(currentParamValue)) {
             currentParamValue = paramDef.defaultValue
         }
-        if (!isNumber(currentParamValue)) {
+
+        let newParamValue: number | boolean | undefined
+        if (isNumber(currentParamValue)) {
+            newParamValue = (paramDef as ParamDef<number>).nextValue(currentParamValue, increase)
+            if (isUndefined(newParamValue) || newParamValue === currentParamValue) {
+                return
+            }
+        } else if (isBoolean(currentParamValue)) {
+            newParamValue = !currentParamValue
+        }
+        if (isUndefined(newParamValue)) {
             return
         }
 
-        const newParamValue = paramDef.nextValue(currentParamValue, increase)
-        if (isUndefined(newParamValue) || newParamValue === currentParamValue) {
-            return
-        }
         const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
         if (isDefined(newComp)) {
             this.editor.cursorMovementMgr.setCurrentMouseOverComp(newComp)

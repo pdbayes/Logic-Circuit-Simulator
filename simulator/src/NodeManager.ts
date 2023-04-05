@@ -21,14 +21,14 @@ export class NodeManager {
 
     public markIDUsed(id: number): void {
         if (this.usedIDs.has(id)) {
-            console.warn(`Loaded node with id ${id}, which is already taken`)
+            console.error(`Loaded node with id ${id}, which is already taken`)
         }
         this.usedIDs.add(id)
     }
 
     public addLiveNode(node: Node) {
         if (!this.usedIDs.has(node.id)) {
-            console.warn(`Inserting live node with unreserved id ${node.id}`)
+            console.error(`Inserting live node with unreserved id ${node.id}`)
         }
         this.allLiveNodes[node.id] = node
     }

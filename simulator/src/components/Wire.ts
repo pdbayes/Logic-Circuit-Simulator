@@ -2,7 +2,7 @@ import { Bezier, Offset } from "bezier-js"
 import * as t from "io-ts"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
-import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
+import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, GRID_STEP, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, isUndefinedOrNull, typeOrUndefined } from "../utils"
@@ -954,10 +954,10 @@ export class WireManager {
         const addToX = dx2 > dy2
 
         const dir = addToX
-            ? (startNode.posX < endNode.posX ? 1 : -1)
-            : (startNode.posY < endNode.posY ? 1 : -1)
+            ? (startNode.posX < endNode.posX ? 1 : startNode.posX > endNode.posX ? -1 : startNode.posX < comp.posX ? -1 : 1)
+            : (startNode.posY < endNode.posY ? 1 : startNode.posY > endNode.posY ? -1 : startNode.posY < comp.posY ? -1 : 1)
         const calcOffsetFromDim = (dim: number) => {
-            return dir * Math.ceil(dim / 20) * 10 + 10
+            return dir * (dim / 2 + 2 * GRID_STEP)
         }
 
         const isVertical = Orientation.isVertical(comp.orient)
