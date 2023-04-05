@@ -107,7 +107,7 @@ export class RAM extends ROMRAMBase<RAMRepr> {
         }
 
         // build new state
-        const newData = this.inputValues(this.inputs.D)
+        const newData = this.inputValues(this.inputs.D).map(LogicValue.filterHighZ)
         const newState: LogicValue[][] = new Array(numWords)
         for (let i = 0; i < numWords; i++) {
             if (i === addr) {

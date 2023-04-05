@@ -33,7 +33,6 @@
 
  * Alternative representation for push or toggle buttons
  * Edge detector?
- * Don't store Z in memory cells, but unknown instead
  * Add rich HTML annotations
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Lock component to some "parent" to move them more intuitively?
@@ -43,6 +42,7 @@
 
 ### DONE
 
+ * Don't store Z in memory cells, but unknown instead
  * Allow repeating deletions with Cmd+Y
  * Highlight only nodes when dragging
  * (Address) decoder: 2, 3, 4 bit versions

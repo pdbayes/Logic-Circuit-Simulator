@@ -219,7 +219,7 @@ export abstract class Flipflop<
     }
 
     public makeStateAfterClock(): [LogicValue, LogicValue] {
-        return this.makeStateFromMainValue(this.doRecalcValueAfterClock())
+        return this.makeStateFromMainValue(LogicValue.filterHighZ(this.doRecalcValueAfterClock()))
     }
 
     protected abstract doRecalcValueAfterClock(): LogicValue

@@ -1154,7 +1154,7 @@ export abstract class ComponentBase<
         }
         if (numOutputs === 1) {
             items.push(["mid", MenuData.submenu("force", s.ForceOutputSingle, [
-                ...makeOutputItems(this.outputs._all[0]!),
+                ...makeOutputItems(this.outputs._all[0]),
                 ...footerItems,
             ])])
 

@@ -54,7 +54,7 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
         if (isUnknown(dirIsRight) || isHighImpedance(dirIsRight)) {
             return this.makeStateFromMainValue(Unknown)
         }
-        const d = this.inputs.D.value
+        const d = LogicValue.filterHighZ(this.inputs.D.value)
         const current = this.value
         const next = dirIsRight ? [...current.slice(1), d] : [d, ...current.slice(0, -1)]
         return next

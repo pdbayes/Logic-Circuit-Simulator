@@ -45,7 +45,7 @@ export class FlipflopD extends Flipflop<FlipflopDRepr> {
     }
 
     protected doRecalcValueAfterClock(): LogicValue {
-        return this.inputs.D.value
+        return LogicValue.filterHighZ(this.inputs.D.value)
     }
 
 }

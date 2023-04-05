@@ -555,7 +555,6 @@ export class LogicEditor extends HTMLElement {
                             }
                         } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
                             const result = this.tryDeleteDrawable(selComp)
-                            console.error(`result=${result._tag}`)
                             this.undoMgr.takeSnapshot(result)
                         }
                         e.preventDefault()
@@ -1329,7 +1328,7 @@ export class LogicEditor extends HTMLElement {
 
             if (isUndefined(error) && isString(decodedData)) {
                 // remember the decompressed/decoded value
-                error = PersistenceManager.doLoadFromJson(this, decodedData!)
+                error = PersistenceManager.doLoadFromJson(this, decodedData)
                 if (isUndefined(error)) {
                     this._initialData = { _type: "json", json: decodedData }
                 }

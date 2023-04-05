@@ -289,7 +289,7 @@ export class Register extends RegisterBase<RegisterRepr> {
         }
 
         // else, just a regular load from D
-        return this.inputValues(this.inputs.D)
+        return this.inputValues(this.inputs.D).map(LogicValue.filterHighZ)
     }
 
     protected override doDrawGenericCaption(g: CanvasRenderingContext2D) {

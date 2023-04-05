@@ -490,6 +490,9 @@ export const LogicValue = {
     invert(v: LogicValue): LogicValue {
         return isUnknown(v) || isHighImpedance(v) ? v : !v
     },
+    filterHighZ(v: LogicValue): boolean | Unknown {
+        return isHighImpedance(v) ? Unknown : v
+    },
 }
 
 export type LogicValueRepr = 0 | 1 | HighImpedance | Unknown
