@@ -215,7 +215,7 @@ export class Wire extends Drawable {
         startNode.addOutgoingWire(this)
 
         if (isDefined(now)) {
-            this.propageNewValue(this._startNode.value, now)
+            this.propagateNewValue(this._startNode.value, now)
         }
     }
 
@@ -232,7 +232,7 @@ export class Wire extends Drawable {
         endNode.doSetColor(this._startNode.color)
     }
 
-    public propageNewValue(newValue: LogicValue, now: Timestamp) {
+    public propagateNewValue(newValue: LogicValue, now: Timestamp) {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
             this._propagatingValues.push([newValue, now])
         }
@@ -362,6 +362,7 @@ export class Wire extends Drawable {
         const drawTime = ctx.drawParams.drawTime
         const wireValue = this.prunePropagatingValues(drawTime, propagationDelay)
 
+        // TODO this is not OK, drawing code should not deal with logic
         this.endNode.value = wireValue
 
         let prevX = this.startNode.posX

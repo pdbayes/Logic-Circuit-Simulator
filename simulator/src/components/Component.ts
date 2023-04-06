@@ -661,7 +661,9 @@ export abstract class ComponentBase<
     }
 
     protected override toStringDetails(): string {
-        return String(this.value)
+        const maybeName = (this as any)._name
+        const name = isDefined(maybeName) ? `name='${maybeName}', ` : ''
+        return name + String(this.value)
     }
 
     public get state() {

@@ -166,6 +166,9 @@ export class LogicEditor extends HTMLElement {
         embedMarkdown: HTMLTextAreaElement,
     }
     public optionsHtml: {
+        undoButton: HTMLButtonElement,
+        redoButton: HTMLButtonElement,
+
         nameField: HTMLInputElement,
         showGateTypesCheckbox: HTMLInputElement,
         showDisconnectedPinsCheckbox: HTMLInputElement,
@@ -1067,6 +1070,9 @@ export class LogicEditor extends HTMLElement {
         optionsZone.appendChild(showUserDataLinkContainer)
 
         this.optionsHtml = {
+            undoButton,
+            redoButton,
+
             nameField,
             hideWireColorsCheckbox,
             hideInputColorsCheckbox,
@@ -1216,10 +1222,13 @@ export class LogicEditor extends HTMLElement {
             }
 
             const showReset = mode >= Mode.TRYOUT && !this._hideResetButton
-            const showRightMenu = showReset || showRightEditControls
+            const showUndoRedo = mode >= Mode.CONNECT
+            const showRightMenu = showReset || showRightEditControls || showUndoRedo
             const showOnlyReset = showReset && !showRightEditControls
             const hideSettings = mode < Mode.FULL
 
+            setVisible(this.optionsHtml!.undoButton, showUndoRedo)
+            setVisible(this.optionsHtml!.redoButton, showUndoRedo)
             setVisible(this.elemWithId("resetToolButton"), showReset)
             setVisible(this.elemWithId("resetToolButtonCaption"), !showOnlyReset)
             setVisible(this.elemWithId("resetToolButtonDummyCaption"), showOnlyReset)
@@ -1281,7 +1290,9 @@ export class LogicEditor extends HTMLElement {
                     const compressedJSON = pngMetadata.tEXt?.Description
                     if (isString(compressedJSON)) {
                         this._initialData = { _type: "compressed", str: compressedJSON }
-                        this.tryLoadFromData()
+                        this.wrapHandler(() => {
+                            this.tryLoadFromData()
+                        })()
                     }
                 }
             }
@@ -1745,7 +1756,6 @@ export class LogicEditor extends HTMLElement {
         }
 
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
-        // console.log("Drawing")
         this.doRedraw()
 
         if (this.redrawMgr.hasReasons()) {
@@ -1800,6 +1810,7 @@ export class LogicEditor extends HTMLElement {
     }
 
     private doRedraw() {
+        // const timeBefore = performance.now()
         const g = this.html.mainCanvas.getContext("2d")!
         const mainCanvas = this.html.mainCanvas
         const baseDrawingScale = this._baseDrawingScale
@@ -1809,6 +1820,8 @@ export class LogicEditor extends HTMLElement {
         const baseTransform = new DOMMatrix(`scale(${this._baseDrawingScale})`)
         const contentTransform = baseTransform.scale(this._actualZoomFactor)
         this.doDrawWithContext(g, width, height, baseTransform, contentTransform, false, false)
+        // const timeAfter = performance.now()
+        // console.log(`Drawing took ${timeAfter - timeBefore}ms`)
     }
 
     private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrixReadOnly, contentTransform: DOMMatrixReadOnly, skipBorder: boolean, transparentBackground: boolean) {

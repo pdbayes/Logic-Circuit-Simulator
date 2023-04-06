@@ -383,7 +383,7 @@ export class NodeOut extends NodeBase<NodeOut> {
     protected propagateNewValue(newValue: LogicValue) {
         const now = this.editor.timeline.adjustedTime()
         for (const wire of this._outgoingWires) {
-            wire.propageNewValue(newValue, now)
+            wire.propagateNewValue(newValue, now)
         }
     }
 

@@ -70,6 +70,11 @@ export class Clock extends InputBase<ClockRepr> {
         }
     }
 
+    protected override toStringDetails(): string {
+        return `period=${this._period} duty=${this._dutycycle} phase=${this._phase}`
+    }
+
+
     public override makeTooltip() {
         const s = S.Components.Clock.tooltip
         return tooltipContent(s.title,
@@ -168,6 +173,7 @@ export class Clock extends InputBase<ClockRepr> {
             [2000, "2 s (0.5 Hz)"],
             [4000, "4 s (0.25 Hz)"],
             [8000, "8 s (0.125 Hz)"],
+            [16000, "8 s (0.0625 Hz)"],
         ]
 
         const makeItemSetPeriod = (data: [number, string]) => {
