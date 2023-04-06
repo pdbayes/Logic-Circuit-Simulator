@@ -120,9 +120,15 @@ export class Timeline {
         } else {
             // check if we need to reschedule
             const tickTime = this._sortedNextCallbackTimes[0]
-            if (isDefined(this._nextTimeout) && this._nextTimeout.tickTime <= tickTime) {
-                // already scheduled, or scheduled before
-                return
+            if (isDefined(this._nextTimeout)) {
+                if (this._nextTimeout.tickTime <= tickTime) {
+                    // something's scheduled before
+                    return
+                } else {
+                    // something's scheduled after, cancel it
+                    clearTimeout(this._nextTimeout.handle)
+                    this._nextTimeout = undefined
+                }
             }
             const now = this.adjustedTime()
             const waitDuration = tickTime - now
@@ -157,7 +163,7 @@ export class Timeline {
             this._epochStart += late
             // console.log(`Adjusted time by ${late} ms`)
         }
-        // console.log(`Running ${callbacks.length} callbacks at logical time ${now} (wanted for ${wantedTime}, late by ${late} ms)`)
+        // console.log(`Running ${callbacks.length} callbacks at adjusted time ${now} (wanted for ${wantedTime}, late by ${late} ms)`)
 
         const runCallback = () => {
             for (const [callback, desc] of callbacks) {
