@@ -826,9 +826,36 @@ export class WireManager {
                 waypoint.draw(g, drawParams)
             }
         }
+        this.drawWireBeingAdded(g)
+    }
+
+    private drawWireBeingAdded(g: CanvasRenderingContext2D) {
+        // TODO use some PartialWire class to draw this and allow adding waypoints
+        // while dragging, e.g. with the A or Space key
         const nodeFrom = this._wireBeingAddedFrom
         if (isDefined(nodeFrom)) {
-            drawStraightWireLine(g, nodeFrom.posX, nodeFrom.posY, this.editor.mouseX, this.editor.mouseY, nodeFrom.value, nodeFrom.color, false)
+            const x1 = nodeFrom.posX
+            const y1 = nodeFrom.posY
+            const x2 = this.editor.mouseX
+            const y2 = this.editor.mouseY
+            g.beginPath()
+            g.moveTo(x1, y1)
+            if (this.editor.options.wireStyle === WireStyles.straight) {
+                g.lineTo(x2, y2)
+            } else {
+                const deltaX = x2 - x1
+                const deltaY = y2 - y1
+                // bezier curve
+                const bezierAnchorPointDistX = Math.max(25, Math.abs(deltaX) / 3)
+                const bezierAnchorPointDistY = Math.max(25, Math.abs(deltaY) / 3)
+
+                // first anchor point
+                const outgoingOrient = Orientation.add(nodeFrom.parent.orient, nodeFrom.orient)
+                const [a1x, a1y] = bezierAnchorForWire(Orientation.invert(outgoingOrient), x1, y1, bezierAnchorPointDistX, bezierAnchorPointDistY)
+                const [a2x, a2y] = bezierAnchorForWire(outgoingOrient, x2, y2, bezierAnchorPointDistX, bezierAnchorPointDistY)
+                g.bezierCurveTo(a1x, a1y, a2x, a2y, x2, y2)
+            }
+            strokeAsWireLine(g, nodeFrom.value, nodeFrom.color, false, false)
         }
     }
 
