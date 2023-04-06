@@ -43,13 +43,13 @@ export const ALUDef =
             const topGroup = groupHorizontal("n", 0, top, topGroupBits)
             const cin = topGroup.pop()!
             // extracted to be mapped correctly when switching between reduced/extended opcodes
-            const opM = topGroup.pop()!
+            const opMode = topGroup.pop()!
             return {
                 ins: {
                     A: groupVertical("w", -outputX, -inputCenterY, numBits),
                     B: groupVertical("w", -outputX, inputCenterY, numBits),
                     Op: topGroup,
-                    OpM: opM,
+                    Mode: opMode,
                     Cin: [cin[0], cin[1], "n", `Cin (${S.Components.ALU.InputCinDesc})`],
                 },
                 outs: {
@@ -137,7 +137,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
 
     public get op(): ALUOp | Unknown {
         const opValues = this.inputValues(this.inputs.Op)
-        opValues.push(this.inputs.OpM.value)
+        opValues.push(this.inputs.Mode.value)
         const opIndex = displayValuesFromArray(opValues, false)[1]
         return isUnknown(opIndex) ? Unknown : (this.usesExtendedOpcode ? ALUOps : ALUOpsReduced)[opIndex]
     }
@@ -178,7 +178,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         for (const input of this.inputs.Op) {
             drawWireLineToComponent(g, input, input.posXInParentTransform, lowerTop)
         }
-        drawWireLineToComponent(g, this.inputs.OpM, this.inputs.OpM.posXInParentTransform, lowerTop)
+        drawWireLineToComponent(g, this.inputs.Mode, this.inputs.Mode.posXInParentTransform, lowerTop)
         drawWireLineToComponent(g, this.inputs.Cin, this.inputs.Cin.posXInParentTransform, lowerTop)
 
         // outputs
@@ -213,11 +213,10 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         // special Op group
         g.beginPath()
         const opGroupHeight = 8
-        const opGroupLeft = this.inputs.OpM.posXInParentTransform - 2
+        const opGroupLeft = this.inputs.Mode.posXInParentTransform - 2
         const opGroupRight = this.inputs.Op[0].posXInParentTransform + 2
-        const [opGroupLeftTop, opGroupRightTop] = this.usesExtendedOpcode
-            ? [top + 8, top + 20]
-            : [top + 11, top + 18]
+        const opGroupLeftTop = top + (this.usesExtendedOpcode ? 8 : 11)
+        const opGroupRightTop = top + 18
 
         g.moveTo(opGroupLeft, opGroupLeftTop)
         g.lineTo(opGroupRight, opGroupRightTop)
@@ -243,7 +242,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
             drawLabel(ctx, this.orient, "Cin", "n", this.inputs.Cin.posXInParentTransform, top + 4, this.inputs.Cin)
 
             g.font = "bold 11px sans-serif"
-            drawLabel(ctx, this.orient, "Op", "n", (opGroupLeft + opGroupRight) / 2, top + 14, this.inputs.Op)
+            drawLabel(ctx, this.orient, "Op", "n", (opGroupLeft + opGroupRight) / 2, top + 12, this.inputs.Op)
 
             // left inputs
             g.font = "bold 12px sans-serif"

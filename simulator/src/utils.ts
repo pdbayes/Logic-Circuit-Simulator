@@ -314,6 +314,14 @@ export function isEmbeddedInIframe(): boolean {
     }
 }
 
+export function setEnabled(elem: HTMLButtonElement, enabled: boolean) {
+    if (enabled) {
+        elem.removeAttribute("disabled")
+    } else {
+        elem.setAttribute("disabled", "disabled")
+    }
+}
+
 export function setVisible(elem: HTMLElement, visible: boolean) {
     if (visible) {
         const prevDisplay = elem.getAttribute("data-prev-display")

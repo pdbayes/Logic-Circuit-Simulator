@@ -10,14 +10,31 @@ type Snapshot = {
     repeatAction?: RepeatFunction
 }
 
+export type UndoState = {
+    canUndo: boolean
+    canRedoOrRepeat: boolean
+}
+
 export class UndoManager {
 
     public readonly editor: LogicEditor
     private _undoSnapshots: Snapshot[] = []
     private _redoSnapshots: Snapshot[] = []
 
+    // remember last sent state to avoid fake events
+    private _lastSentState: UndoState | undefined
+    // public callback function
+    public onStateChanged: (state: UndoState) => unknown = __ => null
+
     public constructor(editor: LogicEditor) {
         this.editor = editor
+    }
+
+    public get state(): UndoState {
+        return {
+            canUndo: this.canUndo(),
+            canRedoOrRepeat: this.canRedoOrRepeat(),
+        }
     }
 
     public canUndo() {
@@ -56,6 +73,7 @@ export class UndoManager {
             this._redoSnapshots = []
         }
         // this.dump()
+        this.fireStateChangedIfNeeded()
     }
 
     public undo() {
@@ -68,6 +86,7 @@ export class UndoManager {
         this._redoSnapshots.push(stateNow)
         this.loadSnapshot(prevState)
         // this.dump()
+        this.fireStateChangedIfNeeded()
     }
 
     public redoOrRepeat() {
@@ -88,6 +107,7 @@ export class UndoManager {
             }
         }
         // this.dump()
+        this.fireStateChangedIfNeeded()
     }
 
     public dump() {
@@ -109,4 +129,17 @@ export class UndoManager {
         PersistenceManager.doLoadFromJson(this.editor, snapshot.workspace, true)
     }
 
+    private fireStateChangedIfNeeded() {
+        const newState = this.state
+        if (isUndefined(this._lastSentState) || !areStatesEqual(this._lastSentState, newState)) {
+            this.onStateChanged(newState)
+            this._lastSentState = newState
+        }
+    }
+
+}
+
+function areStatesEqual(s1: UndoState, s2: UndoState): boolean {
+    return s1.canUndo === s2.canUndo
+        && s1.canRedoOrRepeat === s2.canRedoOrRepeat
 }

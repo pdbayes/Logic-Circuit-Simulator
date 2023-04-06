@@ -1089,7 +1089,7 @@ export abstract class ComponentBase<
             for (const [pl, it] of items) {
                 if (pl === placement) {
                     menuItems.push(it)
-                    lastWasSep = false
+                    lastWasSep = it._tag === "sep"
                 }
             }
         }

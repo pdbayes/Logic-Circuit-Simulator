@@ -33,6 +33,7 @@ import placement from '../img/icons/placement.icon.svg'; // @ts-ignore
 import play from '../img/icons/play.icon.svg'; // @ts-ignore
 import question from '../img/icons/question.icon.svg'; // @ts-ignore
 import questioncircled from '../img/icons/questioncircled.icon.svg'; // @ts-ignore
+import redo from '../img/icons/redo.icon.svg'; // @ts-ignore
 import { default as ref, default as regroup } from '../img/icons/ref.icon.svg'; // @ts-ignore
 import replace from '../img/icons/replace.icon.svg'; // @ts-ignore
 import reset from '../img/icons/reset.icon.svg'; // @ts-ignore
@@ -43,6 +44,7 @@ import step from '../img/icons/step.icon.svg'; // @ts-ignore
 import strokewidth from '../img/icons/strokewidth.icon.svg'; // @ts-ignore
 import timer from '../img/icons/timer.icon.svg'; // @ts-ignore
 import trash from '../img/icons/trash.icon.svg'; // @ts-ignore
+import undo from '../img/icons/undo.icon.svg'; // @ts-ignore
 import wirestyle from '../img/icons/wirestyle.icon.svg'; // @ts-ignore
 
 
@@ -146,6 +148,7 @@ const icons = {
     play,
     question,
     questioncircled,
+    redo,
     ref,
     regroup,
     replace,
@@ -157,6 +160,7 @@ const icons = {
     strokewidth,
     timer,
     trash,
+    undo,
     wirestyle,
 }
 

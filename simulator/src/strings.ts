@@ -172,10 +172,12 @@ const Strings_fr = {
         WireStyleLine: "Ligne",
         WireStyleCurve: "Courbe",
     },
-    Timeline: {
-        Play: tuple("Play", "Démarre l’écoulement du temps"),
-        Pause: tuple("Pause", "Arrête l’écoulement du temps"),
-        Step: tuple(undefined, "Avance au prochain événement"),
+    ControlBar: {
+        TimelinePlay: tuple("Play", "Démarre l’écoulement du temps"),
+        TimelinePause: tuple("Pause", "Arrête l’écoulement du temps"),
+        TimelineStep: tuple(undefined, "Avance au prochain événement"),
+        Undo: tuple(undefined, "Annule la dernière action"),
+        Redo: tuple(undefined, "Rétablit la dernière action annulée ou répète l’action précédente"),
     },
     Messages: {
         ReallyCloseWindow: "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?",
@@ -843,10 +845,12 @@ const Strings_en: Strings = {
         WireStyleLine: "Line",
         WireStyleCurve: "Curve",
     },
-    Timeline: {
-        Play: tuple("Play", "Starts logical time"),
-        Pause: tuple("Pause", "Stops logical time"),
-        Step: tuple(undefined, "Moves logical time to the next scheduled event"),
+    ControlBar: {
+        TimelinePlay: tuple("Play", "Starts logical time"),
+        TimelinePause: tuple("Pause", "Stops logical time"),
+        TimelineStep: tuple(undefined, "Moves logical time to the next scheduled event"),
+        Undo: tuple(undefined, "Undo the last action"),
+        Redo: tuple(undefined, "Redo the last undone action or repeat the last action"),
     },
     Messages: {
         ReallyCloseWindow: "Do you really want to close the window without saving the changes?",

@@ -7,7 +7,7 @@ import { defineParametrizedComponent, Repr, ResolvedParams } from "./Component"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
-    defineParametrizedComponent("out", "shift-register", true, true, {
+    defineParametrizedComponent("ic", "shift-register", true, true, {
         variantName: ({ bits }) => `shift-register-${bits}`,
         ...RegisterBaseDef,
         makeNodes: (params, defaults) => {

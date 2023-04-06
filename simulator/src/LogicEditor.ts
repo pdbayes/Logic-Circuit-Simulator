@@ -23,7 +23,7 @@ import { PersistenceManager, Workspace } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
-import { UndoManager } from './UndoManager'
+import { UndoManager, UndoState } from './UndoManager'
 import { Component, ComponentBase, ComponentState } from "./components/Component"
 import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
@@ -34,7 +34,7 @@ import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setEnabled, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
 
 
 
@@ -901,7 +901,7 @@ export class LogicEditor extends HTMLElement {
 
 
         const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
-        const makeTimelineButton = (icon: IconName, [text, expl]: [string | undefined, string], action: () => unknown) => {
+        const makeRightControlButton = (icon: IconName, [text, expl]: [string | undefined, string], action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
                     isUndefined(text) ? style("text-align: center") : emptyMod,
@@ -912,9 +912,9 @@ export class LogicEditor extends HTMLElement {
             but.addEventListener("click", action)
             return but
         }
-        const playButton = makeTimelineButton("play", S.Timeline.Play, () => this.timeline.play())
-        const pauseButton = makeTimelineButton("pause", S.Timeline.Pause, () => this.timeline.pause())
-        const stepButton = makeTimelineButton("step", S.Timeline.Step, () => this.timeline.step())
+        const playButton = makeRightControlButton("play", S.ControlBar.TimelinePlay, () => this.timeline.play())
+        const pauseButton = makeRightControlButton("pause", S.ControlBar.TimelinePause, () => this.timeline.pause())
+        const stepButton = makeRightControlButton("step", S.ControlBar.TimelineStep, () => this.timeline.step())
         applyModifierTo(timelineControls, mods(playButton, pauseButton, stepButton))
 
         const showTimelineButtons = true
@@ -937,6 +937,20 @@ export class LogicEditor extends HTMLElement {
         this.timeline.reset()
         this.timeline.onStateChanged = newState => setTimelineButtonsVisible(newState)
         setTimelineButtonsVisible(this.timeline.state)
+
+        const undoRedoControls: HTMLElement = this.elemWithId("undoRedoControls")!
+        const undoButton = makeRightControlButton("undo", S.ControlBar.Undo, this.wrapHandler(() => this.undoMgr.undo()))
+        const redoButton = makeRightControlButton("redo", S.ControlBar.Redo, this.wrapHandler(() => this.undoMgr.redoOrRepeat()))
+
+        function setUndoButtonsVisible(state: UndoState) {
+            setEnabled(undoButton, state.canUndo)
+            setEnabled(redoButton, state.canRedoOrRepeat)
+        }
+
+        applyModifierTo(undoRedoControls, mods(undoButton, redoButton))
+        setUndoButtonsVisible({ canUndo: false, canRedoOrRepeat: false })
+        this.undoMgr.onStateChanged = setUndoButtonsVisible
+
 
         // Options
         const optionsZone = this.html.optionsZone

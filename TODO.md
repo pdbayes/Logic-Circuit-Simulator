@@ -15,7 +15,6 @@
 
  * High-Z bus logic
  * Mnemonic in context menu
- * Undo/redo as buttons
  * Custom component creation
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
@@ -42,6 +41,7 @@
 
 ### DONE
 
+ * Undo/redo as buttons
  * Don't store Z in memory cells, but unknown instead
  * Allow repeating deletions with Cmd+Y
  * Highlight only nodes when dragging
