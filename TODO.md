@@ -13,6 +13,7 @@
 
 ## Medium priority
 
+ * Finish implementation of SVG export
  * High-Z bus logic
  * Mnemonic in context menu
  * Custom component creation

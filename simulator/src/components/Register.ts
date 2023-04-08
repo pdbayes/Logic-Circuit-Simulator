@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param, paramBool } from "./Component"
 import { Counter } from "./Counter"
-import { DrawContext, DrawContextExt, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
@@ -148,7 +148,7 @@ export abstract class RegisterBase<
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx) => {
             if (this._showContent && !this.editor.options.hideMemoryContent) {
                 RegisterBase.drawStoredValues(g, ctx, this.outputs.Q, this.posX, Orientation.isVertical(this.orient))
@@ -158,14 +158,14 @@ export abstract class RegisterBase<
         })
     }
 
-    public static drawStoredValues(g: CanvasRenderingContext2D, ctx: DrawContextExt, outputs: ReadonlyGroupedNodeArray<NodeOut>, posX: number, swapHeightWidth: boolean) {
+    public static drawStoredValues(g: GraphicsRendering, ctx: DrawContextExt, outputs: ReadonlyGroupedNodeArray<NodeOut>, posX: number, swapHeightWidth: boolean) {
         const cellHeight = useCompact(outputs.length) ? GRID_STEP : 2 * GRID_STEP
         for (const output of outputs) {
             FlipflopOrLatch.drawStoredValue(g, output.value, ...ctx.rotatePoint(posX, output.posYInParentTransform), cellHeight, swapHeightWidth)
         }
     }
 
-    protected abstract doDrawGenericCaption(g: CanvasRenderingContext2D): void
+    protected abstract doDrawGenericCaption(g: GraphicsRendering): void
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Generic.contextMenu
@@ -292,7 +292,7 @@ export class Register extends RegisterBase<RegisterRepr> {
         return this.inputValues(this.inputs.D).map(LogicValue.filterHighZ)
     }
 
-    protected override doDrawGenericCaption(g: CanvasRenderingContext2D) {
+    protected override doDrawGenericCaption(g: GraphicsRendering) {
         g.font = `bold 15px sans-serif`
         g.fillStyle = COLOR_COMPONENT_BORDER
         g.textAlign = "center"

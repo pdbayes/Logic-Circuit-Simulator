@@ -4,7 +4,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { DrawContext } from "./Drawable"
+import { DrawContext, GraphicsRendering } from "./Drawable"
 
 export const TriStateBufferDef =
     defineComponent("gate", "TRI", {
@@ -63,7 +63,7 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
         this.outputs.Out.value = newValue
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
 
         const width = this.unrotatedWidth
         const height = this.unrotatedHeight

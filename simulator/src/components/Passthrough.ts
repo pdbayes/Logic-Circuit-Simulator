@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
 
@@ -161,7 +161,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
     }
 
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const width = 3
         const height = this.unrotatedHeight
         const top = this.posY - height / 2

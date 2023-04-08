@@ -4,7 +4,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const ComparatorDef =
     defineComponent("ic", "comparator", {
@@ -74,7 +74,7 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
         this.outputs.Eq.value = newValue.eq
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, () => {
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = "bold 11px sans-serif"

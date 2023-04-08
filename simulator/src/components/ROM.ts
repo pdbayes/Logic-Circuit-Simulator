@@ -6,7 +6,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupHorizontal, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
 import { RAM, RAMDef } from "./RAM"
 
 
@@ -172,7 +172,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
 
     protected abstract get moduleName(): string
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx, { width, height }) => {
 
             const mem = this.value.mem
@@ -331,7 +331,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
 }
 
 
-function drawMemoryCells(g: CanvasRenderingContext2D, mem: LogicValue[][], numDataBits: number, addr: number | Unknown, start: number, end: number, centerX: number, centerY: number, cellWidth: number, cellHeight: number): number {
+function drawMemoryCells(g: GraphicsRendering, mem: LogicValue[][], numDataBits: number, addr: number | Unknown, start: number, end: number, centerX: number, centerY: number, cellWidth: number, cellHeight: number): number {
     const numCellsToDraw = end - start
     const contentTop = centerY - numCellsToDraw / 2 * cellHeight
     const contentLeft = centerX - numDataBits / 2 * cellWidth

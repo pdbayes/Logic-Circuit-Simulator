@@ -5,7 +5,7 @@ import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, Mode, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
     defineParametrizedComponent("out", "display", true, false, {
@@ -106,7 +106,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
         return displayValuesFromArray(this.inputValues(this.inputs.In), false)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
         const maxValue = (1 << this.inputs.In.length) - 1
         const background = isUnknown(value) || this.showAsUnknown ? COLOR_UNKNOWN : colorForFraction(value / maxValue)

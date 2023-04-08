@@ -1,12 +1,12 @@
 import * as t from "io-ts"
+import { LogicEditor } from "../LogicEditor"
 import { COLOR_OFF_BACKGROUND } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
-import { ComponentNameRepr, defineComponent, group, Repr } from "./Component"
-import { DrawContext } from "./Drawable"
-import { ledColorForLogicValue, LedColors, OutputBarBase } from "./OutputBar"
+import { ComponentNameRepr, Repr, defineComponent, group } from "./Component"
+import { DrawContext, GraphicsRendering } from "./Drawable"
+import { LedColors, OutputBarBase, ledColorForLogicValue } from "./OutputBar"
 
 
 export const Output16SegDef =
@@ -70,7 +70,7 @@ export class Output16Seg extends OutputBarBase<Output16SegRepr, LogicValue[]> {
         return this.inputValues(this.inputs.In)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             labelSize: 7,
             componentName: [this._name, true, () => this.value.map(toLogicValueRepr).reverse().join("")],

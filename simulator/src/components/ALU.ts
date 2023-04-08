@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
 
 
@@ -163,7 +163,7 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
         this.outputs.Cout.value = newValue.cout
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const bounds = this.bounds()
         const { left, top, right, bottom } = bounds
         const lowerTop = top + 2 * GRID_STEP

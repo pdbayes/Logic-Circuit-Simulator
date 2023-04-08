@@ -1,5 +1,5 @@
 import { Component, ComponentName, isNodeArray, ReadonlyGroupedNodeArray } from "./components/Component"
-import { DrawContext, DrawContextExt, HasPosition, Orientation } from "./components/Drawable"
+import { DrawContext, DrawContextExt, GraphicsRendering, HasPosition, Orientation } from "./components/Drawable"
 import { RectangleColor } from "./components/LabelRect"
 import { Node, WireColor } from "./components/Node"
 import { LedColor } from "./components/OutputBar"
@@ -58,15 +58,10 @@ export class DrawingRect {
         this.right = this.left + this.width
     }
 
-    private _outline: Path2D | undefined
-
-    public get outline(): Path2D {
-        if (isUndefined(this._outline)) {
-            const path = new Path2D()
-            path.rect(this.left, this.top, this.width, this.height)
-            this._outline = path
-        }
-        return this._outline
+    public outline(g: GraphicsRendering): Path2D {
+        const path = g.createPath()
+        path.rect(this.left, this.top, this.width, this.height)
+        return path
     }
 
 }
@@ -333,28 +328,28 @@ export function useCompact(numNodes: number) {
 
 // Adding to current path
 
-export function triangle(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number) {
+export function triangle(g: GraphicsRendering, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number) {
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
     g.lineTo(x2, y2)
     g.closePath()
 }
 
-export function circle(g: CanvasRenderingContext2D, cx: number, cy: number, d: number) {
+export function circle(g: GraphicsRendering, cx: number, cy: number, d: number) {
     const r = d / 2
     g.ellipse(cx, cy, r, r, 0, 0, 2 * Math.PI)
 }
 
 // Stroking/filling
 
-export function strokeSingleLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) {
+export function strokeSingleLine(g: GraphicsRendering, x0: number, y0: number, x1: number, y1: number) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
     g.stroke()
 }
 
-export function strokeBezier(g: CanvasRenderingContext2D, x0: number, y0: number, anchorX0: number, anchorY0: number, anchorX1: number, anchorY1: number, x1: number, y1: number) {
+export function strokeBezier(g: GraphicsRendering, x0: number, y0: number, anchorX0: number, anchorY0: number, anchorX1: number, anchorY1: number, x1: number, y1: number) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.bezierCurveTo(anchorX0, anchorY0, anchorX1, anchorY1, x1, y1)
@@ -374,7 +369,7 @@ export function shouldShowNode(nodeOrArray: Node | readonly Node[]): boolean {
 }
 
 
-export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node, x1: number, y1: number, withTriangle = false) {
+export function drawWireLineToComponent(g: GraphicsRendering, node: Node, x1: number, y1: number, withTriangle = false) {
     if (!shouldShowNode(node)) {
         return
     }
@@ -429,14 +424,14 @@ export function drawWireLineToComponent(g: CanvasRenderingContext2D, node: Node,
     }
 }
 
-export function drawStraightWireLine(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, value: LogicValue, color: WireColor, neutral: boolean) {
+export function drawStraightWireLine(g: GraphicsRendering, x0: number, y0: number, x1: number, y1: number, value: LogicValue, color: WireColor, neutral: boolean) {
     g.beginPath()
     g.moveTo(x0, y0)
     g.lineTo(x1, y1)
     strokeAsWireLine(g, value, color, false, neutral)
 }
 
-export function strokeAsWireLine(g: CanvasRenderingContext2D, value: LogicValue, color: WireColor, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
+export function strokeAsWireLine(g: GraphicsRendering, value: LogicValue, color: WireColor, isMouseOver: boolean, neutral: boolean, path?: Path2D) {
     const oldLineCap = g.lineCap
     g.lineCap = "butt"
 
@@ -472,7 +467,7 @@ export enum NodeStyle {
     WAYPOINT,
 }
 
-export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: number, y: number, style: NodeStyle, value: LogicValue, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
+export function drawWaypoint(g: GraphicsRendering, ctx: DrawContext, x: number, y: number, style: NodeStyle, value: LogicValue, isMouseOver: boolean, neutral: boolean, showForced: boolean, showForcedWarning: boolean, parentOrientIsVertical: boolean) {
 
     const [circleColor, thickness] =
         showForced
@@ -511,7 +506,7 @@ export function drawWaypoint(g: CanvasRenderingContext2D, ctx: DrawContext, x: n
     }
 }
 
-export function drawClockInput(g: CanvasRenderingContext2D, left: number, clockNode: Node, trigger: EdgeTrigger) {
+export function drawClockInput(g: GraphicsRendering, left: number, clockNode: Node, trigger: EdgeTrigger) {
     const clockY = clockNode.posYInParentTransform
     const clockLineOffset = 1
     g.strokeStyle = COLOR_COMPONENT_BORDER
@@ -590,11 +585,11 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     g.fillText(text, finalX + dx, finalY + dy)
 }
 
-export function drawValueTextCentered(g: CanvasRenderingContext2D, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {
+export function drawValueTextCentered(g: GraphicsRendering, value: LogicValue, comp: HasPosition, opts?: { fillStyle?: string, small?: boolean }) {
     drawValueText(g, value, comp.posX, comp.posY, opts)
 }
 
-export function drawValueText(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, opts?: { fillStyle?: string, small?: boolean }) {
+export function drawValueText(g: GraphicsRendering, value: LogicValue, x: number, y: number, opts?: { fillStyle?: string, small?: boolean }) {
     g.textAlign = "center"
     g.textBaseline = "middle"
 
@@ -660,7 +655,7 @@ function textSettingsForName(onRight: boolean, orient: Orientation) {
     }
 }
 
-export function drawComponentName(g: CanvasRenderingContext2D, ctx: DrawContextExt, name: ComponentName, value: string | number, comp: Component, onRight: boolean) {
+export function drawComponentName(g: GraphicsRendering, ctx: DrawContextExt, name: ComponentName, value: string | number, comp: Component, onRight: boolean) {
     if (isUndefined(name)) {
         return
     }

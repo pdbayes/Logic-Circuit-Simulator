@@ -6,7 +6,7 @@ import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, Drawable, DrawableWithPosition, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, Drawable, DrawableWithPosition, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 export const RectangleColor = {
     grey: "grey",
@@ -130,7 +130,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         return 0
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const width = this._w
         const height = this._h
         const left = this.posX - width / 2

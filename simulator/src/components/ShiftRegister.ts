@@ -4,6 +4,7 @@ import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { defineParametrizedComponent, Repr, ResolvedParams } from "./Component"
+import { GraphicsRendering } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
@@ -60,7 +61,7 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
         return next
     }
 
-    protected override doDrawGenericCaption(g: CanvasRenderingContext2D) {
+    protected override doDrawGenericCaption(g: GraphicsRendering) {
         g.font = `bold 13px sans-serif`
         g.fillStyle = COLOR_COMPONENT_BORDER
         g.textAlign = "center"

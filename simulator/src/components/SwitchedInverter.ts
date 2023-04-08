@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { circle, colorForBoolean, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN } from "../drawutils"
-import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, circle, colorForBoolean } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { ArrayFillWith, LogicValue, Unknown, isHighImpedance, isUnknown, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
 
 
 export const SwitchedInverterDef =
@@ -87,7 +87,7 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
         this.outputValues(this.outputs.O, newValue)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
             drawInside: ({ top, left, right }) => {

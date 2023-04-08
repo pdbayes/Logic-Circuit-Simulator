@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
 import { doALUAdd } from "./ALU"
 import { ParametrizedComponentBase, Repr, ResolvedParams, Value, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
 import { GateArrayDef } from "./GateArray"
 
 
@@ -92,7 +92,7 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
         this.outputs.Cout.value = newValue.cout
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx) => {
             g.font = `bold 25px sans-serif`
             g.fillStyle = COLOR_COMPONENT_BORDER

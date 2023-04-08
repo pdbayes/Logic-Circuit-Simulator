@@ -5,7 +5,7 @@ import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawut
 import { S } from "../strings"
 import { InteractionResult, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 export const LabelStringDef =
     defineComponent("label", undefined, {
@@ -69,7 +69,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         return 2
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
 
         g.font = this._font
         g.lineWidth = 3

@@ -5,7 +5,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUndefined, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
@@ -166,7 +166,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             drawInside: () => {
                 const drawContents = () => {

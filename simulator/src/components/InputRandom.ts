@@ -5,7 +5,7 @@ import { tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
@@ -116,7 +116,7 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
         this.outputValues(this.outputs.Out, newValue)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const outputValues = this.value
 
         this.doDrawDefault(g, ctx, {

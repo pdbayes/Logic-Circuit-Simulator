@@ -5,7 +5,7 @@ import { LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
 import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { DrawableWithDraggablePosition, DrawContext, DrawContextExt, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
@@ -759,12 +759,12 @@ export abstract class ComponentBase<
         // const { top, left, bottom, right, width, height } = bounds
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+    protected doDraw(g: GraphicsRendering, ctx: DrawContext): void {
         this.doDrawDefault(g, ctx)
     }
 
     protected doDrawDefault(
-        g: CanvasRenderingContext2D, ctx: DrawContext,
+        g: GraphicsRendering, ctx: DrawContext,
         opts_?: ((ctx: DrawContextExt, bounds: DrawingRect) => void) | {
             drawLabels?: (ctx: DrawContextExt, bounds: DrawingRect) => void,
             drawInside?: (bounds: DrawingRect) => void,
@@ -779,7 +779,8 @@ export abstract class ComponentBase<
 
         // background
         g.fillStyle = opts?.background ?? COLOR_BACKGROUND
-        g.fill(bounds.outline)
+        const outline = bounds.outline(g)
+        g.fill(outline)
 
         // inputs/outputs lines
         for (const node of this.allNodes()) {
@@ -802,7 +803,7 @@ export abstract class ComponentBase<
         // outline
         g.lineWidth = 3
         g.strokeStyle = ctx.borderColor
-        g.stroke(bounds.outline)
+        g.stroke(outline)
 
         // labels
         ctx.inNonTransformedFrame(ctx => {
@@ -836,7 +837,7 @@ export abstract class ComponentBase<
         })
     }
 
-    protected drawWireLineTo(g: CanvasRenderingContext2D, node: Node, bounds: DrawingRect) {
+    protected drawWireLineTo(g: GraphicsRendering, node: Node, bounds: DrawingRect) {
         if (node.isClock) {
             drawClockInput(g, bounds.left, node, (this as any)["_trigger"] ?? EdgeTrigger.rising)
             return
@@ -846,7 +847,7 @@ export abstract class ComponentBase<
         drawWireLineToComponent(g, node, ...this.anchorFor(node, bounds, offset), node.hasTriangle)
     }
 
-    protected drawGroupBox(g: CanvasRenderingContext2D, group: NodeGroup<Node>, bounds: DrawingRect) {
+    protected drawGroupBox(g: GraphicsRendering, group: NodeGroup<Node>, bounds: DrawingRect) {
         if (!shouldShowNode(group.nodes)) {
             return
         }

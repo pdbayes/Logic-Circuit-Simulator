@@ -5,7 +5,7 @@ import { Modifier, asValue, mods, span, style, title, tooltipContent } from "../
 import { S } from "../strings"
 import { HighImpedance, InteractionResult, LogicValue, Unknown, isHighImpedance, isUnknown, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineComponent } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Output16SegRepr } from "./Output16Seg"
 import { Output7SegRepr } from "./Output7Seg"
 
@@ -197,7 +197,7 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
         return this.inputs.I.value
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
         const background = this._transparent && valueToShow === false
             ? COLOR_TRANSPARENT

@@ -70,15 +70,16 @@ export class Timeline {
     }
 
     public scheduleAt(time: Timestamp, desc: string, callback: Callback) {
-        if (time < this.adjustedTime()) {
-            console.log(`WARNING Scheduling this in the past (${time - this.adjustedTime()} ms), may behave strangely: ` + desc)
-        }
         // console.log(`Scheduling '${desc}' at ${time}`)
         if (time in this._schedule) {
             // add callback to existing time
             this._schedule[time].push([callback, desc])
 
         } else {
+            if (time < this.adjustedTime()) {
+                console.log(`WARNING Scheduling this in the past (${time - this.adjustedTime()} ms), may behave strangely: ` + desc)
+            }
+
             // add new time to sorted list of times
             let i = 0
             do {
@@ -165,8 +166,12 @@ export class Timeline {
         }
         // console.log(`Running ${callbacks.length} callbacks at adjusted time ${now} (wanted for ${wantedTime}, late by ${late} ms)`)
 
-        const runCallback = () => {
-            for (const [callback, desc] of callbacks) {
+        const runAllCallbacks = () => {
+            // use while and shift() to allow callbacks to enqueue new callbacks
+            // without causing iteration issues
+            let elem
+            while (isDefined(elem = callbacks.shift())) {
+                const [callback, desc] = elem
                 // console.log(`  -> Running '${desc}'`)
                 try {
                     callback(wantedTime)
@@ -178,7 +183,7 @@ export class Timeline {
 
         // use wrapHandler to do any recalc/redraws after
         // calling the handlers if necessary
-        this.editor.wrapHandler(runCallback)()
+        this.editor.wrapHandler(runAllCallbacks)()
 
         // move on to the next tick
         this.rescheduleNextIfNeeded()

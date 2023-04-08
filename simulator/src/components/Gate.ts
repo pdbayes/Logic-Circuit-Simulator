@@ -5,7 +5,7 @@ import { Modifier, ModifierObject, asValue, b, cls, div, emptyMod, mods, table, 
 import { S } from "../strings"
 import { ArrayFillUsing, InteractionResult, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
 import { ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItem, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItem, MenuItems } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
 
 type GateRepr = Gate1Repr | GateNRepr
@@ -146,14 +146,14 @@ export abstract class GateBase<
         )
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const gateType = this._showAsUnknown
             ? Unknown
             : this.poseAs ?? this.type
         this.drawGate(g, gateType, gateType !== this.type && !this._showAsUnknown, ctx)
     }
 
-    private drawGate(g: CanvasRenderingContext2D, type: TGateType | Unknown, isFake: boolean, ctx: DrawContext) {
+    private drawGate(g: GraphicsRendering, type: TGateType | Unknown, isFake: boolean, ctx: DrawContext) {
         const numBits = this.numBits
         const output = this.outputs.Out
 

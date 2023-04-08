@@ -21,11 +21,12 @@ import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { PersistenceManager, Workspace } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
+import { SVGRenderingContext } from "./SVGRenderingContext"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Drawable, DrawableWithPosition, Orientation } from "./components/Drawable"
+import { Drawable, DrawableWithPosition, GraphicsRendering, Orientation } from "./components/Drawable"
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
@@ -339,7 +340,7 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (tool === "screenshot") {
-            this.downloadSnapshotImage()
+            this.downloadAsPNG()
             return
         }
 
@@ -1682,7 +1683,7 @@ export class LogicEditor extends HTMLElement {
             tmpCanvas.width = width
             tmpCanvas.height = height
 
-            const g = tmpCanvas.getContext('2d')!
+            const g = LogicEditor.getGraphics(tmpCanvas)
             const wasDark = isDarkMode()
             if (wasDark) {
                 setColors(false)
@@ -1693,12 +1694,6 @@ export class LogicEditor extends HTMLElement {
             }
             tmpCanvas.toBlob(resolve, 'image/png')
             tmpCanvas.remove()
-
-            // TODO this was an attempt at generating SVG rather than PNG
-            // const svgCtx = new C2S(width, height)
-            // this.doDrawWithContext(svgCtx)
-            // const serializedSVG = svgCtx.getSerializedSvg()
-            // console.log(serializedSVG)
         })
     }
 
@@ -1721,12 +1716,12 @@ export class LogicEditor extends HTMLElement {
         })
     }
 
-    public async downloadSnapshotImage() {
+    public async downloadAsPNG() {
         const pngBareBlob = await this.toPNG()
         if (pngBareBlob === null) {
             return
         }
-        const [__, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
+        const compressedUriSafeJson = this.fullJsonStateAndCompressedForUri()[1]
 
         const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
         const pngChunks = pngMeta.extractChunks(pngBareData)
@@ -1735,6 +1730,17 @@ export class LogicEditor extends HTMLElement {
 
         const filename = (this.options.name ?? "circuit") + ".png"
         saveAs(pngCompletedBlob, filename)
+    }
+
+    public downloadAsSVG() {
+        const [width, height] = this.guessAdequateCanvasSize(false)
+        const id = new DOMMatrix()
+        const svgCtx = new SVGRenderingContext({ width, height })
+        this.doDrawWithContext(svgCtx, width, height, id, id, true, true)
+        const serializedSVG = svgCtx.getSerializedSvg()
+        const blob = new Blob([serializedSVG], { type: "image/svg+xml" })
+        const filename = (this.options.name ?? "circuit") + ".svg"
+        saveAs(blob, filename)
     }
 
 
@@ -1811,7 +1817,7 @@ export class LogicEditor extends HTMLElement {
 
     private doRedraw() {
         // const timeBefore = performance.now()
-        const g = this.html.mainCanvas.getContext("2d")!
+        const g = LogicEditor.getGraphics(this.html.mainCanvas)
         const mainCanvas = this.html.mainCanvas
         const baseDrawingScale = this._baseDrawingScale
 
@@ -1824,7 +1830,7 @@ export class LogicEditor extends HTMLElement {
         // console.log(`Drawing took ${timeAfter - timeBefore}ms`)
     }
 
-    private doDrawWithContext(g: CanvasRenderingContext2D, width: number, height: number, baseTransform: DOMMatrixReadOnly, contentTransform: DOMMatrixReadOnly, skipBorder: boolean, transparentBackground: boolean) {
+    private doDrawWithContext(g: GraphicsRendering, width: number, height: number, baseTransform: DOMMatrixReadOnly, contentTransform: DOMMatrixReadOnly, skipBorder: boolean, transparentBackground: boolean) {
         g.setTransform(baseTransform)
         g.lineCap = "square"
         g.textBaseline = "middle"
@@ -2027,6 +2033,12 @@ export class LogicEditor extends HTMLElement {
 
     public static decodeFromURLOld(str: string) {
         return decodeURIComponent(atob(str.replace(/-/g, "+").replace(/_/g, "/").replace(/%3D/g, "=")))
+    }
+
+    public static getGraphics(canvas: HTMLCanvasElement): GraphicsRendering {
+        const g = canvas.getContext("2d")! as GraphicsRendering
+        g.createPath = (path?: Path2D | string) => new Path2D(path)
+        return g
     }
 }
 

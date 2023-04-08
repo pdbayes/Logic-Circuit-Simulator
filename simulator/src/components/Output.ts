@@ -5,7 +5,7 @@ import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Mode, Unknown, isDefined, isUndefined, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { Component, ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { InputDef } from "./Input"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -82,7 +82,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         return this.inputValues(this.inputs.In)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         if (this.numBits === 1) {
             this.doDrawSingle(g, ctx, this.inputs.In[0])
         } else {
@@ -90,7 +90,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         }
     }
 
-    private doDrawSingle(g: CanvasRenderingContext2D, ctx: DrawContext, input: NodeIn) {
+    private doDrawSingle(g: GraphicsRendering, ctx: DrawContext, input: NodeIn) {
         drawWireLineToComponent(g, input, this.posX, this.posY)
 
         g.strokeStyle = ctx.borderColor
@@ -120,10 +120,10 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         })
     }
 
-    private doDrawMulti(g: CanvasRenderingContext2D, ctx: DrawContext, inputs: NodeIn[]) {
+    private doDrawMulti(g: GraphicsRendering, ctx: DrawContext, inputs: NodeIn[]) {
         const bounds = this.bounds()
         const { left, top, width } = bounds
-        const outline = bounds.outline
+        const outline = bounds.outline(g)
 
         // background
         g.fillStyle = COLOR_BACKGROUND

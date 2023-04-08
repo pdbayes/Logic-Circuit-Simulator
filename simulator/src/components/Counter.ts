@@ -5,7 +5,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, isUndefined, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
 
@@ -157,7 +157,7 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         this.setNeedsRedraw("trigger changed")
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx, { width }) => {
             if (isDefined(this._displayRadix)) {
                 g.font = "bold 20px sans-serif"

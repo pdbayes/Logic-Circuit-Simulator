@@ -5,7 +5,7 @@ import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent, groupVertical } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
 
 export const OutputAsciiDef =
@@ -78,7 +78,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         return displayValuesFromArray(values, false)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const [binaryStringRep, value] = this.value
         let mainText: string
         let mainTextFont: string

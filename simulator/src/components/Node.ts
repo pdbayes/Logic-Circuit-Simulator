@@ -2,7 +2,7 @@ import { drawWaypoint, GRID_STEP, isOverWaypoint, NodeStyle, WAYPOINT_DIAMETER }
 import { LogicEditor } from "../LogicEditor"
 import { HighImpedance, InteractionResult, isDefined, isUndefined, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
 import { ComponentState, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
-import { DrawableWithPosition, DrawContext, Orientation } from "./Drawable"
+import { DrawableWithPosition, DrawContext, GraphicsRendering, Orientation } from "./Drawable"
 import { Wire } from "./Wire"
 
 
@@ -115,7 +115,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         return false
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const mode = this.editor.mode
         if (mode < Mode.CONNECT && !this.forceDraw()) {
             return

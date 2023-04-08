@@ -5,7 +5,7 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
 
 
 export const DecoderDef =
@@ -83,7 +83,7 @@ export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
         return output
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
             drawLabels: () => {

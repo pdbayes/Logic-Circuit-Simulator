@@ -4,7 +4,7 @@ import { COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, colorForBoolean, draw
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, isUndefined, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineAbstractComponent } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 
 export const FlipflopOrLatchDef =
@@ -75,7 +75,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         this.setNeedsRedraw("show content changed")
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             background: this._isInInvalidState ? COLOR_BACKGROUND_INVALID : undefined,
             drawLabels: () => {
@@ -87,7 +87,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
     }
 
 
-    public static drawStoredValueFrame(g: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, swapHeightWidth: boolean) {
+    public static drawStoredValueFrame(g: GraphicsRendering, x: number, y: number, width: number, height: number, swapHeightWidth: boolean) {
         if (swapHeightWidth) {
             [width, height] = [height, width]
         }
@@ -99,7 +99,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         g.stroke()
     }
 
-    public static drawStoredValue(g: CanvasRenderingContext2D, value: LogicValue, x: number, y: number, cellHeight: number, swapHeightWidth: boolean) {
+    public static drawStoredValue(g: GraphicsRendering, value: LogicValue, x: number, y: number, cellHeight: number, swapHeightWidth: boolean) {
         g.fillStyle = colorForBoolean(value)
         FlipflopOrLatch.drawStoredValueFrame(g, x, y, 20, cellHeight, swapHeightWidth)
         drawValueText(g, value, x, y, { small: cellHeight < 18 })

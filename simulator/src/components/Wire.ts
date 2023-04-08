@@ -7,7 +7,7 @@ import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, isUndefinedOrNull, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
-import { DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, MenuData, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
+import { DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, GraphicsRendering, MenuData, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor, tryMakeRepeatableNodeAction } from "./Node"
 import { Passthrough, PassthroughDef } from "./Passthrough"
 
@@ -89,7 +89,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
         this.parent.removeWaypoint(this)
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+    protected doDraw(g: GraphicsRendering, ctx: DrawContext): void {
         if (this.editor.mode < Mode.CONNECT) {
             return
         }
@@ -349,7 +349,7 @@ export class Wire extends Drawable {
         return this._propagatingValues[0][0]
     }
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected doDraw(g: GraphicsRendering, ctx: DrawContext) {
         // this has to be checked _before_ we prune the list,
         // otherwise we won't get a chance to have a next animation frame
         // and to run the pending updates created by possibly setting
@@ -409,7 +409,7 @@ export class Wire extends Drawable {
         }
 
         const totalLength = this.editor.lengthOfPath(svgPathDesc)
-        const path = new Path2D(svgPathDesc) // TODO cache this?
+        const path = g.createPath(svgPathDesc)
 
         const drawParams = ctx.drawParams
         if (isDefined(drawParams.highlightColor) && (drawParams.highlightedItems?.wires.includes(this) ?? false)) {
@@ -652,7 +652,7 @@ export class Ribbon extends Drawable {
     }
 
 
-    protected doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void {
+    protected doDraw(g: GraphicsRendering, ctx: DrawContext): void {
         const [[startX, startY], startOrient] = this.drawRibbonEnd(g, ctx, this.startNodeGroup, this._startGroupStartIndex, this._startGroupEndIndex)
         const [[endX, endY], endOrient] = this.drawRibbonEnd(g, ctx, this.endNodeGroup, this._endGroupStartIndex, this._endGroupEndIndex)
 
@@ -675,7 +675,7 @@ export class Ribbon extends Drawable {
         this.strokeWireBezier(g, b, values, WireColor.black, ctx.isMouseOver, false)
     }
 
-    private strokeWireBezier(g: CanvasRenderingContext2D, b: Bezier, values: LogicValue[], color: WireColor, isMouseOver: boolean, neutral: boolean) {
+    private strokeWireBezier(g: GraphicsRendering, b: Bezier, values: LogicValue[], color: WireColor, isMouseOver: boolean, neutral: boolean) {
         const numWires = values.length
 
         const WIRE_MARGIN_OUTER = (numWires === 1) ? 1 : (numWires <= 4 || numWires > 8) ? 2 : 3
@@ -739,7 +739,7 @@ export class Ribbon extends Drawable {
         g.lineCap = oldLineCap
     }
 
-    private drawRibbonEnd(g: CanvasRenderingContext2D, ctx: DrawContext, nodeGroup: NodeGroup<Node>, startIndex: number, endIndex: number): [readonly [number, number], Orientation] {
+    private drawRibbonEnd(g: GraphicsRendering, ctx: DrawContext, nodeGroup: NodeGroup<Node>, startIndex: number, endIndex: number): [readonly [number, number], Orientation] {
         const nodes = nodeGroup.nodes
         const orient = nodes[startIndex].orient
         const numNodes = endIndex - startIndex + 1
@@ -809,7 +809,7 @@ export class WireManager {
         return isDefined(this._wireBeingAddedFrom)
     }
 
-    public draw(g: CanvasRenderingContext2D, drawParams: DrawParams) {
+    public draw(g: GraphicsRendering, drawParams: DrawParams) {
         this.removeDeadWires()
         const useRibbons = this.editor.options.groupParallelWires
         if (useRibbons) {
@@ -829,7 +829,7 @@ export class WireManager {
         this.drawWireBeingAdded(g)
     }
 
-    private drawWireBeingAdded(g: CanvasRenderingContext2D) {
+    private drawWireBeingAdded(g: GraphicsRendering) {
         // TODO use some PartialWire class to draw this and allow adding waypoints
         // while dragging, e.g. with the A or Space key
         const nodeFrom = this._wireBeingAddedFrom

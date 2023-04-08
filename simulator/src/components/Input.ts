@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayClampOrPad, ArrayFillWith, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
@@ -66,7 +66,7 @@ export abstract class InputBase<
         return true
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         if (this.numBits === 1) {
             this.doDrawSingle(g, ctx, this.outputs.Out[0])
         } else {
@@ -74,7 +74,7 @@ export abstract class InputBase<
         }
     }
 
-    private doDrawSingle(g: CanvasRenderingContext2D, ctx: DrawContext, output: NodeOut) {
+    private doDrawSingle(g: GraphicsRendering, ctx: DrawContext, output: NodeOut) {
         drawWireLineToComponent(g, output, this.posX + 8, this.posY)
 
         const displayValue = this.editor.options.hideInputColors ? Unknown : output.value
@@ -117,10 +117,10 @@ export abstract class InputBase<
         })
     }
 
-    private doDrawMulti(g: CanvasRenderingContext2D, ctx: DrawContext, outputs: NodeOut[]) {
+    private doDrawMulti(g: GraphicsRendering, ctx: DrawContext, outputs: NodeOut[]) {
         const bounds = this.bounds()
         const { left, top, width, right } = bounds
-        const outline = bounds.outline
+        const outline = bounds.outline(g)
 
         // background
         g.fillStyle = COLOR_BACKGROUND

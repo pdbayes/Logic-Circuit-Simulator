@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { colorForBoolean, COLOR_COMPONENT_BORDER } from "../drawutils"
-import { div, mods, tooltipContent } from "../htmlgen"
 import { LogicEditor } from "../LogicEditor"
+import { COLOR_COMPONENT_BORDER, colorForBoolean } from "../drawutils"
+import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, HighImpedance, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
-import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, MenuItems } from "./Drawable"
+import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isHighImpedance, isUnknown, typeOrUndefined } from "../utils"
+import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
 import { SwitchedInverterDef } from "./SwitchedInverter"
 
 
@@ -82,7 +82,7 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
         this.outputValues(this.outputs.O, newValue)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
             drawInside: ({ top, left, right }) => {

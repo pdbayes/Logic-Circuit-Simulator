@@ -6,7 +6,7 @@ import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { ALUDef } from "./ALU"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
@@ -95,7 +95,7 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
         this.outputValues(this.outputs.S, newValue)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
             drawInside: ({ left, right }) => {

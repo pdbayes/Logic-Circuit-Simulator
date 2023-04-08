@@ -1,14 +1,19 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
 import { DrawParams, LogicEditor } from "../LogicEditor"
+import { SVGRenderingContext } from "../SVGRenderingContext"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, ColorString, GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
 import { Expand, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
 
+export type GraphicsRendering =
+    | CanvasRenderingContext2D & { fill(): void, createPath(path?: Path2D | string): Path2D }
+    | SVGRenderingContext
+
 export interface DrawContext {
-    g: CanvasRenderingContext2D
+    g: GraphicsRendering
     drawParams: DrawParams
     isMouseOver: boolean
     borderColor: ColorString
@@ -52,7 +57,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
 
     public constructor(
         private comp: Drawable,
-        public readonly g: CanvasRenderingContext2D,
+        public readonly g: GraphicsRendering,
         public readonly drawParams: DrawParams,
         public readonly isMouseOver: boolean,
         public readonly borderColor: ColorString,
@@ -104,7 +109,7 @@ export abstract class Drawable {
         return 1
     }
 
-    public draw(g: CanvasRenderingContext2D, drawParams: DrawParams): void {
+    public draw(g: GraphicsRendering, drawParams: DrawParams): void {
         const inSelectionRect = drawParams.currentSelection?.isSelected(this) ?? false
         const isMouseOver = this === drawParams.currentMouseOverComp || inSelectionRect
         const borderColor = !isMouseOver
@@ -118,11 +123,11 @@ export abstract class Drawable {
         ctx.exit()
     }
 
-    public applyDrawTransform(__g: CanvasRenderingContext2D) {
+    public applyDrawTransform(__g: GraphicsRendering) {
         // by default, do nothing
     }
 
-    protected abstract doDraw(g: CanvasRenderingContext2D, ctx: DrawContext): void
+    protected abstract doDraw(g: GraphicsRendering, ctx: DrawContext): void
 
     public abstract isOver(x: number, y: number): boolean
 
@@ -367,7 +372,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     public abstract get unrotatedHeight(): number
 
-    public override applyDrawTransform(g: CanvasRenderingContext2D) {
+    public override applyDrawTransform(g: GraphicsRendering) {
         const rotation = (() => {
             switch (this._orient) {
                 case "e": return undefined

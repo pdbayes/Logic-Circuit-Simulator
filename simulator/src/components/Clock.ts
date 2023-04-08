@@ -5,7 +5,7 @@ import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { LogicValue, isDefined, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, Repr, defineComponent } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { InputBase, InputDef } from "./Input"
 
 export const ClockDef =
@@ -119,7 +119,7 @@ export class Clock extends InputBase<ClockRepr> {
         }
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         super.doDraw(g, ctx)
 
         if (!this._showLabel) {

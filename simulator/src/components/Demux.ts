@@ -6,7 +6,7 @@ import { IconName } from "../images"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param } from "./Component"
-import { DrawContext, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -134,7 +134,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         this.outputValues(this.outputs._all, newValues)
     }
 
-    protected override doDraw(g: CanvasRenderingContext2D, ctx: DrawContext) {
+    protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         const { top, left, bottom, right } = this.bounds()
         const dy = (right - left) / 3
 
@@ -157,7 +157,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         }
 
         // background
-        const outline = new Path2D()
+        const outline = g.createPath()
         outline.moveTo(left, top + dy)
         outline.lineTo(right, top)
         outline.lineTo(right, bottom)
