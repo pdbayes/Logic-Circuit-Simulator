@@ -6,10 +6,15 @@ import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, Colo
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
-import { Expand, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { Expand, FixedArray, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
 
 export type GraphicsRendering =
-    | CanvasRenderingContext2D & { fill(): void, createPath(path?: Path2D | string): Path2D }
+    | CanvasRenderingContext2D & {
+        fill(): void,
+        beginGroup(className?: string): void
+        endGroup(): void,
+        createPath(path?: Path2D | string): Path2D
+    }
     | SVGRenderingContext
 
 export interface DrawContext {
@@ -119,8 +124,11 @@ export abstract class Drawable {
                 : COLOR_MOUSE_OVER
 
         const ctx = new _DrawContextImpl(this, g, drawParams, isMouseOver, borderColor)
-        this.doDraw(g, ctx)
-        ctx.exit()
+        try {
+            this.doDraw(g, ctx)
+        } finally {
+            ctx.exit()
+        }
     }
 
     public applyDrawTransform(__g: GraphicsRendering) {
@@ -373,18 +381,18 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     public abstract get unrotatedHeight(): number
 
     public override applyDrawTransform(g: GraphicsRendering) {
-        const rotation = (() => {
+        const abcd: FixedArray<number, 4> | undefined = (() => {
             switch (this._orient) {
                 case "e": return undefined
-                case "s": return Math.PI / 2
-                case "w": return Math.PI
-                case "n": return -Math.PI / 2
+                case "s": return [0, 1, -1, 0]
+                case "w": return [-1, 0, 0, -1]
+                case "n": return [0, -1, 1, 0]
             }
         })()
 
-        if (isDefined(rotation)) {
+        if (isDefined(abcd)) {
             g.translate(this.posX, this.posY)
-            g.rotate(rotation)
+            g.transform(...abcd, 0, 0)
             g.translate(-this.posX, -this.posY)
         }
     }

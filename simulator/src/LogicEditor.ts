@@ -320,7 +320,7 @@ export class LogicEditor extends HTMLElement {
         chooser.click()
     }
 
-    public setActiveTool(toolElement: HTMLElement) {
+    public setActiveTool(toolElement: HTMLElement, e: MouseEvent) {
         const tool = toolElement.getAttribute("tool")
         if (isUndefinedOrNull(tool)) {
             return
@@ -340,7 +340,11 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (tool === "screenshot") {
-            this.downloadAsPNG()
+            if (e.altKey) {
+                this.downloadAsSVG()
+            } else {
+                this.downloadAsPNG()
+            }
             return
         }
 
@@ -822,8 +826,8 @@ export class LogicEditor extends HTMLElement {
         const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
         for (let i = 0; i < modifButtons.length; i++) {
             const but = modifButtons[i] as HTMLElement
-            but.addEventListener("click", () => {
-                this.setActiveTool(but)
+            but.addEventListener("click", e => {
+                this.setActiveTool(but, e)
             })
         }
 
@@ -1298,6 +1302,23 @@ export class LogicEditor extends HTMLElement {
                 }
             }
             reader.readAsArrayBuffer(file)
+        } else if (file.type === "image/svg+xml") {
+            const reader = new FileReader()
+            reader.onload = e => {
+                const content = e.target?.result?.toString()
+                if (isDefined(content)) {
+
+                    const temp = document.createElement("div")
+                    temp.innerHTML = content
+                    const metadata = temp.querySelector("svg metadata")
+                    const json = metadata?.textContent
+                    temp.remove()
+                    if (!isUndefinedOrNull(json)) {
+                        this.load(json)
+                    }
+                }
+            }
+            reader.readAsText(file, "utf-8")
         } else {
             console.log("Unsupported file type", file.type)
         }
@@ -1733,9 +1754,14 @@ export class LogicEditor extends HTMLElement {
     }
 
     public downloadAsSVG() {
+        const jsonFull = PersistenceManager.stringifyWorkspace(PersistenceManager.buildWorkspace(this), false)
+
         const [width, height] = this.guessAdequateCanvasSize(false)
         const id = new DOMMatrix()
-        const svgCtx = new SVGRenderingContext({ width, height })
+        const svgCtx = new SVGRenderingContext({
+            width, height,
+            metadata: jsonFull,
+        })
         this.doDrawWithContext(svgCtx, width, height, id, id, true, true)
         const serializedSVG = svgCtx.getSerializedSvg()
         const blob = new Blob([serializedSVG], { type: "image/svg+xml" })
@@ -1898,6 +1924,7 @@ export class LogicEditor extends HTMLElement {
         // this.moveMgr.dump()
         const isMovingComponent = this.moveMgr.areDrawablesMoving()
         if (isMovingComponent) {
+            g.beginGroup("grid")
             const widthAdjusted = width / this._actualZoomFactor
             const heightAdjusted = height / this._actualZoomFactor
             const step = GRID_STEP //* 2
@@ -1913,11 +1940,13 @@ export class LogicEditor extends HTMLElement {
                 g.lineTo(width, y)
             }
             g.stroke()
+            g.endGroup()
         }
 
         // draw guidelines when moving waypoint
         const singleMovingWayoint = this.moveMgr.getSingleMovingWaypoint()
         if (isDefined(singleMovingWayoint)) {
+            g.beginGroup("guides")
             const guides = singleMovingWayoint.getPrevAndNextAnchors()
             g.strokeStyle = COLOR_GRID_LINES_GUIDES
             g.lineWidth = 1.5
@@ -1929,10 +1958,12 @@ export class LogicEditor extends HTMLElement {
                 g.lineTo(width, guide.posY)
             }
             g.stroke()
+            g.endGroup()
         }
 
         // draw border according to mode
         if (!skipBorder && (this._mode >= Mode.CONNECT || this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON)) {
+            g.beginGroup("border")
             g.setTransform(baseTransform)
             g.strokeStyle = COLOR_BORDER
             g.lineWidth = 2
@@ -1945,6 +1976,7 @@ export class LogicEditor extends HTMLElement {
                 g.fillRect(0, h, width, height - h)
             }
             g.setTransform(contentTransform)
+            g.endGroup()
         }
 
         // const currentScale = this._currentScale
@@ -1964,33 +1996,47 @@ export class LogicEditor extends HTMLElement {
         const currentSelection = this.cursorMovementMgr.currentSelection
         drawParams.currentSelection = currentSelection
         const drawComp = (comp: Component) => {
-            comp.draw(g, drawParams)
-            for (const node of comp.allNodes()) {
-                node.draw(g, drawParams) // never show nodes as selected
+            g.beginGroup(comp.constructor.name)
+            try {
+                comp.draw(g, drawParams)
+                for (const node of comp.allNodes()) {
+                    node.draw(g, drawParams) // never show nodes as selected
+                }
+            } finally {
+                g.endGroup()
             }
         }
 
         // draw background components
+        g.beginGroup("background")
         for (const comp of this.components.withZIndex(DrawZIndex.Background)) {
             drawComp(comp)
         }
+        g.endGroup()
 
         // draw wires
+        g.beginGroup("wires")
         this.wireMgr.draw(g, drawParams) // never show wires as selected
+        g.endGroup()
 
         // draw normal components
+        g.beginGroup("components")
         for (const comp of this.components.withZIndex(DrawZIndex.Normal)) {
             drawComp(comp)
         }
+        g.endGroup()
 
         // draw overlays
+        g.beginGroup("overlays")
         for (const comp of this.components.withZIndex(DrawZIndex.Overlay)) {
             drawComp(comp)
         }
+        g.endGroup()
 
         // draw selection
         let selRect
         if (isDefined(currentSelection) && isDefined(selRect = currentSelection.currentlyDrawnRect)) {
+            g.beginGroup("selection")
             g.lineWidth = 1.5
             g.strokeStyle = "rgb(100,100,255)"
             g.fillStyle = "rgba(100,100,255,0.2)"
@@ -1998,6 +2044,7 @@ export class LogicEditor extends HTMLElement {
             g.rect(selRect.x, selRect.y, selRect.width, selRect.height)
             g.stroke()
             g.fill()
+            g.endGroup()
         }
 
     }
@@ -2038,6 +2085,8 @@ export class LogicEditor extends HTMLElement {
     public static getGraphics(canvas: HTMLCanvasElement): GraphicsRendering {
         const g = canvas.getContext("2d")! as GraphicsRendering
         g.createPath = (path?: Path2D | string) => new Path2D(path)
+        g.beginGroup = () => undefined
+        g.endGroup = () => undefined
         return g
     }
 }

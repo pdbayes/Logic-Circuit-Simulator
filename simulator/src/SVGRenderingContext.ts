@@ -1,9 +1,5 @@
-/* eslint-disable prefer-named-capture-group */
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-/* eslint-disable @typescript-eslint/explicit-member-accessibility */
-
-/*
- *  This is a TypeScript port of canvas2svg a.k.a svgcanvas
+/**
+ * This is a TypeScript port of canvas2svg a.k.a svgcanvas
  *
  * Original by https://github.com/gliffy/canvas2svg
  * Updated by https://github.com/zenozeng/svgcanvas
@@ -15,458 +11,252 @@
 
 import { isDefined, isString, isUndefined } from "./utils"
 
-
-//helper function that generates a random string
-function randomString(holder?: Record<string, unknown>) {
-    if (!holder) {
-        throw new Error("cannot create a random attribute name for an undefined object")
-    }
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz"
-    let randomstring = ""
-    do {
-        randomstring = ""
-        for (let i = 0; i < 12; i++) {
-            randomstring += chars[Math.floor(Math.random() * chars.length)]
-        }
-    } while (holder[randomstring])
-    return randomstring
-}
-
-//helper function to map named to numbered entities
-function createNamedToNumberedLookup(itemsStr: string, radix?: number) {
-    const lookup: Record<string, string> = {}
-    const items = itemsStr.split(',')
-    radix = radix ?? 10
-    // Map from named to numbered entities.
-    for (let i = 0; i < items.length; i += 2) {
-        const entity = '&' + items[i + 1] + ';'
-        const base10 = parseInt(items[i], radix)
-        lookup[entity] = '&#' + base10 + ';'
-    }
-    //FF and IE need to create a regex from hex values ie &nbsp; == \xa0
-    lookup["\\xa0"] = '&#160;'
-    return lookup
-}
-
-//helper function to map canvas-textAlign to svg-textAnchor
-function getTextAnchor(textAlign: string) {
-    //TODO: support rtl languages
-    const mapping: Record<string, string> = { "left": "start", "right": "end", "center": "middle", "start": "start", "end": "end" }
-    return mapping[textAlign] || mapping.start
-}
-
-//helper function to map canvas-textBaseline to svg-dominantBaseline
-function getDominantBaseline(textBaseline: string) {
-    //INFO: not supported in all browsers
-    const mapping: Record<string, string> = { "alphabetic": "alphabetic", "hanging": "hanging", "top": "text-before-edge", "bottom": "text-after-edge", "middle": "central" }
-    return mapping[textBaseline] ?? mapping.alphabetic
-}
-
-// Unpack entities lookup where the numbers are in radix 32 to reduce the size
-// entity mapping courtesy of tinymce
-export const namedEntities = createNamedToNumberedLookup(
-    '50,nbsp,51,iexcl,52,cent,53,pound,54,curren,55,yen,56,brvbar,57,sect,58,uml,59,copy,' +
-    '5a,ordf,5b,laquo,5c,not,5d,shy,5e,reg,5f,macr,5g,deg,5h,plusmn,5i,sup2,5j,sup3,5k,acute,' +
-    '5l,micro,5m,para,5n,middot,5o,cedil,5p,sup1,5q,ordm,5r,raquo,5s,frac14,5t,frac12,5u,frac34,' +
-    '5v,iquest,60,Agrave,61,Aacute,62,Acirc,63,Atilde,64,Auml,65,Aring,66,AElig,67,Ccedil,' +
-    '68,Egrave,69,Eacute,6a,Ecirc,6b,Euml,6c,Igrave,6d,Iacute,6e,Icirc,6f,Iuml,6g,ETH,6h,Ntilde,' +
-    '6i,Ograve,6j,Oacute,6k,Ocirc,6l,Otilde,6m,Ouml,6n,times,6o,Oslash,6p,Ugrave,6q,Uacute,' +
-    '6r,Ucirc,6s,Uuml,6t,Yacute,6u,THORN,6v,szlig,70,agrave,71,aacute,72,acirc,73,atilde,74,auml,' +
-    '75,aring,76,aelig,77,ccedil,78,egrave,79,eacute,7a,ecirc,7b,euml,7c,igrave,7d,iacute,7e,icirc,' +
-    '7f,iuml,7g,eth,7h,ntilde,7i,ograve,7j,oacute,7k,ocirc,7l,otilde,7m,ouml,7n,divide,7o,oslash,' +
-    '7p,ugrave,7q,uacute,7r,ucirc,7s,uuml,7t,yacute,7u,thorn,7v,yuml,ci,fnof,sh,Alpha,si,Beta,' +
-    'sj,Gamma,sk,Delta,sl,Epsilon,sm,Zeta,sn,Eta,so,Theta,sp,Iota,sq,Kappa,sr,Lambda,ss,Mu,' +
-    'st,Nu,su,Xi,sv,Omicron,t0,Pi,t1,Rho,t3,Sigma,t4,Tau,t5,Upsilon,t6,Phi,t7,Chi,t8,Psi,' +
-    't9,Omega,th,alpha,ti,beta,tj,gamma,tk,delta,tl,epsilon,tm,zeta,tn,eta,to,theta,tp,iota,' +
-    'tq,kappa,tr,lambda,ts,mu,tt,nu,tu,xi,tv,omicron,u0,pi,u1,rho,u2,sigmaf,u3,sigma,u4,tau,' +
-    'u5,upsilon,u6,phi,u7,chi,u8,psi,u9,omega,uh,thetasym,ui,upsih,um,piv,812,bull,816,hellip,' +
-    '81i,prime,81j,Prime,81u,oline,824,frasl,88o,weierp,88h,image,88s,real,892,trade,89l,alefsym,' +
-    '8cg,larr,8ch,uarr,8ci,rarr,8cj,darr,8ck,harr,8dl,crarr,8eg,lArr,8eh,uArr,8ei,rArr,8ej,dArr,' +
-    '8ek,hArr,8g0,forall,8g2,part,8g3,exist,8g5,empty,8g7,nabla,8g8,isin,8g9,notin,8gb,ni,8gf,prod,' +
-    '8gh,sum,8gi,minus,8gn,lowast,8gq,radic,8gt,prop,8gu,infin,8h0,ang,8h7,and,8h8,or,8h9,cap,8ha,cup,' +
-    '8hb,int,8hk,there4,8hs,sim,8i5,cong,8i8,asymp,8j0,ne,8j1,equiv,8j4,le,8j5,ge,8k2,sub,8k3,sup,8k4,' +
-    'nsub,8k6,sube,8k7,supe,8kl,oplus,8kn,otimes,8l5,perp,8m5,sdot,8o8,lceil,8o9,rceil,8oa,lfloor,8ob,' +
-    'rfloor,8p9,lang,8pa,rang,9ea,loz,9j0,spades,9j3,clubs,9j5,hearts,9j6,diams,ai,OElig,aj,oelig,b0,' +
-    'Scaron,b1,scaron,bo,Yuml,m6,circ,ms,tilde,802,ensp,803,emsp,809,thinsp,80c,zwnj,80d,zwj,80e,lrm,' +
-    '80f,rlm,80j,ndash,80k,mdash,80o,lsquo,80p,rsquo,80q,sbquo,80s,ldquo,80t,rdquo,80u,bdquo,810,dagger,' +
-    '811,Dagger,81g,permil,81p,lsaquo,81q,rsaquo,85c,euro', 32)
-
-
-//Some basic mappings for attributes and default values.
-const STYLES = {
-    "strokeStyle": {
-        svgAttr: "stroke",
-        svg: "none",
-        apply: "stroke",
-    },
-    "fillStyle": {
-        svgAttr: "fill",
-        svg: null, //svg default is black, but we need to special case this to handle canvas stroke without fill
-        apply: "fill",
-    },
-    "lineCap": {
-        svgAttr: "stroke-linecap",
-        svg: "butt",
-        apply: "stroke",
-    },
-    "lineJoin": {
-        svgAttr: "stroke-linejoin",
-        svg: "miter",
-        apply: "stroke",
-    },
-    "miterLimit": {
-        svgAttr: "stroke-miterlimit",
-        svg: 4,
-        apply: "stroke",
-    },
-    "lineWidth": {
-        svgAttr: "stroke-width",
-        svg: 1,
-        apply: "stroke",
-    },
-    "globalAlpha": {
-        svgAttr: "opacity",
-        svg: 1,
-        apply: "fill stroke",
-    },
-    "lineDash": {
-        svgAttr: "stroke-dasharray",
-        svg: null,
-        apply: "stroke",
-    },
-} satisfies Record<string, {
-    svgAttr?: string, //corresponding svg attribute
-    svg?: string | number | null,       //svg default
-    apply?: string,    //apply on stroke() or fill()
-}>
-
-class CanvasGradientSVG implements CanvasGradient {
-
-    public __root: SVGGradientElement
-    public __ctx: SVGRenderingContext
-
-    /**
-    *
-    * @param gradientNode - reference to the gradient
-    * @constructor
-    */
-    constructor(gradientNode: SVGGradientElement, ctx: SVGRenderingContext) {
-        this.__root = gradientNode
-        this.__ctx = ctx
-    }
-
-    /**
-    * Adds a color stop to the gradient root
-    */
-    addColorStop(offset: number, color: string) {
-        const stop = this.__ctx.__createElement("stop")
-        stop.setAttribute("offset", String(offset))
-        if (color.indexOf("rgba") !== -1) {
-            //separate alpha value, since webkit can't handle it
-            // eslint-disable-next-line prefer-named-capture-group
-            const regex = /rgba\(\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi
-            const matches = regex.exec(color)
-            if (matches) {
-                stop.setAttribute("stop-color", `rgb(${matches[1]},${matches[2]},${matches[3]})`)
-                stop.setAttribute("stop-opacity", matches[4])
-            } else {
-                stop.setAttribute("stop-color", color)
-            }
-        } else {
-            stop.setAttribute("stop-color", color)
-        }
-        this.__root.appendChild(stop)
-    }
-}
-
-class CanvasPatternSVG {
-    constructor(public __root: SVGElement, public __ctx: SVGRenderingContext) { }
-}
-
-
-type ContextOptions = {
+export type ContextOptions = {
     width: number
     height: number
     enableMirroring: boolean
     document: Document
     ctx: CanvasRenderingContext2D
-    debug: boolean
+    metadata: string | undefined
 }
-
-const defaultOptions = { width: 500, height: 500, enableMirroring: false } satisfies Partial<ContextOptions>
 
 export class SVGRenderingContext {
 
-    width: number
-    height: number
-    enableMirroring: boolean
-    canvas: SVGRenderingContext
+    // basic properties
+    public readonly width: number
+    public readonly height: number
+    public readonly enableMirroring: boolean
+    public readonly canvas: SVGRenderingContext
 
-    strokeStyle: string = "#000000"
-    fillStyle: string = "#000000"
-    lineCap: string = "butt"
-    lineJoin: string = "miter"
-    miterLimit: number = 10
-    lineWidth: number = 1
-    globalAlpha: number = 1
-    font: string = "10px sans-serif"
-    shadowColor: string = "#000000"
-    shadowOffsetX: number = 0
-    shadowOffsetY: number = 0
-    shadowBlur: number = 0
-    textAlign: string = "start"
-    textBaseline: string = "alphabetic"
-    lineDash: string | null = null
+    // mirrored canvas properties
+    public strokeStyle: string = "#000000"
+    public fillStyle: string = "#000000"
+    public lineCap: string = "butt"
+    public lineJoin: string = "miter"
+    public miterLimit: number = 10
+    public lineWidth: number = 1
+    public globalAlpha: number = 1
+    public font: string = "10px sans-serif"
+    public shadowColor: string = "#000000"
+    public shadowOffsetX: number = 0
+    public shadowOffsetY: number = 0
+    public shadowBlur: number = 0
+    public textAlign: string = "start"
+    public textBaseline: string = "alphabetic"
+    public lineDash: string | null = null
+    // extra
+    public fontUnderline: string = ""
+    public fontHref: string | undefined
 
-    __id: string
-    __document: Document
-    __canvas: HTMLCanvasElement | undefined
-    __ctx: CanvasRenderingContext2D
-    __root: SVGSVGElement
-    __defs: SVGDefsElement
-    __currentElement: SVGElement
-    __currentElementsToStyle: null = null
-    __styleStack: Record<string, string>[]
-    __groupStack: SVGElement[]
-    __options: Partial<ContextOptions>
-    __ids: Record<string, unknown>
-    __transformMatrix: DOMMatrix = new DOMMatrix()
-    __transformMatrixStack: DOMMatrix[] | undefined
-    __fontHref: string | undefined
-    __fontUnderline: string = ""
-    __currentDefaultPath: Path2DSVG = new Path2DSVG(this)
-    __currentPosition: { x?: number, y?: number } = {}
+    // internal properties
+    private readonly _document: Document
+    private readonly _helperCanvas: HTMLCanvasElement | undefined
+    private readonly _g: CanvasRenderingContext2D
+    private readonly _svg: SVGSVGElement
+    private readonly _defs: SVGDefsElement
+    private readonly _styleStack: Record<string, string>[]
+    private readonly _groupStack: SVGElement[] = []
+    private readonly _ids: Record<string, unknown>
+    private readonly _transformMatrixStack: DOMMatrix[] = []
+    // current state
+    private _currentElement: SVGElement
+    private _currentPath: Path2DSVG = new Path2DSVG(this)
+    public _transformMatrix: DOMMatrix = new DOMMatrix()
 
+    public constructor(options?: Partial<ContextOptions>)
+    public constructor(width: number, height: number)
 
-    /**
-     * The mock canvas context
-     * @param o - options include:
-     * ctx - existing Context2D to wrap around
-     * width - width of your canvas (defaults to 500)
-     * height - height of your canvas (defaults to 500)
-     * enableMirroring - enables canvas mirroring (get image data) (defaults to false)
-     * document - the document object (defaults to the current document)
-     */
-    constructor(options?: Partial<ContextOptions>) {
+    public constructor(optionsOrWidth?: Partial<ContextOptions> | number, height?: number) {
 
         // keep support for this way of calling Context: new Context(width, height)
-        if (arguments.length > 1) {
-            options = defaultOptions
-            // eslint-disable-next-line prefer-rest-params
-            options.width = arguments[0]
-            // eslint-disable-next-line prefer-rest-params
-            options.height = arguments[1]
-        } else if (!options) {
-            options = defaultOptions
+        let options: Partial<ContextOptions>
+        if (isDefined(height)) {
+            options = { width: optionsOrWidth as number, height }
+        } else if (isDefined(optionsOrWidth)) {
+            options = optionsOrWidth as Partial<ContextOptions>
+        } else {
+            options = {}
         }
 
-        //setup options
-        this.width = options.width ?? defaultOptions.width
-        this.height = options.height ?? defaultOptions.height
-        this.enableMirroring = options.enableMirroring !== undefined ? options.enableMirroring : defaultOptions.enableMirroring
+        // setup options
+        this.width = options.width ?? 500
+        this.height = options.height ?? 500
+        this.enableMirroring = options.enableMirroring ?? false
 
-        this.canvas = this   ///point back to this instance!
-        this.__document = options.document || document
+        this.canvas = this   // point back to this instance!
+        this._document = options.document ?? document
 
         // allow passing in an existing context to wrap around
         // if a context is passed in, we know a canvas already exist
         if (options.ctx) {
-            this.__ctx = options.ctx
+            this._g = options.ctx
         } else {
-            this.__canvas = this.__document.createElement("canvas")
-            this.__ctx = this.__canvas.getContext("2d")!
+            this._helperCanvas = this._document.createElement("canvas")
+            this._g = this._helperCanvas.getContext("2d")!
         }
 
-        this.__styleStack = [this.__getStyleState()]
-        this.__groupStack = []
+        this._styleStack = [this._getStyleState()]
 
-        //the root svg element
-        this.__root = this.__document.createElementNS("http://www.w3.org/2000/svg", "svg")
-        this.__root.setAttribute("version", "1.1")
-        this.__root.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-        this.__root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink")
-        this.__root.setAttribute("width", String(this.width))
-        this.__root.setAttribute("height", String(this.height))
+        // the root svg element
+        this._svg = this._document.createElementNS("http://www.w3.org/2000/svg", "svg")
+        this._svg.setAttribute("version", "1.1")
+        this._svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+        this._svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink")
+        this._svg.setAttribute("width", String(this.width))
+        this._svg.setAttribute("height", String(this.height))
 
-        //make sure we don't generate the same ids in defs
-        this.__ids = {}
+        // make sure we don't generate the same ids in defs
+        this._ids = {}
 
-        //defs tag
-        this.__defs = this.__document.createElementNS("http://www.w3.org/2000/svg", "defs")
-        this.__root.appendChild(this.__defs)
+        if (isDefined(options.metadata)) {
+            const metadata = this._document.createElementNS("http://www.w3.org/2000/svg", "metadata")
+            const textNode = this._document.createTextNode(options.metadata)
+            metadata.appendChild(textNode)
+            this._svg.appendChild(metadata)
+        }
 
-        //also add a group child. the svg element can't use the transform attribute
-        this.__currentElement = this.__document.createElementNS("http://www.w3.org/2000/svg", "g")
-        this.__root.appendChild(this.__currentElement)
+        // defs tag
+        this._defs = this._document.createElementNS("http://www.w3.org/2000/svg", "defs")
+        this._svg.appendChild(this._defs)
+
+        // also add a group child. the svg element can't use the transform attribute
+        this._currentElement = this._document.createElementNS("http://www.w3.org/2000/svg", "g")
+        this._svg.appendChild(this._currentElement)
 
         // init transformation matrix
         this.resetTransform()
-
-        this.__options = options
-        this.__id = Math.random().toString(16).substring(2, 8)
-        this.__debug(`new`, options)
     }
 
-    private __debug(...data: unknown[]) {
-        if (!(this.__options.debug ?? false)) {
-            return
-        }
-        console.debug(`svgcanvas#${this.__id}:`, ...data)
-    }
 
-    __createElement<K extends keyof SVGElementTagNameMap>(elementName: K, properties?: Record<string, string | number>, resetFill?: boolean): SVGElementTagNameMap[K] {
-        if (typeof properties === "undefined") {
-            properties = {}
-        }
+    /// PRIVATE HELPERS
 
-        const element = this.__document.createElementNS("http://www.w3.org/2000/svg", elementName)
-        const keys = Object.keys(properties)
-        if (resetFill ?? false) {
-            //if fill or stroke is not specified, the svg element should not display. By default SVG's fill is black.
+    public _createElement<K extends keyof SVGElementTagNameMap>(elementName: K, properties?: Record<string, string | number>, resetFill = false): SVGElementTagNameMap[K] {
+        const element = this._document.createElementNS("http://www.w3.org/2000/svg", elementName)
+        if (resetFill) {
+            // if fill or stroke is not specified, the svg element should not display. By default SVG's fill is black.
             element.setAttribute("fill", "none")
             element.setAttribute("stroke", "none")
         }
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i]
-            element.setAttribute(key, String(properties[key]))
+        if (isDefined(properties)) {
+            for (const [key, value] of Object.entries(properties)) {
+                element.setAttribute(key, String(value))
+            }
         }
         return element
     }
 
-    // [key: keyof typeof STYLES]: any
-
     /**
      * Will return the closest group or svg node. May return the current element.
-     * @private
      */
-    __closestGroupOrSvg(node?: SVGElement | null): SVGElement {
-        node = node ?? this.__currentElement
+    private _closestGroupOrSvg(node?: SVGElement | null): SVGElement {
+        node = node ?? this._currentElement
         if (node.nodeName === "g" || node.nodeName === "svg") {
             return node
         } else {
-            return this.__closestGroupOrSvg(node.parentNode as SVGElement | null)
+            return this._closestGroupOrSvg(node.parentNode as SVGElement | null)
         }
     }
 
-
     /**
      * Applies styles on restore
-     * @param styleState
-     * @private
      */
-    __applyStyleState(styleState: Record<string, string>) {
+    private _applyStyleState(styleState: Record<string, string>) {
         for (const [key, value] of Object.entries(styleState)) {
             (this as any)[key] = value
         }
     }
 
-
     /**
      * Gets the current style state
-     * @return {Object}
-     * @private
      */
-    __getStyleState() {
+    private _getStyleState() {
         const styleState: Record<string, string> = {}
-        const keys = Object.keys(STYLES)
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i]
+        for (const key of Object.keys(STYLES)) {
             styleState[key] = (this as any)[key]
         }
         return styleState
     }
 
-    /**
-     * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/transform
-     */
-    __applyTransformation(element: SVGElement, matrix?: DOMMatrix) {
+    private _applyTransformation(element: SVGElement, matrix?: DOMMatrix) {
+        // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/transform
         const { a, b, c, d, e, f } = matrix ?? this.getTransform()
+        if (a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0) {
+            // if is identity, do nothing
+            return
+        }
         element.setAttribute('transform', `matrix(${a} ${b} ${c} ${d} ${e} ${f})`)
     }
 
     /**
      * Apples the current styles to the current SVG element. On "ctx.fill" or "ctx.stroke"
-     * @param type
-     * @private
      */
-    __applyStyleToElement(path: SVGElement, type: "fill" | "stroke") {
-        const currentElement = path
-        const currentStyleGroup = this.__currentElementsToStyle
-        if (currentStyleGroup) {
-            console.warn("shoud process currentStyleGroup according to temporarily removed code below")
-            // currentElement.setAttribute(type, "")
-            // currentElement = currentStyleGroup.element
-            // currentStyleGroup.children.forEach(function (node) {
-            //     node.setAttribute(type, "")
-            // })
-        }
-
+    private _applyStyleToElement(elem: SVGElement, type: "fill" | "stroke") {
         for (const [key, style] of Object.entries(STYLES)) {
             let value = (this as any)[key]
             if ("apply" in style && style.apply) {
-                //is this a gradient or pattern?
+                // is this a gradient or pattern?
                 if (value instanceof CanvasPatternSVG) {
-                    //pattern
-                    if (value.__ctx) {
-                        //copy over defs
-                        for (let nodeIndex = 0; nodeIndex < value.__ctx.__defs.childNodes.length; nodeIndex++) {
-                            const node = value.__ctx.__defs.childNodes[nodeIndex] as Element
-                            const id = node.getAttribute("id")!
-                            this.__ids[id] = id
-                            this.__defs.appendChild(node)
-                        }
+                    // copy over defs
+                    for (let nodeIndex = 0; nodeIndex < value._ctx._defs.childNodes.length; nodeIndex++) {
+                        const node = value._ctx._defs.childNodes[nodeIndex] as Element
+                        const id = node.getAttribute("id")!
+                        this._ids[id] = id
+                        this._defs.appendChild(node)
                     }
-                    currentElement.setAttribute(style.apply, `url(#${value.__root.getAttribute("id")})`)
+                    elem.setAttribute(style.apply, `url(#${value.patternElem.getAttribute("id")})`)
                 }
                 else if (value instanceof CanvasGradientSVG) {
-                    //gradient
-                    currentElement.setAttribute(style.apply, `url(#${value.__root.getAttribute("id")})`)
+                    // gradient
+                    elem.setAttribute(style.apply, `url(#${value.gradientElem.getAttribute("id")})`)
                 } else if (style.apply.indexOf(type) !== -1 && style.svg !== value) {
                     if ((style.svgAttr === "stroke" || style.svgAttr === "fill") && value.indexOf("rgba") !== -1) {
-                        //separate alpha value, since illustrator can't handle it
+                        // separate alpha value, since illustrator can't handle it
+                        // eslint-disable-next-line prefer-named-capture-group
                         const regex = /rgba\(\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi
                         const matches = regex.exec(value)!
-                        currentElement.setAttribute(style.svgAttr, `rgb(${matches[1]},${matches[2]},${matches[3]})`)
-                        //should take globalAlpha here
+                        elem.setAttribute(style.svgAttr, `rgb(${matches[1]},${matches[2]},${matches[3]})`)
+                        // should take globalAlpha here
                         const opacity = parseFloat(matches[4]) * this.globalAlpha
-                        currentElement.setAttribute(style.svgAttr + "-opacity", String(opacity))
+                        elem.setAttribute(style.svgAttr + "-opacity", String(opacity))
                     } else {
                         let attr = style.svgAttr
                         if (key === 'globalAlpha') {
                             attr = type + '-' + style.svgAttr
-                            if (currentElement.getAttribute(attr)) {
-                                //fill-opacity or stroke-opacity has already been set by stroke or fill.
+                            if (elem.getAttribute(attr) !== null) {
+                                // fill-opacity or stroke-opacity has already been set by stroke or fill.
                                 continue
                             }
                         } else if (key === 'lineWidth') {
-                            const scale = this.__getTransformScale()
+                            const scale = this._getTransformScale()
                             value = value * Math.max(scale.x, scale.y) // TODO error here?
                         }
-                        //otherwise only update attribute if right type, and not svg default
-                        currentElement.setAttribute(attr, value)
+                        // otherwise only update attribute if right type, and not svg default
+                        elem.setAttribute(attr, value)
                     }
                 }
             }
         }
     }
 
+
+    /// SVG ACCESS
+
     /**
      * Returns the serialized value of the svg so far
-     * @param fixNamedEntities - Standalone SVG doesn't support named entities, which document.createTextNode encodes.
-     *                           If true, we attempt to find all named entities and encode it as a numeric entity.
+     * @param fixNamedEntities - Standalone SVG doesn't support named entities, which document.createTextNode encodes. If true, we attempt to find all named entities and encode it as a numeric entity.
      * @return serialized svg
      */
-    getSerializedSvg(fixNamedEntities?: Record<string, string>) {
-        let serialized = new XMLSerializer().serializeToString(this.__root)
+    public getSerializedSvg(fixNamedEntities = false): string {
+        let serialized = new XMLSerializer().serializeToString(this._svg)
 
-        //IE search for a duplicate xmnls because they didn't implement setAttributeNS correctly
+        // IE search for a duplicate xmnls because they didn't implement setAttributeNS correctly
         const xmlns = /xmlns="http:\/\/www\.w3\.org\/2000\/svg".+xmlns="http:\/\/www\.w3\.org\/2000\/svg/gi
         if (xmlns.test(serialized)) {
             serialized = serialized.replace('xmlns="http://www.w3.org/2000/svg', 'xmlns:xlink="http://www.w3.org/1999/xlink')
         }
 
         if (fixNamedEntities) {
-            for (const [key, value] of Object.entries(fixNamedEntities)) {
+            for (const [key, value] of Object.entries(namedEntities)) {
                 const regexp = new RegExp(key, "gi")
                 if (regexp.test(serialized)) {
                     serialized = serialized.replace(regexp, value)
@@ -477,176 +267,109 @@ export class SVGRenderingContext {
         return serialized
     }
 
-    /**
-     * Returns the root svg
-     * @return
-     */
-    getSvg() {
-        return this.__root
+    public getSvg(): SVGSVGElement {
+        return this._svg
     }
 
-    /**
-     * Will generate a group tag.
-     */
-    save() {
-        const group = this.__createElement("g")
-        const parent = this.__closestGroupOrSvg()
-        this.__groupStack.push(parent)
+
+    /// CONTEXT SAVE/RESTORE and GROUPS
+
+    public beginGroup(className: string | undefined) {
+        const group = this._createElement("g")
+        if (isDefined(className)) {
+            group.setAttribute("class", className)
+        }
+        const parent = this._closestGroupOrSvg()
+        this._groupStack.push(parent)
         parent.appendChild(group)
-        this.__currentElement = group
-        const style = this.__getStyleState()
+        this._currentElement = group
+    }
 
-        this.__debug('save style', style)
-        this.__styleStack.push(style)
-        if (!this.__transformMatrixStack) {
-            this.__transformMatrixStack = []
-        }
-        this.__transformMatrixStack.push(this.getTransform())
+    public endGroup() {
+        this._currentElement = this._groupStack.pop() ?? this._svg.childNodes[1] as SVGElement
     }
 
     /**
-     * Sets current element to parent, or just root if already root
+     * Saves the current state by creating a group tag
      */
-    restore() {
-        this.__currentElement = this.__groupStack.pop()!
-        this.__currentElementsToStyle = null
-        //Clearing canvas will make the poped group invalid, currentElement is set to the root group node.
-        if (!this.__currentElement) {
-            this.__currentElement = this.__root.childNodes[1] as SVGElement
-        }
-        const state = this.__styleStack.pop()!
-        this.__debug('restore style', state)
-        this.__applyStyleState(state)
-        if (this.__transformMatrixStack && this.__transformMatrixStack.length > 0) {
-            this.setTransform(this.__transformMatrixStack.pop()!)
-        }
+    public save() {
+        this.beginGroup(undefined)
+        this._styleStack.push(this._getStyleState())
+        this._transformMatrixStack.push(this.getTransform())
     }
 
-    __createPathElement(): SVGPathElement {
-        const path = this.__createElement("path", {}, true)
-        const parent = this.__closestGroupOrSvg()
+    /**
+     * Sets current element to parent
+     */
+    public restore() {
+        this.endGroup()
+        this._applyStyleState(this._styleStack.pop()!)
+        this.setTransform(this._transformMatrixStack.pop()!)
+    }
+
+
+    /// PATH API
+
+    private _createPathElement(): SVGPathElement {
+        const path = this._createElement("path", {}, true)
+        const parent = this._closestGroupOrSvg()
         parent.appendChild(path)
         return path
     }
 
-    /**
-     * Create a new Path Element
-     */
-    beginPath() {
-        // Note that there is only one current default path, it is not part of the drawing state.
-        // See also: https://html.spec.whatwg.org/multipage/scripting.html#current-default-path
-        this.__currentDefaultPath = new Path2DSVG(this)
-        this.__currentPosition = {}
+    public beginPath() {
+        // https://html.spec.whatwg.org/multipage/scripting.html#current-default-path
+        this._currentPath = new Path2DSVG(this)
     }
 
-    /**
-     * Closes the current path
-     */
-    closePath() {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.closePath()
+    public closePath() {
+        this._currentPath.closePath()
     }
 
-    /**
-     * Adds the move command to the current path element,
-     * if the currentPathElement is not empty create a new path element
-     */
-    moveTo(x: number, y: number) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.moveTo(x, y)
+    public moveTo(x: number, y: number) {
+        this._currentPath.moveTo(x, y)
     }
 
-    /**
-     * Adds a line to command
-     */
-    lineTo(x: number, y: number) {
-        if (!this.__currentDefaultPath) {
-            this.moveTo(x, y)
-        }
-        this.__currentDefaultPath.lineTo(x, y)
+    public lineTo(x: number, y: number) {
+        this._currentPath.lineTo(x, y)
     }
 
-    /**
-     *  Adds a rectangle to the path.
-     */
-    rect(x: number, y: number, width: number, height: number) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.rect(x, y, width, height)
+    public rect(x: number, y: number, width: number, height: number) {
+        this._currentPath.rect(x, y, width, height)
     }
 
-    /**
-     * Add a bezier command
-     */
-    bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+    public bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+        this._currentPath.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
     }
 
-    /**
-     * Adds a quadratic curve to command
-     */
-    quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.quadraticCurveTo(cpx, cpy, x, y)
+    public quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
+        this._currentPath.quadraticCurveTo(cpx, cpy, x, y)
     }
 
-    /**
-     *  Arc command!
-     */
-    arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterClockwise: boolean = false) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.arc(
-            x,
-            y,
-            radius,
-            startAngle,
-            endAngle,
-            counterClockwise
-        )
+    public arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterClockwise: boolean = false) {
+        this._currentPath.arc(x, y, radius, startAngle, endAngle, counterClockwise)
+    }
+
+    public arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
+        this._currentPath.arcTo(x1, y1, x2, y2, radius)
+    }
+
+    public ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, counterClockwise = false) {
+        this._currentPath.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, counterClockwise)
     }
 
 
-    /**
-     * Adds the arcTo to the current path
-     *
-     * @see http://www.w3.org/TR/2015/WD-2dcontext-20150514/#dom-context-2d-arcto
-     */
-    arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
-        }
-        this.__currentDefaultPath.arcTo(x1, y1, x2, y2, radius)
+    /// STROKE/FILL
+
+    public stroke(path2d?: Path2D) {
+        this._strokeOrFill("stroke", path2d)
     }
 
-
-
-    /**
-     * Sets the stroke property on the current element
-     */
-    stroke(path2d?: Path2D) {
-        this.__strokeOrFill("stroke", path2d)
+    public fill(path2d?: Path2D) {
+        this._strokeOrFill("fill", path2d)
     }
 
-    /**
-     * Sets fill properties on the current element
-     */
-    fill(path2d?: Path2D) {
-        this.__strokeOrFill("fill", path2d)
-    }
-
-    __strokeOrFill(action: "stroke" | "fill", path2d?: Path2D) {
+    private _strokeOrFill(action: "stroke" | "fill", path2d?: Path2D) {
         let path: Path2DSVG
 
         if (path2d) {
@@ -655,246 +378,111 @@ export class SVGRenderingContext {
             }
             path = path2d
         } else {
-            if (!this.__currentDefaultPath) {
-                this.beginPath()
-            }
-            path = this.__currentDefaultPath
+            path = this._currentPath
         }
 
-        const pathElement = this.__createPathElement()
-        this.__applyStyleToElement(pathElement, action)
+        const pathElement = this._createPathElement()
+        this._applyStyleToElement(pathElement, action)
         pathElement.setAttribute("paint-order", "fill stroke markers")
         pathElement.setAttribute("d", path.d)
-        if (path2d) {
-            this.__applyTransformation(pathElement)
-        }
+        // if (path2d) {
+        //     this._applyTransformation(pathElement)
+        // }
     }
 
-
-    /**
-     * adds a rectangle element
-     */
-    fillRect(x: number, y: number, width: number, height: number) {
+    public fillRect(x: number, y: number, width: number, height: number) {
         const { a, b, c, d, e, f } = this.getTransform()
         if (JSON.stringify([a, b, c, d, e, f]) === JSON.stringify([1, 0, 0, 1, 0, 0])) {
-            //clear entire canvas
+            // clear entire canvas
             if (x === 0 && y === 0 && width === this.width && height === this.height) {
-                this.__clearCanvas()
+                this._clearCanvas()
             }
         }
-        const rect = this.__createElement("rect", {
+        const rect = this._createElement("rect", {
             x: x,
             y: y,
             width: width,
             height: height,
         }, true)
-        const parent = this.__closestGroupOrSvg()
+        const parent = this._closestGroupOrSvg()
         parent.appendChild(rect)
-        this.__currentElement = rect
-        this.__applyTransformation(rect)
-        this.__applyStyleToElement(this.__currentElement, "fill")
+        this._currentElement = rect
+        this._applyTransformation(rect)
+        this._applyStyleToElement(this._currentElement, "fill")
     }
 
-    /**
-     * Draws a rectangle with no fill
-     * @param x
-     * @param y
-     * @param width
-     * @param height
-     */
-    strokeRect(x: number, y: number, width: number, height: number) {
-        const rect = this.__createElement("rect", {
+    public strokeRect(x: number, y: number, width: number, height: number) {
+        const rect = this._createElement("rect", {
             x: x,
             y: y,
             width: width,
             height: height,
         }, true)
-        const parent = this.__closestGroupOrSvg()
+        const parent = this._closestGroupOrSvg()
         parent.appendChild(rect)
-        this.__currentElement = rect
-        this.__applyTransformation(rect)
-        this.__applyStyleToElement(this.__currentElement, "stroke")
+        this._currentElement = rect
+        this._applyTransformation(rect)
+        this._applyStyleToElement(this._currentElement, "stroke")
     }
-
 
     /**
      * Clear entire canvas:
      * 1. save current transforms
      * 2. remove all the childNodes of the root g element
      */
-    __clearCanvas() {
-        const rootGroup = this.__root.childNodes[1]
-        this.__root.removeChild(rootGroup)
-        this.__currentElement = this.__document.createElementNS("http://www.w3.org/2000/svg", "g")
-        this.__root.appendChild(this.__currentElement)
-        //reset __groupStack as all the child group nodes are all removed.
-        this.__groupStack = []
+    private _clearCanvas() {
+        const rootGroup = this._svg.childNodes[1]
+        this._svg.removeChild(rootGroup)
+        this._currentElement = this._document.createElementNS("http://www.w3.org/2000/svg", "g")
+        this._svg.appendChild(this._currentElement)
+        // reset groupStack as all the child group nodes are all removed.
+        this._groupStack.splice(0, this._groupStack.length)
     }
 
     /**
      * "Clears" a canvas by just drawing a white rectangle in the current group.
      */
-    clearRect(x: number, y: number, width: number, height: number) {
+    public clearRect(x: number, y: number, width: number, height: number) {
         const { a, b, c, d, e, f } = this.getTransform()
-        if (JSON.stringify([a, b, c, d, e, f]) === JSON.stringify([1, 0, 0, 1, 0, 0])) {
-            //clear entire canvas
-            if (x === 0 && y === 0 && width === this.width && height === this.height) {
-                this.__clearCanvas()
-                return
-            }
+        if (a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0 && x === 0 && y === 0 && width === this.width && height === this.height) {
+            this._clearCanvas()
+            return
         }
-        const parent = this.__closestGroupOrSvg()
-        const rect = this.__createElement("rect", {
+        const parent = this._closestGroupOrSvg()
+        const rect = this._createElement("rect", {
             x: x,
             y: y,
             width: width,
             height: height,
             fill: "#FFFFFF",
         }, true)
-        this.__applyTransformation(rect)
+        this._applyTransformation(rect)
         parent.appendChild(rect)
     }
 
-    /**
-     * Adds a linear gradient to a defs tag.
-     * Returns a canvas gradient object that has a reference to it's parent def
-     */
-    createLinearGradient(x1: number, y1: number, x2: number, y2: number) {
-        const grad = this.__createElement("linearGradient", {
-            id: randomString(this.__ids),
-            x1: x1 + "px",
-            x2: x2 + "px",
-            y1: y1 + "px",
-            y2: y2 + "px",
-            "gradientUnits": "userSpaceOnUse",
-        }, false)
-        this.__defs.appendChild(grad)
-        return new CanvasGradientSVG(grad, this)
-    }
-
-    /**
-     * Adds a radial gradient to a defs tag.
-     * Returns a canvas gradient object that has a reference to it's parent def
-     */
-    createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
-        const grad = this.__createElement("radialGradient", {
-            id: randomString(this.__ids),
-            cx: x1 + "px",
-            cy: y1 + "px",
-            r: r1 + "px",
-            fx: x0 + "px",
-            fy: y0 + "px",
-            "gradientUnits": "userSpaceOnUse",
-        }, false)
-        this.__defs.appendChild(grad)
-        return new CanvasGradientSVG(grad, this)
-
-    }
-
-    /**
-     * Fills or strokes text
-     * @param text
-     * @param x
-     * @param y
-     * @param action - stroke or fill
-     * @private
-     */
-    __applyText(text: string, x: number, y: number, action: "fill" | "stroke") {
-        const el = document.createElement("span")
-        el.setAttribute("style", 'font:' + this.font)
-
-        const style = el.style
-        const parent = this.__closestGroupOrSvg()
-        const textElement = this.__createElement("text", {
-            "font-family": style.fontFamily,
-            "font-size": style.fontSize,
-            "font-style": style.fontStyle,
-            "font-weight": style.fontWeight,
-
-            // canvas doesn't support underline natively, but we do :)
-            "text-decoration": this.__fontUnderline,
-            "x": x,
-            "y": y,
-            "text-anchor": getTextAnchor(this.textAlign),
-            "dominant-baseline": getDominantBaseline(this.textBaseline),
-        }, true)
-
-        textElement.appendChild(this.__document.createTextNode(text))
-        this.__currentElement = textElement
-        this.__applyTransformation(textElement)
-        this.__applyStyleToElement(this.__currentElement, action)
-
-        if (this.__fontHref) {
-            const a = this.__createElement("a")
-            // canvas doesn't natively support linking, but we do :)
-            a.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", this.__fontHref)
-            a.appendChild(textElement)
-            parent.appendChild(a)
+    public setLineDash(dashArray?: number[]) {
+        if (dashArray && dashArray.length > 0) {
+            this.lineDash = dashArray.join(",")
         } else {
-            parent.appendChild(textElement)
+            this.lineDash = null
         }
     }
 
-    /**
-     * Creates a text element
-     * @param text
-     * @param x
-     * @param y
-     */
-    fillText(text: string, x: number, y: number) {
-        this.__applyText(text, x, y, "fill")
-    }
-
-    /**
-     * Strokes text
-     * @param text
-     * @param x
-     * @param y
-     */
-    strokeText(text: string, x: number, y: number) {
-        this.__applyText(text, x, y, "stroke")
-    }
-
-    /**
-     * No need to implement this for svg.
-     * @param text
-     * @return {TextMetrics}
-     */
-    measureText(text: string) {
-        this.__ctx.font = this.font
-        return this.__ctx.measureText(text)
-    }
-
-    /**
-     *  Ellipse command!
-     */
-    ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, counterClockwise = false) {
-        if (!this.__currentDefaultPath) {
-            this.beginPath()
+    public getLineDash(): number[] {
+        if (this.lineDash === null) {
+            return []
         }
-        this.__currentDefaultPath.ellipse(
-            x,
-            y,
-            radiusX,
-            radiusY,
-            rotation,
-            startAngle,
-            endAngle,
-            counterClockwise
-        )
+        return this.lineDash.split(",").map(s => parseFloat(s))
     }
 
-    /**
-     * Generates a ClipPath from the clip command.
-     */
-    clip(fillRule?: string) {
-        const group = this.__closestGroupOrSvg()
-        const clipPath = this.__createElement("clipPath")
-        const id = randomString(this.__ids)
+    public clip(fillRule?: string) {
+        const group = this._closestGroupOrSvg()
+        const clipPath = this._createElement("clipPath")
+        const id = randomString(this._ids)
 
-        const pathElement = this.__createPathElement()
-        pathElement.setAttribute("d", this.__currentDefaultPath.d)
-        // this.__applyTransformation(pathElement);
+        const pathElement = this._createPathElement()
+        pathElement.setAttribute("d", this._currentPath.d)
+        // this._applyTransformation(pathElement);
 
         clipPath.setAttribute("id", id)
 
@@ -904,12 +492,12 @@ export class SVGRenderingContext {
 
         clipPath.appendChild(pathElement)
 
-        this.__defs.appendChild(clipPath)
+        this._defs.appendChild(clipPath)
 
-        //set the clip path to this group
+        // set the clip path to this group
         group.setAttribute("clip-path", `url(#${id})`)
 
-        this.__currentElement = group
+        this._currentElement = group
     }
 
     /**
@@ -917,8 +505,8 @@ export class SVGRenderingContext {
      * Note that all svg dom manipulation uses node.childNodes rather than node.children for IE support.
      * http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-context-2d-drawimage
      */
-    drawImage() {
-        //convert arguments to a real array
+    public drawImage() {
+        // convert arguments to a real array
         // eslint-disable-next-line prefer-rest-params
         const args = Array.prototype.slice.call(arguments)
         let image = args[0]
@@ -952,54 +540,151 @@ export class SVGRenderingContext {
             throw new Error("Invalid number of arguments passed to drawImage: " + arguments.length)
         }
 
-        const parent = this.__closestGroupOrSvg()
+        const parent = this._closestGroupOrSvg()
         const matrix = this.getTransform().translate(dx, dy)
         if (image instanceof SVGRenderingContext) {
-            //canvas2svg mock canvas context. In the future we may want to clone nodes instead.
-            //also I'm currently ignoring dw, dh, sw, sh, sx, sy for a mock context.
+            // canvas2svg mock canvas context. In the future we may want to clone nodes instead.
+            // also I'm currently ignoring dw, dh, sw, sh, sx, sy for a mock context.
             svg = image.getSvg().cloneNode(true)
-            if (svg.childNodes && svg.childNodes.length > 1) {
+            if (svg.childNodes.length > 1) {
                 defs = svg.childNodes[0]
                 while (defs.childNodes.length) {
                     const id = (defs.childNodes[0] as Element).getAttribute("id")!
-                    this.__ids[id] = id
-                    this.__defs.appendChild(defs.childNodes[0])
+                    this._ids[id] = id
+                    this._defs.appendChild(defs.childNodes[0])
                 }
                 group = svg.childNodes[1] as SVGElement
-                if (group) {
-                    this.__applyTransformation(group, matrix)
+                if (isDefined(group)) {
+                    this._applyTransformation(group, matrix)
                     parent.appendChild(group)
                 }
             }
         } else if (image.nodeName === "CANVAS" || image.nodeName === "IMG") {
-            //canvas or image
-            svgImage = this.__createElement("image")
+            // canvas or image
+            svgImage = this._createElement("image")
             svgImage.setAttribute("width", dw)
             svgImage.setAttribute("height", dh)
             svgImage.setAttribute("preserveAspectRatio", "none")
 
             if (sx || sy || sw !== image.width || sh !== image.height) {
-                //crop the image using a temporary canvas
-                canvas = this.__document.createElement("canvas")
+                // crop the image using a temporary canvas
+                canvas = this._document.createElement("canvas")
                 canvas.width = dw
                 canvas.height = dh
                 context = canvas.getContext("2d")!
                 context.drawImage(image, sx, sy, sw, sh, 0, 0, dw, dh)
                 image = canvas
             }
-            this.__applyTransformation(svgImage, matrix)
+            this._applyTransformation(svgImage, matrix)
             svgImage.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
                 image.nodeName === "CANVAS" ? image.toDataURL() : image.getAttribute("src"))
             parent.appendChild(svgImage)
         }
     }
 
+
+    /// TEXT
+
     /**
-     * Generates a pattern tag
+     * Fills or strokes text
      */
-    createPattern(image: HTMLCanvasElement | HTMLImageElement | SVGRenderingContext, __repetition: unknown) {
-        const pattern = this.__document.createElementNS("http://www.w3.org/2000/svg", "pattern")
-        const id = randomString(this.__ids)
+    private _applyText(text: string, x: number, y: number, action: "fill" | "stroke") {
+        const el = document.createElement("span")
+        el.setAttribute("style", 'font:' + this.font)
+
+        const style = el.style
+        const parent = this._closestGroupOrSvg()
+        const textElement = this._createElement("text", {
+            "font-family": style.fontFamily,
+            "font-size": style.fontSize,
+            "font-style": style.fontStyle,
+            "font-weight": style.fontWeight,
+
+            // canvas doesn't support underline natively, but we do :)
+            "text-decoration": this.fontUnderline,
+            "x": x,
+            "y": y,
+            "text-anchor": getTextAnchor(this.textAlign),
+            "dominant-baseline": getDominantBaseline(this.textBaseline),
+        }, true)
+
+        textElement.appendChild(this._document.createTextNode(text))
+        this._currentElement = textElement
+        this._applyTransformation(textElement)
+        this._applyStyleToElement(this._currentElement, action)
+
+        if (isDefined(this.fontHref)) {
+            const a = this._createElement("a")
+            // canvas doesn't natively support linking, but we do :)
+            a.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", this.fontHref)
+            a.appendChild(textElement)
+            parent.appendChild(a)
+        } else {
+            parent.appendChild(textElement)
+        }
+    }
+
+    public fillText(text: string, x: number, y: number) {
+        this._applyText(text, x, y, "fill")
+    }
+
+    public strokeText(text: string, x: number, y: number) {
+        this._applyText(text, x, y, "stroke")
+    }
+
+    public measureText(text: string): TextMetrics {
+        this._g.font = this.font
+        return this._g.measureText(text)
+    }
+
+
+    /// PATHS, GRADIENTS, PATTERNS
+
+    public createPath(arg?: string | Path2DSVG): Path2D {
+        // we still return Path2D even if we are using Path2DSVG
+        // for compatibility with other the std lib
+        return new Path2DSVG(this, arg) as unknown as Path2D
+    }
+
+    /**
+     * Adds a linear gradient to a defs tag.
+     * Returns a canvas gradient object that has a reference to it's parent def
+     */
+    public createLinearGradient(x1: number, y1: number, x2: number, y2: number) {
+        const grad = this._createElement("linearGradient", {
+            id: randomString(this._ids),
+            x1: x1 + "px",
+            x2: x2 + "px",
+            y1: y1 + "px",
+            y2: y2 + "px",
+            "gradientUnits": "userSpaceOnUse",
+        }, false)
+        this._defs.appendChild(grad)
+        return new CanvasGradientSVG(grad, this)
+    }
+
+    /**
+     * Adds a radial gradient to a defs tag.
+     * Returns a canvas gradient object that has a reference to it's parent def
+     */
+    public createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
+        const grad = this._createElement("radialGradient", {
+            id: randomString(this._ids),
+            cx: x1 + "px",
+            cy: y1 + "px",
+            r: r1 + "px",
+            fx: x0 + "px",
+            fy: y0 + "px",
+            "gradientUnits": "userSpaceOnUse",
+        }, false)
+        this._defs.appendChild(grad)
+        return new CanvasGradientSVG(grad, this)
+
+    }
+
+    public createPattern(image: HTMLCanvasElement | HTMLImageElement | SVGRenderingContext, __repetition: unknown) {
+        const pattern = this._document.createElementNS("http://www.w3.org/2000/svg", "pattern")
+        const id = randomString(this._ids)
         pattern.setAttribute("id", id)
         pattern.setAttribute("width", String(image.width))
         pattern.setAttribute("height", String(image.height))
@@ -1009,92 +694,54 @@ export class SVGRenderingContext {
         pattern.setAttribute("patternUnits", "userSpaceOnUse")
 
         if ("nodeName" in image && (image.nodeName === "CANVAS" || image.nodeName === "IMG")) {
-            const img = this.__document.createElementNS("http://www.w3.org/2000/svg", "image")
+            const img = this._document.createElementNS("http://www.w3.org/2000/svg", "image")
             img.setAttribute("width", String(image.width))
             img.setAttribute("height", String(image.height))
             img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href",
                 image.nodeName === "CANVAS" ? (image as HTMLCanvasElement).toDataURL() : image.getAttribute("src")!)
             pattern.appendChild(img)
-            this.__defs.appendChild(pattern)
+            this._defs.appendChild(pattern)
         } else if (image instanceof SVGRenderingContext) {
-            pattern.appendChild(image.__root.childNodes[1])
-            this.__defs.appendChild(pattern)
+            pattern.appendChild(image._svg.childNodes[1])
+            this._defs.appendChild(pattern)
         }
         return new CanvasPatternSVG(pattern, this)
     }
 
-    createPath(arg?: string | Path2DSVG): Path2D {
-        // we still return Path2D even if we are using Path2DSVG
-        // for compatibility with other the std lib
-        return new Path2DSVG(this, arg) as unknown as Path2D
-    }
 
-    setLineDash(dashArray?: number[]) {
-        if (dashArray && dashArray.length > 0) {
-            this.lineDash = dashArray.join(",")
-        } else {
-            this.lineDash = null
-        }
-    }
+    /// TRANFORM
 
-    getLineDash() {
-        if (this.lineDash === null) {
-            return []
-        }
-        return this.lineDash.split(",").map(s => parseFloat(s))
-    }
+    public setTransform(matrix: DOMMatrixReadOnly): void
+    public setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void
 
-    /**
-     * SetTransform changes the current transformation matrix to
-     * the matrix given by the arguments as described below.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform
-     */
-    setTransform(matrix: DOMMatrixReadOnly): void
-    setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void
-
-    setTransform(am: DOMMatrixReadOnly | number, b?: number, c?: number, d?: number, e?: number, f?: number) {
+    public setTransform(am: DOMMatrixReadOnly | number, b?: number, c?: number, d?: number, e?: number, f?: number) {
         if (isUndefined(b)) {
             const m = am as DOMMatrixReadOnly
-            this.__transformMatrix = new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f])
+            this._transformMatrix = new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f])
         } else {
             const a = am as number
-            this.__transformMatrix = new DOMMatrix([a, b, c!, d!, e!, f!])
+            this._transformMatrix = new DOMMatrix([a, b, c!, d!, e!, f!])
         }
     }
 
-    /**
-     * GetTransform Returns a copy of the current transformation matrix,
-     * as a newly created DOMMAtrix Object
-     *
-     * @returns A DOMMatrix Object
-     */
-    getTransform() {
-        const { a, b, c, d, e, f } = this.__transformMatrix
+    public getTransform() {
+        const { a, b, c, d, e, f } = this._transformMatrix
         return new DOMMatrix([a, b, c, d, e, f])
     }
 
-    /**
-     * ResetTransform resets the current transformation matrix to the identity matrix
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/resetTransform
-     */
-    resetTransform() {
+    public resetTransform() {
         this.setTransform(1, 0, 0, 1, 0, 0)
     }
 
-    /**
-     * Add the scaling transformation described by the arguments to the current transformation matrix.
-     *
-     * @param x The x argument represents the scale factor in the horizontal direction
-     * @param y The y argument represents the scale factor in the vertical direction.
-     * @see https://html.spec.whatwg.org/multipage/canvas.html#dom-context-2d-scale
-     */
-    scale(x: number, y: number) {
+    public transform(a: number, b: number, c: number, d: number, e: number, f: number) {
+        const matrix = this.getTransform().multiply(new DOMMatrix([a, b, c, d, e, f]))
+        this.setTransform(matrix)
+    }
+
+    public scale(x: number, y: number) {
         if (y === undefined) {
             y = x
         }
-        // If either of the arguments are infinite or NaN, then return.
         if (isNaN(x) || isNaN(y) || !isFinite(x) || !isFinite(y)) {
             return
         }
@@ -1102,14 +749,7 @@ export class SVGRenderingContext {
         this.setTransform(matrix)
     }
 
-    /**
-     * Rotate adds a rotation to the transformation matrix.
-     *
-     * @param angle The rotation angle, clockwise in radians. You can use degree * Math.PI / 180 to calculate a radian from a degree.
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/rotate
-     * @see https://www.w3.org/TR/css-transforms-1
-     */
-    rotate(angle: number) {
+    public rotate(angle: number) {
         const matrix = this.getTransform().multiply(new DOMMatrix([
             Math.cos(angle),
             Math.sin(angle),
@@ -1121,167 +761,119 @@ export class SVGRenderingContext {
         this.setTransform(matrix)
     }
 
-    /**
-     * Translate adds a translation transformation to the current matrix.
-     *
-     * @param x Distance to move in the horizontal direction. Positive values are to the right, and negative to the left.
-     * @param y Distance to move in the vertical direction. Positive values are down, and negative are up.
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/translate
-     */
-    translate(x: number, y: number) {
+    public translate(x: number, y: number) {
         const matrix = this.getTransform().translate(x, y)
         this.setTransform(matrix)
     }
 
-    /**
-     * Transform multiplies the current transformation with the matrix described by the arguments of this method.
-     * This lets you scale, rotate, translate (move), and skew the context.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/transform
-     */
-    transform(a: number, b: number, c: number, d: number, e: number, f: number) {
-        const matrix = this.getTransform().multiply(new DOMMatrix([a, b, c, d, e, f]))
-        this.setTransform(matrix)
-    }
-
-    __matrixTransform(x: number, y: number) {
-        return new DOMPoint(x, y).matrixTransform(this.__transformMatrix)
+    public _matrixTransform(x: number, y: number): [number, number] {
+        const { a, b, c, d, e, f } = this._transformMatrix
+        const x1 = a * x + c * y + e
+        const y1 = b * x + d * y + f
+        return [x1, y1]
     }
 
     /**
-     * 
      * @returns The scale component of the transform matrix as {x,y}.
      */
-    __getTransformScale() {
+    public _getTransformScale() {
         return {
-            x: Math.hypot(this.__transformMatrix.a, this.__transformMatrix.b),
-            y: Math.hypot(this.__transformMatrix.c, this.__transformMatrix.d),
+            x: Math.hypot(this._transformMatrix.a, this._transformMatrix.b),
+            y: Math.hypot(this._transformMatrix.c, this._transformMatrix.d),
         }
     }
 
     /**
-     * 
      * @returns The rotation component of the transform matrix in radians.
      */
-    __getTransformRotation() {
-        return Math.atan2(this.__transformMatrix.b, this.__transformMatrix.a)
+    public _getTransformRotation() {
+        return Math.atan2(this._transformMatrix.b, this._transformMatrix.a)
     }
-
-    // /**
-    //  *
-    //  * @param {*} sx The x-axis coordinate of the top-left corner of the rectangle from which the ImageData will be extracted.
-    //  * @param {*} sy The y-axis coordinate of the top-left corner of the rectangle from which the ImageData will be extracted.
-    //  * @param {*} sw The width of the rectangle from which the ImageData will be extracted. Positive values are to the right, and negative to the left.
-    //  * @param {*} sh The height of the rectangle from which the ImageData will be extracted. Positive values are down, and negative are up.
-    //  * @param {Boolean} options.async Will return a Promise<ImageData> if true, must be set to true
-    //  * @returns An ImageData object containing the image data for the rectangle of the canvas specified. The coordinates of the rectangle's top-left corner are (sx, sy), while the coordinates of the bottom corner are (sx + sw, sy + sh).
-    //  */
-    // Context.prototype.getImageData = function(sx, sy, sw, sh, options) {
-    //     return imageUtils.getImageData(this.getSvg(), this.width, this.height, sx, sy, sw, sh, options)
-    // }
-
-
-
-    drawFocusRing() {
-        throw new Error('not yet implemented')
-    }
-    createImageData() {
-        throw new Error('not yet implemented')
-    }
-    putImageData() {
-        throw new Error('not yet implemented')
-    }
-    globalCompositeOperation() {
-        throw new Error('not yet implemented')
-    }
-
-
 }
 
 
 class Path2DSVG {
 
     public readonly g: SVGRenderingContext
-    private _d: string
+    private _parts: string[]
+    private _hasMoved: boolean
     private _posX: number | undefined = undefined
     private _posY: number | undefined = undefined
 
-    constructor(g: SVGRenderingContext, path?: string | Path2DSVG) {
+    public constructor(g: SVGRenderingContext, path?: string | Path2DSVG) {
         this.g = g
         if (isUndefined(path)) {
-            this._d = ""
+            this._parts = []
+            this._hasMoved = false
         } else if (isString(path)) {
-            this._d = path
+            this._parts = [path]
+            this._hasMoved = path.indexOf("M") >= 0
         } else {
-            // Initialize by copying another path.
-            this._d = path._d
+            this._parts = [...path._parts]
+            this._hasMoved = this._parts.some(path => path.indexOf("M") >= 0)
         }
     }
 
     public get d() {
-        return this._d
+        return this._parts.join(" ")
     }
 
-    addPath(path: string, transform?: DOMMatrix2DInit) {
+    public addPath(path: string, transform?: DOMMatrix2DInit) {
         if (transform) {
             console.error("transform argument to addPath is not supported")
         }
-
-        this._d = this._d + " " + path
+        this._parts.push(path)
+        this._hasMoved ||= path.indexOf("M") >= 0
     }
 
-    closePath() {
+    public closePath() {
         this.addPath("Z")
     }
 
-    moveTo(x: number, y: number) {
+    public moveTo(x: number, y: number) {
         // creates a new subpath with the given point
         this._posX = x
         this._posY = y
-        const p = this.g.__matrixTransform(x, y)
-        this.addPath(`M ${p.x} ${p.y}`)
+        const [tx, ty] = this.g._matrixTransform(x, y)
+        this.addPath(`M ${tx} ${ty}`)
     }
 
-    lineTo(x: number, y: number) {
+    public lineTo(x: number, y: number) {
         this._posX = x
         this._posY = y
-        if (this._d.indexOf("M") > -1) {
-            const p = this.g.__matrixTransform(x, y)
-            this.addPath(`L ${p.x} ${p.y}`)
-        } else {
-            const p = this.g.__matrixTransform(x, y)
-            this.addPath(`M ${p.x} ${p.y}`)
-        }
+        const cmd = this._hasMoved ? "L" : "M"
+        const [tx, ty] = this.g._matrixTransform(x, y)
+        this.addPath(`${cmd} ${tx} ${ty}`)
     }
 
-    rect(x: number, y: number, width: number, height: number) {
+    public bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+        this._posX = x
+        this._posY = y
+        const g = this.g
+        const [tcp1x, tcp1y] = g._matrixTransform(cp1x, cp1y)
+        const [tcp2x, tcp2y] = g._matrixTransform(cp2x, cp2y)
+        const [tx, ty] = g._matrixTransform(x, y)
+        this.addPath(`C ${tcp1x} ${tcp1y} ${tcp2x} ${tcp2y} ${tx} ${ty}`)
+    }
+
+    public quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
+        this._posX = x
+        this._posY = y
+        const g = this.g
+        const [tcpx, tcpy] = g._matrixTransform(cpx, cpy)
+        const [tx, ty] = g._matrixTransform(x, y)
+        this.addPath(`Q ${tcpx} ${tcpy} ${tx} ${ty}`)
+    }
+
+    public rect(x: number, y: number, width: number, height: number) {
         this.moveTo(x, y)
         this.lineTo(x + width, y)
         this.lineTo(x + width, y + height)
         this.lineTo(x, y + height)
-        this.lineTo(x, y)
+        this.closePath()
     }
 
-    bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
-        this._posX = x
-        this._posY = y
-        const g = this.g
-        const cp1 = g.__matrixTransform(cp1x, cp1y)
-        const cp2 = g.__matrixTransform(cp2x, cp2y)
-        const p = g.__matrixTransform(x, y)
-        this.addPath(`C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${p.x} ${p.y}`)
-    }
-
-    quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
-        this._posX = x
-        this._posY = y
-        const g = this.g
-        const cp = g.__matrixTransform(cpx, cpy)
-        const p = g.__matrixTransform(x, y)
-        this.addPath(`Q ${cp.x} ${cp.y} ${p.x} ${p.y}`)
-    }
-
-    arc(
+    public arc(
         x: number,
         y: number,
         radius: number,
@@ -1298,7 +890,7 @@ class Path2DSVG {
         startAngle = startAngle % (2 * Math.PI)
         endAngle = endAngle % (2 * Math.PI)
         if (startAngle === endAngle) {
-            //circle time! subtract some of the angle so svg is happy (svg elliptical arc can't draw a full circle)
+            // circle time! subtract some of the angle so svg is happy (svg elliptical arc can't draw a full circle)
             endAngle =
                 (endAngle + 2 * Math.PI - 0.001 * (counterClockwise ? -1 : 1)) %
                 (2 * Math.PI)
@@ -1322,19 +914,18 @@ class Path2DSVG {
             largeArcFlag = diff > Math.PI ? 1 : 0
         }
 
-        const scaleX = Math.hypot(g.__transformMatrix.a, g.__transformMatrix.b)
-        const scaleY = Math.hypot(g.__transformMatrix.c, g.__transformMatrix.d)
+        const scaleX = Math.hypot(g._transformMatrix.a, g._transformMatrix.b)
+        const scaleY = Math.hypot(g._transformMatrix.c, g._transformMatrix.d)
 
         this.lineTo(startX, startY)
-        const end = g.__matrixTransform(endX, endY)
-        this.addPath(`A ${radius * scaleX} ${radius * scaleY} ${0} ${largeArcFlag} ${sweepFlag} ${end.x} ${end.y}`)
+        const [endx, endy] = g._matrixTransform(endX, endY)
+        this.addPath(`A ${radius * scaleX} ${radius * scaleY} ${0} ${largeArcFlag} ${sweepFlag} ${endx} ${endy}`)
 
         this._posX = x
         this._posY = y
     }
 
-
-    arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
+    public arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
         // Based on Webkit implementation from
         // https://github.com/WebKit/webkit/blob/main/Source/WebCore/platform/graphics/cairo/PathCairo.cpp
         // See also http://www.w3.org/TR/2015/WD-2dcontext-20150514/#dom-context-2d-arcto
@@ -1425,7 +1016,7 @@ class Path2DSVG {
         this.arc(p[0], p[1], radius, sa, ea, anticlockwise)
     }
 
-    ellipse(
+    public ellipse(
         x: number,
         y: number,
         radiusX: number,
@@ -1439,15 +1030,12 @@ class Path2DSVG {
             return
         }
 
-        const g = this.g
-
-        const transformedCenter = g.__matrixTransform(x, y)
-        x = transformedCenter.x
-        y = transformedCenter.y
-        const scale = g.__getTransformScale()
+        const g = this.g;
+        [x, y] = g._matrixTransform(x, y)
+        const scale = g._getTransformScale()
         radiusX = radiusX * scale.x
         radiusY = radiusY * scale.y
-        rotation = rotation + g.__getTransformRotation()
+        rotation = rotation + g._getTransformRotation()
 
         startAngle = startAngle % (2 * Math.PI)
         endAngle = endAngle % (2 * Math.PI)
@@ -1484,14 +1072,184 @@ class Path2DSVG {
 
         // Transform is already applied, so temporarily remove since lineTo
         // will apply it again.
-        const currentTransform = g.__transformMatrix
+        const currentTransform = g._transformMatrix
         g.resetTransform()
         this.lineTo(startX, startY)
-        g.__transformMatrix = currentTransform
+        g._transformMatrix = currentTransform
 
         this.addPath(`A ${radiusX} ${radiusY} ${rotation * (180 / Math.PI)} ${largeArcFlag} ${sweepFlag} ${endX} ${endY}`)
         this._posX = endX
         this._posY = endY
     }
-
 }
+
+
+class CanvasGradientSVG implements CanvasGradient {
+
+    public constructor(
+        public readonly gradientElem: SVGGradientElement,
+        private readonly _ctx: SVGRenderingContext,
+    ) { }
+
+    public addColorStop(offset: number, color: string) {
+        const stop = this._ctx._createElement("stop")
+        stop.setAttribute("offset", String(offset))
+        if (color.indexOf("rgba") !== -1) {
+            // separate alpha value, since webkit can't handle it
+            // eslint-disable-next-line prefer-named-capture-group
+            const regex = /rgba\(\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi
+            const matches = regex.exec(color)
+            if (matches) {
+                stop.setAttribute("stop-color", `rgb(${matches[1]},${matches[2]},${matches[3]})`)
+                stop.setAttribute("stop-opacity", matches[4])
+            } else {
+                stop.setAttribute("stop-color", color)
+            }
+        } else {
+            stop.setAttribute("stop-color", color)
+        }
+        this.gradientElem.appendChild(stop)
+    }
+}
+
+
+class CanvasPatternSVG {
+    public constructor(
+        public readonly patternElem: SVGPatternElement,
+        public readonly _ctx: SVGRenderingContext,
+    ) { }
+}
+
+
+/// HELPER FUNCTIONS
+
+function randomString(holder?: Record<string, unknown>) {
+    if (!holder) {
+        throw new Error("cannot create a random attribute name for an undefined object")
+    }
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz"
+    let randomstring = ""
+    do {
+        randomstring = ""
+        for (let i = 0; i < 12; i++) {
+            randomstring += chars[Math.floor(Math.random() * chars.length)]
+        }
+    } while (isDefined(holder[randomstring]))
+    return randomstring
+}
+
+// Some basic mappings for attributes and default values.
+const STYLES = {
+    "strokeStyle": {
+        svgAttr: "stroke",
+        svg: "none",
+        apply: "stroke",
+    },
+    "fillStyle": {
+        svgAttr: "fill",
+        svg: null, // svg default is black, but we need to special case this to handle canvas stroke without fill
+        apply: "fill",
+    },
+    "lineCap": {
+        svgAttr: "stroke-linecap",
+        svg: "butt",
+        apply: "stroke",
+    },
+    "lineJoin": {
+        svgAttr: "stroke-linejoin",
+        svg: "miter",
+        apply: "stroke",
+    },
+    "miterLimit": {
+        svgAttr: "stroke-miterlimit",
+        svg: 4,
+        apply: "stroke",
+    },
+    "lineWidth": {
+        svgAttr: "stroke-width",
+        svg: 1,
+        apply: "stroke",
+    },
+    "globalAlpha": {
+        svgAttr: "opacity",
+        svg: 1,
+        apply: "fill stroke",
+    },
+    "lineDash": {
+        svgAttr: "stroke-dasharray",
+        svg: null,
+        apply: "stroke",
+    },
+} satisfies Record<string, {
+    svgAttr?: string, // corresponding svg attribute
+    svg?: string | number | null,       // svg default
+    apply?: string,    // apply on stroke() or fill()
+}>
+
+
+const _textAnchorMapping: Record<string, string> = {
+    left: "start",
+    right: "end",
+    center: "middle",
+    start: "start",
+    end: "end",
+}
+function getTextAnchor(textAlign: string) {
+    return _textAnchorMapping[textAlign] ?? _textAnchorMapping.start
+}
+
+const _dominantBaselineMapping: Record<string, string> = {
+    alphabetic: "alphabetic",
+    hanging: "hanging",
+    top: "text-before-edge",
+    bottom: "text-after-edge",
+    middle: "central",
+}
+function getDominantBaseline(textBaseline: string) {
+    return _dominantBaselineMapping[textBaseline] ?? _dominantBaselineMapping.alphabetic
+}
+
+
+function createNamedToNumberedLookup(itemsStr: string, radix?: number) {
+    const lookup: Record<string, string> = {}
+    const items = itemsStr.split(',')
+    radix = radix ?? 10
+    // Map from named to numbered entities.
+    for (let i = 0; i < items.length; i += 2) {
+        const entity = '&' + items[i + 1] + ';'
+        const base10 = parseInt(items[i], radix)
+        lookup[entity] = '&#' + base10 + ';'
+    }
+    // FF and IE need to create a regex from hex values ie &nbsp; == \xa0
+    lookup["\\xa0"] = '&#160;'
+    return lookup
+}
+
+// Unpack entities lookup where the numbers are in radix 32 to reduce the size
+// entity mapping courtesy of tinymce
+const namedEntities = createNamedToNumberedLookup(
+    '50,nbsp,51,iexcl,52,cent,53,pound,54,curren,55,yen,56,brvbar,57,sect,58,uml,59,copy,' +
+    '5a,ordf,5b,laquo,5c,not,5d,shy,5e,reg,5f,macr,5g,deg,5h,plusmn,5i,sup2,5j,sup3,5k,acute,' +
+    '5l,micro,5m,para,5n,middot,5o,cedil,5p,sup1,5q,ordm,5r,raquo,5s,frac14,5t,frac12,5u,frac34,' +
+    '5v,iquest,60,Agrave,61,Aacute,62,Acirc,63,Atilde,64,Auml,65,Aring,66,AElig,67,Ccedil,' +
+    '68,Egrave,69,Eacute,6a,Ecirc,6b,Euml,6c,Igrave,6d,Iacute,6e,Icirc,6f,Iuml,6g,ETH,6h,Ntilde,' +
+    '6i,Ograve,6j,Oacute,6k,Ocirc,6l,Otilde,6m,Ouml,6n,times,6o,Oslash,6p,Ugrave,6q,Uacute,' +
+    '6r,Ucirc,6s,Uuml,6t,Yacute,6u,THORN,6v,szlig,70,agrave,71,aacute,72,acirc,73,atilde,74,auml,' +
+    '75,aring,76,aelig,77,ccedil,78,egrave,79,eacute,7a,ecirc,7b,euml,7c,igrave,7d,iacute,7e,icirc,' +
+    '7f,iuml,7g,eth,7h,ntilde,7i,ograve,7j,oacute,7k,ocirc,7l,otilde,7m,ouml,7n,divide,7o,oslash,' +
+    '7p,ugrave,7q,uacute,7r,ucirc,7s,uuml,7t,yacute,7u,thorn,7v,yuml,ci,fnof,sh,Alpha,si,Beta,' +
+    'sj,Gamma,sk,Delta,sl,Epsilon,sm,Zeta,sn,Eta,so,Theta,sp,Iota,sq,Kappa,sr,Lambda,ss,Mu,' +
+    'st,Nu,su,Xi,sv,Omicron,t0,Pi,t1,Rho,t3,Sigma,t4,Tau,t5,Upsilon,t6,Phi,t7,Chi,t8,Psi,' +
+    't9,Omega,th,alpha,ti,beta,tj,gamma,tk,delta,tl,epsilon,tm,zeta,tn,eta,to,theta,tp,iota,' +
+    'tq,kappa,tr,lambda,ts,mu,tt,nu,tu,xi,tv,omicron,u0,pi,u1,rho,u2,sigmaf,u3,sigma,u4,tau,' +
+    'u5,upsilon,u6,phi,u7,chi,u8,psi,u9,omega,uh,thetasym,ui,upsih,um,piv,812,bull,816,hellip,' +
+    '81i,prime,81j,Prime,81u,oline,824,frasl,88o,weierp,88h,image,88s,real,892,trade,89l,alefsym,' +
+    '8cg,larr,8ch,uarr,8ci,rarr,8cj,darr,8ck,harr,8dl,crarr,8eg,lArr,8eh,uArr,8ei,rArr,8ej,dArr,' +
+    '8ek,hArr,8g0,forall,8g2,part,8g3,exist,8g5,empty,8g7,nabla,8g8,isin,8g9,notin,8gb,ni,8gf,prod,' +
+    '8gh,sum,8gi,minus,8gn,lowast,8gq,radic,8gt,prop,8gu,infin,8h0,ang,8h7,and,8h8,or,8h9,cap,8ha,cup,' +
+    '8hb,int,8hk,there4,8hs,sim,8i5,cong,8i8,asymp,8j0,ne,8j1,equiv,8j4,le,8j5,ge,8k2,sub,8k3,sup,8k4,' +
+    'nsub,8k6,sube,8k7,supe,8kl,oplus,8kn,otimes,8l5,perp,8m5,sdot,8o8,lceil,8o9,rceil,8oa,lfloor,8ob,' +
+    'rfloor,8p9,lang,8pa,rang,9ea,loz,9j0,spades,9j3,clubs,9j5,hearts,9j6,diams,ai,OElig,aj,oelig,b0,' +
+    'Scaron,b1,scaron,bo,Yuml,m6,circ,ms,tilde,802,ensp,803,emsp,809,thinsp,80c,zwnj,80d,zwj,80e,lrm,' +
+    '80f,rlm,80j,ndash,80k,mdash,80o,lsquo,80p,rsquo,80q,sbquo,80s,ldquo,80t,rdquo,80u,bdquo,810,dagger,' +
+    '811,Dagger,81g,permil,81p,lsaquo,81q,rsaquo,85c,euro', 32)
