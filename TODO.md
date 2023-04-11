@@ -3,7 +3,6 @@
 
 ## High priority
 
- * Get key events also when multiple editors are on the same page
  * Copy-paste
  * Adder orientation
  * Prevent click event if right-click and when dragging
@@ -39,6 +38,7 @@
 
 ### DONE
 
+ * Get key events also when multiple editors are on the same page
  * Show keyboard shortcuts in context menus
  * Hide tootips when mouse leaves web component boundaries
  * Rework value propagation to make it instant if necessary and independent of drawing

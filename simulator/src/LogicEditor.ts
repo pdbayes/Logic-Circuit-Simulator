@@ -25,7 +25,7 @@ import { SVGRenderingContext } from "./SVGRenderingContext"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
-import { Component, ComponentBase, ComponentState } from "./components/Component"
+import { Component, ComponentBase } from "./components/Component"
 import { Drawable, GraphicsRendering, Orientation } from "./components/Drawable"
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
@@ -35,7 +35,7 @@ import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setEnabled, setVisible, showModal, targetIsFieldOrOtherInput } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setEnabled, setVisible, showModal } from "./utils"
 
 
 
@@ -246,6 +246,10 @@ export class LogicEditor extends HTMLElement {
 
     public get actualZoomFactor() {
         return this._actualZoomFactor
+    }
+
+    public get isSingleton() {
+        return this._isSingleton
     }
 
     public get options(): Readonly<EditorOptions> {
@@ -539,119 +543,6 @@ export class LogicEditor extends HTMLElement {
                 setColors(darkModeQuery.matches)
             }
             setColors(darkModeQuery.matches)
-
-            window.addEventListener("keyup", this.wrapHandler(e => {
-                if (targetIsFieldOrOtherInput(e)) {
-                    return
-                }
-                switch (e.key) {
-                    case "Escape":
-                        this.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING, false)
-                        this.wireMgr.tryCancelWire()
-                        e.preventDefault()
-                        return
-
-                    case "Backspace":
-                    case "Delete": {
-                        let selComp
-                        if (isDefined(selComp = this.cursorMovementMgr.currentSelection?.previouslySelectedElements) && selComp.size !== 0) {
-                            let anyDeleted = false
-                            for (const comp of selComp) {
-                                anyDeleted = this.tryDeleteDrawable(comp).isChange || anyDeleted
-                            }
-                            if (anyDeleted) {
-                                this.undoMgr.takeSnapshot()
-                            }
-                        } else if ((selComp = this.cursorMovementMgr.currentMouseOverComp) !== null) {
-                            const result = this.tryDeleteDrawable(selComp)
-                            this.undoMgr.takeSnapshot(result)
-                        }
-                        e.preventDefault()
-                        return
-                    }
-
-                    case "e":
-                        this.setCurrentMouseAction("edit")
-                        e.preventDefault()
-                        return
-
-                    case "d":
-                        this.setCurrentMouseAction("delete")
-                        e.preventDefault()
-                        return
-
-                    case "m":
-                        this.setCurrentMouseAction("move")
-                        e.preventDefault()
-                        return
-                }
-            }))
-
-            // TODO this should also work then not in singleton mode,
-            // but it still requires listening for keydown on the window,
-            // so we must know which was the lastest editor on screen to target
-            // this to
-            window.addEventListener("keydown", this.wrapHandler(e => {
-                const ctrlOrCommand = e.ctrlKey || e.metaKey
-                const keyLower = e.key.toLowerCase()
-                const shift = e.shiftKey || (keyLower !== e.key)
-                switch (keyLower) {
-                    case "a":
-                        if (ctrlOrCommand && this.mode >= Mode.CONNECT && !targetIsFieldOrOtherInput(e)) {
-                            this.cursorMovementMgr.selectAll()
-                            e.preventDefault()
-                        }
-                        return
-
-                    case "s":
-                        if (ctrlOrCommand && this._isSingleton) {
-                            this.saveCurrentStateToUrl()
-                            e.preventDefault()
-                        }
-                        return
-
-                    case "z":
-                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
-                            if (shift) {
-                                this.undoMgr.redoOrRepeat()
-                            } else {
-                                this.undoMgr.undo()
-                            }
-                            e.preventDefault()
-                        }
-                        return
-                    case "y":
-                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
-                            this.undoMgr.redoOrRepeat()
-                            e.preventDefault()
-                        }
-                        return
-                    case "x":
-                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
-                            this.cut()
-                            e.preventDefault()
-                        }
-                        return
-                    // case "c":
-                    // NO: this prevents the sharing code from being copied
-                    // if (ctrlOrCommand && !targetIsField()) {
-                    //     this.copy()
-                    //     e.preventDefault()
-                    // }
-                    // return
-                    case "v":
-                        if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
-                            this.paste()
-                            e.preventDefault()
-                        }
-                        return
-                }
-
-                const mouseOverComp = this.cursorMovementMgr.currentMouseOverComp
-                if (mouseOverComp !== null) {
-                    mouseOverComp.keyDown(e)
-                }
-            }))
 
             // make load function available globally
             window.Logic.singleton = this

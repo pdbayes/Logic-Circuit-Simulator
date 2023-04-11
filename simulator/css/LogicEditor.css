@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+canvas:focus {
+  outline: none;
+}
+
 #logicEditorRoot {
   font-family: 'Roboto', sans-serif;
 }

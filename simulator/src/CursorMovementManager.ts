@@ -8,7 +8,7 @@ import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, emptyMod, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
-import { getScrollParent, InteractionResult, isDefined, isUndefined, Mode, TimeoutHandle } from "./utils"
+import { getScrollParent, InteractionResult, isDefined, isUndefined, Mode, targetIsFieldOrOtherInput, TimeoutHandle } from "./utils"
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -352,6 +352,114 @@ export class CursorMovementManager {
             e.preventDefault()
             if (this.editor.mode >= Mode.CONNECT && this._currentMouseOverComp !== null) {
                 this._currentHandlers.contextMenuOn(this._currentMouseOverComp, e)
+            }
+        }))
+
+        canvas.addEventListener("keyup", editor.wrapHandler(e => {
+            if (targetIsFieldOrOtherInput(e)) {
+                return
+            }
+            switch (e.key) {
+                case "Escape":
+                    editor.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING, false)
+                    editor.wireMgr.tryCancelWire()
+                    e.preventDefault()
+                    return
+
+                case "Backspace":
+                case "Delete": {
+                    let selComp
+                    if (isDefined(selComp = this.currentSelection?.previouslySelectedElements) && selComp.size !== 0) {
+                        let anyDeleted = false
+                        for (const comp of selComp) {
+                            anyDeleted = editor.tryDeleteDrawable(comp).isChange || anyDeleted
+                        }
+                        if (anyDeleted) {
+                            editor.undoMgr.takeSnapshot()
+                        }
+                    } else if ((selComp = this.currentMouseOverComp) !== null) {
+                        const result = editor.tryDeleteDrawable(selComp)
+                        editor.undoMgr.takeSnapshot(result)
+                    }
+                    e.preventDefault()
+                    return
+                }
+
+                case "e":
+                    editor.setCurrentMouseAction("edit")
+                    e.preventDefault()
+                    return
+
+                case "d":
+                    editor.setCurrentMouseAction("delete")
+                    e.preventDefault()
+                    return
+
+                case "m":
+                    editor.setCurrentMouseAction("move")
+                    e.preventDefault()
+                    return
+            }
+        }))
+
+        canvas.addEventListener("keydown", editor.wrapHandler(e => {
+            const ctrlOrCommand = e.ctrlKey || e.metaKey
+            const keyLower = e.key.toLowerCase()
+            const shift = e.shiftKey || (keyLower !== e.key)
+            switch (keyLower) {
+                case "a":
+                    if (ctrlOrCommand && editor.mode >= Mode.CONNECT && !targetIsFieldOrOtherInput(e)) {
+                        this.selectAll()
+                        e.preventDefault()
+                    }
+                    return
+
+                case "s":
+                    if (ctrlOrCommand && editor.isSingleton) {
+                        editor.saveCurrentStateToUrl()
+                        e.preventDefault()
+                    }
+                    return
+
+                case "z":
+                    if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
+                        if (shift) {
+                            editor.undoMgr.redoOrRepeat()
+                        } else {
+                            editor.undoMgr.undo()
+                        }
+                        e.preventDefault()
+                    }
+                    return
+                case "y":
+                    if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
+                        editor.undoMgr.redoOrRepeat()
+                        e.preventDefault()
+                    }
+                    return
+                case "x":
+                    if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
+                        editor.cut()
+                        e.preventDefault()
+                    }
+                    return
+                // case "c":
+                // NO: this prevents the sharing code from being copied
+                // if (ctrlOrCommand && !targetIsField()) {
+                //     this.copy()
+                //     e.preventDefault()
+                // }
+                // return
+                case "v":
+                    if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
+                        editor.paste()
+                        e.preventDefault()
+                    }
+                    return
+            }
+
+            if (this._currentMouseOverComp !== null) {
+                this._currentMouseOverComp.keyDown(e)
             }
         }))
     }
