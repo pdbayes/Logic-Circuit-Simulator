@@ -1,7 +1,7 @@
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, shouldShowNode, useCompact } from "../drawutils"
 import { IconName, ImageName } from "../images"
-import { LogicEditor } from "../LogicEditor"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
 import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
@@ -160,9 +160,10 @@ export class NodeGroup<TNode extends Node> {
 }
 
 export enum ComponentState {
-    SPAWNING,
-    SPAWNED,
-    DEAD
+    SPAWNING, // during placement drag
+    SPAWNED,  // regular use
+    DEAD,     // after deletion
+    INVALID,  // if cannot be updated because of circular dependencies
 }
 
 // Simplified, generics-free representation of a component
@@ -370,6 +371,10 @@ export abstract class ComponentBase<
     public setSpawned() {
         this._state = ComponentState.SPAWNED
         this.editor.moveMgr.setDrawableStoppedMoving(this)
+    }
+
+    public setInvalid() {
+        this._state = ComponentState.INVALID
     }
 
     public abstract toJSON(): TRepr
@@ -757,6 +762,17 @@ export abstract class ComponentBase<
         // use with:
         // const bounds = this.bounds()
         // const { top, left, bottom, right, width, height } = bounds
+        // g.fill(bounds.outline(g))
+    }
+
+    public override draw(g: GraphicsRendering, drawParams: DrawParams): void {
+        super.draw(g, drawParams)
+        // TODO this doesn't honor the rotation
+        if (this._state === ComponentState.INVALID) {
+            g.fillStyle = "rgba(255, 0, 0, 0.3)"
+            const bounds = this.bounds()
+            g.fill(bounds.outline(g, 5))
+        }
     }
 
     protected doDraw(g: GraphicsRendering, ctx: DrawContext): void {
@@ -946,7 +962,8 @@ export abstract class ComponentBase<
             }
             wire.setEndNode(node)
         })
-        const now = this.editor.timeline.adjustedTime()
+        
+        const now = this.editor.timeline.logicalTime()
         restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
             if (isUndefined(wires) || wires.length === 0) {
                 return
@@ -1108,27 +1125,36 @@ export abstract class ComponentBase<
     }
 
     private makeBaseContextMenu(): MenuItems {
+        const s = S.Components.Generic.contextMenu
+
         const setRefItems: MenuItems =
             this.editor.mode < Mode.FULL ? [] : [
                 ["end", this.makeSetRefContextMenuItem()],
                 ["end", MenuData.sep()],
             ]
 
+        const resetItem: MenuItems =
+            this.state !== ComponentState.INVALID ? [] : [
+                ["end", MenuData.item("reset", s.Reset, () => {
+                    this._state = ComponentState.SPAWNED
+                    this.setNeedsRecalc(true)
+                })],
+            ]
+
+        const deleteItem = MenuData.item("trash", s.Delete, () => {
+            return this.editor.tryDeleteDrawable(this)
+        }, true)
+
         return [
             ...this.makeOrientationAndPosMenuItems(),
             ...setRefItems,
-            ["end", this.makeDeleteContextMenuItem()],
+            ...resetItem,
+            ["end", deleteItem],
         ]
     }
 
     protected makeComponentSpecificContextMenuItems(): MenuItems {
         return []
-    }
-
-    protected makeDeleteContextMenuItem(): MenuItem {
-        return MenuData.item("trash", S.Components.Generic.contextMenu.Delete, () => {
-            return this.editor.tryDeleteDrawable(this)
-        }, true)
     }
 
     protected makeForceOutputsContextMenuItem(withSepBefore = false): MenuItems {

@@ -5,7 +5,7 @@ import { Timestamp } from "../Timeline"
 import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, GRID_STEP, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
-import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, isUndefinedOrNull, typeOrUndefined } from "../utils"
+import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, isUndefinedOrNull, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
 import { DrawContext, Drawable, DrawableWithDraggablePosition, DrawableWithPosition, GraphicsRendering, MenuData, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor, tryMakeRepeatableNodeAction } from "./Node"
@@ -232,9 +232,18 @@ export class Wire extends Drawable {
         endNode.doSetColor(this._startNode.color)
     }
 
-    public propagateNewValue(newValue: LogicValue, now: Timestamp) {
+    public propagateNewValue(newValue: LogicValue, logicalTime: Timestamp) {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
-            this._propagatingValues.push([newValue, now])
+            this._propagatingValues.push([newValue, logicalTime])
+        }
+        const propagationDelay = this.customPropagationDelay ?? this.editor.options.propagationDelay
+        if (propagationDelay === 0) {
+            this.endNode.value = newValue
+        } else {
+            const desc = S.Components.Wire.timeline.PropagatingValue.expand({ val: toLogicValueRepr(newValue) })
+            this.editor.timeline.scheduleAt(logicalTime + propagationDelay, () => {
+                this.endNode.value = newValue
+            }, desc, false)
         }
     }
 
@@ -360,10 +369,7 @@ export class Wire extends Drawable {
         const propagationDelay = this.customPropagationDelay ?? options.propagationDelay
         const neutral = options.hideWireColors
         const drawTime = ctx.drawParams.drawTime
-        const wireValue = this.prunePropagatingValues(drawTime, propagationDelay)
-
-        // TODO this is not OK, drawing code should not deal with logic
-        this.endNode.value = wireValue
+        this.prunePropagatingValues(drawTime, propagationDelay)
 
         let prevX = this.startNode.posX
         let prevY = this.startNode.posY
@@ -432,7 +438,7 @@ export class Wire extends Drawable {
         }
         g.setLineDash(old)
 
-        if (isAnimating) {
+        if (isAnimating && !this.editor.timeline.isPaused) {
             this.setNeedsRedraw("propagating value")
         }
     }
@@ -900,6 +906,7 @@ export class WireManager {
 
     public stopDraggingOn(newNode: Node): Wire | undefined {
         const nodes = this.getOutInNodes(newNode)
+        this._wireBeingAddedFrom = undefined
         if (isUndefined(nodes)) {
             return undefined
         }

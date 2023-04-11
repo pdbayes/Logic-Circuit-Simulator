@@ -98,6 +98,11 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         // nothing by default; overridden in NodeOut
     }
 
+    public get hasNonTrivialName(): boolean {
+        const refName = isDefined(this.group) ? this.group.name : this.shortName
+        return refName !== "In" && refName !== "Out"
+    }
+
     public override isOver(x: number, y: number) {
         return this.editor.mode >= Mode.CONNECT
             && isOverWaypoint(x, y, this.posX, this.posY)
@@ -381,7 +386,7 @@ export class NodeOut extends NodeBase<NodeOut> {
     }
 
     protected propagateNewValue(newValue: LogicValue) {
-        const now = this.editor.timeline.adjustedTime()
+        const now = this.editor.timeline.logicalTime()
         for (const wire of this._outgoingWires) {
             wire.propagateNewValue(newValue, now)
         }

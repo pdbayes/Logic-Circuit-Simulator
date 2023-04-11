@@ -58,9 +58,9 @@ export class DrawingRect {
         this.right = this.left + this.width
     }
 
-    public outline(g: GraphicsRendering): Path2D {
+    public outline(g: GraphicsRendering, margin: number = 0): Path2D {
         const path = g.createPath()
-        path.rect(this.left, this.top, this.width, this.height)
+        path.rect(this.left - margin, this.top - margin, this.width + margin * 2, this.height + margin * 2)
         return path
     }
 

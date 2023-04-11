@@ -12,7 +12,7 @@ declare global {
         load(jsonStringOrObject: string | Record<string, unknown>): void
         save(): Record<string, unknown>
         highlight(ref: string | string[] | undefined): void
-        adjustedTime(): Timestamp
+        logicalTime(): Timestamp
         formatString(str: string, ...varargs: any[]): string
         decompress(str: string): string | null
         decodeOld(str: string): string

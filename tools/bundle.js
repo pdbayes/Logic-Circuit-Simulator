@@ -53,6 +53,7 @@ function build(dist) {
     return esbuild
         .build({
             minify,
+            keepNames: true,
             bundle: true,
             sourcemap: true,
             loader: {

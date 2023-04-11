@@ -86,6 +86,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     hideTooltips: false,
     groupParallelWires: false,
     propagationDelay: 100,
+    allowPausePropagation: false,
     zoom: 100,
 }
 
@@ -671,10 +672,10 @@ export class LogicEditor extends HTMLElement {
             window.save = this.save.bind(this)
             window.highlight = this.highlight.bind(this)
 
-            window.adjustedTime = () => {
-                const nowAdjusted = this.timeline.adjustedTime()
-                // console.log(nowAdjusted)
-                return nowAdjusted
+            window.logicalTime = () => {
+                const time = this.timeline.logicalTime()
+                // console.log(time)
+                return time
             }
 
             this.html.canvasContainer.appendChild(
@@ -917,7 +918,7 @@ export class LogicEditor extends HTMLElement {
                     makeIcon(icon, 20, 20),
                     isUndefined(text) ? raw("&nbsp;") : text,
                 ).render()
-            but.addEventListener("click", action)
+            but.addEventListener("click", this.wrapHandler(action))
             return but
         }
         const playButton = makeRightControlButton("play", S.ControlBar.TimelinePlay, () => this.timeline.play())
@@ -928,12 +929,13 @@ export class LogicEditor extends HTMLElement {
         const showTimelineButtons = true
         setVisible(timelineControls, showTimelineButtons)
 
-        function setTimelineButtonsVisible(state: TimelineState) {
-            if (state.hasCallbacks) {
+        const setTimelineButtonsVisible = ({ enablesPause, hasCallbacks, isPaused, nextStepDesc }: TimelineState) => {
+            if (enablesPause || (this.options.allowPausePropagation && hasCallbacks)) {
                 // show part of the interface
-                setVisible(playButton, state.isPaused)
-                setVisible(pauseButton, !state.isPaused)
-                setVisible(stepButton, state.canStep)
+                setVisible(playButton, isPaused)
+                setVisible(pauseButton, !isPaused)
+                setVisible(stepButton, isDefined(nextStepDesc))
+                stepButton.title = S.ControlBar.TimelineStep[1] + "\n" + (nextStepDesc ?? "")
             } else {
                 // show nothing
                 setVisible(playButton, false)
@@ -950,7 +952,7 @@ export class LogicEditor extends HTMLElement {
         const undoButton = makeRightControlButton("undo", S.ControlBar.Undo, this.wrapHandler(() => this.undoMgr.undo()))
         const redoButton = makeRightControlButton("redo", S.ControlBar.Redo, this.wrapHandler(() => this.undoMgr.redoOrRepeat()))
 
-        function setUndoButtonsVisible(state: UndoState) {
+        const setUndoButtonsVisible = (state: UndoState) => {
             setEnabled(undoButton, state.canUndo)
             setEnabled(redoButton, state.canRedoOrRepeat)
         }
@@ -1982,7 +1984,7 @@ export class LogicEditor extends HTMLElement {
         // const currentScale = this._currentScale
         // g.scale(currentScale, currentScale)
 
-        const drawTime = this.timeline.adjustedTime()
+        const drawTime = this.timeline.logicalTime()
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
         const drawParams: DrawParams = {

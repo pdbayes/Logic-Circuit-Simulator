@@ -13,7 +13,6 @@
 
 ## Medium priority
 
- * Finish implementation of SVG export
  * High-Z bus logic
  * Mnemonic in context menu
  * Custom component creation
@@ -42,6 +41,8 @@
 
 ### DONE
 
+ * Rework value propagation to make it instant if necessary and independent of drawing
+ * Finish implementation of SVG export
  * Undo/redo as buttons
  * Don't store Z in memory cells, but unknown instead
  * Allow repeating deletions with Cmd+Y

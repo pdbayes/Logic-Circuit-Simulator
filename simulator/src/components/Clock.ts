@@ -56,7 +56,7 @@ export class Clock extends InputBase<ClockRepr> {
         this._showLabel = saved?.showLabel ?? ClockDef.aults.showLabel
 
         // sets the value and schedules the next tick
-        this.tickCallback(editor.timeline.adjustedTime())
+        this.tickCallback()
     }
 
     public toJSON() {
@@ -74,7 +74,6 @@ export class Clock extends InputBase<ClockRepr> {
         return `period=${this._period} duty=${this._dutycycle} phase=${this._phase}`
     }
 
-
     public override makeTooltip() {
         const s = S.Components.Clock.tooltip
         return tooltipContent(s.title,
@@ -86,8 +85,8 @@ export class Clock extends InputBase<ClockRepr> {
             ))
     }
 
-    private currentClockValue(time: number): [boolean, number] {
-        const myTime = time - this._phase
+    private currentClockValue(logicalTime: number): [boolean, number] {
+        const myTime = logicalTime - this._phase
         let timeOverPeriod = myTime % this._period
         if (timeOverPeriod < 0) {
             timeOverPeriod += this._period
@@ -103,19 +102,22 @@ export class Clock extends InputBase<ClockRepr> {
             value = false
             timeOverLastTick = timeOverPeriod - onDuration
         }
-        const lastTick = time - timeOverLastTick
+        const lastTick = logicalTime - timeOverLastTick
         const nextTick = lastTick + (value ? onDuration : offDuration)
 
         return [value, nextTick]
     }
 
-    private tickCallback(theoreticalTime: number) {
-        const [value, nextTick] = this.currentClockValue(theoreticalTime)
+    private tickCallback() {
+        const timeline = this.editor.timeline
+        const [value, nextTick] = this.currentClockValue(timeline.logicalTime())
         this.doSetValue([value])
         if (this.state !== ComponentState.DEAD) {
-            this.editor.timeline.scheduleAt(nextTick, "next tick for clock value " + (!value),
-                time => this.tickCallback(time)
-            )
+            const s = S.Components.Clock.timeline
+            const desc = value ? s.NextFallingEdge : s.NextRisingEdge
+            timeline.scheduleAt(nextTick, () => {
+                this.tickCallback()
+            }, desc, true)
         }
     }
 

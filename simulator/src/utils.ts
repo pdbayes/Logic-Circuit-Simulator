@@ -190,14 +190,6 @@ export function isArray(arg: unknown): arg is Array<any> {
 //     return typeof arg === "function"
 // }
 
-export function isEmpty(container: { length: number } | { size: number }): boolean {
-    return ("length" in container ? container.length : container.size) === 0
-}
-
-export function nonEmpty(container: { length: number } | { size: number }): boolean {
-    return !isEmpty(container)
-}
-
 export function isNumber(arg: unknown): arg is number {
     return typeof arg === "number"
 }

@@ -170,12 +170,13 @@ export abstract class InputBase<
         if (newLinks.length !== 1) {
             return
         }
+
         const [outNode, comp, inNode] = newLinks[0]
         if (inNode instanceof NodeIn) {
             if (inNode.prefersSpike) {
                 this.doSetIsPushButton(true) // will do nothing for clocks
             }
-            if (isUndefined(this._name)) {
+            if (isUndefined(this._name) && inNode.hasNonTrivialName) {
                 this.doSetName(inNode.shortName)
             }
         }

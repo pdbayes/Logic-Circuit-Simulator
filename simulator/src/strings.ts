@@ -187,6 +187,7 @@ const Strings_fr = {
         Generic: {
             contextMenu: {
                 Delete: "Supprimer",
+                Reset: "Réactiver",
 
                 SetIdentifier: "Attribuer un identifiant…",
                 ChangeIdentifier: tuple("Changer l’identifiant (", ")…"),
@@ -292,6 +293,10 @@ const Strings_fr = {
             contextMenu: {
                 Period: "Période",
                 ReplaceWithInput: "Remplacer par entrée",
+            },
+            timeline: {
+                NextRisingEdge: "Prochain flanc montant de l’horloge",
+                NextFallingEdge: "Prochain flanc descendant de l’horloge",
             },
         },
         Comparator: {
@@ -677,6 +682,9 @@ const Strings_fr = {
                 WireStyleStraight: "Ligne droite",
                 WireStyleCurved: "Courbe",
             },
+            timeline: {
+                PropagatingValue: template("Propagation de la valeur ${val} sur le fil"),
+            },
         },
     },
     Palette: {
@@ -860,6 +868,7 @@ const Strings_en: Strings = {
         Generic: {
             contextMenu: {
                 Delete: "Delete",
+                Reset: "Reset",
 
                 SetIdentifier: "Set Identifier…",
                 ChangeIdentifier: tuple("Change Identifier (", ")…"),
@@ -965,6 +974,10 @@ const Strings_en: Strings = {
             contextMenu: {
                 Period: "Period",
                 ReplaceWithInput: "Replace with Input",
+            },
+            timeline: {
+                NextRisingEdge: "Next rising edge of the clock",
+                NextFallingEdge: "Next falling edge of the clock",
             },
         },
         Comparator: {
@@ -1349,6 +1362,9 @@ const Strings_en: Strings = {
                 WireStyleAuto: "Automatic",
                 WireStyleStraight: "Straight Line",
                 WireStyleCurved: "Curve",
+            },
+            timeline: {
+                PropagatingValue: template("Propagation of value ${val} on wire"),
             },
         },
     },

@@ -178,7 +178,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             let group
             if (isDefined(group = outNode.group) && group.nodes.length === 1) {
                 this.doSetName(group.name)
-            } else if (isUndefined(this._name)) {
+            } else if (isUndefined(this._name) && outNode.hasNonTrivialName) {
                 this.doSetName(outNode.shortName)
             }
         }
