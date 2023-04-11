@@ -8,7 +8,7 @@ import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
-import { InteractionResult, isDefined, isUndefined, Mode, TimeoutHandle } from "./utils"
+import { getScrollParent, InteractionResult, isDefined, isUndefined, Mode, TimeoutHandle } from "./utils"
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -73,7 +73,7 @@ export class CursorMovementManager {
 
     public readonly editor: LogicEditor
     private _currentMouseOverComp: Drawable | null = null
-    private _currentMouseOverPopper: PopperInstance | null = null
+    private _currentMouseOverPopper: [popper: PopperInstance, removeScrollListener: () => void] | null = null
     private _currentMouseDownData: MouseDownData | null = null
     private _startHoverTimeoutHandle: TimeoutHandle | null = null
     private _startDragTimeoutHandle: TimeoutHandle | null = null
@@ -260,28 +260,37 @@ export class CursorMovementManager {
 
     public clearPopperIfNecessary() {
         if (this._currentMouseOverPopper !== null) {
-            this._currentMouseOverPopper.destroy()
+            const [popper, removeListener] = this._currentMouseOverPopper
+            removeListener()
+            popper.destroy()
             this._currentMouseOverPopper = null
             this.editor.html.tooltipElem.style.display = "none"
         }
     }
 
-    public makePopper(tooltipHtml: ModifierObject, rect: DOMRect) {
+    public makePopper(tooltipHtml: ModifierObject, rect: () => DOMRect) {
         const tooltipContents = this.editor.html.tooltipContents
         const tooltipElem = this.editor.html.tooltipElem
         tooltipContents.innerHTML = ""
         tooltipHtml.applyTo(tooltipContents)
         tooltipElem.style.removeProperty("display")
-        const canvas = document.getElementsByTagName("CANVAS")[0]
-        this._currentMouseOverPopper = createPopper({
-            getBoundingClientRect() { return rect },
+        const canvas = this.editor.html.mainCanvas
+        const popper = createPopper({
+            getBoundingClientRect: rect,
             contextElement: canvas,
         }, tooltipElem, {
             placement: 'right',
             modifiers: [{ name: 'offset', options: { offset: [4, 8] } }],
         })
+
+        const scrollParent = getScrollParent(canvas)
+        const scrollListener = () => popper.update()
+        scrollParent.addEventListener("scroll", scrollListener)
+        const removeListener = () => scrollParent.removeEventListener("scroll", scrollListener)
+        this._currentMouseOverPopper = [popper, removeListener]
+
         tooltipElem.setAttribute('data-show', '')
-        this._currentMouseOverPopper.update()
+        popper.update()
     }
 
     public registerCanvasListenersOn(canvas: HTMLCanvasElement) {
@@ -325,6 +334,10 @@ export class CursorMovementManager {
             // console.log("mousemove %o, composedPath = %o", e, e.composedPath())
             this._mouseMoveTouchMove(e)
             this.editor.updateCursor(e)
+        }))
+
+        canvas.addEventListener("mouseleave", editor.wrapHandler(() => {
+            this.clearPopperIfNecessary()
         }))
 
         canvas.addEventListener("mouseup", editor.wrapHandler((e) => {
@@ -596,13 +609,15 @@ class EditHandlers extends ToolHandlers {
         }
         const tooltip = comp.makeTooltip()
         if (isDefined(tooltip)) {
-            const containerRect = editor.html.canvasContainer.getBoundingClientRect()
-            const f = editor.actualZoomFactor
-            const [cx, cy, w, h] =
-                comp instanceof DrawableWithPosition
-                    ? [comp.posX * f, comp.posY * f, comp.width * f, comp.height * f]
-                    : [editor.mouseX, editor.mouseY, 4, 4]
-            const rect = new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
+            const rect = () => {
+                const containerRect = editor.html.canvasContainer.getBoundingClientRect()
+                const f = editor.actualZoomFactor
+                const [cx, cy, w, h] =
+                    comp instanceof DrawableWithPosition
+                        ? [comp.posX * f, comp.posY * f, comp.width * f, comp.height * f]
+                        : [editor.mouseX, editor.mouseY, 4, 4]
+                return new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
+            }
             editor.cursorMovementMgr.makePopper(tooltip, rect)
         }
     }

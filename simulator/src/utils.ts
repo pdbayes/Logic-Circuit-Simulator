@@ -643,6 +643,28 @@ export function targetIsFieldOrOtherInput(e: Event) {
     return targets.length !== 0 && (elem = targets[0]) instanceof HTMLElement && ((tagName = elem.tagName) === "INPUT" || tagName === "SELECT")
 }
 
+export function getScrollParent(element: HTMLElement): HTMLElement | Document {
+    let style = getComputedStyle(element)
+    const excludeStaticParent = style.position === "absolute"
+    const overflowRegex = /(?:auto|scroll)/
+
+    if (style.position === "fixed") {
+        return document
+    }
+    let parent
+    for (parent = element; (parent = parent.parentElement);) {
+        style = getComputedStyle(parent)
+        if (excludeStaticParent && style.position === "static") {
+            continue
+        }
+        if (overflowRegex.test(style.overflow + style.overflowY + style.overflowX)) {
+            return parent
+        }
+    }
+    return document
+}
+
+
 export const fetchJSONP = ((unique: number) => (url: string) =>
     new Promise<string>(resolve => {
         const script = document.createElement('script')

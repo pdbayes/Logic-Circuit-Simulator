@@ -5,7 +5,6 @@
 
  * Get key events also when multiple editors are on the same page
  * Copy-paste
- * Hide mouseover when mouse leaves web component boundaries
  * Adder orientation
  * Prevent click event if right-click and when dragging
  * More consistently set things dirty
@@ -41,6 +40,7 @@
 
 ### DONE
 
+ * Hide tootips when mouse leaves web component boundaries
  * Rework value propagation to make it instant if necessary and independent of drawing
  * Finish implementation of SVG export
  * Undo/redo as buttons
