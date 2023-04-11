@@ -283,6 +283,12 @@ logic-editor:not(:defined) {
   transform: translateY(-50%);
 }
 
+.menu-shortcut {
+  position: absolute;
+  right: 8px;
+  font-size: 85%;
+}
+
 .menu-item:hover>.menu-btn {
   color: #fff;
   outline: none;

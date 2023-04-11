@@ -204,7 +204,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     }
 
     public override keyDown(e: KeyboardEvent): void {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.altKey) {
             this.runSetNameDialog(this._name, this.doSetName.bind(this))
         } else {
             super.keyDown(e)

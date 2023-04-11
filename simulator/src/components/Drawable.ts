@@ -31,9 +31,24 @@ export interface DrawContextExt extends DrawContext {
 
 export type MenuItem =
     | { _tag: "sep" }
-    | { _tag: "text", caption: Modifier }
-    | { _tag: "item", icon: IconName | undefined, caption: Modifier, danger: boolean | undefined, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void }
-    | { _tag: "submenu", icon: IconName | undefined, caption: Modifier, items: MenuData }
+    | {
+        _tag: "text",
+        caption: Modifier
+    }
+    | {
+        _tag: "submenu",
+        icon: IconName | undefined,
+        caption: Modifier,
+        items: MenuData
+    }
+    | {
+        _tag: "item",
+        icon: IconName | undefined,
+        caption: Modifier,
+        shortcut: string | undefined,
+        danger: boolean | undefined,
+        action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void
+    }
 
 export type MenuData = MenuItem[]
 export const MenuData = {
@@ -43,8 +58,8 @@ export const MenuData = {
     text(caption: Modifier): MenuItem {
         return { _tag: "text", caption }
     },
-    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void, danger?: boolean): MenuItem {
-        return { _tag: "item", icon, caption, action, danger }
+    item(icon: IconName | undefined, caption: Modifier, action: (itemEvent: MouseEvent | TouchEvent, menuEvent: MouseEvent | TouchEvent) => InteractionResult | undefined | void, shortcut?: string, danger?: boolean): MenuItem {
+        return { _tag: "item", icon, caption, action, shortcut, danger }
     },
     submenu(icon: IconName | undefined, caption: Modifier, items: MenuData): MenuItem {
         return { _tag: "submenu", icon, caption, items }
@@ -61,7 +76,7 @@ class _DrawContextImpl implements DrawContext, DrawContextExt {
     private readonly componentTransform: DOMMatrix
 
     public constructor(
-        private comp: Drawable,
+        comp: Drawable,
         public readonly g: GraphicsRendering,
         public readonly drawParams: DrawParams,
         public readonly isMouseOver: boolean,
@@ -170,15 +185,21 @@ export abstract class Drawable {
         const s = S.Components.Generic.contextMenu
         const caption: Modifier = isUndefined(currentRef) ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
         return MenuData.item("ref", caption, () => {
-            const newRef = window.prompt(s.SetIdentifierPrompt, currentRef)
-            if (newRef !== null) {
-                // OK button pressed
-                this.ref = newRef.length === 0 ? undefined : newRef
-                if (currentRef !== this.ref) {
-                    this.setNeedsRedraw("ref changed")
-                }
+            this.runSetRefDialog()
+        }, "⌥↩︎")
+    }
+
+    private runSetRefDialog() {
+        const s = S.Components.Generic.contextMenu
+        const currentRef = this.ref
+        const newRef = window.prompt(s.SetIdentifierPrompt, currentRef)
+        if (newRef !== null) {
+            // OK button pressed
+            this.ref = newRef.length === 0 ? undefined : newRef
+            if (currentRef !== this.ref) {
+                this.setNeedsRedraw("ref changed")
             }
-        })
+        }
     }
 
     // Return { wantsDragEvents: true } (default) to signal the component
@@ -212,8 +233,10 @@ export abstract class Drawable {
         return InteractionResult.NoChange
     }
 
-    public keyDown(__: KeyboardEvent): void {
-        // empty default implementation
+    public keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter" && e.altKey) {
+            this.runSetRefDialog()
+        }
     }
 
 }
@@ -428,6 +451,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     protected makeOrientationAndPosMenuItems(): MenuItems {
         const s = S.Components.Generic.contextMenu
 
+        const shortcuts = { e: "→", s: "↓", w: "←", n: "↑" }
         const rotateItem: MenuItems = !this.canRotate() ? [] : [
             ["start", MenuData.submenu("direction", s.Orientation, [
                 ...Orientations.values.map(orient => {
@@ -437,7 +461,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
                     const action = isCurrent ? () => undefined : () => {
                         this.doSetOrient(orient)
                     }
-                    return MenuData.item(icon, caption, action)
+                    return MenuData.item(icon, caption, action, shortcuts[orient])
                 }),
                 MenuData.sep(),
                 MenuData.text(s.ChangeOrientationDesc),
@@ -447,11 +471,35 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         const lockPosItem: MenuItems = !this.canLockPos() ? [] : [
             ["start", MenuData.item(this.lockPos ? "check" : "none", s.LockPosition, () => {
                 this.doSetLockPos(!this.lockPos)
-            })],
+            }, "L")],
         ]
 
         return [...rotateItem, ...lockPosItem]
+    }
 
+    public override keyDown(e: KeyboardEvent): void {
+        if (this.canRotate()) {
+            if (e.key === "ArrowRight") {
+                this.doSetOrient("e")
+                return
+            } else if (e.key === "ArrowDown") {
+                this.doSetOrient("s")
+                return
+            } else if (e.key === "ArrowLeft") {
+                this.doSetOrient("w")
+                return
+            } else if (e.key === "ArrowUp") {
+                this.doSetOrient("n")
+                return
+            }
+        }
+        if (this.canLockPos()) {
+            if (e.key === "l") {
+                this.doSetLockPos(!this.lockPos)
+                return
+            }
+        }
+        super.keyDown(e)
     }
 
 }

@@ -5,7 +5,7 @@ import { ComponentBase, ComponentState } from './components/Component'
 import { Drawable, DrawableWithPosition, MenuItem } from "./components/Drawable"
 import { Node } from "./components/Node"
 import { dist, setColorMouseOverIsDanger } from './drawutils'
-import { applyModifiersTo, button, cls, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
+import { applyModifiersTo, button, cls, emptyMod, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
 import { getScrollParent, InteractionResult, isDefined, isUndefined, Mode, TimeoutHandle } from "./utils"
@@ -665,11 +665,15 @@ class EditHandlers extends ToolHandlers {
             // console.log("building menu for %o", MenuData)
 
             const defToElem = (item: MenuItem): HTMLElement => {
-                function mkButton(spec: { icon?: IconName | undefined, caption: Modifier }, danger: boolean) {
+                function mkButton(spec: { icon?: IconName | undefined, caption: Modifier }, shortcut: string | undefined, danger: boolean) {
                     return button(type("button"), cls(`menu-btn${(danger ? " danger" : "")}`),
                         isUndefined(spec.icon)
                             ? spec.caption
-                            : mods(makeIcon(spec.icon), span(cls("menu-text"), spec.caption))
+                            : mods(
+                                makeIcon(spec.icon),
+                                span(cls("menu-text"), spec.caption)
+                            ),
+                        isUndefined(shortcut) ? emptyMod : span(cls("menu-shortcut"), shortcut),
                     )
                 }
 
@@ -679,7 +683,7 @@ class EditHandlers extends ToolHandlers {
                     case 'text':
                         return li(cls("menu-item-static"), item.caption).render()
                     case "item": {
-                        const but = mkButton(item, item.danger ?? false).render()
+                        const but = mkButton(item, item.shortcut, item.danger ?? false).render()
                         but.addEventListener("click", this.editor.wrapHandler((itemEvent: MouseEvent | TouchEvent) => {
                             const result = item.action(itemEvent, e)
                             this.editor.undoMgr.takeSnapshot(result as Exclude<typeof result, void>)
@@ -688,7 +692,7 @@ class EditHandlers extends ToolHandlers {
                     }
                     case "submenu": {
                         return li(cls("menu-item submenu"),
-                            mkButton(item, false),
+                            mkButton(item, undefined, false),
                             ul(cls("menu"),
                                 ...item.items.map(defToElem)
                             )

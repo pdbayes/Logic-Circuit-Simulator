@@ -26,7 +26,7 @@ import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
 import { Component, ComponentBase, ComponentState } from "./components/Component"
-import { Drawable, DrawableWithPosition, GraphicsRendering, Orientation } from "./components/Drawable"
+import { Drawable, GraphicsRendering, Orientation } from "./components/Drawable"
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
@@ -583,19 +583,6 @@ export class LogicEditor extends HTMLElement {
                     case "m":
                         this.setCurrentMouseAction("move")
                         e.preventDefault()
-                        return
-
-                    case "ArrowRight":
-                        this.trySetCurrentComponentOrientation("e", e)
-                        return
-                    case "ArrowLeft":
-                        this.trySetCurrentComponentOrientation("w", e)
-                        return
-                    case "ArrowUp":
-                        this.trySetCurrentComponentOrientation("n", e)
-                        return
-                    case "ArrowDown":
-                        this.trySetCurrentComponentOrientation("s", e)
                         return
                 }
             }))
@@ -1419,15 +1406,6 @@ export class LogicEditor extends HTMLElement {
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
-    }
-
-    public trySetCurrentComponentOrientation(orient: Orientation, e: Event) {
-        const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
-        if (isDefined(currentMouseOverComp) && currentMouseOverComp instanceof DrawableWithPosition && currentMouseOverComp.canRotate()) {
-            currentMouseOverComp.doSetOrient(orient)
-            e.preventDefault()
-            e.stopPropagation()
-        }
     }
 
     public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {

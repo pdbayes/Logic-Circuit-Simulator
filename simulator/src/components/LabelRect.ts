@@ -286,7 +286,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         })
 
         const setCaptionItemName = isDefined(this._caption) ? s.ChangeTitle : s.SetTitle
-        const setCaptionItem = MenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog())
+        const setCaptionItem = MenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog(), "↩︎")
 
         const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
             const isCurrent = this._captionPos === placement
@@ -306,7 +306,6 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         const setFontItem = MenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelRectDef.aults.font, this.doSetFont.bind(this))
         })
-
 
         return [
             ["mid", setSizeItem],
@@ -423,9 +422,8 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         return InteractionResult.SimpleChange
     }
 
-
     public override keyDown(e: KeyboardEvent): void {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.altKey) {
             this.runSetCaptionDialog()
         } else {
             super.keyDown(e)

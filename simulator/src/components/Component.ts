@@ -1143,7 +1143,7 @@ export abstract class ComponentBase<
 
         const deleteItem = MenuData.item("trash", s.Delete, () => {
             return this.editor.tryDeleteDrawable(this)
-        }, true)
+        }, "⌫", true)
 
         return [
             ...this.makeOrientationAndPosMenuItems(),
@@ -1223,7 +1223,7 @@ export abstract class ComponentBase<
     protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): MenuItem {
         const s = S.Components.Generic.contextMenu
         const caption = isUndefined(currentName) ? s.SetName : s.ChangeName
-        return MenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler))
+        return MenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler), "↩︎")
     }
 
     protected runSetNameDialog(currentName: ComponentName, handler: (newName: ComponentName) => void): void {

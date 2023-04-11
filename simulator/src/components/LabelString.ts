@@ -106,7 +106,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.LabelString.contextMenu
-        const setTextItem = MenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this))
+        const setTextItem = MenuData.item("pen", s.ChangeText, this.runSetTextDialog.bind(this), "↩︎")
 
         const setFontItem = MenuData.item("font", s.Font, () => {
             this.runSetFontDialog(this._font, LabelStringDef.aults.font, this.doSetFont.bind(this))
@@ -130,7 +130,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     }
 
     public override keyDown(e: KeyboardEvent): void {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.altKey) {
             this.runSetTextDialog()
         } else {
             super.keyDown(e)

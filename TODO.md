@@ -13,7 +13,6 @@
 ## Medium priority
 
  * High-Z bus logic
- * Mnemonic in context menu
  * Custom component creation
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
@@ -40,6 +39,7 @@
 
 ### DONE
 
+ * Show keyboard shortcuts in context menus
  * Hide tootips when mouse leaves web component boundaries
  * Rework value propagation to make it instant if necessary and independent of drawing
  * Finish implementation of SVG export
