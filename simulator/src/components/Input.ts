@@ -1,12 +1,12 @@
 import * as t from "io-ts"
 import { LogicEditor } from "../LogicEditor"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, triangle, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, isTrivialNodeName, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayClampOrPad, ArrayFillWith, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Node, NodeIn, NodeOut } from "./Node"
 
 
@@ -29,8 +29,8 @@ export abstract class InputBase<
     public abstract get numBits(): number
     protected _name: ComponentName
 
-    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue[]>, SomeParamCompDef<TParamDefs>], saved?: TRepr) {
-        super(editor, SubclassDef, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue[]>, SomeParamCompDef<TParamDefs>], saved?: TRepr) {
+        super(parent, SubclassDef, saved)
         this._name = saved?.name ?? undefined
     }
 
@@ -50,6 +50,10 @@ export abstract class InputBase<
 
     public override get allowsForcedOutputs() {
         return false
+    }
+
+    public get name() {
+        return this._name
     }
 
     protected doRecalcValue(): LogicValue[] {
@@ -77,11 +81,11 @@ export abstract class InputBase<
     private doDrawSingle(g: GraphicsRendering, ctx: DrawContext, output: NodeOut) {
         drawWireLineToComponent(g, output, this.posX + 8, this.posY)
 
-        const displayValue = this.editor.options.hideInputColors ? Unknown : output.value
+        const displayValue = this.parent.options.hideInputColors ? Unknown : output.value
 
         const shouldDrawBorder = this.shouldDrawBorder()
         if (shouldDrawBorder) {
-            const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+            const drawMouseOver = ctx.isMouseOver && this.parent.mode !== Mode.STATIC
 
             if (drawMouseOver) {
                 g.strokeStyle = ctx.borderColor
@@ -131,11 +135,11 @@ export abstract class InputBase<
             drawWireLineToComponent(g, output, right + 3, output.posYInParentTransform, true)
         }
 
-        const displayValues = this.editor.options.hideInputColors
+        const displayValues = this.parent.options.hideInputColors
             ? ArrayFillWith(Unknown, this.numBits) : this.value
 
         // cells
-        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+        const drawMouseOver = ctx.isMouseOver && this.parent.mode !== Mode.STATIC
         g.strokeStyle = drawMouseOver ? ctx.borderColor : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
@@ -176,7 +180,7 @@ export abstract class InputBase<
             if (inNode.prefersSpike) {
                 this.doSetIsPushButton(true) // will do nothing for clocks
             }
-            if (isUndefined(this._name) && inNode.hasNonTrivialName) {
+            if (isUndefined(this._name) && !isTrivialNodeName(inNode.shortName)) {
                 this.doSetName(inNode.shortName)
             }
         }
@@ -189,15 +193,15 @@ export abstract class InputBase<
                 return
             case "e":
                 this.doSetOrient("w")
-                this.setPosition(this.posX + GRID_STEP * 6, this.posY)
+                this.setPosition(this.posX + GRID_STEP * 6, this.posY, false)
                 return
             case "s":
                 this.doSetOrient("n")
-                this.setPosition(this.posX + GRID_STEP * 3, this.posY + GRID_STEP * 3)
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY + GRID_STEP * 3, false)
                 return
             case "n":
                 this.doSetOrient("s")
-                this.setPosition(this.posX + GRID_STEP * 3, this.posY - GRID_STEP * 3)
+                this.setPosition(this.posX + GRID_STEP * 3, this.posY - GRID_STEP * 3, false)
                 return
         }
     }
@@ -206,7 +210,7 @@ export abstract class InputBase<
         // overridden in normal Input, not in Clock
     }
 
-    private doSetName(name: ComponentName) {
+    public doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }
@@ -300,8 +304,8 @@ export class Input extends InputBase<InputRepr> {
     private _isPushButton: boolean
     private _isConstant: boolean
 
-    public constructor(editor: LogicEditor, params: InputParams, saved?: InputRepr) {
-        super(editor, InputDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: InputParams, saved?: InputRepr) {
+        super(parent, InputDef.with(params), saved)
 
         this.numBits = params.numBits
 
@@ -340,7 +344,7 @@ export class Input extends InputBase<InputRepr> {
     }
 
     public override cursorWhenMouseover(e?: MouseEvent | TouchEvent) {
-        const mode = this.editor.mode
+        const mode = this.parent.mode
         if (mode === Mode.STATIC) {
             // signal we can't switch it here
             return "not-allowed"
@@ -369,6 +373,14 @@ export class Input extends InputBase<InputRepr> {
         return tooltipContent(undefined, mods(s.title.expand({ numBits: this.numBits })))
     }
 
+    public get isLinkedToSomeClock(): boolean {
+        return this.outputs._all.some(out => out.outgoingWires.some(w => w.endNode.isClock))
+    }
+
+    public get isPushButton() {
+        return this._isPushButton
+    }
+
     protected override shouldDrawBorder() {
         return !this._isConstant
     }
@@ -379,18 +391,21 @@ export class Input extends InputBase<InputRepr> {
             return result
         }
 
-        if (this.editor.mode === Mode.STATIC || this._isPushButton || this._isConstant) {
+        if (this.parent.mode === Mode.STATIC
+            || this._isPushButton
+            || this._isConstant
+            || !this.parent.isMainEditor()) {
             return InteractionResult.NoChange
         }
 
-        const i = this.clickedBitIndex(e)
+        const i = this.clickedBitIndex(e, this.parent)
         if (i === -1) {
             return InteractionResult.SimpleChange
         }
 
         const altKey = e.altKey // don't include event in the closure
         const doChange = () => {
-            this.doSetValueChangingBit(i, nextValue(this.value[i], this.editor.mode, altKey))
+            this.doSetValueChangingBit(i, nextValue(this.value[i], this.parent.mode, altKey))
             return true
         }
 
@@ -409,9 +424,9 @@ export class Input extends InputBase<InputRepr> {
         return result
     }
 
-    private clickedBitIndex(e: MouseEvent | TouchEvent): number {
+    private clickedBitIndex(e: MouseEvent | TouchEvent, editor: LogicEditor): number {
         const h = this.unrotatedHeight
-        const y = this.editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
+        const y = editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
         const i = Math.floor(y * this.numBits / h)
         if (i >= 0 && i < this.numBits) {
             return i
@@ -421,11 +436,12 @@ export class Input extends InputBase<InputRepr> {
 
     private trySetPushButtonBit(v: LogicValue, e: MouseEvent | TouchEvent) {
         let i
-        if (this.editor.mode !== Mode.STATIC
+        if (this.parent.mode !== Mode.STATIC
             && this._isPushButton
             && !this._isConstant
-            && this.editor.cursorMovementMgr.currentSelectionEmpty()
-            && (i = this.clickedBitIndex(e)) !== -1) {
+            && this.parent.isMainEditor()
+            && this.parent.cursorMovementMgr.currentSelectionEmpty()
+            && (i = this.clickedBitIndex(e, this.parent)) !== -1) {
             this.doSetValueChangingBit(i, v)
         }
     }
@@ -475,7 +491,7 @@ export class Input extends InputBase<InputRepr> {
             }
             const replaceWithClockItem =
                 MenuData.item("timer", s.ReplaceWithClock, () => {
-                    this.replaceWithComponent(ClockDef.make(this.editor))
+                    this.replaceWithComponent(ClockDef.make(this.parent))
                 })
 
             newItems.push(

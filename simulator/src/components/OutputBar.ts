@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_HIGH_IMPEDANCE, COLOR_LED_ON, COLOR_TRANSPARENT, COLOR_UNKNOWN, COLOR_WIRE_BORDER, GRID_STEP, pxToGrid } from "../drawutils"
 import { Modifier, asValue, mods, span, style, title, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { HighImpedance, InteractionResult, LogicValue, Unknown, isHighImpedance, isUnknown, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineComponent } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Output16SegRepr } from "./Output16Seg"
 import { Output7SegRepr } from "./Output7Seg"
 
@@ -50,8 +49,8 @@ export abstract class OutputBarBase<TRepr extends OutputBarBaseRepr, TValue> ext
     protected _transparent: boolean
     protected _name: ComponentName
 
-    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, TValue>, transparentDefault: boolean, saved?: TRepr) {
-        super(editor, SubclassDef, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: InstantiatedComponentDef<TRepr, TValue>, transparentDefault: boolean, saved?: TRepr) {
+        super(parent, SubclassDef, saved)
         this.transparentDefault = transparentDefault
 
         this._color = saved?.color ?? OutputBarDef.aults.color
@@ -154,8 +153,8 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
 
     private _display: OutputBarType
 
-    public constructor(editor: LogicEditor, saved?: OutputBarRepr) {
-        super(editor, OutputBarDef, false, saved)
+    public constructor(parent: DrawableParent, saved?: OutputBarRepr) {
+        super(parent, OutputBarDef, false, saved)
 
         this._display = this.doSetDisplay(saved?.display ?? OutputBarDef.aults.display)
     }
@@ -198,7 +197,7 @@ export class OutputBar extends OutputBarBase<OutputBarRepr, LogicValue> {
     }
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
-        const valueToShow = this.editor.options.hideOutputColors ? Unknown : this.value
+        const valueToShow = this.parent.options.hideOutputColors ? Unknown : this.value
         const background = this._transparent && valueToShow === false
             ? COLOR_TRANSPARENT
             : ledColorForLogicValue(valueToShow, this._color)

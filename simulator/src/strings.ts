@@ -189,6 +189,9 @@ const Strings_fr = {
                 Delete: "Supprimer",
                 Reset: "Réactiver",
 
+                MakeNewComponent: "Créer un nouveau composant…",
+                MakeNewComponentFailed: "Impossible de créer un nouveau composant.",
+
                 SetIdentifier: "Attribuer un identifiant…",
                 ChangeIdentifier: tuple("Changer l’identifiant (", ")…"),
                 SetIdentifierPrompt: "Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)",
@@ -239,6 +242,19 @@ const Strings_fr = {
             OutputCarryOutDesc: "Cout (retenue)",
             OutputQDesc: "Q (sortie normale)",
             OutputQBarDesc: "Q̅ (sortie inversée)",
+        },
+        Custom: {
+            messages: {
+                EmptySelection: "Aucun composant n’est sélectionné.",
+                NoInput: "Aucune entrée n’est sélectionnée.",
+                NoOutput: "Aucune sortie n’est sélectionnée.",
+                InputsOutputsMustHaveNames: "Toutes les entrées et sorties doivent avoir un nom.",
+                MissingComponents: template("Les composants suivants sont connectés à des sorties mais ne sont pas sélectionnés: ${list}."),
+                UselessComponents: template("Les composants suivants ne sont pas connectés à des sorties et sont inutiles: ${list}."),
+                CannotIncludeClock: "Les horloges ne peuvent pas être incluses dans les composants personnalisés. Ajoutez une entrée normale, qui pourra être connectée à une horloge de l'extérieur du composant.",
+                EnterCaptionPrompt: "Entrez le nom (unique) du composant personnalisé:",
+                ComponentAlreadyExists: template("Un composant personnalisé avec l’identifiant '${id}' existe déjà."),
+            },
         },
         Adder: {
             tooltip: {
@@ -691,7 +707,7 @@ const Strings_fr = {
         Design: tuple("Concevoir", "Compose ou modifie le circuit"),
         Delete: tuple("Supprimer", "Supprime des éléments du circuit"),
         Move: tuple("Déplacer", "Déplace tout le circuit"),
-        Download: tuple("Télécharger", "Télécharge le circuit"),
+        Download: tuple("Télécharger", "Télécharge le circuit (ou les composants personnalisés avec la touche Option/Alt)"),
         Screenshot: tuple("Screenshot", "Télécharge le circuit sous forme d’image (PNG ou SVG avec touche Option/Alt)"),
         Open: tuple("Ouvrir", "Ouvre un circuit précédemment téléchargé"),
         Reset: tuple("Réinitialiser", "Réinitialise l’état de ce circuit"),
@@ -870,6 +886,9 @@ const Strings_en: Strings = {
                 Delete: "Delete",
                 Reset: "Reset",
 
+                MakeNewComponent: "Make New Component…",
+                MakeNewComponentFailed: "Cannot create new custom component.",
+
                 SetIdentifier: "Set Identifier…",
                 ChangeIdentifier: tuple("Change Identifier (", ")…"),
                 SetIdentifierPrompt: "Choose the identifier to use for this component or leave empty to remove it:\n\n(The identifier is only used to refer to this component from external JavaScript code.)",
@@ -920,6 +939,19 @@ const Strings_en: Strings = {
             OutputCarryOutDesc: "Cout (Carry)",
             OutputQDesc: "Q (Normal Output)",
             OutputQBarDesc: "Q̅ (Inverted Output)",
+        },
+        Custom: {
+            messages: {
+                EmptySelection: "No components are selected.",
+                NoInput: "No input is selected.",
+                NoOutput: "No output is selected.",
+                InputsOutputsMustHaveNames: "All inputs and outputs must have unique (non-dynamic) names.",
+                MissingComponents: template("The following components are connected to outputs but are missing from selection: ${list}."),
+                UselessComponents: template("The following components are not connected to outputs and are useless: ${list}."),
+                CannotIncludeClock: "Clocks cannot be included in custom components. Add a normal input, which can later be connected to an external clock.",
+                EnterCaptionPrompt: "Entrez le nom (unique) du composant personnalisé:",
+                ComponentAlreadyExists: template("A custom component definition with id '${id}' already exists."),
+            },
         },
         Adder: {
             tooltip: {
@@ -1372,7 +1404,7 @@ const Strings_en: Strings = {
         Design: tuple("Design", "Create or modify the circuit"),
         Delete: tuple("Delete", "Delete elements from the circuit"),
         Move: tuple("Move", "Move the whole circuit"),
-        Download: tuple("Download", "Download the circuit"),
+        Download: tuple("Download", "Download the circuit (or the custom components with Option/Alt key down)"),
         Screenshot: tuple("Screenshot", "Download the circuit as an image (PNG or SVG with Option/Alt key down)"),
         Open: tuple("Open", "Open a previously downloaded circuit"),
         Reset: tuple("Reset", "Reset the state of this circuit"),

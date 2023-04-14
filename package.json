@@ -51,9 +51,10 @@
     },
     "lint": {
       "patterns": [
-        "simulator"
+        "simulator",
+        ".eslintrc.json"
       ],
-      "extensions": "ts"
+      "extensions": "ts,json"
     }
   }
 }

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { LogicValue, isDefined, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, Repr, defineComponent } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { InputBase, InputDef } from "./Input"
 
 export const ClockDef =
@@ -45,10 +44,10 @@ export class Clock extends InputBase<ClockRepr> {
     private _phase: number
     private _showLabel: boolean
 
-    public constructor(editor: LogicEditor, saved?: ClockRepr) {
+    public constructor(parent: DrawableParent, saved?: ClockRepr) {
         // 'undefined as any' is a hack to get around the fact that InputBase is parametrized
         // and Clock is not. As long as we don't try to change nonexitent params, it's fine.
-        super(editor, [ClockDef, undefined as any], saved)
+        super(parent, [ClockDef, undefined as any], saved)
 
         this._period = saved?.period ?? ClockDef.aults.period
         this._dutycycle = isDefined(saved?.dutycycle) ? saved!.dutycycle % 100 : ClockDef.aults.dutycycle
@@ -109,7 +108,7 @@ export class Clock extends InputBase<ClockRepr> {
     }
 
     private tickCallback() {
-        const timeline = this.editor.timeline
+        const timeline = this.parent.timeline
         const [value, nextTick] = this.currentClockValue(timeline.logicalTime())
         this.doSetValue([value])
         if (this.state !== ComponentState.DEAD) {
@@ -187,7 +186,7 @@ export class Clock extends InputBase<ClockRepr> {
 
         const replaceWithInputItem =
             MenuData.item("replace", s.ReplaceWithInput, () => {
-                this.replaceWithComponent(InputDef.make(this.editor, { bits: 1 }))
+                this.replaceWithComponent(InputDef.make(this.parent, { bits: 1 }))
             })
 
         return [

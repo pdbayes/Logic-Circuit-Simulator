@@ -1,12 +1,18 @@
 import * as t from "io-ts"
-import { DrawZIndex } from "../ComponentList"
-import { DrawParams, LogicEditor } from "../LogicEditor"
-import { SVGRenderingContext } from "../SVGRenderingContext"
+import { ComponentList, DrawZIndex } from "../ComponentList"
+import { DrawParams, EditorOptions, LogicEditor } from "../LogicEditor"
+import { type MoveManager } from "../MoveManager"
+import { type NodeManager } from "../NodeManager"
+import { RecalcManager, RedrawManager } from "../RedrawRecalcManager"
+import { type SVGRenderingContext } from "../SVGRenderingContext"
+import { type Timeline } from "../Timeline"
+import { UndoManager } from "../UndoManager"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, ColorString, GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
 import { Expand, FixedArray, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { type WireManager } from "./Wire"
 
 export type GraphicsRendering =
     | CanvasRenderingContext2D & {
@@ -111,18 +117,43 @@ function mult(m: DOMMatrix, x: number, y: number): [x: number, y: number] {
     ]
 }
 
+export interface DrawableParent {
+    
+    isMainEditor(): this is LogicEditor
+    readonly editor: LogicEditor
+
+    // implemented everywhere
+    readonly mode: Mode
+    readonly options: Readonly<EditorOptions>
+
+    readonly timeline: Timeline
+    readonly recalcMgr: RecalcManager
+    readonly nodeMgr: NodeManager
+    readonly wireMgr: WireManager
+    readonly components: ComponentList
+
+    // used with optional calls that are not used in custom components
+    // because they are only related to the display of components
+    readonly redrawMgr?: RedrawManager
+    readonly moveMgr?: MoveManager
+    readonly undoMgr?: UndoManager
+    setDirty?(reason: string): void
+    setToolCursor?(cursor: string | null): void
+
+}
+
 export abstract class Drawable {
 
-    public readonly editor: LogicEditor
+    public readonly parent: DrawableParent
     public ref: string | undefined = undefined
 
-    protected constructor(editor: LogicEditor) {
-        this.editor = editor
+    protected constructor(parent: DrawableParent) {
+        this.parent = parent
         this.setNeedsRedraw("newly created")
     }
 
     protected setNeedsRedraw(reason: string) {
-        this.editor.redrawMgr.addReason(reason, this)
+        this.parent.redrawMgr?.addReason(reason, this)
     }
 
     public get drawZIndex(): DrawZIndex {
@@ -322,8 +353,8 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     private _lockPos: boolean
     private _orient: Orientation
 
-    protected constructor(editor: LogicEditor, saved?: PositionSupportRepr) {
-        super(editor)
+    protected constructor(parent: DrawableParent, saved?: PositionSupportRepr) {
+        super(parent)
 
         // using null and not undefined to prevent subclasses from
         // unintentionally skipping the parameter
@@ -337,8 +368,9 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             this._orient = saved.orient ?? Orientation.default
         } else {
             // creating new object
-            this._posX = Math.max(0, this.editor.mouseX)
-            this._posY = this.editor.mouseY
+            const editor = this.parent.editor
+            this._posX = Math.max(0, editor.mouseX)
+            this._posY = editor.mouseY
             this._lockPos = false
             this._orient = Orientation.default
         }
@@ -421,7 +453,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
     }
 
     public isOver(x: number, y: number) {
-        return this.editor.mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
+        return this.parent.mode >= Mode.CONNECT && inRect(this._posX, this._posY, this.width, this.height, x, y)
     }
 
     protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
@@ -518,8 +550,8 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     private _isMovingWithContext: undefined | DragContext = undefined
 
-    protected constructor(editor: LogicEditor, saved?: PositionSupportRepr) {
-        super(editor, saved)
+    protected constructor(parent: DrawableParent, saved?: PositionSupportRepr) {
+        super(parent, saved)
     }
 
     public get isMoving() {
@@ -527,11 +559,11 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     private tryStartMoving(e: MouseEvent | TouchEvent) {
-        if (this.lockPos) {
+        if (this.lockPos || !this.parent.isMainEditor()) {
             return
         }
         if (isUndefined(this._isMovingWithContext)) {
-            const [offsetX, offsetY] = this.editor.offsetXY(e)
+            const [offsetX, offsetY] = this.parent.offsetXY(e)
             this._isMovingWithContext = {
                 mouseOffsetToPosX: offsetX - this.posX,
                 mouseOffsetToPosY: offsetY - this.posY,
@@ -548,13 +580,13 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             this._isMovingWithContext = undefined
             wasMoving = true
         }
-        this.editor.moveMgr.setDrawableStoppedMoving(this, e)
+        this.parent.moveMgr?.setDrawableStoppedMoving(this, e)
         return wasMoving
     }
 
 
-    public setPosition(x: number, y: number) {
-        const newPos = this.tryMakePosition(x, y, false)
+    public setPosition(x: number, y: number, snapToGrid: boolean) {
+        const newPos = this.tryMakePosition(x, y, snapToGrid)
         if (isDefined(newPos)) { // position would change indeed
             this.doSetPosition(...newPos)
             this.positionChanged()
@@ -562,20 +594,20 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT) {
+        if (this.parent.mode >= Mode.CONNECT) {
             this.tryStartMoving(e)
         }
         return { wantsDragEvents: true }
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT && !this.lockPos) {
-            const [x, y] = this.editor.offsetXY(e)
+        if (this.parent.mode >= Mode.CONNECT && !this.lockPos && this.parent.isMainEditor()) {
+            const [x, y] = this.parent.offsetXY(e)
             const snapToGrid = !e.metaKey
             const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
             if (isDefined(newPos)) { // position changed
                 this.positionChanged()
-                this.editor.moveMgr.setDrawableMoving(this, e)
+                this.parent.moveMgr.setDrawableMoving(this, e)
             }
         }
     }
@@ -616,9 +648,9 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
         const newPos = this.tryMakePosition(targetX, targetY, snapToGrid)
         if (isDefined(newPos)) {
             let clone
-            if (e.altKey && this.editor.mode >= Mode.DESIGN && isDefined((clone = this.makeClone(true)))) {
+            if (e.altKey && this.parent.mode >= Mode.DESIGN && this.parent.isMainEditor() && isDefined((clone = this.makeClone(true)))) {
                 this._isMovingWithContext.createdClone = clone
-                this.editor.cursorMovementMgr.setCurrentMouseOverComp(clone)
+                this.parent.cursorMovementMgr.setCurrentMouseOverComp(clone)
             } else {
                 this.doSetPosition(...newPos)
             }

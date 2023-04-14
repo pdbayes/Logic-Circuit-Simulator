@@ -1,10 +1,9 @@
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
 import { ComponentBase, defineComponent, Repr } from "./Component"
-import { DrawContext, GraphicsRendering } from "./Drawable"
+import { DrawableParent, DrawContext, GraphicsRendering } from "./Drawable"
 
 export const TriStateBufferDef =
     defineComponent("gate", "TRI", {
@@ -27,8 +26,8 @@ type TriStateBufferRepr = Repr<typeof TriStateBufferDef>
 
 export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
 
-    public constructor(editor: LogicEditor, saved?: TriStateBufferRepr) {
-        super(editor, TriStateBufferDef, saved)
+    public constructor(parent: DrawableParent, saved?: TriStateBufferRepr) {
+        super(parent, TriStateBufferDef, saved)
     }
 
     public toJSON() {

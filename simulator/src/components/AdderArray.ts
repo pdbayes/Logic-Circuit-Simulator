@@ -1,12 +1,11 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
 import { doALUAdd } from "./ALU"
 import { ParametrizedComponentBase, Repr, ResolvedParams, Value, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 import { GateArrayDef } from "./GateArray"
 
 
@@ -60,8 +59,8 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, params: AdderArrayParams, saved?: AdderArrayRepr) {
-        super(editor, AdderArrayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: AdderArrayParams, saved?: AdderArrayRepr) {
+        super(parent, AdderArrayDef.with(params), saved)
         this.numBits = params.numBits
     }
 

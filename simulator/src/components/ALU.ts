@@ -1,11 +1,10 @@
 import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawableParent, DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
 
 
@@ -107,8 +106,8 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
     public readonly usesExtendedOpcode: boolean
     private _showOp: boolean
 
-    public constructor(editor: LogicEditor, params: ALUParams, saved?: ALURepr) {
-        super(editor, ALUDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: ALUParams, saved?: ALURepr) {
+        super(parent, ALUDef.with(params), saved)
 
         this.numBits = params.numBits
         this.usesExtendedOpcode = params.usesExtendedOpcode

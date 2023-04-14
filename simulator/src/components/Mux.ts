@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -73,8 +72,8 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
     public readonly numSel: number
     private _showWiring: boolean
 
-    public constructor(editor: LogicEditor, params: MuxParams, saved?: MuxRepr) {
-        super(editor, MuxDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: MuxParams, saved?: MuxRepr) {
+        super(parent, MuxDef.with(params), saved)
 
         this.numFrom = params.numFrom
         this.numTo = params.numTo
@@ -148,13 +147,13 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
             const sels = this.inputValues(this.inputs.S)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
-                const neutral = this.editor.options.hideWireColors
+                const neutral = this.parent.options.hideWireColors
                 const selectedInputs = this.inputs.I[sel]
                 const anchorDiffX = (right - left) / 3
-                const wireStyleStraight = this.editor.options.wireStyle === WireStyles.straight
+                const wireStyleStraight = this.parent.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < selectedInputs.length; i++) {
-                    this.editor.options.wireStyle
+                    this.parent.options.wireStyle
                     g.beginPath()
                     const fromY = selectedInputs[i].posYInParentTransform
                     const toNode = this.outputs.Z[i]

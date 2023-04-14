@@ -1,10 +1,9 @@
 import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { FixedArray, FixedArrayFillWith, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, group, Repr } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { FixedArray, FixedArrayFillWith, LogicValue, Unknown, isUnknown } from "../utils"
+import { ComponentBase, Repr, defineComponent, group } from "./Component"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const Decoder16SegDef =
     defineComponent("ic", "decoder-16seg", {
@@ -53,8 +52,8 @@ type Decoder16SegRepr = Repr<typeof Decoder16SegDef>
 
 export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
 
-    public constructor(editor: LogicEditor, saved?: Decoder16SegRepr) {
-        super(editor, Decoder16SegDef, saved)
+    public constructor(parent: DrawableParent, saved?: Decoder16SegRepr) {
+        super(parent, Decoder16SegDef, saved)
     }
 
     public toJSON() {

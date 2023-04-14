@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent, groupVertical } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
 
 export const OutputAsciiDef =
@@ -34,8 +33,8 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     private _additionalReprRadix: number | undefined
     private _showAsUnknown: boolean
 
-    public constructor(editor: LogicEditor, saved?: OutputAsciiRepr) {
-        super(editor, OutputAsciiDef, saved)
+    public constructor(parent: DrawableParent, saved?: OutputAsciiRepr) {
+        super(parent, OutputAsciiDef, saved)
         this._name = saved?.name ?? undefined
         this._additionalReprRadix = saved?.additionalReprRadix ?? undefined
         this._showAsUnknown = saved?.showAsUnknown ?? false
@@ -52,7 +51,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     }
 
     private get showAsUnknown() {
-        return this._showAsUnknown || this.editor.options.hideOutputColors
+        return this._showAsUnknown || this.parent.options.hideOutputColors
     }
 
     public override makeTooltip() {
@@ -158,7 +157,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
         if (superChange.isChange) {
             return superChange // already handled
         }
-        const mode = this.editor.mode
+        const mode = this.parent.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return InteractionResult.SimpleChange

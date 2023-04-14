@@ -1,12 +1,11 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, isDefined, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, Drawable, DrawableWithPosition, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, Drawable, DrawableParent, DrawableWithPosition, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 export const RectangleColor = {
     grey: "grey",
@@ -79,8 +78,8 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     private _captionInside: boolean
     private _font: string
 
-    public constructor(editor: LogicEditor, saved?: LabelRectRepr) {
-        super(editor, LabelRectDef, saved)
+    public constructor(parent: DrawableParent, saved?: LabelRectRepr) {
+        super(parent, LabelRectDef, saved)
         this._w = saved?.w ?? LabelRectDef.aults.width
         this._h = saved?.h ?? LabelRectDef.aults.height
         this._color = saved?.color ?? LabelRectDef.aults.color

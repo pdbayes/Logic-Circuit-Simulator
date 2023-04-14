@@ -1,12 +1,11 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, displayValuesFromArray, drawWireLineToComponent, strokeAsWireLine, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupHorizontal, groupVertical, groupVerticalMulti, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { WireStyles } from "./Wire"
 
 
@@ -77,8 +76,8 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
     private _showWiring: boolean
     private _disconnectedAsHighZ: boolean
 
-    public constructor(editor: LogicEditor, params: DemuxParams, saved?: DemuxRepr) {
-        super(editor, DemuxDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: DemuxParams, saved?: DemuxRepr) {
+        super(parent, DemuxDef.with(params), saved)
 
         this.numFrom = params.numFrom
         this.numTo = params.numTo
@@ -168,13 +167,13 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
         // wiring
         if (this._showWiring) {
-            const neutral = this.editor.options.hideWireColors
+            const neutral = this.parent.options.hideWireColors
             const sels = this.inputValues(this.inputs.S)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
                 const selectedOutputs = this.outputs.Z[sel]
                 const anchorDiffX = (right - left) / 3
-                const wireStyleStraight = this.editor.options.wireStyle === WireStyles.straight
+                const wireStyleStraight = this.parent.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < this.inputs.I.length; i++) {
                     g.beginPath()

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_NODE_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawableParent, DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
 import { WireStyle } from "./Wire"
 
@@ -61,8 +60,8 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
     private _slant: Slant
     private _hShift: [number, number]
 
-    public constructor(editor: LogicEditor, params: PassthroughParams, saved?: PassthroughRepr) {
-        super(editor, PassthroughDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: PassthroughParams, saved?: PassthroughRepr) {
+        super(parent, PassthroughDef.with(params), saved)
         this.numBits = params.numBits
         this._hShift = [0, 0] // updated by updateNodeOffsets
         this._slant = saved?.slant ?? PassthroughDef.aults.slant
@@ -103,7 +102,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
         super.destroy()
 
         if (savedWireEnds.length > 0) {
-            const wireMgr = this.editor.wireMgr
+            const wireMgr = this.parent.wireMgr
             for (const [nodeOut, nodeIns] of savedWireEnds) {
                 for (const [nodeIn, style] of nodeIns) {
                     const wire = wireMgr.addWire(nodeOut, nodeIn, false)
@@ -185,7 +184,7 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
             g.strokeStyle = COLOR_UNKNOWN
         }
 
-        if (this.editor.mode >= Mode.CONNECT) {
+        if (this.parent.mode >= Mode.CONNECT) {
             g.lineWidth = width
             g.stroke()
         }

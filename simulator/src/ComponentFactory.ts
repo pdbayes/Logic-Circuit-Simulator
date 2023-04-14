@@ -1,18 +1,20 @@
+import * as t from "io-ts"
 import { LogicEditor } from "./LogicEditor"
-import { isDefined, isString, isUndefined } from "./utils"
-
+import { PersistenceManager } from "./PersistenceManager"
 import { ALUDef } from "./components/ALU"
 import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
-import { ClockDef } from "./components/Clock"
+import { Clock, ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
-import { Component, ComponentCategory, Params } from "./components/Component"
+import { Component, ComponentBase, ComponentCategory, Params } from "./components/Component"
 import { CounterDef } from "./components/Counter"
+import { CustomComponentDef, CustomComponentDefRepr, CustomComponentPrefix } from "./components/CustomComponent"
 import { DecoderDef } from "./components/Decoder"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
 import { DecoderBCD4Def } from "./components/DecoderBCD4"
 import { DemuxDef } from "./components/Demux"
+import { DrawableParent } from "./components/Drawable"
 import { FlipflopDDef } from "./components/FlipflopD"
 import { FlipflopJKDef } from "./components/FlipflopJK"
 import { FlipflopTDef } from "./components/FlipflopT"
@@ -20,13 +22,13 @@ import { Gate1Def, GateNDef } from "./components/Gate"
 import { GateArrayDef } from "./components/GateArray"
 import { Gate1Types, GateNTypes } from "./components/GateTypes"
 import { HalfAdderDef } from "./components/HalfAdder"
-import { InputDef } from "./components/Input"
+import { Input, InputDef } from "./components/Input"
 import { InputRandomDef } from "./components/InputRandom"
 import { LabelRectDef } from "./components/LabelRect"
-import { LabelStringDef } from "./components/LabelString"
+import { LabelString, LabelStringDef } from "./components/LabelString"
 import { LatchSRDef } from "./components/LatchSR"
 import { MuxDef } from "./components/Mux"
-import { OutputDef } from "./components/Output"
+import { Output, OutputDef } from "./components/Output"
 import { Output16SegDef } from "./components/Output16Seg"
 import { Output7SegDef } from "./components/Output7Seg"
 import { OutputAsciiDef } from "./components/OutputAscii"
@@ -41,17 +43,20 @@ import { ShiftRegisterDef } from "./components/ShiftRegister"
 import { SwitchedInverterDef } from "./components/SwitchedInverter"
 import { TriStateBufferDef } from "./components/TriStateBuffer"
 import { TriStateBufferArrayDef } from "./components/TriStateBufferArray"
+import { S } from "./strings"
+import { JSONParseObject, isDefined, isString, isUndefined, validateJson } from "./utils"
 
+// Generic interface to instantiate components from scratch (possibly with params) or from JSON
 type ComponentMaker<TParams extends Record<string, unknown>> = {
     isValid(): boolean,
     category: ComponentCategory,
     type: string | undefined,
-    make(editor: LogicEditor, params?: TParams): Component,
-    makeFromJSON(editor: LogicEditor, data: Record<string, unknown>): Component | undefined,
+    make(parent: DrawableParent, params?: TParams): Component,
+    makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined,
 }
 
+// Gate is special and needs its own ComponentMaker adapter
 type GateParams = Params<typeof Gate1Def> | Params<typeof GateNDef> | { type: "TRI" }
-
 const GateAdapter: ComponentMaker<GateParams> = {
     isValid: () => true,
     category: "gate",
@@ -85,6 +90,7 @@ const GateAdapter: ComponentMaker<GateParams> = {
     },
 }
 
+// All predefined components
 const AllComponentDefs: ComponentMaker<any>[] = [
     // in
     InputDef,
@@ -137,6 +143,7 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     PassthroughDef,
 ]
 
+// Data present in the HTMLElement of a component button
 export type ButtonDataset = {
     category: ComponentCategory,
     type?: string,
@@ -144,37 +151,43 @@ export type ButtonDataset = {
     params?: string,
 }
 
-class _ComponentFactory {
+export class ComponentFactory {
 
-    private readonly registry = new Map<string, ComponentMaker<any>>()
+    public readonly editor: LogicEditor
+    private readonly _predefinedComponents = new Map<string, ComponentMaker<any>>()
+    private readonly _customComponents = new Map<string, CustomComponentDef>()
 
-    public constructor() {
+    public constructor(editor: LogicEditor) {
+        this.editor = editor
         for (const maker of AllComponentDefs) {
             const key = isDefined(maker.type) ? `${maker.category}.${maker.type}` : maker.category
             if (!maker.isValid()) {
                 throw new Error(`Implementation missing for components of type '${key}'`)
             }
             // console.log(`Registering component for '${key}'`)
-            if (this.registry.has(key)) {
+            if (this._predefinedComponents.has(key)) {
                 throw new Error(`Duplicate component for components of type '${key}'`)
             }
-            this.registry.set(key, maker)
+            this._predefinedComponents.set(key, maker)
         }
     }
 
-    public makeFromJSON(editor: LogicEditor, category: string, obj_: unknown): Component | undefined {
+
+    // Component creation functions
+
+    public makeFromJSON(parent: DrawableParent, category: string, obj_: unknown): Component | undefined {
         const obj = obj_ as Record<string, unknown>
         const type = isString(obj.type) ? obj.type : undefined
         const maker = this.getMaker(category, type)
-        return maker?.makeFromJSON(editor, obj)
+        return maker?.makeFromJSON(parent, obj)
     }
 
-    public makeFromButton(editor: LogicEditor, elem: HTMLElement) {
+    public makeFromButton(parent: DrawableParent, elem: HTMLElement) {
         const compDataset = elem.dataset as ButtonDataset
         const paramsStr = compDataset.params
         const maker = this.getMaker(compDataset.category, compDataset.type)
         const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
-        return maker?.make(editor, params)
+        return maker?.make(parent, params)
 
         // TODO further general component customisation based on editor options
         // const classId = compDataset.componentId
@@ -189,17 +202,25 @@ class _ComponentFactory {
         //         }
         //     }
 
-        }
+    }
 
     private getMaker(category: string, type?: string): ComponentMaker<any> | undefined {
         let maker
         if (isDefined(type)) {
-            maker = this.registry.get(`${category}.${type}`)
-            if (isUndefined(maker)) {
-                maker = this.registry.get(category)
+            if (type.startsWith(CustomComponentPrefix)) {
+                const customId = type.substring(CustomComponentPrefix.length)
+                maker = this._customComponents.get(customId)
+            } else {
+                // specific type
+                maker = this._predefinedComponents.get(`${category}.${type}`)
+                if (isUndefined(maker)) {
+                    // maybe a more generic maker handles it
+                    maker = this._predefinedComponents.get(category)
+                }
             }
         } else {
-            maker = this.registry.get(category)
+            // no type, use generic maker
+            maker = this._predefinedComponents.get(category)
         }
         if (isUndefined(maker)) {
             console.warn(`Unknown component for '${category}.${type}'`)
@@ -207,6 +228,201 @@ class _ComponentFactory {
         return maker
     }
 
+
+    // Custom components handling
+
+    public customDefs(): CustomComponentDef[] | undefined {
+        if (this._customComponents.size === 0) {
+            return undefined
+        }
+        return [...this._customComponents.values()]
+    }
+
+    public clearCustomDefs() {
+        this._customComponents.clear()
+    }
+
+    public tryAddCustomDef(defRepr: CustomComponentDefRepr): ComponentMaker<any> | undefined {
+        // Calling this may change the list of custom defs, we may need to update the UI
+        const id = defRepr.id
+        if (this._customComponents.has(id)) {
+            console.warn(`Could not add custom component with duplicate id '${id}'`)
+            return undefined
+        }
+
+        const def = new CustomComponentDef(defRepr)
+        this._customComponents.set(id, def)
+        return def
+    }
+
+    public tryLoadCustomDefsFrom(defs: unknown) {
+        // Calling this may change the list of custom defs, we may need to update the UI
+        if (isUndefined(defs)) {
+            return
+        }
+        const validatedDefs = validateJson(defs, t.array(CustomComponentDefRepr), "defs")
+        if (isDefined(validatedDefs)) {
+            for (const validatedDef of validatedDefs) {
+                this.tryAddCustomDef(validatedDef)
+            }
+        }
+    }
+
+    public hasCustomComponents() {
+        return this._customComponents.size > 0
+    }
+
+    public tryMakeNewCustomComponent(editor: LogicEditor): undefined | string {
+        const s = S.Components.Custom.messages
+
+        const selectionAll = editor.cursorMovementMgr.currentSelection?.previouslySelectedElements
+        if (isUndefined(selectionAll)) {
+            return s.EmptySelection
+        }
+        const selectedComps = [...selectionAll].filter((e): e is Component => e instanceof ComponentBase)
+        if (selectedComps.length === 0) {
+            return s.EmptySelection
+        }
+
+        const inputs = selectedComps.filter((e): e is Input => e instanceof Input)
+        if (inputs.length === 0) {
+            return s.NoInput
+        }
+
+        const outputs = selectedComps.filter((e): e is Output => e instanceof Output)
+        if (outputs.length === 0) {
+            return s.NoOutput
+        }
+
+
+        // Check that all inputs and outputs have names
+        function checkNames(inOuts: Array<Input | Output>): boolean {
+            const names = new Set<string>()
+            for (const inOut of inOuts) {
+                const name = (inOut as Input | Output).name
+                if (!isString(name) || names.has(name)) {
+                    return false
+                }
+                names.add(name)
+            }
+            return true
+        }
+
+        const namesValid = checkNames(inputs) && checkNames(outputs)
+        if (!namesValid) {
+            return s.InputsOutputsMustHaveNames
+        }
+
+
+        const componentsToInclude: Component[] = [...inputs, ...outputs]
+        const queue: Component[] = []
+        let comp
+
+        // Go forward from inputs to keep all linked components.
+        // We don't complain about linked components that are not in the selection
+        // as we allow inputs to connect to other stuff as well.
+        queue.push(...inputs)
+        while (isDefined(comp = queue.shift())) {
+            for (const node of comp.outputs._all) {
+                for (const wire of node.outgoingWires) {
+                    const otherComp = wire.endNode.component
+                    if (selectedComps.includes(otherComp)
+                        && !componentsToInclude.includes(otherComp)) {
+                        componentsToInclude.push(otherComp)
+                        queue.push(otherComp)
+                    }
+                }
+            }
+        }
+
+        // Go backward from outputs to include all linked components
+        // and make sure all necessary components are in the selection.
+        queue.push(...outputs)
+        const missingComponents: Component[] = []
+        while (isDefined(comp = queue.shift())) {
+            for (const node of comp.inputs._all) {
+                const wire = node.incomingWire
+                if (wire !== null) {
+                    const otherComp = wire.startNode.component
+
+                    if (!selectedComps.includes(otherComp)) {
+                        // this component is missing from the selection
+                        if (!missingComponents.includes(otherComp)) {
+                            missingComponents.push(otherComp)
+                        }
+                    } else {
+                        if (!componentsToInclude.includes(otherComp)) {
+                            componentsToInclude.push(otherComp)
+                            queue.push(otherComp)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (missingComponents.length > 0) {
+            const missingCompsStr = missingComponents.map(c => c.toString()).join(", ")
+            return s.MissingComponents.expand({ list: missingCompsStr })
+        }
+
+        const uselessComponents = selectedComps.filter(c =>
+            !componentsToInclude.includes(c)
+            // allow disconnected comps that have no inputs or outputs, e.g. labels
+            && (c.inputs._all.length !== 0 || c.outputs._all.length !== 0)
+        )
+        if (uselessComponents.length > 0) {
+            const uselessCompsStr = uselessComponents.map(c => c.toString()).join(", ")
+            return s.UselessComponents.expand({ list: uselessCompsStr })
+        }
+
+        if (componentsToInclude.some(c => c instanceof Clock)) {
+            return s.CannotIncludeClock
+        }
+
+        let caption
+        const labels = selectedComps.filter((e): e is LabelString => e instanceof LabelString)
+        if (labels.length !== 1) {
+            caption = window.prompt(s.EnterCaptionPrompt)
+            if (caption === null) {
+                return ""
+            }
+        } else {
+            caption = labels[0].text
+        }
+        const id = makeIdentifier(caption)
+        if (this._customComponents.has(id)) {
+            return s.ComponentAlreadyExists.expand({ id })
+        }
+
+        // we have to stringify and parse because stringifying actually calls toJSON()
+        const circuit =
+            JSONParseObject(
+                PersistenceManager.stringifyObject(
+                    PersistenceManager.buildComponentsObject(componentsToInclude), true
+                )
+            ) as ReturnType<typeof PersistenceManager.buildComponentsObject>
+
+        const maker = this.tryAddCustomDef({ id, caption, circuit })
+        if (isUndefined(maker)) {
+            return ""
+        }
+
+        const customComp = maker.make(editor)
+        customComp.setSpawned()
+        customComp.setPosition(editor.mouseX + customComp.unrotatedWidth / 2 - 5, editor.mouseY, true)
+        editor.cursorMovementMgr.currentSelection = undefined
+        editor.cursorMovementMgr.setCurrentMouseOverComp(customComp)
+
+        return undefined // success
+    }
 }
 
-export const ComponentFactory = new _ComponentFactory()
+
+function makeIdentifier(name: string): string {
+    return name
+        .trim()
+        .normalize("NFKD")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/\./g, "")
+}

@@ -180,7 +180,7 @@ export function isString(v: unknown): v is string {
     return typeof v === "string"
 }
 
-export function isArray(arg: unknown): arg is Array<any> {
+export function isArray(arg: unknown): arg is any[] {
     return Array.isArray(arg)
 }
 
@@ -196,6 +196,10 @@ export function isNumber(arg: unknown): arg is number {
 
 export function isBoolean(arg: unknown): arg is boolean {
     return typeof arg === "boolean"
+}
+
+export function isRecord(arg: unknown): arg is Record<string, unknown> {
+    return typeof arg === "object" && arg !== null
 }
 
 
@@ -275,6 +279,16 @@ export function FixedArrayMap<U, Arr extends readonly any[]>(items: Arr, fn: (it
 }
 
 
+// JSON
+
+export function JSONParseObject(str: string): Record<string, unknown> {
+    const parsed: unknown = JSON.parse(str)
+    if (isRecord(parsed)) {
+        return parsed
+    }
+    throw new Error("JSONParseObject: not an object")
+}
+
 
 export function isTruthyString(str: string | null | undefined): boolean {
     return !isUndefinedOrNull(str) && (str === "1" || str.toLowerCase() === "true")
@@ -289,8 +303,8 @@ export function getURLParameter(sParam: string, defaultValue?: undefined): strin
 export function getURLParameter(sParam: string, defaultValue: any) {
     const sPageURL = window.location.search.substring(1)
     const sURLVariables = sPageURL.split('&')
-    for (let i = 0; i < sURLVariables.length; i++) {
-        const sParameterName = sURLVariables[i].split('=')
+    for (const sURLVariable of sURLVariables) {
+        const sParameterName = sURLVariable.split('=')
         if (sParameterName[0] === sParam) {
             return sParameterName[1]
         }
@@ -470,6 +484,26 @@ export const typeOrNull = <T extends t.Mixed>(tpe: T) => {
     return t.union([tpe, t.null], tpe.name + " | null")
 }
 
+export function templateLiteral<L extends string>(regex: RegExp | string, name?: string) {
+    const regex_ = typeof regex === 'string' ? new RegExp(regex) : regex
+    const predicate = (s: string): s is L => regex_.test(s)
+    return new t.RefinementType(
+        name ?? `TemplateLiteral<${regex_.source}>`,
+        (u): u is L => t.string.is(u) && predicate(u),
+        (i, c) => {
+            const e = t.string.validate(i, c)
+            if (isLeft(e)) {
+                return e
+            }
+            const a = e.right
+            return predicate(a) ? t.success(a) : t.failure(a, c)
+        },
+        t.string.encode,
+        t.string,
+        predicate,
+    )
+}
+
 export function validateJson<T, I>(obj: I, repr: t.Decoder<I, T>, what: string): T | undefined {
     const validated = repr.decode(obj)
     if (isLeft(validated)) {
@@ -567,8 +601,8 @@ export function allBooleans(values: LogicValue[]): values is boolean[] {
 }
 
 export function isAllZeros(s: string) {
-    for (let i = 0; i < s.length; i++) {
-        if (s[i] !== "0") {
+    for (const c of s) {
+        if (c !== "0") {
             return false
         }
     }

@@ -61,13 +61,16 @@ export class RecalcManager {
 
     private _propagateQueue: Array<Component> = []
     private _recalcQueue: Array<[Component, boolean]> = []
+    public debug = false
 
     public enqueueForPropagate(comp: Component) {
         this._propagateQueue.push(comp)
+        this.log("Enqueued for propagate: " + comp)
     }
 
     public enqueueForRecalc(comp: Component, forcePropagate: boolean) {
         this._recalcQueue.push([comp, forcePropagate])
+        this.log("Enqueued for recalc: " + comp)
     }
 
     public queueIsEmpty(): boolean {
@@ -105,25 +108,41 @@ export class RecalcManager {
                 break
             }
 
-            // console.log(`Recalc/propagate round ${round}: ${this._propagateQueue.length} propagate, ${this._recalcQueue.length} recalc.`)
+            this.log(`Recalc/propagate round ${round}: ${this._propagateQueue.length} propagate, ${this._recalcQueue.length} recalc.`)
 
             const propagateQueue = this._propagateQueue
             this._propagateQueue = []
-            // console.log(`  PROPAG (${propagateQueue.length}) – ` + propagateQueue.map((c) => c.toString()).join("; "))
+            this.log(`  PROPAG (${propagateQueue.length}) – ` + propagateQueue.map((c) => c.toString()).join("; "))
             for (const comp of propagateQueue) {
-                comp.propagateCurrentValue()
+                try {
+                    comp.propagateCurrentValue()
+                } catch (e) {
+                    console.error("Error while propagating value of " + comp, e)
+                    comp.setInvalid()
+                }
             }
 
             const recalcQueue = this._recalcQueue
             this._recalcQueue = []
-            // console.log(`  RECALC (${recalcQueue.length}) – ` + recalcQueue.map((c) => c.toString()).join("; "))
+            this.log(`  RECALC (${recalcQueue.length}) – ` + recalcQueue.map((c) => c.toString()).join("; "))
             for (const [comp, forcePropagate] of recalcQueue) {
-                comp.recalcValue(forcePropagate)
+                try {
+                    comp.recalcValue(forcePropagate)
+                } catch (e) {
+                    console.error("Error while recalculating value of " + comp, e)
+                    comp.setInvalid()
+                }
             }
 
         } while (!this.queueIsEmpty())
 
-        // console.log(`Recalc/propagate done in ${round} rounds.`)
+        this.log(`Recalc/propagate done in ${round} rounds.`)
+    }
+
+    private log(msg: string) {
+        if (this.debug) {
+            console.log(msg)
+        }
     }
 
 }

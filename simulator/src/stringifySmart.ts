@@ -5,7 +5,6 @@
 
 import { isDefined } from "./utils"
 
-// eslint-disable-next-line prefer-named-capture-group
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
 
 export function stringifySmart(

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, triangle, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, isTrivialNodeName, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Mode, Unknown, isDefined, isUndefined, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { Component, ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { InputDef } from "./Input"
 import { Node, NodeIn, NodeOut } from "./Node"
 
@@ -50,8 +49,8 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
     public readonly numBits: number
     private _name: ComponentName
 
-    public constructor(editor: LogicEditor, params: OutputParams, saved?: OutputRepr) {
-        super(editor, OutputDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: OutputParams, saved?: OutputRepr) {
+        super(parent, OutputDef.with(params), saved)
 
         this.numBits = params.numBits
 
@@ -68,9 +67,13 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
     public override isOver(x: number, y: number) {
         if (this.numBits === 1) {
-            return this.editor.mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
+            return this.parent.mode >= Mode.CONNECT && dist(x, y, this.posX, this.posY) < INPUT_OUTPUT_DIAMETER / 2
         }
         return super.isOver(x, y)
+    }
+
+    public get name() {
+        return this._name
     }
 
     public override makeTooltip() {
@@ -104,7 +107,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         g.fill()
         g.stroke()
 
-        const valueToShow = this.editor.options.hideOutputColors ? Unknown : input.value
+        const valueToShow = this.parent.options.hideOutputColors ? Unknown : input.value
         g.fillStyle = colorForBoolean(valueToShow)
         g.lineWidth = 4
         g.beginPath()
@@ -134,10 +137,10 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform, true)
         }
 
-        const displayValues = this.editor.options.hideOutputColors ? ArrayFillWith(Unknown, this.numBits) : this.value
+        const displayValues = this.parent.options.hideOutputColors ? ArrayFillWith(Unknown, this.numBits) : this.value
 
         // cells
-        const drawMouseOver = ctx.isMouseOver && this.editor.mode !== Mode.STATIC
+        const drawMouseOver = ctx.isMouseOver && this.parent.mode !== Mode.STATIC
         g.strokeStyle = drawMouseOver ? ctx.borderColor : COLOR_COMPONENT_BORDER
         g.lineWidth = 1
         const cellHeight = useCompact(this.numBits) ? GRID_STEP : 2 * GRID_STEP
@@ -176,9 +179,9 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         const [inNode, comp, outNode] = newLinks[0]
         if (outNode instanceof NodeOut) {
             let group
-            if (isDefined(group = outNode.group) && group.nodes.length === 1) {
+            if (isDefined(group = outNode.group) && group.nodes.length === 1 && !isTrivialNodeName(group.name)) {
                 this.doSetName(group.name)
-            } else if (isUndefined(this._name) && outNode.hasNonTrivialName) {
+            } else if (isUndefined(this._name) && !isTrivialNodeName(outNode.shortName)) {
                 this.doSetName(outNode.shortName)
             }
         }
@@ -192,15 +195,15 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
                 return
             case "w":
                 this.doSetOrient("w")
-                this.setPosition(this.posX - GRID_STEP * 6, this.posY)
+                this.setPosition(this.posX - GRID_STEP * 6, this.posY, false)
                 return
             case "s":
                 this.doSetOrient("s")
-                this.setPosition(this.posX - GRID_STEP * 3, this.posY + GRID_STEP * 3)
+                this.setPosition(this.posX - GRID_STEP * 3, this.posY + GRID_STEP * 3, false)
                 return
             case "n":
                 this.doSetOrient("n")
-                this.setPosition(this.posX - GRID_STEP * 3, this.posY - GRID_STEP * 3)
+                this.setPosition(this.posX - GRID_STEP * 3, this.posY - GRID_STEP * 3, false)
                 return
         }
     }

@@ -15,18 +15,19 @@ import dialogPolyfill from 'dialog-polyfill'
 import { saveAs } from 'file-saver'
 import * as LZString from "lz-string"
 import * as pngMeta from 'png-metadata-writer'
+import { ComponentFactory } from "./ComponentFactory"
 import { ComponentList, DrawZIndex } from "./ComponentList"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
-import { PersistenceManager, Workspace } from "./PersistenceManager"
+import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { SVGRenderingContext } from "./SVGRenderingContext"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
 import { Component, ComponentBase } from "./components/Component"
-import { Drawable, GraphicsRendering, Orientation } from "./components/Drawable"
+import { Drawable, DrawableParent, GraphicsRendering, Orientation } from "./components/Drawable"
 import { LabelRect, LabelRectDef } from "./components/LabelRect"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
@@ -114,7 +115,7 @@ export type DrawParams = {
     highlightColor: string | undefined,
     anythingMoving: boolean,
 }
-export class LogicEditor extends HTMLElement {
+export class LogicEditor extends HTMLElement implements DrawableParent {
 
     public static _globalListenersInstalled = false
 
@@ -123,7 +124,8 @@ export class LogicEditor extends HTMLElement {
         return LogicEditor._allConnectedEditors
     }
 
-    public readonly wireMgr = new WireManager(this)
+    public readonly factory = new ComponentFactory(this)
+    public readonly wireMgr: WireManager = new WireManager(this)
     public readonly nodeMgr = new NodeManager()
     public readonly timeline = new Timeline(this)
     public readonly redrawMgr = new RedrawManager()
@@ -218,6 +220,14 @@ export class LogicEditor extends HTMLElement {
         }
         this.html = html
         dialogPolyfill.registerDialog(html.embedDialog)
+    }
+
+    public isMainEditor(): this is LogicEditor {
+        return true
+    }
+
+    public get editor(): LogicEditor {
+        return this
     }
 
     private elemWithId<E extends Element>(id: string) {
@@ -340,7 +350,11 @@ export class LogicEditor extends HTMLElement {
         }
 
         if (tool === "save") {
-            PersistenceManager.saveToFile(this)
+            if (e.altKey && this.editor.factory.hasCustomComponents()) {
+                PersistenceManager.saveLibraryToFile(this)
+            } else {
+                PersistenceManager.saveCircuitToFile(this)
+            }
             return
         }
 
@@ -355,7 +369,7 @@ export class LogicEditor extends HTMLElement {
 
         if (tool === "open") {
             this.runFileChooser("text/plain|image/png|application/json", file => {
-                this.tryLoadFromFile(file)
+                this.tryLoadFrom(file)
             })
             return
         }
@@ -363,7 +377,7 @@ export class LogicEditor extends HTMLElement {
         this.setCurrentMouseAction("edit")
         if (tool === "reset") {
             this.wrapHandler(() => {
-                this.tryLoadFromData()
+                this.tryLoadCircuitFromData()
             })()
             return
         }
@@ -412,16 +426,15 @@ export class LogicEditor extends HTMLElement {
             e.preventDefault()
             const file = e.dataTransfer.files?.[0]
             if (isDefined(file)) {
-                this.tryLoadFromFile(file)
+                this.tryLoadFrom(file)
             } else {
                 const dataItems = e.dataTransfer.items
                 if (isDefined(dataItems)) {
-                    for (let i = 0; i < dataItems.length; i++) {
-                        const dataItem = dataItems[i]
-                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type !== "text/plain")) {
+                    for (const dataItem of dataItems) {
+                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
                             dataItem.getAsString(content => {
                                 e.dataTransfer!.dropEffect = "copy"
-                                this.load(content)
+                                this.loadCircuit(content)
                             })
                             break
                         }
@@ -546,7 +559,7 @@ export class LogicEditor extends HTMLElement {
 
             // make load function available globally
             window.Logic.singleton = this
-            window.load = this.load.bind(this)
+            window.load = this.loadCircuit.bind(this)
             window.save = this.save.bind(this)
             window.highlight = this.highlight.bind(this)
 
@@ -577,6 +590,8 @@ export class LogicEditor extends HTMLElement {
                     e.returnValue = S.Messages.ReallyCloseWindow
                 }
             }
+
+            this.html.mainCanvas.focus()
         }
 
         // Load parameters from attributes
@@ -621,7 +636,7 @@ export class LogicEditor extends HTMLElement {
                     this._initialData = { _type: "json", json: innerScriptElem.innerHTML }
                     innerScriptElem.remove() // remove the data element to hide the raw data
                     // do this manually
-                    this.tryLoadFromData()
+                    this.tryLoadCircuitFromData()
                     this.doRedraw()
                     return true
                 } else {
@@ -702,9 +717,8 @@ export class LogicEditor extends HTMLElement {
 
         this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
 
-        const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
-        for (let i = 0; i < modifButtons.length; i++) {
-            const but = modifButtons[i] as HTMLElement
+        const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
+        for (const but of modifButtons) {
             but.addEventListener("click", e => {
                 this.setActiveTool(but, e)
             })
@@ -976,7 +990,7 @@ export class LogicEditor extends HTMLElement {
         // this is called once here to set the initial transform and size before the first draw, and again later
         this.setCanvasSize()
 
-        this.tryLoadFromData()
+        this.tryLoadCircuitFromData()
         // also triggers redraw, should be last thing called here
 
         this.setModeFromString(this.getAttribute(ATTRIBUTE_NAMES.mode))
@@ -989,9 +1003,9 @@ export class LogicEditor extends HTMLElement {
     }
 
     private findLightDOMChild<K extends keyof HTMLElementTagNameMap>(tagName: K): HTMLElementTagNameMap[K] | null {
-        tagName = tagName.toUpperCase() as any
-        for (const child of Array.from(this.children)) {
-            if (child.tagName === tagName) {
+        const TAGNAME = tagName.toUpperCase()
+        for (const child of this.children) {
+            if (child.tagName === TAGNAME) {
                 return child as HTMLElementTagNameMap[K]
             }
         }
@@ -1100,9 +1114,9 @@ export class LogicEditor extends HTMLElement {
                     : (mode >= Mode.DESIGN) ? "show" : "inactive"
 
             const showRightEditControls = mode >= Mode.CONNECT
-            const modifButtons = this.root.querySelectorAll("button.sim-modification-tool")
-            for (let i = 0; i < modifButtons.length; i++) {
-                const but = modifButtons[i] as HTMLElement
+            const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
+
+            for (const but of modifButtons) {
                 setVisible(but, showRightEditControls)
             }
 
@@ -1155,20 +1169,40 @@ export class LogicEditor extends HTMLElement {
         this.setMode(mode)
     }
 
-    public tryLoadFromFile(file: File) {
+    public updateCustomComponentButtons() {
+        // TODO
+        const customDefs = this.factory.customDefs()
+        if (isUndefined(customDefs)) {
+            console.log("no custom components")
+        } else {
+            console.log("Custom components:")
+            for (const customDef of customDefs) {
+                console.log("  " + customDef.id)
+            }
+        }
+    }
+
+    public tryLoadFrom(file: File) {
         if (file.type === "application/json" || file.type === "text/plain") {
+            // JSON files can be circuits or libraries
             const reader = new FileReader()
-            reader.onload = e => {
-                const content = e.target?.result?.toString()
+            reader.onload = () => {
+                const content = reader.result?.toString()
                 if (isDefined(content)) {
-                    this.load(content)
+                    if (file.name.endsWith("lib.json")) {
+                        PersistenceManager.loadLibrary(this, content)
+                    } else {
+                        this.loadCircuit(content)
+                    }
                 }
             }
             reader.readAsText(file, "utf-8")
+
         } else if (file.type === "image/png") {
+            // PNG files may contain a circuit in the metadata
             const reader = new FileReader()
-            reader.onload = e => {
-                const content = e.target?.result
+            reader.onload = () => {
+                const content = reader.result
                 if (content instanceof ArrayBuffer) {
                     const uintArray2 = new Uint8Array(content)
                     const pngMetadata = pngMeta.readMetadata(uintArray2)
@@ -1176,13 +1210,15 @@ export class LogicEditor extends HTMLElement {
                     if (isString(compressedJSON)) {
                         this._initialData = { _type: "compressed", str: compressedJSON }
                         this.wrapHandler(() => {
-                            this.tryLoadFromData()
+                            this.tryLoadCircuitFromData()
                         })()
                     }
                 }
             }
             reader.readAsArrayBuffer(file)
+
         } else if (file.type === "image/svg+xml") {
+            // SVG files may contain a circuit in the metadata
             const reader = new FileReader()
             reader.onload = e => {
                 const content = e.target?.result?.toString()
@@ -1194,17 +1230,18 @@ export class LogicEditor extends HTMLElement {
                     const json = metadata?.textContent
                     temp.remove()
                     if (!isUndefinedOrNull(json)) {
-                        this.load(json)
+                        this.loadCircuit(json)
                     }
                 }
             }
             reader.readAsText(file, "utf-8")
+
         } else {
-            console.log("Unsupported file type", file.type)
+            console.warn("Unsupported file type", file.type)
         }
     }
 
-    public tryLoadFromData() {
+    public tryLoadCircuitFromData() {
         if (isUndefined(this._initialData)) {
             return
         }
@@ -1216,7 +1253,7 @@ export class LogicEditor extends HTMLElement {
             fetch(url, { mode: "cors" }).then(response => response.text()).then(json => {
                 console.log(`Loaded initial data from URL '${url}'`)
                 this._initialData = { _type: "json", json }
-                this.tryLoadFromData()
+                this.tryLoadCircuitFromData()
             })
 
             // TODO try fetchJSONP if this fails?
@@ -1229,7 +1266,7 @@ export class LogicEditor extends HTMLElement {
         if (this._initialData._type === "json") {
             // already decompressed
             try {
-                error = PersistenceManager.doLoadFromJson(this, this._initialData.json)
+                error = PersistenceManager.loadCircuit(this, this._initialData.json)
             } catch (e) {
                 error = String(e) + " (JSON)"
             }
@@ -1255,7 +1292,7 @@ export class LogicEditor extends HTMLElement {
 
             if (isUndefined(error) && isString(decodedData)) {
                 // remember the decompressed/decoded value
-                error = PersistenceManager.doLoadFromJson(this, decodedData)
+                error = PersistenceManager.loadCircuit(this, decodedData)
                 if (isUndefined(error)) {
                     this._initialData = { _type: "json", json: decodedData }
                 }
@@ -1268,10 +1305,10 @@ export class LogicEditor extends HTMLElement {
         }
     }
 
-    public load(jsonStringOrObject: string | Record<string, unknown>) {
+    public loadCircuit(jsonStringOrObject: string | Record<string, unknown>) {
         this.wrapHandler(
             (jsonStringOrObject: string | Record<string, unknown>) =>
-                PersistenceManager.doLoadFromJson(this, jsonStringOrObject)
+                PersistenceManager.loadCircuit(this, jsonStringOrObject)
         )(jsonStringOrObject)
     }
 
@@ -1312,9 +1349,8 @@ export class LogicEditor extends HTMLElement {
         this._currentMouseAction = action
         this.setToolCursor(MouseActions.props[action].cursor)
 
-        const toolButtons = this.root.querySelectorAll(".sim-modification-tool")
-        for (let i = 0; i < toolButtons.length; i++) {
-            const toolButton = toolButtons[i] as HTMLElement
+        const toolButtons = this.root.querySelectorAll<HTMLElement>(".sim-modification-tool")
+        for (const toolButton of toolButtons) {
             const setActive = toolButton.getAttribute("tool") === action
             if (setActive) {
                 toolButton.classList.add("active")
@@ -1524,8 +1560,8 @@ export class LogicEditor extends HTMLElement {
         this.saveToUrl(compressedUriSafeJson)
     }
 
-    public save(): Workspace {
-        return PersistenceManager.buildWorkspace(this)
+    public save() {
+        return PersistenceManager.buildCircuitObject(this)
     }
 
     public saveToUrl(compressedUriSafeJson: string) {
@@ -1536,10 +1572,10 @@ export class LogicEditor extends HTMLElement {
     }
 
     private fullJsonStateAndCompressedForUri(): [string, string] {
-        const jsonObj = PersistenceManager.buildWorkspace(this)
-        const jsonFull = PersistenceManager.stringifyWorkspace(jsonObj, false)
+        const jsonObj = PersistenceManager.buildCircuitObject(this)
+        const jsonFull = PersistenceManager.stringifyObject(jsonObj, false)
         PersistenceManager.removeShowOnlyFrom(jsonObj)
-        const jsonForUri = PersistenceManager.stringifyWorkspace(jsonObj, true)
+        const jsonForUri = PersistenceManager.stringifyObject(jsonObj, true)
 
         // We did this in the past, but now we're compressing things a bit
         // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
@@ -1625,7 +1661,7 @@ export class LogicEditor extends HTMLElement {
     }
 
     public downloadAsSVG() {
-        const jsonFull = PersistenceManager.stringifyWorkspace(PersistenceManager.buildWorkspace(this), false)
+        const jsonFull = PersistenceManager.stringifyObject(PersistenceManager.buildCircuitObject(this), false)
 
         const [width, height] = this.guessAdequateCanvasSize(false)
         const id = new DOMMatrix()

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, colorForBoolean } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isHighImpedance, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 import { SwitchedInverterDef } from "./SwitchedInverter"
 
 
@@ -44,8 +43,8 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, params: TriStateBufferArrayParams, saved?: TriStateBufferArrayRepr) {
-        super(editor, TriStateBufferArrayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: TriStateBufferArrayParams, saved?: TriStateBufferArrayRepr) {
+        super(parent, TriStateBufferArrayDef.with(params), saved)
         this.numBits = params.numBits
     }
 

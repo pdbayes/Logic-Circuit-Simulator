@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 
 export const DecoderDef =
@@ -46,8 +45,8 @@ export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
     public readonly numFrom: number
     public readonly numTo: number
 
-    public constructor(editor: LogicEditor, params: DecoderParams, saved?: DecoderRepr) {
-        super(editor, DecoderDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: DecoderParams, saved?: DecoderRepr) {
+        super(parent, DecoderDef.with(params), saved)
         this.numFrom = params.numFrom
         this.numTo = params.numTo
     }

@@ -1,10 +1,9 @@
 import { displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { FixedArray, FixedArrayFillWith, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, group, groupVertical, Repr } from "./Component"
-import { MenuItems } from "./Drawable"
+import { FixedArray, FixedArrayFillWith, LogicValue, Unknown, isUnknown } from "../utils"
+import { ComponentBase, Repr, defineComponent, group, groupVertical } from "./Component"
+import { DrawableParent, MenuItems } from "./Drawable"
 
 
 export const DecoderBCD4Def =
@@ -32,8 +31,8 @@ type DecoderBCD4Repr = Repr<typeof DecoderBCD4Def>
 
 export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
 
-    public constructor(editor: LogicEditor, saved?: DecoderBCD4Repr) {
-        super(editor, DecoderBCD4Def, saved)
+    public constructor(parent: DrawableParent, saved?: DecoderBCD4Repr) {
+        super(parent, DecoderBCD4Def, saved)
     }
 
     public toJSON() {

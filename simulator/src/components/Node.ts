@@ -1,18 +1,10 @@
 import { drawWaypoint, GRID_STEP, isOverWaypoint, NodeStyle, WAYPOINT_DIAMETER } from "../drawutils"
-import { LogicEditor } from "../LogicEditor"
 import { HighImpedance, InteractionResult, isDefined, isUndefined, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
-import { ComponentState, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
+import { Component, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, GraphicsRendering, Orientation } from "./Drawable"
 import { Wire } from "./Wire"
 
-
-
-// This should just be Component, but it then has some cyclic 
-// type definition issue which causes problems
-type NodeParent = DrawableWithPosition & { isMoving: boolean, state: ComponentState, setNeedsRecalc(): void, allowsForcedOutputs: boolean, alwaysDrawMultiOutNodes: boolean }
-
 export type Node = NodeIn | NodeOut
-
 
 export const WireColor = {
     black: "black",
@@ -37,9 +29,8 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     protected _color: WireColor = DEFAULT_WIRE_COLOR
 
     public constructor(
-        editor: LogicEditor,
+        public readonly component: Component,
         nodeSpec: InputNodeRepr | OutputNodeRepr,
-        public readonly parent: NodeParent,
         public readonly group: NodeGroup<N> | undefined,
         public readonly shortName: string,
         public readonly fullName: string,
@@ -48,7 +39,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         public readonly hasTriangle: boolean,
         relativePosition: Orientation,
     ) {
-        super(editor)
+        super(component.parent)
         this.id = nodeSpec.id
         if ("force" in nodeSpec) {
             this._forceValue = toLogicValue(nodeSpec.force)
@@ -61,7 +52,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
             this._initialValue = initialValue
             this._value = initialValue
         }
-        this.editor.nodeMgr.addLiveNode(this.asNode)
+        this.parent.nodeMgr.addLiveNode(this.asNode)
         this.updatePositionFromParent()
         this.doSetOrient(relativePosition)
     }
@@ -98,20 +89,15 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         // nothing by default; overridden in NodeOut
     }
 
-    public get hasNonTrivialName(): boolean {
-        const refName = isDefined(this.group) ? this.group.name : this.shortName
-        return refName !== "In" && refName !== "Out"
-    }
-
     public override isOver(x: number, y: number) {
-        return this.editor.mode >= Mode.CONNECT
+        return this.parent.mode >= Mode.CONNECT
             && isOverWaypoint(x, y, this.posX, this.posY)
     }
 
     public destroy() {
         this.preDestroy()
         this._isAlive = false
-        this.editor.nodeMgr.removeLiveNode(this.asNode)
+        this.parent.nodeMgr.removeLiveNode(this.asNode)
     }
 
     protected abstract preDestroy(): void
@@ -121,15 +107,15 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     protected doDraw(g: GraphicsRendering, ctx: DrawContext) {
-        const mode = this.editor.mode
+        const mode = this.parent.mode
         if (mode < Mode.CONNECT && !this.forceDraw()) {
             return
         }
 
         const showForced = isDefined(this._forceValue) && mode >= Mode.FULL
         const showForcedWarning = mode >= Mode.FULL && !isUnknown(this._value) && !isUnknown(this.value) && this._value !== this.value
-        const parentOrientIsVertical = Orientation.isVertical(this.parent.orient)
-        const neutral = this.editor.options.hideWireColors
+        const parentOrientIsVertical = Orientation.isVertical(this.component.orient)
+        const neutral = this.parent.options.hideWireColors
         drawWaypoint(g, ctx, this.posX, this.posY, this.nodeDisplayStyle, this.value, ctx.isMouseOver, neutral, showForced, showForcedWarning, parentOrientIsVertical)
     }
 
@@ -187,16 +173,17 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     public abstract get isDisconnected(): boolean
 
     public get posXInParentTransform() {
-        return this.parent.posX + this._gridOffsetX * GRID_STEP
+        return this.component.posX + this._gridOffsetX * GRID_STEP
     }
 
     public get posYInParentTransform() {
-        return this.parent.posY + this._gridOffsetY * GRID_STEP
+        return this.component.posY + this._gridOffsetY * GRID_STEP
     }
 
     public updatePositionFromParent() {
+        const component = this.component
         const [appliedGridOffsetX, appliedGridOffsetY] = (() => {
-            switch (this.parent.orient) {
+            switch (component.orient) {
                 case "e": return [+this._gridOffsetX, +this._gridOffsetY]
                 case "w": return [-this._gridOffsetX, -this._gridOffsetY]
                 case "s": return [-this._gridOffsetY, +this._gridOffsetX]
@@ -204,14 +191,14 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
             }
         })()
         return super.trySetPosition(
-            this.parent.posX + appliedGridOffsetX * GRID_STEP,
-            this.parent.posY + appliedGridOffsetY * GRID_STEP,
+            component.posX + appliedGridOffsetX * GRID_STEP,
+            component.posY + appliedGridOffsetY * GRID_STEP,
             false
         ) ?? [this.posX, this.posY]
     }
 
     public get wireProlongDirection(): Orientation {
-        switch (this.parent.orient) {
+        switch (this.component.orient) {
             case "e":
                 switch (this.orient) {
                     case "e": return "w"
@@ -244,17 +231,17 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     public override mouseDown(__: MouseEvent | TouchEvent) {
-        this.editor.wireMgr.startDraggingFrom(this.asNode)
+        this.parent.wireMgr.startDraggingFrom(this.asNode)
         return { wantsDragEvents: false }
     }
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
-        const newWire = this.editor.wireMgr.stopDraggingOn(this.asNode)
+        const newWire = this.parent.wireMgr.stopDraggingOn(this.asNode)
         if (isUndefined(newWire)) {
             return InteractionResult.NoChange
         }
         return tryMakeRepeatableNodeAction(newWire.startNode, newWire.endNode, (startNode, endNode) => {
-            const newWire = this.editor.wireMgr.addWire(startNode, endNode, true)
+            const newWire = this.parent.wireMgr.addWire(startNode, endNode, true)
             return isDefined(newWire)
         })
     }
@@ -284,7 +271,7 @@ export class NodeIn extends NodeBase<NodeIn> {
 
     protected preDestroy() {
         if (this._incomingWire !== null) {
-            this.editor.wireMgr.deleteWire(this._incomingWire)
+            this.parent.wireMgr.deleteWire(this._incomingWire)
         }
     }
 
@@ -305,7 +292,7 @@ export class NodeIn extends NodeBase<NodeIn> {
     }
 
     protected propagateNewValue(__newValue: LogicValue) {
-        this.parent.setNeedsRecalc()
+        this.component.setNeedsRecalc()
     }
 
     protected get nodeDisplayStyle() {
@@ -348,7 +335,7 @@ export class NodeOut extends NodeBase<NodeOut> {
     protected preDestroy() {
         // we need to make a copy of the array because the wires will remove themselves from the array
         for (const wire of [...this._outgoingWires]) {
-            this.editor.wireMgr.deleteWire(wire)
+            this.parent.wireMgr.deleteWire(wire)
         }
     }
 
@@ -386,14 +373,14 @@ export class NodeOut extends NodeBase<NodeOut> {
     }
 
     protected propagateNewValue(newValue: LogicValue) {
-        const now = this.editor.timeline.logicalTime()
+        const now = this.parent.timeline.logicalTime()
         for (const wire of this._outgoingWires) {
             wire.propagateNewValue(newValue, now)
         }
     }
 
     protected override forceDraw() {
-        return this._outgoingWires.length > 1 && this.parent.alwaysDrawMultiOutNodes
+        return this._outgoingWires.length > 1 && this.component.alwaysDrawMultiOutNodes
     }
 
     protected get nodeDisplayStyle() {
@@ -406,7 +393,7 @@ export class NodeOut extends NodeBase<NodeOut> {
         if (superChange.isChange) {
             return superChange // already handled
         }
-        if (this.editor.mode >= Mode.FULL && e.altKey && this.isOutput() && this.parent.allowsForcedOutputs) {
+        if (this.parent.mode >= Mode.FULL && e.altKey && this.isOutput() && this.component.allowsForcedOutputs) {
             this.forceValue = (() => {
                 switch (this._forceValue) {
                     case undefined: return Unknown

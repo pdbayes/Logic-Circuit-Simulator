@@ -1,10 +1,9 @@
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { defineParametrizedComponent, Repr, ResolvedParams } from "./Component"
-import { GraphicsRendering } from "./Drawable"
+import { LogicValue, Unknown, isHighImpedance, isUnknown } from "../utils"
+import { Repr, ResolvedParams, defineParametrizedComponent } from "./Component"
+import { DrawableParent, GraphicsRendering } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
@@ -30,8 +29,8 @@ export type ShiftRegisterParams = ResolvedParams<typeof ShiftRegisterDef>
 
 export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
 
-    public constructor(editor: LogicEditor, params: ShiftRegisterParams, saved?: ShiftRegisterRepr) {
-        super(editor, ShiftRegisterDef, params, saved)
+    public constructor(parent: DrawableParent, params: ShiftRegisterParams, saved?: ShiftRegisterRepr) {
+        super(parent, ShiftRegisterDef, params, saved)
     }
 
     public toJSON() {

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, circle, colorForBoolean } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, isHighImpedance, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 
 export const SwitchedInverterDef =
@@ -48,8 +47,8 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, params: SwitchedInverterParams, saved?: SwitchedInverterRepr) {
-        super(editor, SwitchedInverterDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: SwitchedInverterParams, saved?: SwitchedInverterRepr) {
+        super(parent, SwitchedInverterDef.with(params), saved)
         this.numBits = params.numBits
     }
 

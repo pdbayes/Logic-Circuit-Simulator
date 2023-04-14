@@ -1,10 +1,9 @@
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
-import { isHighImpedance, isUnknown, LogicValue, Unknown } from "../utils"
-import { ComponentBase, defineComponent, Repr } from "./Component"
-import { DrawContext, GraphicsRendering, MenuItems } from "./Drawable"
+import { LogicValue, Unknown, isHighImpedance, isUnknown } from "../utils"
+import { ComponentBase, Repr, defineComponent } from "./Component"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const ComparatorDef =
     defineComponent("ic", "comparator", {
@@ -32,8 +31,8 @@ type ComparatorRepr = Repr<typeof ComparatorDef>
 
 export class Comparator extends ComponentBase<ComparatorRepr> {
 
-    public constructor(editor: LogicEditor, saved?: ComparatorRepr) {
-        super(editor, ComparatorDef, saved)
+    public constructor(parent: DrawableParent, saved?: ComparatorRepr) {
+        super(parent, ComparatorDef, saved)
     }
 
     public toJSON() {

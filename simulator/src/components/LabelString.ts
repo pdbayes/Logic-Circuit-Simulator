@@ -1,11 +1,10 @@
 import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { S } from "../strings"
 import { InteractionResult, isUndefined, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 export const LabelStringDef =
     defineComponent("label", undefined, {
@@ -33,8 +32,8 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
     private _font: string
     private _cachedTextMetrics: TextMetrics | undefined = undefined
 
-    public constructor(editor: LogicEditor, saved?: LabelStringRepr) {
-        super(editor, LabelStringDef, saved)
+    public constructor(parent: DrawableParent, saved?: LabelStringRepr) {
+        super(parent, LabelStringDef, saved)
         this._text = saved?.text ?? LabelStringDef.aults.text
         // this._align = (saved?.align as CanvasTextAlign) ?? LabelStringDefaults.align
         this._font = saved?.font ?? LabelStringDef.aults.font
@@ -59,6 +58,10 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
             return 2 * GRID_STEP
         }
         return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+    }
+
+    public get text() {
+        return this._text
     }
 
     protected doRecalcValue(): undefined {

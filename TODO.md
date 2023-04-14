@@ -3,6 +3,8 @@
 
 ## High priority
 
+ * Fix moving: ctr-click then drag -> shouldn't starts moving; long click -> should start moving
+ * Take undo snapshot after key events too
  * Copy-paste
  * Adder orientation
  * Prevent click event if right-click and when dragging
@@ -12,7 +14,6 @@
 ## Medium priority
 
  * High-Z bus logic
- * Custom component creation
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
     * standalone
@@ -32,12 +33,13 @@
  * Add rich HTML annotations
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Lock component to some "parent" to move them more intuitively?
- * Add external component by drag-and-drop from file
  * Implement Quine–McCluskey algorithm for function normalization
 
 
 ### DONE
 
+ * Add external component library by drag-and-drop from file
+ * Custom component creation
  * Get key events also when multiple editors are on the same page
  * Show keyboard shortcuts in context menus
  * Hide tootips when mouse leaves web component boundaries

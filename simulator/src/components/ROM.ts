@@ -1,12 +1,11 @@
 import { saveAs } from 'file-saver'
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_EMPTY, colorForBoolean, displayValuesFromArray, formatWithRadix, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupHorizontal, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
 import { RAM, RAMDef } from "./RAM"
 
 
@@ -102,8 +101,8 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
     private _showContent: boolean
     private _displayRadix: number | undefined
 
-    public constructor(editor: LogicEditor, SubclassDef: typeof RAMDef | typeof ROMDef, params: ROMRAMParams, saved?: TRepr) {
-        super(editor, SubclassDef.with(params) as any /* TODO */, saved)
+    public constructor(parent: DrawableParent, SubclassDef: typeof RAMDef | typeof ROMDef, params: ROMRAMParams, saved?: TRepr) {
+        super(parent, SubclassDef.with(params) as any /* TODO */, saved)
 
         this.numDataBits = params.numDataBits
         this.numAddressBits = params.numAddressBits
@@ -179,7 +178,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
             const addr = this.currentAddress()
             let contentBottom, labelCenter
 
-            if (!this._showContent || !this.canShowContent() || this.editor.options.hideMemoryContent) {
+            if (!this._showContent || !this.canShowContent() || this.parent.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"
@@ -262,13 +261,13 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
         const saveContentItem: [MenuItemPlacement, MenuItem] =
             ["mid", MenuData.item("download", s.SaveContent, () => {
                 const blob = new Blob([this.contentRepr("\n", false)], { type: "text/plain" })
-                const filename = (this.editor.options.name ?? "circuit") + "." + (this.ref ?? this.moduleName.toLowerCase()) + "-content.txt"
+                const filename = (this.parent.options.name ?? "circuit") + "." + (this.ref ?? this.moduleName.toLowerCase()) + "-content.txt"
                 saveAs(blob, filename)
             })]
 
         const loadContentItem: [MenuItemPlacement, MenuItem] =
             ["mid", MenuData.item("open", s.LoadContent, () => {
-                this.editor.runFileChooser("text/plain", async file => {
+                this.parent.editor.runFileChooser("text/plain", async file => {
                     const content = await file.text()
                     this.doSetMem(RAM.contentsFromString(content, this.numDataBits, this.numWords))
                 })
@@ -280,7 +279,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
                 const repr = this.toNodelessJSON();
                 (repr as any).type = isROM ? "ram" : "rom"
                 const otherDef = isROM ? RAMDef : ROMDef
-                const newComp = otherDef.makeFromJSON(this.editor, repr)
+                const newComp = otherDef.makeFromJSON(this.parent, repr)
                 if (isUndefined(newComp)) {
                     console.warn("Could not swap ROM/RAM from repr:", repr)
                     return
@@ -395,8 +394,8 @@ export type ROMRepr = Repr<typeof ROMDef>
 
 export class ROM extends ROMRAMBase<ROMRepr> {
 
-    public constructor(editor: LogicEditor, params: ROMRAMParams, saved?: ROMRepr) {
-        super(editor, ROMDef, params, saved)
+    public constructor(parent: DrawableParent, params: ROMRAMParams, saved?: ROMRepr) {
+        super(parent, ROMDef, params, saved)
     }
 
     public toJSON() {

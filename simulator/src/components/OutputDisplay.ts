@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_UNKNOWN, ColorString, colorComps, colorForFraction, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { InteractionResult, Mode, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
 export const OutputDisplayDef =
     defineParametrizedComponent("out", "display", true, false, {
@@ -55,8 +54,8 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     private _radix: number
     private _showAsUnknown: boolean
 
-    public constructor(editor: LogicEditor, params: OutputDisplayParams, saved?: OutputDisplayRepr) {
-        super(editor, OutputDisplayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: OutputDisplayParams, saved?: OutputDisplayRepr) {
+        super(parent, OutputDisplayDef.with(params), saved)
 
         this.numBits = params.numBits
 
@@ -77,7 +76,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     }
 
     private get showAsUnknown() {
-        return this._showAsUnknown || this.editor.options.hideOutputColors
+        return this._showAsUnknown || this.parent.options.hideOutputColors
     }
 
     public override makeTooltip() {
@@ -145,7 +144,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
         if (superChange.isChange) {
             return superChange // already handled
         }
-        const mode = this.editor.mode
+        const mode = this.parent.mode
         if (mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return InteractionResult.SimpleChange

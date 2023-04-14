@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUndefined, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { OutputAscii } from "./OutputAscii"
 
@@ -95,8 +94,8 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     protected _trigger: EdgeTrigger
     protected _lastClock: LogicValue = Unknown
 
-    public constructor(editor: LogicEditor, saved?: OutputShiftBufferRepr) {
-        super(editor, OutputShiftBufferDef, saved)
+    public constructor(parent: DrawableParent, saved?: OutputShiftBufferRepr) {
+        super(parent, OutputShiftBufferDef, saved)
 
         this._decodeAs = saved?.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
         this._groupEvery = saved?.groupEvery ?? undefined

@@ -1,8 +1,8 @@
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { LogicValue } from "../utils"
-import { defineComponent, Repr } from "./Component"
+import { Repr, defineComponent } from "./Component"
+import { DrawableParent } from "./Drawable"
 import { Flipflop, FlipflopBaseDef } from "./FlipflopOrLatch"
 
 
@@ -26,8 +26,8 @@ type FlipflopDRepr = Repr<typeof FlipflopDDef>
 
 export class FlipflopD extends Flipflop<FlipflopDRepr> {
 
-    public constructor(editor: LogicEditor, saved?: FlipflopDRepr) {
-        super(editor, FlipflopDDef, saved)
+    public constructor(parent: DrawableParent, saved?: FlipflopDRepr) {
+        super(parent, FlipflopDDef, saved)
     }
 
     public toJSON() {

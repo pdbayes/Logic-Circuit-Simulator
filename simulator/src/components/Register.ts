@@ -1,12 +1,11 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_BORDER, GRID_STEP, displayValuesFromArray, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param, paramBool } from "./Component"
 import { Counter } from "./Counter"
-import { DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawContextExt, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 import { NodeOut } from "./Node"
 import { type ShiftRegisterDef } from "./ShiftRegister"
@@ -83,8 +82,8 @@ export abstract class RegisterBase<
     protected _isInInvalidState = false
     protected _lastClock: LogicValue = Unknown
 
-    protected constructor(editor: LogicEditor, SubclassDef: typeof RegisterDef | typeof ShiftRegisterDef, params: RegisterBaseParams, saved?: TRepr) {
-        super(editor, SubclassDef.with(params as any) as any /* TODO */, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: typeof RegisterDef | typeof ShiftRegisterDef, params: RegisterBaseParams, saved?: TRepr) {
+        super(parent, SubclassDef.with(params as any) as any /* TODO */, saved)
 
         this.numBits = params.numBits
 
@@ -150,7 +149,7 @@ export abstract class RegisterBase<
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx) => {
-            if (this._showContent && !this.editor.options.hideMemoryContent) {
+            if (this._showContent && !this.parent.options.hideMemoryContent) {
                 RegisterBase.drawStoredValues(g, ctx, this.outputs.Q, this.posX, Orientation.isVertical(this.orient))
             } else {
                 this.doDrawGenericCaption(g)
@@ -232,8 +231,8 @@ export class Register extends RegisterBase<RegisterRepr> {
 
     public readonly hasIncDec: boolean
 
-    public constructor(editor: LogicEditor, params: RegisterParams, saved?: RegisterRepr) {
-        super(editor, RegisterDef, params, saved)
+    public constructor(parent: DrawableParent, params: RegisterParams, saved?: RegisterRepr) {
+        super(parent, RegisterDef, params, saved)
         this.hasIncDec = params.hasIncDec
     }
 

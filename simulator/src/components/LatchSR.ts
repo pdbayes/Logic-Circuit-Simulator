@@ -1,9 +1,8 @@
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { LogicValue } from "../utils"
-import { defineComponent, Repr } from "./Component"
-import { MenuData, MenuItems } from "./Drawable"
+import { Repr, defineComponent } from "./Component"
+import { DrawableParent, MenuData, MenuItems } from "./Drawable"
 import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
@@ -27,8 +26,8 @@ type LatchSRRepr = Repr<typeof LatchSRDef>
 
 export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
 
-    public constructor(editor: LogicEditor, saved?: LatchSRRepr) {
-        super(editor, LatchSRDef, saved)
+    public constructor(parent: DrawableParent, saved?: LatchSRRepr) {
+        super(parent, LatchSRDef, saved)
     }
 
     public toJSON() {

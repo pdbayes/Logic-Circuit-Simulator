@@ -49,22 +49,22 @@ export class NodeManager {
     }
 
     public tryConnectNodesOf(comp: Component) {
-        const wireMgr = comp.editor.wireMgr
+        const wireMgr = comp.parent.wireMgr
         const addedConnections: [Node, Component, Node][] = []
         for (const node of comp.allNodes()) {
             if (node.acceptsMoreConnections) {
                 const nodeX = node.posX
                 const nodeY = node.posY
-                const parent = node.parent
+                const component = node.component
                 for (const other of this.allLiveNodes) {
-                    if (!isUndefined(other) && other.parent !== parent && other.acceptsMoreConnections) {
+                    if (!isUndefined(other) && other.component !== component && other.acceptsMoreConnections) {
                         if (other.posX === nodeX && other.posY === nodeY) {
                             // the wire manager will take care of determining whether
                             // they can actually be connected or not
                             wireMgr.startDraggingFrom(node)
                             const wire = wireMgr.stopDraggingOn(other)
                             if (isDefined(wire)) {
-                                addedConnections.push([node, other.parent as Component, other])
+                                addedConnections.push([node, other.component, other])
                             }
                         }
                     }

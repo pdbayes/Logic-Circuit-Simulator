@@ -1,10 +1,9 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, colorForBoolean, drawValueText } from "../drawutils"
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, isUndefined, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineAbstractComponent } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
 
 export const FlipflopOrLatchDef =
@@ -51,8 +50,8 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
     protected _showContent: boolean
     protected _isInInvalidState = false
 
-    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
-        super(editor, SubclassDef, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
+        super(parent, SubclassDef, saved)
         this._showContent = saved?.showContent ?? FlipflopOrLatchDef.aults.showContent
     }
 
@@ -79,7 +78,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         this.doDrawDefault(g, ctx, {
             background: this._isInInvalidState ? COLOR_BACKGROUND_INVALID : undefined,
             drawLabels: () => {
-                if (this._showContent && !this.editor.options.hideMemoryContent) {
+                if (this._showContent && !this.parent.options.hideMemoryContent) {
                     FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, false)
                 }
             },
@@ -155,8 +154,8 @@ export abstract class Flipflop<
     protected _lastClock: LogicValue = Unknown
     protected _trigger: EdgeTrigger
 
-    protected constructor(editor: LogicEditor, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
-        super(editor, SubclassDef, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: InstantiatedComponentDef<TRepr, FlipflopOrLatchValue>, saved?: TRepr) {
+        super(parent, SubclassDef, saved)
         this._trigger = saved?.trigger ?? FlipflopBaseDef.aults.trigger
     }
 

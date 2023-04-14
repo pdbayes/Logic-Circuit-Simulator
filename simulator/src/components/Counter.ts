@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_EMPTY, COLOR_LABEL_OFF, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, isUndefined, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
 
@@ -84,8 +83,8 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
     private _lastClock: LogicValue = Unknown
     private _displayRadix: number | undefined
 
-    public constructor(editor: LogicEditor, params: CounterParams, saved?: CounterRepr) {
-        super(editor, CounterDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: CounterParams, saved?: CounterRepr) {
+        super(parent, CounterDef.with(params), saved)
 
         this.numBits = params.numBits
 

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_UNKNOWN, ColorString, GRID_STEP, PATTERN_STRIPED_GRAY, circle, drawWireLineToComponent } from "../drawutils"
 import { Modifier, ModifierObject, asValue, b, cls, div, emptyMod, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillUsing, InteractionResult, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
 import { ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItem, MenuItems } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItem, MenuItems } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
 
 type GateRepr = Gate1Repr | GateNRepr
@@ -29,8 +28,8 @@ export abstract class GateBase<
     private _poseAs: TGateType | undefined
     private _showAsUnknown: boolean
 
-    protected constructor(editor: LogicEditor, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue>, SomeParamCompDef<TParamDefs>], type: TGateType, saved?: TRepr) {
-        super(editor, SubclassDef, saved)
+    protected constructor(parent: DrawableParent, SubclassDef: [InstantiatedComponentDef<TRepr, LogicValue>, SomeParamCompDef<TParamDefs>], type: TGateType, saved?: TRepr) {
+        super(parent, SubclassDef, saved)
 
         this._type = type
         this._poseAs = saved?.poseAs as TGateType ?? undefined
@@ -226,7 +225,7 @@ export abstract class GateBase<
             drawWireLineToComponent(g, output, gateRight + 1, this.posY)
         }
 
-        const showAsFake = isFake && this.editor.mode >= Mode.FULL
+        const showAsFake = isFake && this.parent.mode >= Mode.FULL
         const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
         const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
         g.lineWidth = 3
@@ -390,7 +389,7 @@ export abstract class GateBase<
                 break
         }
 
-        if (this.editor.options.showGateTypes && !isUnknown(type)) {
+        if (this.parent.options.showGateTypes && !isUnknown(type)) {
             const gateShortName = this.gateTypes(this.numBits).props[type].fullShortDesc()[1]
             if (isDefined(gateShortName)) {
                 g.fillStyle = COLOR_GATE_NAMES
@@ -406,7 +405,7 @@ export abstract class GateBase<
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.FULL && e.altKey) {
+        if (this.parent.mode >= Mode.FULL && e.altKey) {
             this.doSetShowAsUnknown(!this._showAsUnknown)
             return InteractionResult.SimpleChange
         }
@@ -417,7 +416,7 @@ export abstract class GateBase<
         const items: MenuItems = [
             ["start", this.makeReplaceByMenuItem()],
         ]
-        if (this.editor.mode >= Mode.FULL) {
+        if (this.parent.mode >= Mode.FULL) {
             items.push(
                 ["mid", this.makePoseAsMenuItem()],
                 ...this.makeForceOutputsContextMenuItem()
@@ -506,8 +505,8 @@ export class Gate1 extends GateBase<Gate1Repr> {
 
     public get numBits() { return 1 }
 
-    public constructor(editor: LogicEditor, params: Gate1Params, saved?: Gate1Repr) {
-        super(editor, Gate1Def.with(params), params.type, saved)
+    public constructor(parent: DrawableParent, params: Gate1Params, saved?: Gate1Repr) {
+        super(parent, Gate1Def.with(params), params.type, saved)
     }
 
     protected gateTypes() { return Gate1Types }
@@ -521,7 +520,7 @@ export class Gate1 extends GateBase<Gate1Repr> {
         if (superChange.isChange) {
             return superChange // already handled
         }
-        if (this.editor.mode >= Mode.DESIGN) {
+        if (this.parent.mode >= Mode.DESIGN) {
             this.doSetType(this.type === "BUF" ? "NOT" : "BUF")
             return InteractionResult.SimpleChange
         }
@@ -578,8 +577,8 @@ export class GateN extends GateBase<GateNRepr> {
 
     public readonly numBits: number
 
-    public constructor(editor: LogicEditor, params: GateNParams, saved?: GateNRepr) {
-        super(editor, GateNDef.with(params), params.type, saved)
+    public constructor(parent: DrawableParent, params: GateNParams, saved?: GateNRepr) {
+        super(parent, GateNDef.with(params), params.type, saved)
         this.numBits = params.numBits
     }
 
@@ -598,7 +597,7 @@ export class GateN extends GateBase<GateNRepr> {
         if (superChange.isChange) {
             return superChange // already handled
         }
-        if (this.editor.mode >= Mode.DESIGN) {
+        if (this.parent.mode >= Mode.DESIGN) {
             // switch to IMPLY / NIMPLY variant
             const newType = (() => {
                 switch (this.type) {

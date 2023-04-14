@@ -197,8 +197,7 @@ export class SVGRenderingContext {
                 // is this a gradient or pattern?
                 if (value instanceof CanvasPatternSVG) {
                     // copy over defs
-                    for (let nodeIndex = 0; nodeIndex < value._ctx._defs.childNodes.length; nodeIndex++) {
-                        const node = value._ctx._defs.childNodes[nodeIndex] as Element
+                    for (const node of value._ctx._defs.children) {
                         const id = node.getAttribute("id")!
                         this._ids[id] = id
                         this._defs.appendChild(node)
@@ -211,7 +210,6 @@ export class SVGRenderingContext {
                 } else if (style.apply.indexOf(type) !== -1 && style.svg !== value) {
                     if ((style.svgAttr === "stroke" || style.svgAttr === "fill") && value.indexOf("rgba") !== -1) {
                         // separate alpha value, since illustrator can't handle it
-                        // eslint-disable-next-line prefer-named-capture-group
                         const regex = /rgba\(\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi
                         const matches = regex.exec(value)!
                         elem.setAttribute(style.svgAttr, `rgb(${matches[1]},${matches[2]},${matches[3]})`)
@@ -286,7 +284,7 @@ export class SVGRenderingContext {
     }
 
     public endGroup() {
-        this._currentElement = this._groupStack.pop() ?? this._svg.childNodes[1] as SVGElement
+        this._currentElement = this._groupStack.pop() ?? this._svg.children[1] as SVGElement
     }
 
     /**
@@ -426,12 +424,10 @@ export class SVGRenderingContext {
     }
 
     /**
-     * Clear entire canvas:
-     * 1. save current transforms
-     * 2. remove all the childNodes of the root g element
+     * Clear the entire canvas by replacing the root group
      */
     private _clearCanvas() {
-        const rootGroup = this._svg.childNodes[1]
+        const rootGroup = this._svg.children[1]
         this._svg.removeChild(rootGroup)
         this._currentElement = this._document.createElementNS("http://www.w3.org/2000/svg", "g")
         this._svg.appendChild(this._currentElement)
@@ -502,16 +498,14 @@ export class SVGRenderingContext {
 
     /**
      * Draws a canvas, image or mock context to this canvas.
-     * Note that all svg dom manipulation uses node.childNodes rather than node.children for IE support.
      * http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#dom-context-2d-drawimage
      */
     public drawImage() {
         // convert arguments to a real array
         // eslint-disable-next-line prefer-rest-params
         const args = Array.prototype.slice.call(arguments)
-        let image = args[0]
-        let dx, dy, dw, dh, sx = 0, sy = 0, sw, sh, svg, defs, group,
-            svgImage, canvas, context
+        let image: any = args[0]
+        let dx: number, dy: number, dw: number, dh: number, sx = 0, sy = 0, sw: number, sh: number
 
         if (args.length === 3) {
             dx = args[1]
@@ -545,15 +539,15 @@ export class SVGRenderingContext {
         if (image instanceof SVGRenderingContext) {
             // canvas2svg mock canvas context. In the future we may want to clone nodes instead.
             // also I'm currently ignoring dw, dh, sw, sh, sx, sy for a mock context.
-            svg = image.getSvg().cloneNode(true)
+            const svg = image.getSvg().cloneNode(true) as SVGSVGElement
             if (svg.childNodes.length > 1) {
-                defs = svg.childNodes[0]
+                const defs = svg.childNodes[0]
                 while (defs.childNodes.length) {
                     const id = (defs.childNodes[0] as Element).getAttribute("id")!
                     this._ids[id] = id
                     this._defs.appendChild(defs.childNodes[0])
                 }
-                group = svg.childNodes[1] as SVGElement
+                const group = svg.children[1] as SVGElement
                 if (isDefined(group)) {
                     this._applyTransformation(group, matrix)
                     parent.appendChild(group)
@@ -561,17 +555,17 @@ export class SVGRenderingContext {
             }
         } else if (image.nodeName === "CANVAS" || image.nodeName === "IMG") {
             // canvas or image
-            svgImage = this._createElement("image")
-            svgImage.setAttribute("width", dw)
-            svgImage.setAttribute("height", dh)
+            const svgImage = this._createElement("image")
+            svgImage.setAttribute("width", String(dw))
+            svgImage.setAttribute("height", String(dh))
             svgImage.setAttribute("preserveAspectRatio", "none")
 
             if (sx || sy || sw !== image.width || sh !== image.height) {
                 // crop the image using a temporary canvas
-                canvas = this._document.createElement("canvas")
+                const canvas = this._document.createElement("canvas")
                 canvas.width = dw
                 canvas.height = dh
-                context = canvas.getContext("2d")!
+                const context = canvas.getContext("2d")!
                 context.drawImage(image, sx, sy, sw, sh, 0, 0, dw, dh)
                 image = canvas
             }
@@ -702,7 +696,7 @@ export class SVGRenderingContext {
             pattern.appendChild(img)
             this._defs.appendChild(pattern)
         } else if (image instanceof SVGRenderingContext) {
-            pattern.appendChild(image._svg.childNodes[1])
+            pattern.appendChild(image._svg.children[1])
             this._defs.appendChild(pattern)
         }
         return new CanvasPatternSVG(pattern, this)
@@ -1096,7 +1090,6 @@ class CanvasGradientSVG implements CanvasGradient {
         stop.setAttribute("offset", String(offset))
         if (color.indexOf("rgba") !== -1) {
             // separate alpha value, since webkit can't handle it
-            // eslint-disable-next-line prefer-named-capture-group
             const regex = /rgba\(\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d*\.?\d+)\s*,\s*(\d?\.?\d*)\s*\)/gi
             const matches = regex.exec(color)
             if (matches) {

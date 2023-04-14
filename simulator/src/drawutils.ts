@@ -321,6 +321,11 @@ export function useCompact(numNodes: number) {
     return numNodes >= 5
 }
 
+const trivialNameMatcher = /^(In|Out|in|out)\d*$/
+export function isTrivialNodeName(name: string | undefined): boolean {
+    return isUndefined(name) || trivialNameMatcher.test(name)
+}
+
 
 //
 // DRAWING
@@ -361,7 +366,7 @@ export function shouldShowNode(nodeOrArray: Node | readonly Node[]): boolean {
         return nodeOrArray.map(shouldShowNode).includes(true)
     }
     const node = nodeOrArray as Exclude<typeof nodeOrArray, readonly Node[]>
-    const editor = node.editor
+    const editor = node.parent
     if (editor.mode <= Mode.TRYOUT && !editor.options.showDisconnectedPins && node.isDisconnected) {
         return false
     }
@@ -373,7 +378,7 @@ export function drawWireLineToComponent(g: GraphicsRendering, node: Node, x1: nu
     if (!shouldShowNode(node)) {
         return
     }
-    const neutral = node.editor.options.hideWireColors
+    const neutral = node.parent.options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
     drawStraightWireLine(g, x0, y0, x1, y1, node.value, node.color, neutral)

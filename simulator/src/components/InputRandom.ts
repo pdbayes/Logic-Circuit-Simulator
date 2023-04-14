@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
@@ -64,8 +63,8 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     private _trigger: EdgeTrigger
     private _name: ComponentName
 
-    public constructor(editor: LogicEditor, params: InputRandomParams, saved?: InputRandomRepr) {
-        super(editor, InputRandomDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: InputRandomParams, saved?: InputRandomRepr) {
+        super(parent, InputRandomDef.with(params), saved)
 
         this.numBits = params.numBits
 

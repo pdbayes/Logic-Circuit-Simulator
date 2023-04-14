@@ -1,10 +1,9 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isUnknown, typeOrUndefined } from "../utils"
 import { Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
-import { MenuData } from "./Drawable"
+import { DrawableParent, MenuData } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
 import { ROMRAMBase, ROMRAMDef, ROMRAMValue } from "./ROM"
 
@@ -51,8 +50,8 @@ export class RAM extends ROMRAMBase<RAMRepr> {
     private _trigger: EdgeTrigger = RAMDef.aults.trigger
     private _lastClock: LogicValue = Unknown
 
-    public constructor(editor: LogicEditor, params: RAMParams, saved?: RAMRepr) {
-        super(editor, RAMDef, params, saved)
+    public constructor(parent: DrawableParent, params: RAMParams, saved?: RAMRepr) {
+        super(parent, RAMDef, params, saved)
 
         this._trigger = saved?.trigger ?? RAMDef.aults.trigger
     }

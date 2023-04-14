@@ -1,12 +1,11 @@
 import * as t from "io-ts"
 import { circle, COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
-import { LogicEditor } from "../LogicEditor"
 import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { ALUDef } from "./ALU"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
-import { DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
+import { DrawableParent, DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { GateNType, GateNTypeRepr, GateNTypes } from "./GateTypes"
 
 
@@ -58,8 +57,8 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
     private _subtype: GateNType
     private _showAsUnknown: boolean
 
-    public constructor(editor: LogicEditor, params: GateArrayParams, saved?: GateArrayRepr) {
-        super(editor, GateArrayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: GateArrayParams, saved?: GateArrayRepr) {
+        super(parent, GateArrayDef.with(params), saved)
 
         this.numBits = params.numBits
         this._subtype = saved?.subtype ?? GateArrayDef.aults.subtype
@@ -253,7 +252,7 @@ export class GateArray extends ParametrizedComponentBase<GateArrayRepr> {
             ["mid", MenuData.submenu("settings", s.Type, typeItems)],
         ]
 
-        if (this.editor.mode >= Mode.FULL) {
+        if (this.parent.mode >= Mode.FULL) {
             const showAsUnknownItem = MenuData.item(this._showAsUnknown ? "check" : "none", s.ShowAsUnknown, () => {
                 this.doSetShowAsUnknown(!this._showAsUnknown)
             })

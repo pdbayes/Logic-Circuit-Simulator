@@ -1,11 +1,10 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_OFF_BACKGROUND } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, Repr, defineComponent, group } from "./Component"
-import { DrawContext, GraphicsRendering } from "./Drawable"
+import { DrawContext, DrawableParent, GraphicsRendering } from "./Drawable"
 import { LedColors, OutputBarBase, ledColorForLogicValue } from "./OutputBar"
 
 
@@ -41,8 +40,8 @@ export type Output7SegRepr = Repr<typeof Output7SegDef>
 
 export class Output7Seg extends OutputBarBase<Output7SegRepr, LogicValue[]> {
 
-    public constructor(editor: LogicEditor, saved?: Output7SegRepr) {
-        super(editor, Output7SegDef, true, saved)
+    public constructor(parent: DrawableParent, saved?: Output7SegRepr) {
+        super(parent, Output7SegDef, true, saved)
     }
 
     public toJSON() {

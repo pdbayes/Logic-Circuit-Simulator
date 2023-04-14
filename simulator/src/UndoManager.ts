@@ -6,7 +6,7 @@ const MAX_UNDO_SNAPSHOTS = 100
 
 type Snapshot = {
     time: number
-    workspace: string
+    circuitStr: string
     repeatAction?: RepeatFunction
 }
 
@@ -63,9 +63,9 @@ export class UndoManager {
         // const nowStr = new Date(now).toISOString()
         // console.log("Taking snapshot at " + nowStr + " (repeatAction=" + repeatAction + ")")
 
-        const workspace = this.editor.save()
-        const workspaceStr = PersistenceManager.stringifyWorkspace(workspace, true)
-        this._undoSnapshots.push({ time: now, workspace: workspaceStr, repeatAction })
+        const dataObject = this.editor.save()
+        const jsonStr = PersistenceManager.stringifyObject(dataObject, true)
+        this._undoSnapshots.push({ time: now, circuitStr: jsonStr, repeatAction })
         while (this._undoSnapshots.length > MAX_UNDO_SNAPSHOTS) {
             this._undoSnapshots.shift()
         }
@@ -126,7 +126,7 @@ export class UndoManager {
     }
 
     private loadSnapshot(snapshot: Snapshot) {
-        PersistenceManager.doLoadFromJson(this.editor, snapshot.workspace, true)
+        PersistenceManager.loadCircuit(this.editor, snapshot.circuitStr, { isUndoRedoAction: true })
     }
 
     private fireStateChangedIfNeeded() {

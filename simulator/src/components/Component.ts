@@ -1,11 +1,11 @@
 import * as t from "io-ts"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, shouldShowNode, useCompact } from "../drawutils"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, isTrivialNodeName, shouldShowNode, useCompact } from "../drawutils"
 import { IconName, ImageName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isRecord, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
+import { DrawableParent, DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
@@ -190,8 +190,8 @@ export type ComponentCategory = typeof ComponentCategories.type
 export type MainJsonFieldName = typeof ComponentCategories.props[ComponentCategory]["jsonFieldName"]
 
 export type DynamicName = Record<string | number, string>
-export function isDynamicName(obj: any): obj is DynamicName {
-    if (typeof obj !== "object") {
+export function isDynamicName(obj: unknown): obj is DynamicName {
+    if (!isRecord(obj)) {
         return false
     }
     for (const key in obj) {
@@ -289,11 +289,11 @@ export abstract class ComponentBase<
     public readonly outputGroups: Map<string, NodeGroup<NodeOut>>
 
     protected constructor(
-        editor: LogicEditor,
+        parent: DrawableParent,
         def: InstantiatedComponentDef<TRepr, TValue>,
         saved: TRepr | undefined
     ) {
-        super(editor, saved)
+        super(parent, saved)
 
         this._def = def
         this.category = def.category
@@ -364,13 +364,13 @@ export abstract class ComponentBase<
 
     public setSpawning() {
         this._state = ComponentState.SPAWNING
-        this.editor.moveMgr.setDrawableMoving(this)
+        this.parent.moveMgr?.setDrawableMoving(this)
         return this._state // make compiler happy for constructor
     }
 
     public setSpawned() {
         this._state = ComponentState.SPAWNED
-        this.editor.moveMgr.setDrawableStoppedMoving(this)
+        this.parent.moveMgr?.setDrawableStoppedMoving(this)
     }
 
     public setInvalid() {
@@ -404,9 +404,8 @@ export abstract class ComponentBase<
         nodeRec: NodeRec<TDesc> | undefined,
         specs: readonly (InputNodeRepr | OutputNodeRepr)[],
         node: new (
-            editor: LogicEditor,
-            nodeSpec: InputNodeRepr | OutputNodeRepr,
             parent: Component,
+            nodeSpec: InputNodeRepr | OutputNodeRepr,
             group: NodeGroup<TNode> | undefined,
             shortName: string,
             fullName: string,
@@ -437,9 +436,8 @@ export abstract class ComponentBase<
                 }
                 const fullName = isUndefined(nameOverride) ? shortName : nameOverride
                 const newNode = new node(
-                    this.editor,
-                    spec,
                     this,
+                    spec,
                     group,
                     shortName,
                     fullName,
@@ -499,7 +497,7 @@ export abstract class ComponentBase<
         outputSpecs: Array<OutputNodeRepr>,
         hasAnyPrecomputedInitialValues: boolean
     ] {
-        const nodeMgr = this.editor.nodeMgr
+        const nodeMgr = this.parent.nodeMgr
         const makeDefaultSpec = () => ({ id: nodeMgr.newID() })
         const makeDefaultSpecArray = (len: number) => ArrayFillUsing(makeDefaultSpec, len)
 
@@ -744,11 +742,11 @@ export abstract class ComponentBase<
     }
 
     public setNeedsRecalc(forcePropagate = false) {
-        this.editor.recalcMgr.enqueueForRecalc(this, forcePropagate)
+        this.parent.recalcMgr.enqueueForRecalc(this, forcePropagate)
     }
 
     private setNeedsPropagate() {
-        this.editor.recalcMgr.enqueueForPropagate(this)
+        this.parent.recalcMgr.enqueueForPropagate(this)
     }
 
     private updateNodePositions() {
@@ -894,7 +892,7 @@ export abstract class ComponentBase<
     }
 
     protected drawNodeLabel(ctx: DrawContextExt, node: Node, bounds: DrawingRect): void {
-        if (node.isClock) {
+        if (node.isClock || isTrivialNodeName(node.shortName)) {
             return
         }
         drawLabel(ctx, this.orient, node.shortName, node.orient, ...this.anchorFor(node, bounds, 1), node)
@@ -939,7 +937,7 @@ export abstract class ComponentBase<
         const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
         const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
 
-        newComp.setPosition(this.posX, this.posY)
+        newComp.setPosition(this.posX, this.posY, false)
         newComp.setSpawned()
 
         const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
@@ -962,8 +960,8 @@ export abstract class ComponentBase<
             }
             wire.setEndNode(node)
         })
-        
-        const now = this.editor.timeline.logicalTime()
+
+        const now = this.parent.timeline.logicalTime()
         restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
             if (isUndefined(wires) || wires.length === 0) {
                 return
@@ -973,21 +971,21 @@ export abstract class ComponentBase<
             }
         })
 
-        const editor = this.editor
-        const result = editor.tryDeleteDrawable(this)
-        if (!result.isChange) {
+        const editor = this.parent
+        const deleted = editor.components.tryDelete(this)
+        if (!deleted) {
             console.warn("Could not delete old component")
         }
 
-        editor.undoMgr.takeSnapshot()
-        editor.redrawMgr.addReason("component replaced", newComp)
+        editor.undoMgr?.takeSnapshot()
+        editor.redrawMgr?.addReason("component replaced", newComp)
 
         return newComp
     }
 
     protected override makeClone(setSpawning: boolean): DrawableWithDraggablePosition | undefined {
         const repr = this.toNodelessJSON()
-        const newComp = this._def.makeFromJSON(this.editor, repr)
+        const newComp = this._def.makeFromJSON(this.parent, repr)
         if (isUndefined(newComp)) {
             console.warn("Could not create component clone")
         } else {
@@ -999,9 +997,9 @@ export abstract class ComponentBase<
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {
-        if (this.editor.mode >= Mode.CONNECT && !e.shiftKey) {
+        if (this.parent.mode >= Mode.CONNECT && !e.shiftKey && this.parent.isMainEditor()) {
             // try clearing selection
-            const mvtMgr = this.editor.cursorMovementMgr
+            const mvtMgr = this.parent.cursorMovementMgr
             let elems
             if (isDefined(mvtMgr.currentSelection)
                 && (elems = mvtMgr.currentSelection.previouslySelectedElements).size > 0
@@ -1021,11 +1019,11 @@ export abstract class ComponentBase<
         }
         const wasMoving = super.mouseUp(e).isChange
         if (wasSpawning || wasMoving) {
-            const newLinks = this.editor.nodeMgr.tryConnectNodesOf(this)
+            const newLinks = this.parent.nodeMgr.tryConnectNodesOf(this)
             if (newLinks.length > 0) {
                 this.autoConnected(newLinks)
             }
-            this.editor.setDirty("moved component")
+            this.parent.setDirty?.("moved component")
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
@@ -1047,15 +1045,15 @@ export abstract class ComponentBase<
     }
 
     public override mouseClicked(e: MouseEvent | TouchEvent): InteractionResult {
-        if (this.editor.mode >= Mode.CONNECT && e.shiftKey) {
-            this.editor.cursorMovementMgr.toggleSelect(this)
+        if (this.parent.mode >= Mode.CONNECT && e.shiftKey && this.parent.isMainEditor()) {
+            this.parent.cursorMovementMgr.toggleSelect(this)
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
     }
 
     public override mouseDoubleClicked(e: MouseEvent | TouchEvent): InteractionResult {
-        if (this.editor.mode >= Mode.CONNECT && e.metaKey && this.canRotate()) {
+        if (this.parent.mode >= Mode.CONNECT && e.metaKey && this.canRotate()) {
             const doChange = () => {
                 this.doSetOrient(Orientation.nextClockwise(this.orient))
                 return true
@@ -1079,7 +1077,7 @@ export abstract class ComponentBase<
     }
 
     public override cursorWhenMouseover(e?: MouseEvent | TouchEvent): string | undefined {
-        const mode = this.editor.mode
+        const mode = this.parent.mode
         if ((e?.ctrlKey ?? false) && mode >= Mode.CONNECT) {
             return "context-menu"
         }
@@ -1092,10 +1090,14 @@ export abstract class ComponentBase<
         return undefined
     }
 
-    public override makeContextMenu(): MenuData {
+    public override makeContextMenu(): MenuData | undefined {
+        if (!this.parent.isMainEditor()) {
+            return undefined
+        }
+
         const menuItems: MenuData = []
 
-        const baseItems = this.makeBaseContextMenu()
+        const baseItems = this.makeBaseContextMenu(this.parent)
         const specificItems = this.makeComponentSpecificContextMenuItems()
 
         let lastWasSep = true
@@ -1124,11 +1126,26 @@ export abstract class ComponentBase<
         return menuItems
     }
 
-    private makeBaseContextMenu(): MenuItems {
+    private makeBaseContextMenu(editor: LogicEditor): MenuItems {
         const s = S.Components.Generic.contextMenu
 
+        const makeNewComponentItems: MenuItems =
+            editor.cursorMovementMgr.currentSelectionEmpty() ? [] : [
+                ["start", MenuData.item("newcomponent", s.MakeNewComponent, () => {
+                    const error = editor.factory.tryMakeNewCustomComponent(editor)
+                    if (isDefined(error)) {
+                        if (error.length > 0) {
+                            window.alert(s.MakeNewComponentFailed + " " + error)
+                        }
+                    } else {
+                        editor.updateCustomComponentButtons()
+                    }
+                })],
+                ["start", MenuData.sep()],
+            ]
+
         const setRefItems: MenuItems =
-            this.editor.mode < Mode.FULL ? [] : [
+            editor.mode < Mode.FULL ? [] : [
                 ["end", this.makeSetRefContextMenuItem()],
                 ["end", MenuData.sep()],
             ]
@@ -1142,10 +1159,16 @@ export abstract class ComponentBase<
             ]
 
         const deleteItem = MenuData.item("trash", s.Delete, () => {
-            return this.editor.tryDeleteDrawable(this)
+            const deleted = editor.components.tryDelete(this)
+            if (deleted) {
+                this.setNeedsRedraw("deleted component")
+                return InteractionResult.SimpleChange
+            }
+            return InteractionResult.NoChange
         }, "⌫", true)
 
         return [
+            ...makeNewComponentItems,
             ...this.makeOrientationAndPosMenuItems(),
             ...setRefItems,
             ...resetItem,
@@ -1160,7 +1183,7 @@ export abstract class ComponentBase<
     protected makeForceOutputsContextMenuItem(withSepBefore = false): MenuItems {
         const numOutputs = this.outputs._all.length
 
-        if (numOutputs === 0 || this.editor.mode < Mode.FULL) {
+        if (numOutputs === 0 || this.parent.mode < Mode.FULL) {
             return []
         }
 
@@ -1237,7 +1260,7 @@ export abstract class ComponentBase<
             } else {
                 // is it JSON that can be valid as a DynamicName?
                 try {
-                    const parsedValue = JSON.parse(promptReturnValue)
+                    const parsedValue: unknown = JSON.parse(promptReturnValue)
                     if (isDynamicName(parsedValue)) {
                         newName = parsedValue
                     } else {
@@ -1284,14 +1307,14 @@ export abstract class ParametrizedComponentBase<
     private readonly _defP: SomeParamCompDef<TParamDefs>
 
     protected constructor(
-        editor: LogicEditor,
+        parent: DrawableParent,
         [instance, def]: [
             InstantiatedComponentDef<TRepr, TValue>,
             SomeParamCompDef<TParamDefs>,
         ],
         saved: TRepr | undefined
     ) {
-        super(editor, instance, saved)
+        super(parent, instance, saved)
         this._defP = def
     }
 
@@ -1337,7 +1360,7 @@ export abstract class ParametrizedComponentBase<
         const currentRepr = this.toNodelessJSON()
         const newRepr = { ...currentRepr, ...newParams }
 
-        const newComp = this._defP.makeFromJSON(this.editor, newRepr)
+        const newComp = this._defP.makeFromJSON(this.parent, newRepr)
         if (isUndefined(newComp)) {
             console.warn("Could not create component variant")
             return undefined
@@ -1387,8 +1410,8 @@ export abstract class ParametrizedComponentBase<
         }
 
         const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
-        if (isDefined(newComp)) {
-            this.editor.cursorMovementMgr.setCurrentMouseOverComp(newComp)
+        if (isDefined(newComp) && this.parent.isMainEditor()) {
+            this.parent.cursorMovementMgr.setCurrentMouseOverComp(newComp)
         }
     }
 
@@ -1541,7 +1564,7 @@ export type InstantiatedComponentDef<
     size: ComponentGridSize,
     nodeRecs: InOutRecs,
     initialValue: (saved: TRepr | undefined) => TValue,
-    makeFromJSON: (editor: LogicEditor, data: Record<string, unknown>) => Component | undefined,
+    makeFromJSON: (parent: DrawableParent, data: Record<string, unknown>) => Component | undefined,
 }
 
 export class ComponentDef<
@@ -1558,7 +1581,7 @@ export class ComponentDef<
     public readonly nodeRecs: TInOutRecs
     public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
 
-    public impl: (new (editor: LogicEditor, saved?: TRepr) => Component) = undefined as any
+    public impl: (new (parent: DrawableParent, saved?: TRepr) => Component) = undefined as any
 
     public constructor(
         public readonly category: ComponentCategory,
@@ -1596,19 +1619,19 @@ export class ComponentDef<
         }
     }
 
-    public make<TComp extends Component>(editor: LogicEditor): TComp {
-        const comp = new this.impl(editor)
-        editor.components.add(comp)
+    public make<TComp extends Component>(parent: DrawableParent): TComp {
+        const comp = new this.impl(parent)
+        parent.components.add(comp)
         return comp as TComp
     }
 
-    public makeFromJSON(editor: LogicEditor, data: Record<string, unknown>): Component | undefined {
+    public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
         const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
         if (isUndefined(validated)) {
             return undefined
         }
-        const comp = new this.impl(editor, validated)
-        editor.components.add(comp)
+        const comp = new this.impl(parent, validated)
+        parent.components.add(comp)
         return comp
     }
 
@@ -1738,7 +1761,7 @@ export class ParametrizedComponentDef<
     public readonly aults: TValueDefaults & TParams
     public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
 
-    public impl: (new (editor: LogicEditor, params: TResolvedParams, saved?: TRepr) => Component) = undefined as any
+    public impl: (new (parent: DrawableParent, params: TResolvedParams, saved?: TRepr) => Component) = undefined as any
 
     public constructor(
         public readonly category: ComponentCategory,
@@ -1788,23 +1811,23 @@ export class ParametrizedComponentDef<
         }
     }
 
-    public make<TComp extends Component>(editor: LogicEditor, params?: TParams): TComp {
+    public make<TComp extends Component>(parent: DrawableParent, params?: TParams): TComp {
         const fullParams = isUndefined(params) ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
         const resolvedParams = this.doValidate(fullParams)
-        const comp = new this.impl(editor, resolvedParams)
-        editor.components.add(comp)
+        const comp = new this.impl(parent, resolvedParams)
+        parent.components.add(comp)
         return comp as TComp
     }
 
-    public makeFromJSON(editor: LogicEditor, data: Record<string, unknown>): Component | undefined {
+    public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
         const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
         if (isUndefined(validated)) {
             return undefined
         }
         const fullParams = mergeWhereDefined(this.defaultParams, validated)
         const resolvedParams = this.doValidate(fullParams)
-        const comp = new this.impl(editor, resolvedParams, validated)
-        editor.components.add(comp)
+        const comp = new this.impl(parent, resolvedParams, validated)
+        parent.components.add(comp)
         return comp
     }
 

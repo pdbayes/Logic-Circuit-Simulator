@@ -42,9 +42,13 @@ export class ComponentList {
         this._componentsByZIndex[z].push(comp)
     }
 
-    public tryDeleteWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
+    public tryDelete(comp: Component): boolean {
+        return this.tryDeleteWhere(c => c === comp, true) > 0
+    }
+
+    public tryDeleteWhere(cond: (e: Component) => boolean, onlyOne: boolean): number {
         let numDeleted = 0
-        
+
         outer:
         for (const compList of this._componentsByZIndex) {
             for (let i = 0; i < compList.length; i++) {
@@ -67,6 +71,5 @@ export class ComponentList {
             compList.splice(0, compList.length)
         }
     }
-
 
 }

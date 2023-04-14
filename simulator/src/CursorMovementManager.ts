@@ -1,5 +1,4 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
-import { ComponentFactory } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
 import { Drawable, DrawableWithPosition, MenuItem } from "./components/Drawable"
@@ -319,6 +318,7 @@ export class CursorMovementManager {
             e.preventDefault()
             this._mouseUpTouchEnd(e)
             this.setCurrentMouseOverComp(null)
+            this.editor.html.mainCanvas.focus()
         }))
 
         // canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
@@ -345,6 +345,7 @@ export class CursorMovementManager {
             this._mouseUpTouchEnd(e)
             this.updateMouseOver(this.editor.offsetXY(e), false)
             this.editor.updateCursor(e)
+            this.editor.html.mainCanvas.focus()
         }))
 
         canvas.addEventListener("contextmenu", editor.wrapHandler((e) => {
@@ -609,14 +610,12 @@ export class CursorMovementManager {
 
     public registerButtonListenersOn(componentButtons: NodeListOf<HTMLElement>) {
         const editor = this.editor
-        for (let i = 0; i < componentButtons.length; i++) {
-            const compButton = componentButtons[i]
-
+        for (const compButton of componentButtons) {
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 this.editor.cursorMovementMgr.currentSelection = undefined
-                const newComponent = ComponentFactory.makeFromButton(editor, compButton)
+                const newComponent = editor.factory.makeFromButton(editor, compButton)
                 if (isUndefined(newComponent)) {
                     return
                 }
