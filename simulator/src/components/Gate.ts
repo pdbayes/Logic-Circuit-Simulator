@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_DARK_RED, COLOR_GATE_NAMES, COLOR_UNKNOWN, ColorString, GRID_STEP, PATTERN_STRIPED_GRAY, circle, drawWireLineToComponent } from "../drawutils"
 import { Modifier, ModifierObject, asValue, b, cls, div, emptyMod, mods, table, tbody, td, th, thead, tooltipContent, tr } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillUsing, InteractionResult, LogicValue, Mode, Unknown, deepEquals, isDefined, isUndefined, isUnknown, typeOrUndefined } from "../utils"
+import { ArrayFillUsing, InteractionResult, LogicValue, Mode, Unknown, deepEquals, isUnknown, typeOrUndefined } from "../utils"
 import { ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItem, MenuItems } from "./Drawable"
 import { Gate1Type, Gate1TypeRepr, Gate1Types, Gate2OnlyTypes, Gate2toNTypes, GateNType, GateNTypeRepr, GateNTypes, GateTypes } from "./GateTypes"
@@ -391,7 +391,7 @@ export abstract class GateBase<
 
         if (this.parent.options.showGateTypes && !isUnknown(type)) {
             const gateShortName = this.gateTypes(this.numBits).props[type].fullShortDesc()[1]
-            if (isDefined(gateShortName)) {
+            if (gateShortName !== undefined) {
                 g.fillStyle = COLOR_GATE_NAMES
                 g.textAlign = "center"
                 g.font = "bold 13px sans-serif"
@@ -448,7 +448,7 @@ export abstract class GateBase<
         const currentShowAsUnknown = this._showAsUnknown
         const currentPoseAs = this.poseAs
         return MenuData.submenu("questioncircled", s.ShowAs, [
-            MenuData.item(!currentShowAsUnknown && isUndefined(currentPoseAs) ? "check" : "none",
+            MenuData.item(!currentShowAsUnknown && currentPoseAs === undefined ? "check" : "none",
                 s.NormalGateTempl.expand({ type: gateTypes.props[this._type].fullShortDesc()[0] }), () => {
                     this.poseAs = undefined
                     this.doSetShowAsUnknown(false)
@@ -615,7 +615,7 @@ export class GateN extends GateBase<GateNRepr> {
                     default: return undefined
                 }
             })()
-            if (isDefined(newType)) {
+            if (newType !== undefined) {
                 this.doSetType(newType)
                 return InteractionResult.SimpleChange
             }

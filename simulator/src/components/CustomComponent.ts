@@ -2,10 +2,10 @@ import * as t from "io-ts"
 import { ComponentList } from "../ComponentList"
 import { LogicEditor } from "../LogicEditor"
 import { NodeManager } from "../NodeManager"
-import { PersistenceManager } from "../PersistenceManager"
 import { RecalcManager } from "../RedrawRecalcManager"
+import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
-import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isDefined, isString, isUndefined, templateLiteral, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, templateLiteral, validateJson } from "../utils"
 import { Component, ComponentBase, ComponentRepr, NodeDesc, NodeGroupDesc, NodeInDesc, NodeOutDesc, NodeRec, defineComponent, groupHorizontal, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems, Orientation, Orientations } from "./Drawable"
 import { Input, InputRepr } from "./Input"
@@ -20,9 +20,10 @@ type CustomComponentNodeSpec = {
     numBits: number,
 }
 
-// How custom components are identied
+// How custom components are identied in their type
 export const CustomComponentPrefix = "custom-"
 
+// How custom component definitions are stored in JSON
 export const CustomComponentDefRepr = t.type({
     id: t.string,
     caption: t.string,
@@ -98,7 +99,7 @@ export class CustomComponentDef {
 
     public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
         const validated = validateJson(data, CustomComponentRepr, "CustomComponent")
-        if (isUndefined(validated)) {
+        if (validated === undefined) {
             return undefined
         }
         const comp = new CustomComponent(parent, this, validated)
@@ -193,8 +194,8 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
         this.numInputs = this.inputs._all.length
         this.numOutputs = this.outputs._all.length
 
-        const error = PersistenceManager.loadCircuit(this, def.circuit, { immediateWirePropagation: true, skipMigration: true })
-        if (isDefined(error)) {
+        const error = Serialization.loadCircuit(this, def.circuit, { immediateWirePropagation: true, skipMigration: true })
+        if (error !== undefined) {
             console.error("Failed to load custom component:", error)
             this.setInvalid()
         }

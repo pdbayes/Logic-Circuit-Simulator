@@ -52,7 +52,7 @@ export const DemuxDef =
 
             return {
                 ins: {
-                    I: groupVertical("w", inX, 0, numFrom),
+                    In: groupVertical("w", inX, 0, numFrom),
                     S: groupHorizontal("n", 0, selY, numSel),
                 },
                 outs: {
@@ -115,7 +115,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         const disconnected = this._disconnectedAsHighZ ? HighImpedance : false
         for (let g = 0; g < this.numGroups; g++) {
             if (g === sel) {
-                const inputs = this.inputValues(this.inputs.I)
+                const inputs = this.inputValues(this.inputs.In)
                 for (const input of inputs) {
                     values.push(input)
                 }
@@ -138,7 +138,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
         const dy = (right - left) / 3
 
         // inputs
-        for (const input of this.inputs.I) {
+        for (const input of this.inputs.In) {
             drawWireLineToComponent(g, input, left, input.posYInParentTransform)
         }
 
@@ -175,9 +175,9 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
                 const anchorDiffX = (right - left) / 3
                 const wireStyleStraight = this.parent.options.wireStyle === WireStyles.straight
 
-                for (let i = 0; i < this.inputs.I.length; i++) {
+                for (let i = 0; i < this.inputs.In.length; i++) {
                     g.beginPath()
-                    const fromNode = this.inputs.I[i]
+                    const fromNode = this.inputs.In[i]
                     const fromY = fromNode.posYInParentTransform
                     const toY = selectedOutputs[i].posYInParentTransform
                     g.moveTo(left + 1, fromY)
@@ -192,7 +192,7 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
                             right - 1, toY,
                         )
                     }
-                    strokeAsWireLine(g, this.inputs.I[i].value, fromNode.color, false, neutral)
+                    strokeAsWireLine(g, this.inputs.In[i].value, fromNode.color, false, neutral)
                 }
             }
         }

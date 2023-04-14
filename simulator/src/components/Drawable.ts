@@ -11,7 +11,7 @@ import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, Colo
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
-import { Expand, FixedArray, InteractionResult, Mode, RichStringEnum, isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { Expand, FixedArray, InteractionResult, Mode, RichStringEnum, typeOrUndefined } from "../utils"
 import { type WireManager } from "./Wire"
 
 export type GraphicsRendering =
@@ -118,7 +118,7 @@ function mult(m: DOMMatrix, x: number, y: number): [x: number, y: number] {
 }
 
 export interface DrawableParent {
-    
+
     isMainEditor(): this is LogicEditor
     readonly editor: LogicEditor
 
@@ -214,7 +214,7 @@ export abstract class Drawable {
     protected makeSetRefContextMenuItem(): MenuItem {
         const currentRef = this.ref
         const s = S.Components.Generic.contextMenu
-        const caption: Modifier = isUndefined(currentRef) ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
+        const caption: Modifier = currentRef === undefined ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
         return MenuData.item("ref", caption, () => {
             this.runSetRefDialog()
         }, "⌥↩︎")
@@ -359,7 +359,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
         // using null and not undefined to prevent subclasses from
         // unintentionally skipping the parameter
 
-        if (isDefined(saved)) {
+        if (saved !== undefined) {
             // restoring from saved object
             this.ref = saved.ref
             this._posX = saved.pos[0]
@@ -445,7 +445,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
             }
         })()
 
-        if (isDefined(abcd)) {
+        if (abcd !== undefined) {
             g.translate(this.posX, this.posY)
             g.transform(...abcd, 0, 0)
             g.translate(-this.posX, -this.posY)
@@ -458,7 +458,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
     protected trySetPosition(posX: number, posY: number, snapToGrid: boolean): undefined | [number, number] {
         const newPos = this.tryMakePosition(posX, posY, snapToGrid)
-        if (isDefined(newPos)) {
+        if (newPos !== undefined) {
             this.doSetPosition(newPos[0], newPos[1])
         }
         return newPos
@@ -555,14 +555,14 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     public get isMoving() {
-        return isDefined(this._isMovingWithContext)
+        return this._isMovingWithContext !== undefined
     }
 
     private tryStartMoving(e: MouseEvent | TouchEvent) {
         if (this.lockPos || !this.parent.isMainEditor()) {
             return
         }
-        if (isUndefined(this._isMovingWithContext)) {
+        if (this._isMovingWithContext === undefined) {
             const [offsetX, offsetY] = this.parent.offsetXY(e)
             this._isMovingWithContext = {
                 mouseOffsetToPosX: offsetX - this.posX,
@@ -576,7 +576,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     private tryStopMoving(e: MouseEvent | TouchEvent): boolean {
         let wasMoving = false
-        if (isDefined(this._isMovingWithContext)) {
+        if (this._isMovingWithContext !== undefined) {
             this._isMovingWithContext = undefined
             wasMoving = true
         }
@@ -587,7 +587,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
 
     public setPosition(x: number, y: number, snapToGrid: boolean) {
         const newPos = this.tryMakePosition(x, y, snapToGrid)
-        if (isDefined(newPos)) { // position would change indeed
+        if (newPos !== undefined) { // position would change indeed
             this.doSetPosition(...newPos)
             this.positionChanged()
         }
@@ -605,7 +605,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             const [x, y] = this.parent.offsetXY(e)
             const snapToGrid = !e.metaKey
             const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
-            if (isDefined(newPos)) { // position changed
+            if (newPos !== undefined) { // position changed
                 this.positionChanged()
                 this.parent.moveMgr.setDrawableMoving(this, e)
             }
@@ -623,12 +623,12 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     protected updateSelfPositionIfNeeded(x: number, y: number, snapToGrid: boolean, e: MouseEvent | TouchEvent): undefined | [number, number] {
-        if (!isDefined(this._isMovingWithContext)) {
+        if (this._isMovingWithContext === undefined) {
             return undefined
         }
         const { mouseOffsetToPosX, mouseOffsetToPosY, lastAnchorX, lastAnchorY, createdClone } = this._isMovingWithContext
 
-        if (isDefined(createdClone)) {
+        if (createdClone !== undefined) {
             createdClone.mouseDragged(e)
             return undefined
         }
@@ -646,9 +646,9 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             }
         }
         const newPos = this.tryMakePosition(targetX, targetY, snapToGrid)
-        if (isDefined(newPos)) {
+        if (newPos !== undefined) {
             let clone
-            if (e.altKey && this.parent.mode >= Mode.DESIGN && this.parent.isMainEditor() && isDefined((clone = this.makeClone(true)))) {
+            if (e.altKey && this.parent.mode >= Mode.DESIGN && this.parent.isMainEditor() && (clone = this.makeClone(true)) !== undefined) {
                 this._isMovingWithContext.createdClone = clone
                 this.parent.cursorMovementMgr.setCurrentMouseOverComp(clone)
             } else {

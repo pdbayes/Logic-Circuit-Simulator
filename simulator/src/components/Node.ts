@@ -1,5 +1,5 @@
 import { drawWaypoint, GRID_STEP, isOverWaypoint, NodeStyle, WAYPOINT_DIAMETER } from "../drawutils"
-import { HighImpedance, InteractionResult, isDefined, isUndefined, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
+import { HighImpedance, InteractionResult, isUnknown, LogicValue, Mode, RepeatFunction, toLogicValue, Unknown } from "../utils"
 import { Component, InputNodeRepr, NodeGroup, OutputNodeRepr } from "./Component"
 import { DrawableWithPosition, DrawContext, GraphicsRendering, Orientation } from "./Drawable"
 import { Wire } from "./Wire"
@@ -44,10 +44,10 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         if ("force" in nodeSpec) {
             this._forceValue = toLogicValue(nodeSpec.force)
         }
-        if ("color" in nodeSpec && isDefined(nodeSpec.color)) {
+        if ("color" in nodeSpec && nodeSpec.color !== undefined) {
             this._color = nodeSpec.color
         }
-        if ("initialValue" in nodeSpec && isDefined(nodeSpec.initialValue)) {
+        if ("initialValue" in nodeSpec && nodeSpec.initialValue !== undefined) {
             const initialValue = toLogicValue(nodeSpec.initialValue)
             this._initialValue = initialValue
             this._value = initialValue
@@ -112,7 +112,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
             return
         }
 
-        const showForced = isDefined(this._forceValue) && mode >= Mode.FULL
+        const showForced = this._forceValue !== undefined && mode >= Mode.FULL
         const showForcedWarning = mode >= Mode.FULL && !isUnknown(this._value) && !isUnknown(this.value) && this._value !== this.value
         const parentOrientIsVertical = Orientation.isVertical(this.component.orient)
         const neutral = this.parent.options.hideWireColors
@@ -126,7 +126,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
     }
 
     public get value(): LogicValue {
-        return isDefined(this._forceValue) ? this._forceValue : this._value
+        return this._forceValue !== undefined ? this._forceValue : this._value
     }
 
     public set value(val: LogicValue) {
@@ -237,12 +237,12 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
 
     public override mouseUp(__: MouseEvent | TouchEvent) {
         const newWire = this.parent.wireMgr.stopDraggingOn(this.asNode)
-        if (isUndefined(newWire)) {
+        if (newWire === undefined) {
             return InteractionResult.NoChange
         }
         return tryMakeRepeatableNodeAction(newWire.startNode, newWire.endNode, (startNode, endNode) => {
             const newWire = this.parent.wireMgr.addWire(startNode, endNode, true)
-            return isDefined(newWire)
+            return newWire !== undefined
         })
     }
 
@@ -421,7 +421,7 @@ export function tryMakeRepeatableNodeAction(startNode: NodeOut, endNode: NodeIn,
     // more free nodes in the group
     const startGroup = startNode.group
     const endGroup = endNode.group
-    if (isUndefined(startGroup) || isUndefined(endGroup)) {
+    if (startGroup === undefined || endGroup === undefined) {
         return InteractionResult.SimpleChange
     }
 

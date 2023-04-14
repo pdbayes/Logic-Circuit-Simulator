@@ -28,10 +28,10 @@ export const DecoderDef =
         }),
         makeNodes: ({ numFrom, numTo }) => ({
             ins: {
-                I: groupVertical("w", -3, 0, numFrom),
+                In: groupVertical("w", -3, 0, numFrom),
             },
             outs: {
-                D: groupVertical("e", 3, 0, numTo),
+                Out: groupVertical("e", 3, 0, numTo),
             },
         }),
         initialValue: (saved, { numTo }) => ArrayFillWith<LogicValue>(false, numTo),
@@ -67,7 +67,7 @@ export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
     }
 
     public currentAddr() {
-        const addrArr = this.inputValues(this.inputs.I)
+        const addrArr = this.inputValues(this.inputs.In)
         return displayValuesFromArray(addrArr, false)[1]
     }
 
@@ -96,7 +96,7 @@ export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        this.outputValues(this.outputs.D, newValue)
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

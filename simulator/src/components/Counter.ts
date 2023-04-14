@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_EMPTY, COLOR_LABEL_OFF, displayValuesFromArray, formatWithRadix, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, isUndefined, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
+import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isUnknown, typeOrNull, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
@@ -53,7 +53,7 @@ export const CounterDef =
             }
         },
         initialValue: (saved, { numBits }) => {
-            if (isUndefined(saved) || isUndefined(saved.count)) {
+            if (saved === undefined || saved.count === undefined) {
                 return Counter.emptyValue(numBits)
             }
             return [Counter.decimalToNBits(saved.count, numBits), false] as const
@@ -89,14 +89,14 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         this.numBits = params.numBits
 
         this._trigger = saved?.trigger ?? CounterDef.aults.trigger
-        this._displayRadix = isUndefined(saved?.displayRadix) ? CounterDef.aults.displayRadix
-            : (saved!.displayRadix === null ? undefined : saved!.displayRadix) // convert null in the repr to undefined
+        this._displayRadix = saved?.displayRadix === undefined ? CounterDef.aults.displayRadix
+            : (saved.displayRadix === null ? undefined : saved.displayRadix) // convert null in the repr to undefined
     }
 
     public toJSON() {
         const [__, currentCountOrUnknown] = displayValuesFromArray(this.value[0], false)
         const currentCount = isUnknown(currentCountOrUnknown) ? 0 : currentCountOrUnknown
-        const displayRadix = isUndefined(this._displayRadix) ? null : this._displayRadix
+        const displayRadix = this._displayRadix === undefined ? null : this._displayRadix
         return {
             type: "counter" as const,
             bits: this.numBits === CounterDef.aults.bits ? undefined : this.numBits,
@@ -158,7 +158,7 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx, { width }) => {
-            if (isDefined(this._displayRadix)) {
+            if (this._displayRadix !== undefined) {
                 g.font = "bold 20px sans-serif"
                 const [__, currentCount] = displayValuesFromArray(this.value[0], false)
                 const stringRep = formatWithRadix(currentCount, this._displayRadix, this.numBits, false)

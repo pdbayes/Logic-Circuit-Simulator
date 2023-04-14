@@ -5,7 +5,7 @@ import { Timestamp } from "../Timeline"
 import { COLOR_MOUSE_OVER, COLOR_UNKNOWN, COLOR_WIRE, GRID_STEP, NodeStyle, WAYPOINT_DIAMETER, WIRE_WIDTH, colorForBoolean, dist, drawStraightWireLine, drawWaypoint, isOverWaypoint, strokeAsWireLine } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
-import { InteractionResult, LogicValue, Mode, isArray, isDefined, isUndefined, isUndefinedOrNull, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { InteractionResult, LogicValue, Mode, isArray, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { Component, NodeGroup } from "./Component"
 import { DrawContext, Drawable, DrawableParent, DrawableWithDraggablePosition, DrawableWithPosition, GraphicsRendering, MenuData, Orientation, Orientations_, PositionSupportRepr } from "./Drawable"
 import { Node, NodeIn, NodeOut, WireColor, tryMakeRepeatableNodeAction } from "./Node"
@@ -25,7 +25,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
     }
 
     public static toSuperRepr(saved?: WaypointRepr | undefined): PositionSupportRepr | undefined {
-        if (isUndefined(saved)) {
+        if (saved === undefined) {
             return undefined
         }
         return {
@@ -160,7 +160,7 @@ export class Wire extends Drawable {
 
     public toJSON(): WireRepr {
         const endID = this._endNode.id
-        if (this._waypoints.length === 0 && isUndefined(this.customPropagationDelay) && isUndefined(this.ref) && isUndefined(this.style)) {
+        if (this._waypoints.length === 0 && this.customPropagationDelay === undefined && this.ref === undefined && this.style === undefined) {
             // no need for node options
             return [this._startNode.id, endID]
 
@@ -206,24 +206,24 @@ export class Wire extends Drawable {
     }
 
     public setStartNode(startNode: NodeOut, now?: Timestamp) {
-        if (isDefined(this._startNode)) {
+        if (this._startNode !== undefined) {
             this._startNode.removeOutgoingWire(this)
         }
 
         this._startNode = startNode
         startNode.addOutgoingWire(this)
 
-        if (isDefined(now)) {
+        if (now !== undefined) {
             this.propagateNewValue(this._startNode.value, now)
         }
     }
 
     public setEndNode(endNode: NodeIn) {
-        if (isDefined(this._endNode)) {
+        if (this._endNode !== undefined) {
             this._endNode.incomingWire = null
         }
         this._endNode = endNode
-        if (!isUndefinedOrNull(endNode.incomingWire)) {
+        if (endNode.incomingWire !== null && endNode.incomingWire !== undefined) {
             console.warn(`Unexpectedly replacing existing incoming wire on node ${this._endNode.id}`)
         }
         endNode.incomingWire = this
@@ -277,11 +277,11 @@ export class Wire extends Drawable {
         passthrough.setPosition(x, y, false)
 
         // modify this wire to go to the passthrough
-        this.setEndNode(passthrough.inputs.I[0])
+        this.setEndNode(passthrough.inputs.In[0])
 
         // create a new wire from the passthrough to the end node
-        const newWire = parent.wireMgr.addWire(passthrough.outputs.O[0], endNode, false)
-        if (isUndefined(newWire)) {
+        const newWire = parent.wireMgr.addWire(passthrough.outputs.Out[0], endNode, false)
+        if (newWire === undefined) {
             console.warn("Couldn't create new wire")
             return
         }
@@ -296,7 +296,7 @@ export class Wire extends Drawable {
 
     public addWaypointWith(x: number, y: number): Waypoint {
         let coordData = this.indexOfNextWaypointIfMouseover(x, y)
-        if (isUndefined(coordData)) {
+        if (coordData === undefined) {
             // shouldn't happen since we're calling this form a context menu
             // which was invoked when we were in a mouseover state
             coordData = [
@@ -419,7 +419,7 @@ export class Wire extends Drawable {
         const path = g.createPath(svgPathDesc)
 
         const drawParams = ctx.drawParams
-        if (isDefined(drawParams.highlightColor) && (drawParams.highlightedItems?.wires.includes(this) ?? false)) {
+        if (drawParams.highlightColor !== undefined && (drawParams.highlightedItems?.wires.includes(this) ?? false)) {
             g.lineWidth = 15
             g.shadowColor = drawParams.highlightColor
             g.shadowBlur = 20
@@ -448,7 +448,7 @@ export class Wire extends Drawable {
         if (this.parent.mode < Mode.CONNECT || !this.startNode.isAlive || !this.endNode.isAlive) {
             return false
         }
-        return isDefined(this.indexOfNextWaypointIfMouseover(x, y))
+        return this.indexOfNextWaypointIfMouseover(x, y) !== undefined
     }
 
     private indexOfNextWaypointIfMouseover(x: number, y: number): undefined | [number, [number, number], [number, number]] {
@@ -472,15 +472,15 @@ export class Wire extends Drawable {
     public override mouseDown(e: MouseEvent | TouchEvent) {
         if (e.altKey && this.parent.mode >= Mode.DESIGN) {
             const passthrough = this.addPassthroughFrom(e)
-            if (isDefined(passthrough)) {
-                return passthrough.outputs.O[0].mouseDown(e)
+            if (passthrough !== undefined) {
+                return passthrough.outputs.Out[0].mouseDown(e)
             }
         }
         return super.mouseDown(e)
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (isDefined(this._waypointBeingDragged)) {
+        if (this._waypointBeingDragged !== undefined) {
             this._waypointBeingDragged.mouseDragged(e)
         } else {
             if (this.parent.isMainEditor() && this.parent.cursorMovementMgr.currentSelectionEmpty()) {
@@ -493,7 +493,7 @@ export class Wire extends Drawable {
     }
 
     public override mouseUp(e: MouseEvent | TouchEvent) {
-        if (isDefined(this._waypointBeingDragged)) {
+        if (this._waypointBeingDragged !== undefined) {
             this._waypointBeingDragged.mouseUp(e)
             this._waypointBeingDragged = undefined
             return InteractionResult.SimpleChange
@@ -504,7 +504,7 @@ export class Wire extends Drawable {
     public override makeContextMenu(): MenuData {
 
         const s = S.Components.Wire.contextMenu
-        const currentPropDelayStr = isUndefined(this.customPropagationDelay) ? "" : ` (${this.customPropagationDelay} ms)`
+        const currentPropDelayStr = this.customPropagationDelay === undefined ? "" : ` (${this.customPropagationDelay} ms)`
 
         const makeItemUseColor = (desc: string, color: WireColor) => {
             const isCurrent = this._startNode.color === color
@@ -527,7 +527,7 @@ export class Wire extends Drawable {
             this.parent.mode < Mode.DESIGN ? [] : [
                 MenuData.sep(),
                 MenuData.item("timer", s.CustomPropagationDelay.expand({ current: currentPropDelayStr }), (__itemEvent) => {
-                    const currentStr = isUndefined(this.customPropagationDelay) ? "" : String(this.customPropagationDelay)
+                    const currentStr = this.customPropagationDelay === undefined ? "" : String(this.customPropagationDelay)
                     const defaultDelay = String(this.parent.options.propagationDelay)
                     const message = s.CustomPropagationDelayDesc.expand({ current: defaultDelay })
                     const newValueStr = prompt(message, currentStr)
@@ -813,7 +813,7 @@ export class WireManager {
     }
 
     public get isAddingWire() {
-        return isDefined(this._wireBeingAddedFrom)
+        return this._wireBeingAddedFrom !== undefined
     }
 
     public draw(g: GraphicsRendering, drawParams: DrawParams) {
@@ -825,7 +825,7 @@ export class WireManager {
             }
         }
         for (const wire of this._wires) {
-            if (useRibbons && isDefined(wire.ribbon)) {
+            if (useRibbons && wire.ribbon !== undefined) {
                 continue
             }
             wire.draw(g, drawParams)
@@ -840,7 +840,7 @@ export class WireManager {
         // TODO use some PartialWire class to draw this and allow adding waypoints
         // while dragging, e.g. with the A or Space key
         const nodeFrom = this._wireBeingAddedFrom
-        if (isDefined(nodeFrom)) {
+        if (nodeFrom !== undefined) {
             const x1 = nodeFrom.posX
             const y1 = nodeFrom.posY
             const editor = this.parent.editor
@@ -896,7 +896,7 @@ export class WireManager {
     }
 
     public startDraggingFrom(node: Node) {
-        if (isDefined(this._wireBeingAddedFrom)) {
+        if (this._wireBeingAddedFrom !== undefined) {
             console.warn("WireManager.startDraggingFrom: already dragging from a node")
         }
         if (!node.acceptsMoreConnections) {
@@ -909,19 +909,19 @@ export class WireManager {
     public stopDraggingOn(newNode: Node): Wire | undefined {
         const nodes = this.getOutInNodes(newNode)
         this._wireBeingAddedFrom = undefined
-        if (isUndefined(nodes)) {
+        if (nodes === undefined) {
             return undefined
         }
         return this.addWire(nodes[0], nodes[1], true)
     }
 
     public isValidMouseUp(node: Node): boolean {
-        return isDefined(this.getOutInNodes(node))
+        return this.getOutInNodes(node) !== undefined
     }
 
     private getOutInNodes(newNode: Node): [NodeOut, NodeIn] | undefined {
         const otherNode = this._wireBeingAddedFrom
-        if (isUndefined(otherNode)) {
+        if (otherNode === undefined) {
             return undefined
         }
 
@@ -944,11 +944,11 @@ export class WireManager {
             } else {
                 // two inputs: if one is connected to some output already, connect to that
                 let otherStartNode = newNode.incomingWire?.startNode
-                if (isDefined(otherStartNode) && otherNode.acceptsMoreConnections) {
+                if (otherStartNode !== undefined && otherNode.acceptsMoreConnections) {
                     return [otherStartNode, otherNode]
                 }
                 otherStartNode = otherNode.incomingWire?.startNode
-                if (isDefined(otherStartNode) && newNode.acceptsMoreConnections) {
+                if (otherStartNode !== undefined && newNode.acceptsMoreConnections) {
                     return [otherStartNode, newNode]
                 }
 
@@ -1000,7 +1000,7 @@ export class WireManager {
 
         const startGroup = startNode.group
         const endGroup = endNode.group
-        if (isUndefined(startGroup) || isUndefined(endGroup)) {
+        if (startGroup === undefined || endGroup === undefined) {
             return
         }
 
@@ -1015,9 +1015,9 @@ export class WireManager {
         const indexEnd = endGroup.nodes.indexOf(endNode)
 
         const wireBefore = findWire(startGroup, indexStart - 1, endGroup, indexEnd - 1)
-        if (isDefined(wireBefore)) {
+        if (wireBefore !== undefined) {
             let ribbon = wireBefore.ribbon
-            if (isUndefined(ribbon)) {
+            if (ribbon === undefined) {
                 ribbon = new Ribbon(startNode.parent, startGroup, endGroup)
                 this._ribbons.push(ribbon) // TODO determine when we must remove them
                 wireBefore.ribbon = ribbon
@@ -1029,7 +1029,7 @@ export class WireManager {
 
         // TODO merge after, too!
 
-        // if (isDefined(wireAfter)) {
+        // if (wireAfter !== undefined) {
         //     console.log("we have a wire after")
         // }
 
@@ -1058,7 +1058,7 @@ export class WireManager {
         // TODO check in ribbon
         wire.destroy()
         const ribbon = wire.ribbon
-        if (isDefined(ribbon)) {
+        if (ribbon !== undefined) {
             ribbon.wireWasDeleted(wire)
             if (ribbon.isEmpty()) {
                 this._ribbons.splice(this._ribbons.indexOf(ribbon), 1)

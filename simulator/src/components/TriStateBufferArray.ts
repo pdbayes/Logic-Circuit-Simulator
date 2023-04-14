@@ -25,11 +25,11 @@ export const TriStateBufferArrayDef =
         size: SwitchedInverterDef.size,
         makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
-                I: groupVertical("w", -3, 0, numBits),
+                In: groupVertical("w", -3, 0, numBits),
                 E: [0, -(gridHeight / 2 + 1), "n", "E (Enable)"],
             },
             outs: {
-                O: groupVertical("e", 3, 0, numBits),
+                Out: groupVertical("e", 3, 0, numBits),
             },
         }),
         initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(HighImpedance, numBits),
@@ -74,11 +74,11 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
             return ArrayFillWith(HighImpedance, this.numBits)
         }
 
-        return this.inputValues(this.inputs.I)
+        return this.inputValues(this.inputs.In)
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        this.outputValues(this.outputs.O, newValue)
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {

@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { br, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { LogicValue, isDefined, typeOrUndefined } from "../utils"
+import { LogicValue, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, ComponentState, Repr, defineComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { InputBase, InputDef } from "./Input"
@@ -50,8 +50,8 @@ export class Clock extends InputBase<ClockRepr> {
         super(parent, [ClockDef, undefined as any], saved)
 
         this._period = saved?.period ?? ClockDef.aults.period
-        this._dutycycle = isDefined(saved?.dutycycle) ? saved!.dutycycle % 100 : ClockDef.aults.dutycycle
-        this._phase = isDefined(saved?.phase) ? saved!.phase % this._period : ClockDef.aults.phase
+        this._dutycycle = (saved?.dutycycle !== undefined) ? saved.dutycycle % 100 : ClockDef.aults.dutycycle
+        this._phase = (saved?.phase !== undefined) ? saved.phase % this._period : ClockDef.aults.phase
         this._showLabel = saved?.showLabel ?? ClockDef.aults.showLabel
 
         // sets the value and schedules the next tick

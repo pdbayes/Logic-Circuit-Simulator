@@ -1,15 +1,14 @@
-import { binaryStringRepr, isAllZeros, isArray, isDefined, isRecord, isString, isUndefined, toLogicValue } from "./utils"
+import { binaryStringRepr, isAllZeros, isArray, isRecord, isString, toLogicValue } from "./utils"
 
 export const CurrentFormatVersion = 5
 
 export function migrateData(data: Record<string, unknown>) {
-    // console.log("BEFORE:\n" + (isString(content) ? content : JSON.stringify(content)))
+    // console.log("BEFORE:\n" + (isString(content) ? content : JSON5.stringify(content)))
 
-    // TODO also apply migration to defs
     let jsonVersion = Number(data["v"]) ?? 0
     const savedVersion = jsonVersion
     while (jsonVersion < CurrentFormatVersion) {
-        const migrationFunc = migrateTo[jsonVersion]
+        const migrationFunc = migrateTo[++jsonVersion]
 
         // migrate the outer container
         migrationFunc(data)
@@ -24,9 +23,6 @@ export function migrateData(data: Record<string, unknown>) {
                 }
             }
         }
-
-        // bump version
-        jsonVersion++
     }
     if (jsonVersion !== savedVersion) {
         console.log(`Migrated data format from v${savedVersion} to v${jsonVersion}, consider upgrading the source`)
@@ -301,7 +297,7 @@ function findFirstFreeId(parsedContents: Record<string, unknown>): number {
     }
 
     function inspectValue(value: unknown) {
-        if (isUndefined(value)) {
+        if (value === undefined) {
             return
         }
         if (typeof value === "number") {
@@ -323,7 +319,7 @@ function findFirstFreeId(parsedContents: Record<string, unknown>): number {
 
     for (const jsonField of Object.keys(parsedContents)) {
         const arr = parsedContents[jsonField]
-        if (isDefined(arr) && isArray(arr)) {
+        if (arr !== undefined && isArray(arr)) {
             for (const comp of arr) {
                 inspectComponentDef(comp)
             }

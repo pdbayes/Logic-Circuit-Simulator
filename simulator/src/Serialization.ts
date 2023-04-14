@@ -1,14 +1,15 @@
 import { saveAs } from 'file-saver'
+import JSON5 from "json5"
+import * as json5util from "json5/lib/util"
 import { CurrentFormatVersion, migrateData } from './DataMigration'
 import { LogicEditor } from "./LogicEditor"
 import { Component, ComponentCategories, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
 import { type CustomComponentDefRepr } from './components/CustomComponent'
 import { DrawableParent } from './components/Drawable'
 import { Wire } from "./components/Wire"
-import { stringifySmart } from "./stringifySmart"
-import { JSONParseObject, isArray, isDefined, isString, isUndefined, keysOf, validateJson } from "./utils"
+import { JSONParseObject, isArray, isString, keysOf, validateJson } from "./utils"
 
-class _PersistenceManager {
+class _Serialization {
 
     // Library
 
@@ -63,7 +64,7 @@ class _PersistenceManager {
         if (!(opts?.skipMigration ?? false)) {
             migrateData(parsed)
         }
-        delete parsed["v"]
+        delete parsed.v
 
         if (parent.isMainEditor()) {
             parent.factory.clearCustomDefs()
@@ -113,25 +114,25 @@ class _PersistenceManager {
         const immediateWirePropagation = opts?.immediateWirePropagation ?? false
         loadField("wires", obj => {
             const wireData = validateJson(obj, Wire.Repr, "wire")
-            if (isUndefined(wireData)) {
+            if (wireData === undefined) {
                 return
             }
 
             const [nodeID1, nodeID2, wireOptions] = wireData
             const node1 = nodeMgr.findNode(nodeID1)
             const node2 = nodeMgr.findNode(nodeID2)
-            if (!isUndefined(node1) && !isUndefined(node2) && node1.isOutput() && !node2.isOutput()) {
+            if (node1 !== undefined && node2 !== undefined && node1.isOutput() && !node2.isOutput()) {
                 const completedWire = wireMgr.addWire(node1, node2, false)
-                if (isDefined(completedWire)) {
-                    if (isDefined(wireOptions)) {
+                if (completedWire !== undefined) {
+                    if (wireOptions !== undefined) {
                         completedWire.ref = wireOptions.ref
-                        if (isDefined(wireOptions.via)) {
+                        if (wireOptions.via !== undefined) {
                             completedWire.setWaypoints(wireOptions.via)
                         }
-                        if (isDefined(wireOptions.propagationDelay)) {
+                        if (wireOptions.propagationDelay !== undefined) {
                             completedWire.customPropagationDelay = wireOptions.propagationDelay
                         }
-                        if (isDefined(wireOptions.style)) {
+                        if (wireOptions.style !== undefined) {
                             completedWire.doSetStyle(wireOptions.style)
                         }
                     }
@@ -146,7 +147,7 @@ class _PersistenceManager {
 
         if (parent.isMainEditor()) {
             // load userdata, keeping already existing data
-            if (isDefined(parsed.userdata)) {
+            if (parsed.userdata !== undefined) {
                 if (typeof parent.userdata === "object" && typeof parsed.userdata === "object") {
                     // merge
                     parent.userdata = {
@@ -187,7 +188,7 @@ class _PersistenceManager {
             "defs": editor.factory.customDefs(),
         }
 
-        if (isDefined(editor.userdata)) {
+        if (editor.userdata !== undefined) {
             dataObject["userdata"] = editor.userdata
         }
 
@@ -223,7 +224,7 @@ class _PersistenceManager {
         for (const comp of components) {
             const fieldName = ComponentCategories.props[comp.category].jsonFieldName
             let arr = dataObject[fieldName]
-            if (isUndefined(arr)) {
+            if (arr === undefined) {
                 dataObject[fieldName] = (arr = [comp])
             } else if (isArray(arr)) {
                 arr.push(comp)
@@ -235,7 +236,7 @@ class _PersistenceManager {
         // TODO: better way of representing the wires, along these lines:
         // const nodeName = (node: Node) => {
         //     const group = node.group
-        //     if (isUndefined(group)) {
+        //     if (group === undefined) {
         //         return node.shortName
         //     }
         //     const nodeIndex = group.nodes.indexOf(node as any)
@@ -271,7 +272,7 @@ class _PersistenceManager {
 
         // TODO: refactor this to not touch input object and not do this "delete dataObject.key" thing
         if (compact) {
-            return JSON.stringify(_dataObject)
+            return JSON5.stringify(_dataObject)
         }
 
         // Custom stringifier to have always one component per line and
@@ -286,7 +287,7 @@ class _PersistenceManager {
         stringifyCompactReprTo(parts, dataObject, "userdata")
 
         const defs = dataObject.defs
-        if (isDefined(defs) && isArray(defs)) {
+        if (defs !== undefined && isArray(defs)) {
             const defparts: string[] = []
             for (const def of defs as Partial<CustomComponentDefRepr>[]) {
                 const circuit = def.circuit!
@@ -311,15 +312,18 @@ class _PersistenceManager {
             console.error("ERROR: unprocessed fields in stringified JSON: " + unprocessedFields.join(", "))
         }
 
-        return "{\n  " + parts.join(",\n  ") + "\n}"
+        return "{ //JSON5\n  " + parts.join(",\n  ") + "\n}"
     }
 
 }
 
+export const Serialization = new _Serialization()
+
+
 function stringifyCompactReprTo(parts: string[], container: Record<string, unknown>, key: string) {
     const value = container[key]
-    if (isDefined(value)) {
-        parts.push(`"${key}": ${stringifySmart(value, { maxLength: Infinity })}`)
+    if (value !== undefined) {
+        parts.push(`${stringifyKey(key)}: ${stringifySmart(value, { maxLength: Infinity })}`)
     }
     delete container[key]
 }
@@ -329,16 +333,193 @@ function stringifyComponentAndWiresReprsTo(parts: string[], container: Record<st
     const outerIndent = "  ".repeat(inDef ? 3 : 1)
     for (const jsonField of JsonFieldsComponents) {
         const arr = container[jsonField]
-        if (isDefined(arr) && isArray(arr)) {
+        if (arr !== undefined && isArray(arr)) {
             const subparts: string[] = []
             for (const comp of arr) {
                 subparts.push(stringifySmart(comp, { maxLength: Infinity }))
             }
-            parts.push(`"${jsonField}": [\n${innerIndent}` + subparts.join(`,\n${innerIndent}`) + `\n${outerIndent}]`)
+            parts.push(`${stringifyKey(jsonField)}: [\n${innerIndent}` + subparts.join(`,\n${innerIndent}`) + `,\n${outerIndent}]`)
             delete container[jsonField]
         }
     }
     stringifyCompactReprTo(parts, container, "wires")
 }
 
-export const PersistenceManager = new _PersistenceManager()
+
+// Note: This regex matches even invalid JSON strings, but since we’re
+// working on the output of `JSON.stringify` we know that only valid strings
+// are present (unless the user supplied a weird `options.indent` but in
+// that case we don’t care since the output would be invalid anyway).
+const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
+
+function stringifySmart(
+    passedObj: any,
+    options?: {
+        replacer?: (this: any, key: string, value: any) => any,
+        indent?: number | string,
+        maxLength?: number
+    }
+): string {
+
+    options ??= {}
+    const indent: string = JSON5.stringify([1], undefined, options.indent ?? 2).slice(2, -3)
+    const maxLength: number =
+        indent === ""
+            ? Infinity
+            : options.maxLength ?? 80
+
+    let replacer = options.replacer
+
+    return (function _stringify(obj: any, currentIndent: string, reserved: number): string {
+        if (obj !== undefined && typeof obj.toJSON === "function") {
+            obj = obj.toJSON()
+        }
+
+        const string = JSON5.stringify(obj, replacer)
+
+        if (string === undefined) {
+            return string
+        }
+
+        let length = maxLength - currentIndent.length - reserved
+
+        if (string.length <= length) {
+            const prettified = string.replace(
+                stringOrChar,
+                function (match, stringLiteral) {
+                    return stringLiteral ?? match + " "
+                }
+            )
+            if (prettified.length <= length) {
+                return prettified
+            }
+        }
+
+        if (replacer !== null) {
+            obj = JSON5.parse(string)
+            replacer = undefined
+        }
+
+        if (typeof obj === "object" && obj !== null) {
+            const nextIndent = currentIndent + indent
+            const items: string[] = []
+            let index = 0
+
+            let start: string
+            let end: string
+            if (Array.isArray(obj)) {
+                start = "["
+                end = "]"
+                length = obj.length
+                for (; index < length; index++) {
+                    items.push(
+                        _stringify(obj[index], nextIndent, index === length - 1 ? 0 : 1) ||
+                        "null"
+                    )
+                }
+            } else {
+                start = "{"
+                end = "}"
+                const keys = Object.keys(obj)
+                length = keys.length
+                for (; index < length; index++) {
+                    const key = keys[index]
+                    const keyPart = stringifyKey(key) + ": "
+                    const value = _stringify(
+                        obj[key],
+                        nextIndent,
+                        keyPart.length + (index === length - 1 ? 0 : 1)
+                    )
+                    if (value !== undefined) {
+                        items.push(keyPart + value)
+                    }
+                }
+            }
+
+            if (items.length > 0) {
+                return [start, indent + items.join(",\n" + nextIndent), end].join(
+                    "\n" + currentIndent
+                )
+            }
+        }
+
+        return string
+    })(passedObj, "", 0)
+}
+
+// Adapted from JSON5 (https://github.com/json5/json5), MIT license
+function stringifyKey(key: string): string {
+    if (key.length === 0) {
+        return quoteString(key)
+    }
+
+    const firstChar = String.fromCodePoint(key.codePointAt(0)!)
+    if (!json5util.isIdStartChar(firstChar)) {
+        return quoteString(key)
+    }
+
+    for (let i = firstChar.length; i < key.length; i++) {
+        if (!json5util.isIdContinueChar(String.fromCodePoint(key.codePointAt(i)!))) {
+            return quoteString(key)
+        }
+    }
+
+    return key
+}
+
+const replacements: Record<string, string> = {
+    "'": "\\'",
+    '"': '\\"',
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\v': '\\v',
+    '\0': '\\0',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029',
+}
+
+function quoteString(value: string): string {
+    const quotes = {
+        "'": 0.1,
+        '"': 0.2,
+    }
+
+    let product = ''
+
+    for (let i = 0; i < value.length; i++) {
+        const c = value[i]
+        switch (c) {
+            case "'":
+            case '"':
+                quotes[c]++
+                product += c
+                continue
+
+            case '\0':
+                if (json5util.isDigit(value[i + 1])) {
+                    product += '\\x00'
+                    continue
+                }
+        }
+
+        if (replacements[c] !== undefined) {
+            product += replacements[c]
+            continue
+        }
+
+        if (c < ' ') {
+            const hexString = c.charCodeAt(0).toString(16)
+            product += '\\x' + ('00' + hexString).substring(hexString.length)
+            continue
+        }
+        product += c
+    }
+
+    const quoteChar = keysOf(quotes).reduce(function (a, b) { return (quotes[a] < quotes[b]) ? a : b })
+    product = product.replace(new RegExp(quoteChar, 'g'), replacements[quoteChar])
+    return quoteChar + product + quoteChar
+}

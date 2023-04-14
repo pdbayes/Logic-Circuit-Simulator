@@ -1,4 +1,5 @@
 import { Branded } from "io-ts"
+import JSON5 from "json5"
 import { ButtonDataset } from "./ComponentFactory"
 import { ALUDef } from "./components/ALU"
 import { AdderDef } from "./components/Adder"
@@ -42,7 +43,7 @@ import { TriStateBufferArrayDef } from "./components/TriStateBufferArray"
 import { a, button, cls, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage } from "./images"
 import { S, Strings } from "./strings"
-import { deepObjectEquals, isDefined, isString, isUndefined } from "./utils"
+import { deepObjectEquals, isString } from "./utils"
 
 export type ComponentKey = Strings["ComponentBar"]["Components"]["type"]
 
@@ -184,7 +185,7 @@ const componentsMenu: Array<Section> = [{
 export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] | undefined) {
 
     let showOnly: string[] | undefined = undefined
-    if (isDefined(_showOnly)) {
+    if (_showOnly !== undefined) {
         showOnly = [..._showOnly]
     }
 
@@ -219,17 +220,17 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
         const showWithMoreButton: HTMLButtonElement[] = []
         const showOnlyWithURLParam: HTMLButtonElement[] = []
         for (const item of section.items) {
-            const normallyHidden = isDefined(item.visible) && item.visible !== "always"
-            const hiddenNow = isDefined(showOnly) ? !shouldShow(item, showOnly) : normallyHidden
+            const normallyHidden = item.visible !== undefined && item.visible !== "always"
+            const hiddenNow = showOnly !== undefined ? !shouldShow(item, showOnly) : normallyHidden
 
             const buttonStyle = !hiddenNow ? "" : "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
             const visual = item.visual
             const [stringsKey, img] = isString(visual) ? [visual, visual] : visual
             const compStrings = S.ComponentBar.Components.props[stringsKey]
             const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
-            const caption = isUndefined(captionStr) ? emptyMod : span(cls("gate-label"), captionStr)
+            const caption = captionStr === undefined ? emptyMod : span(cls("gate-label"), captionStr)
             const classIds = componentIdsFor(item)
-            const buttonTitle = title(isUndefined(titleStr) ? "" : (titleStr + " \n") + `(“${classIds[0]}”)`)
+            const buttonTitle = title(titleStr === undefined ? "" : (titleStr + " \n") + `(“${classIds[0]}”)`)
             const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
             const params = item.params?.params
             const compButton =
@@ -240,12 +241,12 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
 
             const compDataset = compButton.dataset as ButtonDataset
             compDataset.category = item.category
-            if (isDefined(item.type)) {
+            if (item.type !== undefined) {
                 compDataset.type = item.type
             }
             compDataset.componentId = classIds[0]
-            if (isDefined(params)) {
-                compDataset.params = JSON.stringify(params)
+            if (params !== undefined) {
+                compDataset.params = JSON5.stringify(params)
             }
 
             if (hiddenNow) {
@@ -261,7 +262,7 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
         const numVisible = numAdded - numShowWithMoreButton - showOnlyWithURLParam.length
 
         // link to show more if needed
-        if (numShowWithMoreButton !== 0 && isUndefined(showOnly)) {
+        if (numShowWithMoreButton !== 0 && showOnly === undefined) {
             let moreShown = false
             const names = [S.ComponentBar.Labels.More + " ↓", S.ComponentBar.Labels.Less + " ↑"]
             const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
@@ -288,7 +289,7 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
         }
 
         if (numVisible === 0) {
-            if (isDefined(separator)) {
+            if (separator !== undefined) {
                 separator.remove()
             }
             header.remove()
@@ -302,7 +303,7 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
 
     }
 
-    if (isDefined(showOnly) && showOnly.length > 0) {
+    if (showOnly !== undefined && showOnly.length > 0) {
         console.log(`ERROR Supposed to show unknown elems: ${showOnly.join("; ")}`)
     }
 }
@@ -329,7 +330,7 @@ function componentIdsFor(item: LibraryItem): string[] {
     const category = item.category
     const defAndParams = item.params
 
-    if (isDefined(defAndParams)) {
+    if (defAndParams !== undefined) {
         const ids: string[] = []
         const { def, params } = defAndParams
         if (category !== "gate" && deepObjectEquals(params, def.defaultParams)) {
@@ -338,7 +339,7 @@ function componentIdsFor(item: LibraryItem): string[] {
         }
         const specificId = def.variantName(params)
         ids.push(specificId.toLowerCase())
-        if (isDefined(item.compat)) {
+        if (item.compat !== undefined) {
             ids.push(item.compat.toLowerCase())
         }
         if (ids.length !== 0) {
@@ -348,7 +349,7 @@ function componentIdsFor(item: LibraryItem): string[] {
 
     const type = item.type
     let buttonId
-    if (isUndefined(type)) {
+    if (type === undefined) {
         buttonId = category
     } else {
         if (category === "ic" || category === "gate") {

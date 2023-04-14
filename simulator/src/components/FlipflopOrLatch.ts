@@ -1,7 +1,7 @@
 import * as t from "io-ts"
 import { COLOR_BACKGROUND_INVALID, COLOR_COMPONENT_BORDER, colorForBoolean, drawValueText } from "../drawutils"
 import { S } from "../strings"
-import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, isUndefined, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { EdgeTrigger, LogicValue, LogicValueRepr, Unknown, toLogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, InstantiatedComponentDef, NodesIn, NodesOut, Repr, defineAbstractComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
@@ -28,10 +28,10 @@ export const FlipflopOrLatchDef =
             }
         },
         initialValue: (saved, defaults): [LogicValue, LogicValue] => {
-            if (isUndefined(saved)) {
+            if (saved === undefined) {
                 return [false, true]
             }
-            const state = isUndefined(saved.state) ? defaults.state : toLogicValue(saved.state)
+            const state = saved.state === undefined ? defaults.state : toLogicValue(saved.state)
             return [state, LogicValue.invert(state)]
         },
     })

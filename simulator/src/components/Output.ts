@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, isTrivialNodeName, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, Mode, Unknown, isDefined, isUndefined, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ArrayFillWith, LogicValue, Mode, Unknown, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { Component, ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { InputDef } from "./Input"
@@ -116,7 +116,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         g.stroke()
 
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(this._name)) {
+            if (this._name !== undefined) {
                 drawComponentName(g, ctx, this._name, toLogicValueRepr(valueToShow), this, true)
             }
             drawValueTextCentered(g, valueToShow, this)
@@ -159,7 +159,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
         // labels
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(this._name)) {
+            if (this._name !== undefined) {
                 const valueString = displayValues.map(toLogicValueRepr).reverse().join("")
                 drawComponentName(g, ctx, this._name, valueString, this, true)
             }
@@ -179,9 +179,9 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         const [inNode, comp, outNode] = newLinks[0]
         if (outNode instanceof NodeOut) {
             let group
-            if (isDefined(group = outNode.group) && group.nodes.length === 1 && !isTrivialNodeName(group.name)) {
+            if ((group = outNode.group) !== undefined && group.nodes.length === 1 && !isTrivialNodeName(group.name)) {
                 this.doSetName(group.name)
-            } else if (isUndefined(this._name) && !isTrivialNodeName(outNode.shortName)) {
+            } else if (this._name === undefined && !isTrivialNodeName(outNode.shortName)) {
                 this.doSetName(outNode.shortName)
             }
         }

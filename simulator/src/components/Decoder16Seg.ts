@@ -12,7 +12,7 @@ export const Decoder16SegDef =
         size: { gridWidth: 4, gridHeight: 10 },
         makeNodes: () => ({
             ins: {
-                I: group("w", [
+                In: group("w", [
                     [-3, -3],
                     [-3, -2],
                     [-3, -1],
@@ -70,7 +70,7 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
     }
 
     protected doRecalcValue(): FixedArray<LogicValue, 17> {
-        const input = this.inputValues(this.inputs.I)
+        const input = this.inputValues(this.inputs.In)
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
@@ -98,13 +98,13 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
         this.doDrawDefault(g, ctx, {
             skipLabels: true,
             drawInside: bounds => {
-                this.drawGroupBox(g, this.inputs.I.group, bounds)
+                this.drawGroupBox(g, this.inputs.In.group, bounds)
             },
             drawLabels: (ctx, { left, right }) => {
                 g.fillStyle = COLOR_COMPONENT_INNER_LABELS
                 g.font = "bold 11px sans-serif"
 
-                drawLabel(ctx, this.orient, "C", "w", left, this.inputs.I)
+                drawLabel(ctx, this.orient, "C", "w", left, this.inputs.In)
 
                 g.font = "7px sans-serif"
                 this.outputs._all.forEach(output => {

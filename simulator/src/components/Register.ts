@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, GRID_STEP, displayValuesFromArray, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
+import { ArrayFillWith, EdgeTrigger, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isHighImpedance, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ExtractParamDefs, ExtractParams, NodesIn, NodesOut, ParametrizedComponentBase, ReadonlyGroupedNodeArray, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupVertical, param, paramBool } from "./Component"
 import { Counter } from "./Counter"
 import { DrawContext, DrawContextExt, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
@@ -53,7 +53,7 @@ export const RegisterBaseDef =
         },
         initialValue: (saved, { numBits }) => {
             let content
-            if (isUndefined(saved) || isUndefined(content = saved.content)) {
+            if (saved === undefined || (content = saved.content) === undefined) {
                 return ArrayFillWith(false, numBits)
             }
             return wordFromBinaryOrHexRepr(content, numBits)

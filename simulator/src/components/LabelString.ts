@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { DrawZIndex } from "../ComponentList"
 import { COLOR_COMPONENT_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { S } from "../strings"
-import { InteractionResult, isUndefined, typeOrUndefined } from "../utils"
+import { InteractionResult, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
@@ -54,7 +54,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
 
     public override get unrotatedHeight() {
         const metrics = this._cachedTextMetrics
-        if (isUndefined(metrics)) {
+        if (metrics === undefined) {
             return 2 * GRID_STEP
         }
         return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
@@ -78,7 +78,7 @@ export class LabelString extends ComponentBase<LabelStringRepr> {
         g.lineWidth = 3
 
         if (ctx.isMouseOver) {
-            if (isUndefined(this._cachedTextMetrics)) {
+            if (this._cachedTextMetrics === undefined) {
                 this._cachedTextMetrics = g.measureText(this._text)
             }
             const width = this.unrotatedWidth

@@ -13,7 +13,7 @@ export const DecoderBCD4Def =
         size: { gridWidth: 5, gridHeight: 10 },
         makeNodes: () => ({
             ins: {
-                I: group("w", [
+                In: group("w", [
                     [-4, -3, "A"],
                     [-4, -1, "B"],
                     [-4, +1, "C"],
@@ -21,7 +21,7 @@ export const DecoderBCD4Def =
                 ]),
             },
             outs: {
-                Z: groupVertical("e", 4, 0, 5, 2),
+                Out: groupVertical("e", 4, 0, 5, 2),
             },
         }),
         initialValue: () => FixedArrayFillWith(false as LogicValue, 5),
@@ -49,7 +49,7 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
     }
 
     protected doRecalcValue(): FixedArray<LogicValue, 5> {
-        const input = this.inputValues(this.inputs.I)
+        const input = this.inputValues(this.inputs.In)
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
@@ -83,7 +83,7 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        this.outputValues(this.outputs.Z, newValue, true)
+        this.outputValues(this.outputs.Out, newValue, true)
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {

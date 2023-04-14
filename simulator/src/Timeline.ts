@@ -1,5 +1,5 @@
 import { LogicEditor } from "./LogicEditor"
-import { isDefined, isUndefined, TimeoutHandle } from "./utils"
+import { TimeoutHandle } from "./utils"
 
 export type Timestamp = number
 export type CallbackFn = () => unknown
@@ -54,7 +54,7 @@ export class Timeline {
         this._sortedNextCallbackTimes = []
         this._schedule = {}
         this._numCallbacksEnablingPause = 0
-        if (isDefined(this._nextTimeout)) {
+        if (this._nextTimeout !== undefined) {
             clearTimeout(this._nextTimeout.handle)
             this._nextTimeout = undefined
         }
@@ -63,7 +63,7 @@ export class Timeline {
     }
 
     public get isPaused() {
-        return isDefined(this._pausedSince)
+        return this._pausedSince !== undefined
     }
 
     public get nextTickDesc(): string | undefined {
@@ -98,12 +98,12 @@ export class Timeline {
     }
 
     public logicalTime(): Timestamp {
-        if (isDefined(this._fixedLogicalTime)) {
+        if (this._fixedLogicalTime !== undefined) {
             // we're in a callback, return constant value
             return this._fixedLogicalTime
         }
 
-        if (isDefined(this._pausedSince)) {
+        if (this._pausedSince !== undefined) {
             // return constant value of "stuck" time
             return this._pausedSince - this._epochStart
         }
@@ -159,7 +159,7 @@ export class Timeline {
 
         if (this._sortedNextCallbackTimes.length === 0) {
             // make sure nothing is scheduled
-            if (isDefined(this._nextTimeout)) {
+            if (this._nextTimeout !== undefined) {
                 clearTimeout(this._nextTimeout.handle)
                 this._nextTimeout = undefined
             }
@@ -167,7 +167,7 @@ export class Timeline {
         } else {
             // check if we need to reschedule
             const tickTime = this._sortedNextCallbackTimes[0]
-            if (isDefined(this._nextTimeout)) {
+            if (this._nextTimeout !== undefined) {
                 if (this._nextTimeout.tickTime <= tickTime) {
                     // something's scheduled before
                     return
@@ -188,7 +188,7 @@ export class Timeline {
     private nextTickCallback() {
         this._nextTimeout = undefined
         // don't do anything if this was called while we are paused
-        if (isDefined(this._pausedSince)) {
+        if (this._pausedSince !== undefined) {
             return
         }
         this.handleNextTick()
@@ -197,7 +197,7 @@ export class Timeline {
     private handleNextTick() {
         // run all the handlers from the next tick
         const wantedTime = this._sortedNextCallbackTimes.shift()
-        if (isUndefined(wantedTime)) {
+        if (wantedTime === undefined) {
             return
         }
         const now = this.logicalTime()
@@ -216,7 +216,7 @@ export class Timeline {
             // without causing iteration issues
             let elem
             this._fixedLogicalTime = wantedTime
-            while (isDefined(elem = callbacks.shift())) {
+            while ((elem = callbacks.shift()) !== undefined) {
                 const { callback, desc, enablesPause } = elem
                 this._numCallbacksEnablingPause -= enablesPause ? 1 : 0
                 // console.log(`  -> Running '${desc}'`)
@@ -242,10 +242,10 @@ export class Timeline {
     }
 
     public pause() {
-        if (isDefined(this._pausedSince)) {
+        if (this._pausedSince !== undefined) {
             return
         }
-        if (isDefined(this._nextTimeout)) {
+        if (this._nextTimeout !== undefined) {
             clearTimeout(this._nextTimeout.handle)
             this._nextTimeout = undefined
         }
@@ -255,7 +255,7 @@ export class Timeline {
     }
 
     public play() {
-        if (isUndefined(this._pausedSince)) {
+        if (this._pausedSince === undefined) {
             return
         }
         this._epochStart += (this.unadjustedTime() - this._pausedSince)
@@ -267,7 +267,7 @@ export class Timeline {
     }
 
     public step() {
-        if (isUndefined(this._pausedSince) || this._sortedNextCallbackTimes.length === 0) {
+        if (this._pausedSince === undefined || this._sortedNextCallbackTimes.length === 0) {
             return
         }
         // move back epoch start time to simulate that the time
@@ -281,7 +281,7 @@ export class Timeline {
 
     private fireStateChangedIfNeeded() {
         const newState = this.state
-        if (isUndefined(this._lastSentState) || !areStatesEqual(this._lastSentState, newState)) {
+        if (this._lastSentState === undefined || !areStatesEqual(this._lastSentState, newState)) {
             this.onStateChanged(newState)
             this._lastSentState = newState
         }

@@ -4,7 +4,7 @@ import { RectangleColor } from "./components/LabelRect"
 import { Node, WireColor } from "./components/Node"
 import { LedColor } from "./components/OutputBar"
 import { LogicEditor } from "./LogicEditor"
-import { EdgeTrigger, isArray, isDefined, isHighImpedance, isNumber, isString, isUndefined, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { EdgeTrigger, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 
 
 //
@@ -323,7 +323,7 @@ export function useCompact(numNodes: number) {
 
 const trivialNameMatcher = /^(In|Out|in|out)\d*$/
 export function isTrivialNodeName(name: string | undefined): boolean {
-    return isUndefined(name) || trivialNameMatcher.test(name)
+    return name === undefined || trivialNameMatcher.test(name)
 }
 
 
@@ -545,19 +545,19 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number, y: number, referenceNode: Node | ReadonlyGroupedNodeArray<Node> | undefined): void
 
 export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: string | undefined, anchor: Orientation | undefined, x: number | Node | ReadonlyGroupedNodeArray<Node>, y: number | Node | ReadonlyGroupedNodeArray<Node>, referenceNode?: Node | ReadonlyGroupedNodeArray<Node>) {
-    if (isUndefined(text)) {
+    if (text === undefined) {
         return
     }
 
     let nodeHidden = false
-    if (isUndefined(referenceNode)) {
+    if (referenceNode === undefined) {
         if (!isNumber(x)) {
             referenceNode = x
         } else if (!isNumber(y)) {
             referenceNode = y
         }
     }
-    if (isDefined(referenceNode)) {
+    if (referenceNode !== undefined) {
         nodeHidden = !shouldShowNode(referenceNode)
     }
     if (nodeHidden) {
@@ -565,7 +565,7 @@ export function drawLabel(ctx: DrawContextExt, compOrient: Orientation, text: st
     }
 
     const [halign, valign, dx, dy] = (() => {
-        if (isUndefined(anchor)) {
+        if (anchor === undefined) {
             return ["center", "middle", 0, 0] as const
         }
         const rotatedAnchor = Orientation.add(compOrient, anchor)
@@ -661,7 +661,7 @@ function textSettingsForName(onRight: boolean, orient: Orientation) {
 }
 
 export function drawComponentName(g: GraphicsRendering, ctx: DrawContextExt, name: ComponentName, value: string | number, comp: Component, onRight: boolean) {
-    if (isUndefined(name)) {
+    if (name === undefined) {
         return
     }
 
@@ -681,7 +681,7 @@ export function drawComponentName(g: GraphicsRendering, ctx: DrawContextExt, nam
         }
     }
 
-    if (isUndefined(displayName)) {
+    if (displayName === undefined) {
         return
     }
 

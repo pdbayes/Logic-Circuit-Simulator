@@ -1,6 +1,6 @@
 import { LogicEditor } from "./LogicEditor"
-import { PersistenceManager } from "./PersistenceManager"
-import { InteractionResult, isDefined, isUndefined, RepeatFunction } from "./utils"
+import { Serialization } from "./Serialization"
+import { InteractionResult, RepeatFunction } from "./utils"
 
 const MAX_UNDO_SNAPSHOTS = 100
 
@@ -44,7 +44,7 @@ export class UndoManager {
     public canRedoOrRepeat() {
         return this._redoSnapshots.length > 0 ||
             (this._undoSnapshots.length > 0 &&
-                isDefined(this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction))
+                this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction) !== undefined
     }
 
     public takeSnapshot(interactionResult?: InteractionResult) {
@@ -53,7 +53,7 @@ export class UndoManager {
             return
         }
 
-        const repeatAction = isUndefined(interactionResult) ? undefined
+        const repeatAction = interactionResult === undefined ? undefined
             : interactionResult._tag === "RepeatableChange" ? interactionResult.repeat : undefined
         this.doTakeSnapshot(repeatAction)
     }
@@ -64,7 +64,7 @@ export class UndoManager {
         // console.log("Taking snapshot at " + nowStr + " (repeatAction=" + repeatAction + ")")
 
         const dataObject = this.editor.save()
-        const jsonStr = PersistenceManager.stringifyObject(dataObject, true)
+        const jsonStr = Serialization.stringifyObject(dataObject, true)
         this._undoSnapshots.push({ time: now, circuitStr: jsonStr, repeatAction })
         while (this._undoSnapshots.length > MAX_UNDO_SNAPSHOTS) {
             this._undoSnapshots.shift()
@@ -95,12 +95,12 @@ export class UndoManager {
             return
         }
         const snapshot = this._redoSnapshots.pop()
-        if (isDefined(snapshot)) {
+        if (snapshot !== undefined) {
             this._undoSnapshots.push(snapshot)
             this.loadSnapshot(snapshot)
         } else {
             const repeatAction = this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction
-            if (isDefined(repeatAction)) {
+            if (repeatAction !== undefined) {
                 const result = repeatAction()
                 const newRepeatAction = result === false ? undefined : result === true ? repeatAction : result
                 this.doTakeSnapshot(newRepeatAction)
@@ -126,12 +126,12 @@ export class UndoManager {
     }
 
     private loadSnapshot(snapshot: Snapshot) {
-        PersistenceManager.loadCircuit(this.editor, snapshot.circuitStr, { isUndoRedoAction: true })
+        Serialization.loadCircuit(this.editor, snapshot.circuitStr, { isUndoRedoAction: true })
     }
 
     private fireStateChangedIfNeeded() {
         const newState = this.state
-        if (isUndefined(this._lastSentState) || !areStatesEqual(this._lastSentState, newState)) {
+        if (this._lastSentState === undefined || !areStatesEqual(this._lastSentState, newState)) {
             this.onStateChanged(newState)
             this._lastSentState = newState
         }

@@ -3,7 +3,7 @@ import { DrawZIndex } from "../ComponentList"
 import { COLOR_COMPONENT_BORDER, COLOR_RECTANGLE_BACKGROUND, COLOR_RECTANGLE_BORDER, FONT_LABEL_DEFAULT, GRID_STEP } from "../drawutils"
 import { span, style, title } from "../htmlgen"
 import { S } from "../strings"
-import { InteractionResult, isDefined, isUndefined, typeOrUndefined } from "../utils"
+import { InteractionResult, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, Drawable, DrawableParent, DrawableWithPosition, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 
@@ -157,7 +157,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
             g.fill()
         }
 
-        if (isDefined(this._caption)) {
+        if (this._caption !== undefined) {
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.font = this._font
             g.textAlign = "center"
@@ -264,7 +264,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
             const isCurrent = this._color === color
             const icon = isCurrent ? "check" : "none"
             const action = isCurrent ? () => undefined : () => this.doSetColor(color)
-            if (isDefined(color)) {
+            if (color !== undefined) {
                 const fillColorProp = this._noFill ? "" : `background-color: ${COLOR_RECTANGLE_BACKGROUND[color]}; `
                 const roundedProp = !this._rounded ? "" : "border-radius: 4px; "
                 const borderColor = COLOR_RECTANGLE_BORDER[color]
@@ -284,7 +284,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
             this.setNeedsRedraw("nofill changed")
         })
 
-        const setCaptionItemName = isDefined(this._caption) ? s.ChangeTitle : s.SetTitle
+        const setCaptionItemName = this._caption !== undefined ? s.ChangeTitle : s.SetTitle
         const setCaptionItem = MenuData.item("pen", setCaptionItemName, () => this.runSetCaptionDialog(), "↩︎")
 
         const makeItemSetPlacement = (desc: string, placement: CaptionPosition) => {
@@ -352,7 +352,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
             let match
             if ((match = /^(?<w>\d*)(?:(?:\s+|(?: *[×x,;] *))(?<h>\d*))?$/.exec(promptReturnValue)) !== null) {
                 const parse = (s: string | undefined, dflt: number) => {
-                    if (isUndefined(s)) {
+                    if (s === undefined) {
                         return dflt
                     }
                     const n = parseInt(s)

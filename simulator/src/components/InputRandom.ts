@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray, drawLabel, useCompact } from "../drawutils"
 import { tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, LogicValue, Unknown, isDefined, typeOrUndefined } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, EdgeTrigger, LogicValue, Unknown, typeOrUndefined } from "../utils"
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
@@ -68,8 +68,8 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
 
         this.numBits = params.numBits
 
-        this._prob1 = isDefined(saved?.prob1)
-            ? Math.max(0, Math.min(1, saved!.prob1)) : InputRandomDef.aults.prob1
+        this._prob1 = saved?.prob1 !== undefined
+            ? Math.max(0, Math.min(1, saved.prob1)) : InputRandomDef.aults.prob1
         this._showProb = saved?.showProb ?? InputRandomDef.aults.showProb
         this._trigger = saved?.trigger ?? InputRandomDef.aults.trigger
         this._name = saved?.name ?? undefined

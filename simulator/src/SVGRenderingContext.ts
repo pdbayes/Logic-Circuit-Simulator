@@ -9,7 +9,7 @@
  *  http://www.opensource.org/licenses/mit-license.php
  */
 
-import { isDefined, isString, isUndefined } from "./utils"
+import { isString } from "./utils"
 
 export type ContextOptions = {
     width: number
@@ -70,9 +70,9 @@ export class SVGRenderingContext {
 
         // keep support for this way of calling Context: new Context(width, height)
         let options: Partial<ContextOptions>
-        if (isDefined(height)) {
+        if (height !== undefined) {
             options = { width: optionsOrWidth as number, height }
-        } else if (isDefined(optionsOrWidth)) {
+        } else if (optionsOrWidth !== undefined) {
             options = optionsOrWidth as Partial<ContextOptions>
         } else {
             options = {}
@@ -108,7 +108,7 @@ export class SVGRenderingContext {
         // make sure we don't generate the same ids in defs
         this._ids = {}
 
-        if (isDefined(options.metadata)) {
+        if (options.metadata !== undefined) {
             const metadata = this._document.createElementNS("http://www.w3.org/2000/svg", "metadata")
             const textNode = this._document.createTextNode(options.metadata)
             metadata.appendChild(textNode)
@@ -137,7 +137,7 @@ export class SVGRenderingContext {
             element.setAttribute("fill", "none")
             element.setAttribute("stroke", "none")
         }
-        if (isDefined(properties)) {
+        if (properties !== undefined) {
             for (const [key, value] of Object.entries(properties)) {
                 element.setAttribute(key, String(value))
             }
@@ -274,7 +274,7 @@ export class SVGRenderingContext {
 
     public beginGroup(className: string | undefined) {
         const group = this._createElement("g")
-        if (isDefined(className)) {
+        if (className !== undefined) {
             group.setAttribute("class", className)
         }
         const parent = this._closestGroupOrSvg()
@@ -390,7 +390,7 @@ export class SVGRenderingContext {
 
     public fillRect(x: number, y: number, width: number, height: number) {
         const { a, b, c, d, e, f } = this.getTransform()
-        if (JSON.stringify([a, b, c, d, e, f]) === JSON.stringify([1, 0, 0, 1, 0, 0])) {
+        if (a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0) {
             // clear entire canvas
             if (x === 0 && y === 0 && width === this.width && height === this.height) {
                 this._clearCanvas()
@@ -482,7 +482,7 @@ export class SVGRenderingContext {
 
         clipPath.setAttribute("id", id)
 
-        if (isDefined(fillRule)) {
+        if (fillRule !== undefined) {
             clipPath.setAttribute("clip-rule", fillRule)
         }
 
@@ -548,7 +548,7 @@ export class SVGRenderingContext {
                     this._defs.appendChild(defs.childNodes[0])
                 }
                 const group = svg.children[1] as SVGElement
-                if (isDefined(group)) {
+                if (group !== undefined) {
                     this._applyTransformation(group, matrix)
                     parent.appendChild(group)
                 }
@@ -607,7 +607,7 @@ export class SVGRenderingContext {
         this._applyTransformation(textElement)
         this._applyStyleToElement(this._currentElement, action)
 
-        if (isDefined(this.fontHref)) {
+        if (this.fontHref !== undefined) {
             const a = this._createElement("a")
             // canvas doesn't natively support linking, but we do :)
             a.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", this.fontHref)
@@ -709,7 +709,7 @@ export class SVGRenderingContext {
     public setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void
 
     public setTransform(am: DOMMatrixReadOnly | number, b?: number, c?: number, d?: number, e?: number, f?: number) {
-        if (isUndefined(b)) {
+        if (b === undefined) {
             const m = am as DOMMatrixReadOnly
             this._transformMatrix = new DOMMatrix([m.a, m.b, m.c, m.d, m.e, m.f])
         } else {
@@ -796,7 +796,7 @@ class Path2DSVG {
 
     public constructor(g: SVGRenderingContext, path?: string | Path2DSVG) {
         this.g = g
-        if (isUndefined(path)) {
+        if (path === undefined) {
             this._parts = []
             this._hasMoved = false
         } else if (isString(path)) {
@@ -929,7 +929,7 @@ class Path2DSVG {
         const y0 = this._posY
 
         // First ensure there is a subpath for (x1, y1).
-        if (isUndefined(x0) || isUndefined(y0)) {
+        if (x0 === undefined || y0 === undefined) {
             return
         }
 
@@ -1127,7 +1127,7 @@ function randomString(holder?: Record<string, unknown>) {
         for (let i = 0; i < 12; i++) {
             randomstring += chars[Math.floor(Math.random() * chars.length)]
         }
-    } while (isDefined(holder[randomstring]))
+    } while (holder[randomstring] !== undefined)
     return randomstring
 }
 

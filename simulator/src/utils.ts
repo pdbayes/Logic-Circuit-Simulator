@@ -1,7 +1,7 @@
-
 import { isLeft } from "fp-ts/lib/Either"
 import * as t from "io-ts"
 import { PathReporter } from "io-ts/lib/PathReporter"
+import JSON5 from "json5"
 import { Add } from "ts-arithmetic"
 
 export type Dict<T> = Record<string, T | undefined>
@@ -78,7 +78,7 @@ export function tuple<T extends readonly any[]>(...items: [...T]): [...T] {
 export function mergeWhereDefined<A, B>(a: A, b: B): A & PickDefined<B> {
     const obj: any = { ...a }
     for (const [k, v] of Object.entries(b as any)) {
-        if (isDefined(v)) {
+        if (v !== undefined) {
             obj[k] = v
         }
     }
@@ -164,17 +164,9 @@ export function defineADTStatics<
 
 // Series of type-assertion functions
 
-export function isUndefined(v: unknown): v is undefined {
-    return typeof v === "undefined"
-}
-
-export function isDefined<T>(v: T | undefined): v is T {
-    return typeof v !== "undefined"
-}
-
-export function isUndefinedOrNull(v: unknown): v is undefined | null {
-    return v === null || isUndefined(v)
-}
+// We *don't* have isUndefined, etc. functions as they
+// do not improve readability or correctness (see for clarifications
+// https://stackoverflow.com/a/22053469/390581)
 
 export function isString(v: unknown): v is string {
     return typeof v === "string"
@@ -282,7 +274,7 @@ export function FixedArrayMap<U, Arr extends readonly any[]>(items: Arr, fn: (it
 // JSON
 
 export function JSONParseObject(str: string): Record<string, unknown> {
-    const parsed: unknown = JSON.parse(str)
+    const parsed: unknown = JSON5.parse(str)
     if (isRecord(parsed)) {
         return parsed
     }
@@ -291,11 +283,11 @@ export function JSONParseObject(str: string): Record<string, unknown> {
 
 
 export function isTruthyString(str: string | null | undefined): boolean {
-    return !isUndefinedOrNull(str) && (str === "1" || str.toLowerCase() === "true")
+    return str !== null && str !== undefined && (str === "1" || str.toLowerCase() === "true")
 }
 
 export function isFalsyString(str: string | null | undefined): boolean {
-    return !isUndefinedOrNull(str) && (str === "0" || str.toLowerCase() === "false")
+    return str !== null && str !== undefined && (str === "0" || str.toLowerCase() === "false")
 }
 
 export function getURLParameter<T>(sParam: string, defaultValue: T): string | T
@@ -714,7 +706,7 @@ export const fetchJSONP = ((unique: number) => (url: string) =>
         (window as any)[name] = (json: any) => {
             script.remove()
             delete (window as any)[name]
-            resolve(JSON.stringify(json))
+            resolve(JSON5.stringify(json))
         }
 
         document.body.appendChild(script)

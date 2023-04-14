@@ -9,6 +9,7 @@
     "file-saver": "^2.0.5",
     "fp-ts": "^2.13.1",
     "io-ts": "^2.2.16",
+    "json5": "^2.2.3",
     "lz-string": "^1.4.4",
     "png-metadata-writer": "^1.0.1",
     "qrcode": "^1.5.0"

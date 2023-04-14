@@ -3,7 +3,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_EMPTY, colorForBoolean, displayValuesFromArray, formatWithRadix, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isDefined, isUndefined, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
+import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupHorizontal, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
 import { RAM, RAMDef } from "./RAM"
@@ -49,7 +49,7 @@ export const ROMRAMDef =
             }
         },
         initialValue: (saved, { numDataBits, numWords }) => {
-            if (isUndefined(saved) || isUndefined(saved.content)) {
+            if (saved === undefined || saved.content === undefined) {
                 return ROMRAMBase.defaultValue(numWords, numDataBits)
             }
             const mem = ROMRAMBase.contentsFromString(saved.content, numDataBits, numWords)
@@ -192,7 +192,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
             } else {
                 const isVertical = Orientation.isVertical(this.orient)
                 const canUseTwoCols = isVertical
-                const addressedContentHeight = isDefined(this._displayRadix) ? 12 : 0
+                const addressedContentHeight = this._displayRadix !== undefined ? 12 : 0
                 const contentCenterY = this.posY - addressedContentHeight / 2
                 const [availWidth, availHeight] = !isVertical
                     ? [width - 42, height - 30 - addressedContentHeight]
@@ -217,7 +217,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
                 }
             }
 
-            if (isDefined(this._displayRadix)) {
+            if (this._displayRadix !== undefined) {
                 g.textAlign = "center"
                 g.textBaseline = "top"
                 const word = isUnknown(addr) ? Unknown : displayValuesFromArray(mem[addr], false)[1]
@@ -280,7 +280,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
                 (repr as any).type = isROM ? "ram" : "rom"
                 const otherDef = isROM ? RAMDef : ROMDef
                 const newComp = otherDef.makeFromJSON(this.parent, repr)
-                if (isUndefined(newComp)) {
+                if (newComp === undefined) {
                     console.warn("Could not swap ROM/RAM from repr:", repr)
                     return
                 }

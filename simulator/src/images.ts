@@ -116,7 +116,6 @@ import XNOR4 from '../img/XNOR4.svg'; // @ts-ignore
 import XOR from '../img/XOR.svg'; // @ts-ignore
 import XOR3 from '../img/XOR3.svg'; // @ts-ignore
 import XOR4 from '../img/XOR4.svg'; // @ts-ignore
-import { isDefined } from './utils';
 
 
 void 0 // dummy line to consume the last 'ts-ignore'
@@ -256,10 +255,10 @@ export function makeIcon(name: IconName, width?: number, height?: number): HTMLE
 function makeSvgHolder<TImages extends Record<string, string>>(className: string, svgData: TImages, name: string & keyof TImages, width?: number, height?: number): HTMLElement {
     const elem = document.createElement('i')
     elem.classList.add(className)
-    if (isDefined(width)) {
+    if (width !== undefined) {
         elem.style.width = `${width}px`
     }
-    if (isDefined(height)) {
+    if (height !== undefined) {
         elem.style.height = `${height}px`
     }
     elem.dataset.icon = name

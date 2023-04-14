@@ -13,6 +13,7 @@ import DialogPolyfillCSS from "../../node_modules/dialog-polyfill/dist/dialog-po
 
 import dialogPolyfill from 'dialog-polyfill'
 import { saveAs } from 'file-saver'
+import JSON5 from "json5"
 import * as LZString from "lz-string"
 import * as pngMeta from 'png-metadata-writer'
 import { ComponentFactory } from "./ComponentFactory"
@@ -20,9 +21,9 @@ import { ComponentList, DrawZIndex } from "./ComponentList"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
-import { PersistenceManager } from "./PersistenceManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { SVGRenderingContext } from "./SVGRenderingContext"
+import { Serialization } from "./Serialization"
 import { Tests } from "./Tests"
 import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
@@ -36,7 +37,7 @@ import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isDefined, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, isUndefined, isUndefinedOrNull, setEnabled, setVisible, showModal } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, setEnabled, setVisible, showModal } from "./utils"
 
 
 
@@ -275,7 +276,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         this._options = newOptions
         let optionsHtml
 
-        if (isDefined(optionsHtml = this.optionsHtml)) {
+        if ((optionsHtml = this.optionsHtml) !== undefined) {
             this.setDocumentName(newOptions.name)
             optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
@@ -290,7 +291,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
             optionsHtml.zoomLevelField.valueAsNumber = newOptions.zoom
 
-            optionsHtml.showUserDataLinkContainer.style.display = isDefined(this.userdata) ? "initial" : "none"
+            optionsHtml.showUserDataLinkContainer.style.display = this.userdata !== undefined ? "initial" : "none"
         }
 
         this._actualZoomFactor = clampZoom(newOptions.zoom)
@@ -303,7 +304,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             return
         }
         const defaultTitle = "Logic"
-        if (isUndefined(name)) {
+        if (name === undefined) {
             document.title = defaultTitle
         } else {
             document.title = `${name} – ${defaultTitle}`
@@ -337,7 +338,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     public setActiveTool(toolElement: HTMLElement, e: MouseEvent) {
         const tool = toolElement.getAttribute("tool")
-        if (isUndefinedOrNull(tool)) {
+        if (tool === null || tool === undefined) {
             return
         }
 
@@ -351,18 +352,18 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         if (tool === "save") {
             if (e.altKey && this.editor.factory.hasCustomComponents()) {
-                PersistenceManager.saveLibraryToFile(this)
+                Serialization.saveLibraryToFile(this)
             } else {
-                PersistenceManager.saveCircuitToFile(this)
+                Serialization.saveCircuitToFile(this)
             }
             return
         }
 
         if (tool === "screenshot") {
             if (e.altKey) {
-                this.downloadAsSVG()
+                this.download(this.toSVG(true), ".svg")
             } else {
-                this.downloadAsPNG()
+                this.download(this.toPNG(true), ".png")
             }
             return
         }
@@ -425,11 +426,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
             e.preventDefault()
             const file = e.dataTransfer.files?.[0]
-            if (isDefined(file)) {
+            if (file !== undefined) {
                 this.tryLoadFrom(file)
             } else {
                 const dataItems = e.dataTransfer.items
-                if (isDefined(dataItems)) {
+                if (dataItems !== undefined) {
                     for (const dataItem of dataItems) {
                         if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
                             dataItem.getAsString(content => {
@@ -496,7 +497,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (this._isSingleton || this._isEmbedded) {
             const transferUrlParamToAttribute = (name: string) => {
                 const value = getURLParameter(name)
-                if (isDefined(value)) {
+                if (value !== undefined) {
                     this.setAttribute(name, value)
                 }
             }
@@ -542,7 +543,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                     }
                 }
             })
-            if (isDefined(this.userdata)) {
+            if (this.userdata !== undefined) {
                 console.log("Custom user data: ", this.userdata)
             }
         }
@@ -662,7 +663,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             const elem = this.elemWithId(buttonId)
             const [name, tooltip] = isString(strings) ? [strings, undefined] : strings
             elem.insertAdjacentText("beforeend", name)
-            if (isDefined(tooltip)) {
+            if (tooltip !== undefined) {
                 elem.setAttribute("title", tooltip)
             }
         }
@@ -805,10 +806,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         const makeRightControlButton = (icon: IconName, [text, expl]: [string | undefined, string], action: () => unknown) => {
             const but =
                 button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
-                    isUndefined(text) ? style("text-align: center") : emptyMod,
+                    text === undefined ? style("text-align: center") : emptyMod,
                     title(expl),
                     makeIcon(icon, 20, 20),
-                    isUndefined(text) ? raw("&nbsp;") : text,
+                    text === undefined ? raw("&nbsp;") : text,
                 ).render()
             but.addEventListener("click", this.wrapHandler(action))
             return but
@@ -826,7 +827,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 // show part of the interface
                 setVisible(playButton, isPaused)
                 setVisible(pauseButton, !isPaused)
-                setVisible(stepButton, isDefined(nextStepDesc))
+                setVisible(stepButton, nextStepDesc !== undefined)
                 stepButton.title = S.ControlBar.TimelineStep[1] + "\n" + (nextStepDesc ?? "")
             } else {
                 // show nothing
@@ -960,7 +961,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const showUserdataLink = a(S.Settings.showUserDataLink[1], style("text-decoration: underline; cursor: pointer")).render()
         showUserdataLink.addEventListener("click", () => {
-            alert(S.Settings.userDataHeader + "\n\n" + JSON.stringify(this.userdata, undefined, 4))
+            alert(S.Settings.userDataHeader + "\n\n" + JSON5.stringify(this.userdata, undefined, 4))
         })
         const showUserDataLinkContainer = div(
             style("margin-top: 5px; display: none"),
@@ -1029,7 +1030,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             // console.log({ x: e.clientX, y: e.clientY })
             for (const editor of LogicEditor._allConnectedEditors) {
                 const canvasContainer = editor.html.canvasContainer
-                if (isDefined(canvasContainer)) {
+                if (canvasContainer !== undefined) {
                     const canvasPos = canvasContainer.getBoundingClientRect()
                     // console.log(canvasContainer.getBoundingClientRect(), { x: e.clientX - canvasPos.left, y: e.clientY - canvasPos.top })
                     editor.mouseX = e.clientX - canvasPos.left
@@ -1042,7 +1043,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         window.addEventListener("resize", () => {
             for (const editor of LogicEditor._allConnectedEditors) {
                 const canvasContainer = editor.html.canvasContainer
-                if (isDefined(canvasContainer)) {
+                if (canvasContainer !== undefined) {
                     editor.wrapHandler(() => {
                         editor.setCanvasSize()
                         editor.redrawMgr.addReason("window resized", null)
@@ -1054,7 +1055,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         let pixelRatioMediaQuery: undefined | MediaQueryList
         const registerPixelRatioListener = () => {
-            if (isDefined(pixelRatioMediaQuery)) {
+            if (pixelRatioMediaQuery !== undefined) {
                 pixelRatioMediaQuery.onchange = null
             }
 
@@ -1152,7 +1153,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                     break
             }
 
-            // const showTxGates = mode >= Mode.FULL && (isUndefined(showOnly) || showOnly.includes("TX") || showOnly.includes("TXA"))
+            // const showTxGates = mode >= Mode.FULL && (showOnly === undefined || showOnly.includes("TX") || showOnly.includes("TXA"))
             // const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
             // setVisible(txGateButton, showTxGates)
 
@@ -1172,7 +1173,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public updateCustomComponentButtons() {
         // TODO
         const customDefs = this.factory.customDefs()
-        if (isUndefined(customDefs)) {
+        if (customDefs === undefined) {
             console.log("no custom components")
         } else {
             console.log("Custom components:")
@@ -1188,9 +1189,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             const reader = new FileReader()
             reader.onload = () => {
                 const content = reader.result?.toString()
-                if (isDefined(content)) {
+                if (content !== undefined) {
                     if (file.name.endsWith("lib.json")) {
-                        PersistenceManager.loadLibrary(this, content)
+                        Serialization.loadLibrary(this, content)
                     } else {
                         this.loadCircuit(content)
                     }
@@ -1222,14 +1223,14 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             const reader = new FileReader()
             reader.onload = e => {
                 const content = e.target?.result?.toString()
-                if (isDefined(content)) {
+                if (content !== undefined) {
 
                     const temp = document.createElement("div")
                     temp.innerHTML = content
                     const metadata = temp.querySelector("svg metadata")
                     const json = metadata?.textContent
                     temp.remove()
-                    if (!isUndefinedOrNull(json)) {
+                    if (json !== undefined && json !== null) {
                         this.loadCircuit(json)
                     }
                 }
@@ -1242,7 +1243,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public tryLoadCircuitFromData() {
-        if (isUndefined(this._initialData)) {
+        if (this._initialData === undefined) {
             return
         }
 
@@ -1266,7 +1267,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (this._initialData._type === "json") {
             // already decompressed
             try {
-                error = PersistenceManager.loadCircuit(this, this._initialData.json)
+                error = Serialization.loadCircuit(this, this._initialData.json)
             } catch (e) {
                 error = String(e) + " (JSON)"
             }
@@ -1290,17 +1291,17 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 }
             }
 
-            if (isUndefined(error) && isString(decodedData)) {
+            if (error === undefined && isString(decodedData)) {
                 // remember the decompressed/decoded value
-                error = PersistenceManager.loadCircuit(this, decodedData)
-                if (isUndefined(error)) {
+                error = Serialization.loadCircuit(this, decodedData)
+                if (error === undefined) {
                     this._initialData = { _type: "json", json: decodedData }
                 }
             }
         }
 
 
-        if (isDefined(error)) {
+        if (error !== undefined) {
             console.log("ERROR could not not load initial data: " + error)
         }
     }
@@ -1308,7 +1309,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public loadCircuit(jsonStringOrObject: string | Record<string, unknown>) {
         this.wrapHandler(
             (jsonStringOrObject: string | Record<string, unknown>) =>
-                PersistenceManager.loadCircuit(this, jsonStringOrObject)
+                Serialization.loadCircuit(this, jsonStringOrObject)
         )(jsonStringOrObject)
     }
 
@@ -1556,12 +1557,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     public saveCurrentStateToUrl() {
         const [fullJson, compressedUriSafeJson] = this.fullJsonStateAndCompressedForUri()
-        console.log("Saved to URL:\n" + fullJson)
+        console.log("Saved to URL compressed version of:\n" + fullJson)
         this.saveToUrl(compressedUriSafeJson)
     }
 
     public save() {
-        return PersistenceManager.buildCircuitObject(this)
+        return Serialization.buildCircuitObject(this)
     }
 
     public saveToUrl(compressedUriSafeJson: string) {
@@ -1572,10 +1573,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     private fullJsonStateAndCompressedForUri(): [string, string] {
-        const jsonObj = PersistenceManager.buildCircuitObject(this)
-        const jsonFull = PersistenceManager.stringifyObject(jsonObj, false)
-        PersistenceManager.removeShowOnlyFrom(jsonObj)
-        const jsonForUri = PersistenceManager.stringifyObject(jsonObj, true)
+        const jsonObj = Serialization.buildCircuitObject(this)
+        const jsonFull = Serialization.stringifyObject(jsonObj, false)
+        Serialization.removeShowOnlyFrom(jsonObj)
+        const jsonForUri = Serialization.stringifyObject(jsonObj, true)
 
         // We did this in the past, but now we're compressing things a bit
         // const encodedJson1 = btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "%3D")
@@ -1587,7 +1588,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     private fullUrlForMode(mode: Mode, compressedUriSafeJson: string): string {
         const loc = window.location
-        const showOnlyParam = isUndefined(this._options.showOnly) ? "" : `&${ATTRIBUTE_NAMES.showonly}=${this._options.showOnly.join(",")}`
+        const showOnlyParam = this._options.showOnly === undefined ? "" : `&${ATTRIBUTE_NAMES.showonly}=${this._options.showOnly.join(",")}`
         const currentLang = getLang()
         const hasCorrectLangParam = new URL(loc.href).searchParams.get(ATTRIBUTE_NAMES.lang) === currentLang
         const langParam = !hasCorrectLangParam ? "" // no param, keep default lang
@@ -1595,11 +1596,27 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         return `${loc.protocol}//${loc.host}${loc.pathname}?${ATTRIBUTE_NAMES.mode}=${Mode[mode].toLowerCase()}${langParam}${showOnlyParam}&${ATTRIBUTE_NAMES.data}=${compressedUriSafeJson}`
     }
 
-    private async toPNG(heightHint?: number) {
-        return new Promise<Blob | null>((resolve) => {
+    public toBase64(blob: Blob | null | undefined): Promise<string | undefined> {
+        return new Promise((resolve, __) => {
+            if (blob === null || blob === undefined) {
+                resolve(undefined)
+                return
+            }
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                const dataURL = reader.result as string
+                const asBase64 = dataURL.substring(dataURL.indexOf(",") + 1)
+                resolve(asBase64)
+            }
+            reader.readAsDataURL(blob)
+        })
+    }
+
+    public async toPNG(withMetadata: boolean, heightHint?: number): Promise<Blob | undefined> {
+        const pngBareBlob = await new Promise<Blob | null>((resolve) => {
             const drawingScale = 3 // super retina
             let [width, height] = this.guessAdequateCanvasSize(false)
-            if (isDefined(heightHint)) {
+            if (heightHint !== undefined) {
                 height = heightHint
             }
             width *= drawingScale
@@ -1623,59 +1640,43 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             tmpCanvas.toBlob(resolve, 'image/png')
             tmpCanvas.remove()
         })
-    }
 
-    public async toPNGBase64(heightHint?: number) {
-        const blob = await this.toPNG(heightHint)
-        if (blob === null) {
-            return null
-        }
-        return new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                let dataURL = reader.result as string
-                const prefix = "data:image/png;base64,"
-                if (dataURL.startsWith(prefix)) {
-                    dataURL = dataURL.substring(prefix.length)
-                }
-                resolve(dataURL)
-            }
-            reader.readAsDataURL(blob)
-        })
-    }
-
-    public async downloadAsPNG() {
-        const pngBareBlob = await this.toPNG()
         if (pngBareBlob === null) {
-            return
+            return undefined
         }
-        const compressedUriSafeJson = this.fullJsonStateAndCompressedForUri()[1]
 
+        if (!withMetadata) {
+            return pngBareBlob
+        }
+
+        // else, add metadata
+        const compressedUriSafeJson = this.fullJsonStateAndCompressedForUri()[1]
         const pngBareData = new Uint8Array(await pngBareBlob.arrayBuffer())
         const pngChunks = pngMeta.extractChunks(pngBareData)
         pngMeta.insertMetadata(pngChunks, { "tEXt": { "Description": compressedUriSafeJson } })
-        const pngCompletedBlob = new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
-
-        const filename = (this.options.name ?? "circuit") + ".png"
-        saveAs(pngCompletedBlob, filename)
+        return new Blob([pngMeta.encodeChunks(pngChunks)], { type: "image/png" })
     }
 
-    public downloadAsSVG() {
-        const jsonFull = PersistenceManager.stringifyObject(PersistenceManager.buildCircuitObject(this), false)
+    public async toSVG(withMetadata: boolean): Promise<Blob> {
+        const metadata = !withMetadata ? undefined
+            : Serialization.stringifyObject(Serialization.buildCircuitObject(this), false)
 
         const [width, height] = this.guessAdequateCanvasSize(false)
         const id = new DOMMatrix()
-        const svgCtx = new SVGRenderingContext({
-            width, height,
-            metadata: jsonFull,
-        })
+        const svgCtx = new SVGRenderingContext({ width, height, metadata })
         this.doDrawWithContext(svgCtx, width, height, id, id, true, true)
         const serializedSVG = svgCtx.getSerializedSvg()
-        const blob = new Blob([serializedSVG], { type: "image/svg+xml" })
-        const filename = (this.options.name ?? "circuit") + ".svg"
-        saveAs(blob, filename)
+        return Promise.resolve(new Blob([serializedSVG], { type: "image/svg+xml" }))
     }
 
+    public async download(data: Promise<Blob | undefined>, extension: string) {
+        const blob = await data
+        if (blob === undefined) {
+            return
+        }
+        const filename = (this.options.name ?? "circuit") + extension
+        saveAs(blob, filename)
+    }
 
     public recalcPropagateAndDrawIfNeeded() {
         if (this._nextAnimationFrameHandle !== null) {
@@ -1690,7 +1691,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         }
 
         const redrawReasons = this.redrawMgr.getReasonsAndClear()
-        if (isUndefined(redrawReasons)) {
+        if (redrawReasons === undefined) {
             return
         }
 
@@ -1707,7 +1708,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public highlight(refs: string | string[] | undefined) {
-        if (isUndefined(refs)) {
+        if (refs === undefined) {
             this._highlightedItems = undefined
             return
         }
@@ -1718,14 +1719,14 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const highlightComps: Component[] = []
         for (const comp of this.components.all()) {
-            if (isDefined(comp.ref) && refs.includes(comp.ref)) {
+            if (comp.ref !== undefined && refs.includes(comp.ref)) {
                 highlightComps.push(comp)
             }
         }
 
         const highlightWires: Wire[] = []
         for (const wire of this.wireMgr.wires) {
-            if (isDefined(wire.ref) && refs.includes(wire.ref)) {
+            if (wire.ref !== undefined && refs.includes(wire.ref)) {
                 highlightWires.push(wire)
             }
         }
@@ -1792,7 +1793,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const highlightedItems = this._highlightedItems
         let highlightColor: string | undefined = undefined
-        if (isDefined(highlightedItems)) {
+        if (highlightedItems !== undefined) {
             const HOLD_TIME = 2000
             const FADE_OUT_TIME = 200
             const START_ALPHA = 0.4
@@ -1852,7 +1853,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         // draw guidelines when moving waypoint
         const singleMovingWayoint = this.moveMgr.getSingleMovingWaypoint()
-        if (isDefined(singleMovingWayoint)) {
+        if (singleMovingWayoint !== undefined) {
             g.beginGroup("guides")
             const guides = singleMovingWayoint.getPrevAndNextAnchors()
             g.strokeStyle = COLOR_GRID_LINES_GUIDES
@@ -1942,7 +1943,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         // draw selection
         let selRect
-        if (isDefined(currentSelection) && isDefined(selRect = currentSelection.currentlyDrawnRect)) {
+        if (currentSelection !== undefined && (selRect = currentSelection.currentlyDrawnRect) !== undefined) {
             g.beginGroup("selection")
             g.lineWidth = 1.5
             g.strokeStyle = "rgb(100,100,255)"
@@ -1962,7 +1963,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public copy() {
-        if (isUndefined(this.cursorMovementMgr.currentSelection)) {
+        if (this.cursorMovementMgr.currentSelection === undefined) {
             // copy URL
             copyToClipboard(window.location.href)
             return

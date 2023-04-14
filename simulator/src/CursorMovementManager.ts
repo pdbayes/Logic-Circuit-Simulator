@@ -7,7 +7,7 @@ import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, emptyMod, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
 import { LogicEditor, MouseAction } from './LogicEditor'
-import { getScrollParent, InteractionResult, isDefined, isUndefined, Mode, targetIsFieldOrOtherInput, TimeoutHandle } from "./utils"
+import { getScrollParent, InteractionResult, Mode, targetIsFieldOrOtherInput, TimeoutHandle } from "./utils"
 
 type MouseDownData = {
     mainComp: Drawable | Element
@@ -35,7 +35,7 @@ export class EditorSelection {
 
     public finishCurrentRect(editor: LogicEditor) {
         let rect
-        if (isDefined(rect = this.currentlyDrawnRect)) {
+        if ((rect = this.currentlyDrawnRect) !== undefined) {
             for (const comp of editor.components.all()) {
                 if (comp.isInRect(rect)) {
                     this.toggle(comp)
@@ -57,7 +57,7 @@ export class EditorSelection {
     public isSelected(component: Drawable): boolean {
         const prevSelected = this.previouslySelectedElements.has(component)
         const rect = this.currentlyDrawnRect
-        if (isUndefined(rect)) {
+        if (rect === undefined) {
             return prevSelected
         } else {
             const inverted = component.isInRect(rect)
@@ -248,7 +248,7 @@ export class CursorMovementManager {
 
     public toggleSelect(comp: Drawable) {
         let sel
-        if (isUndefined(sel = this.currentSelection)) {
+        if ((sel = this.currentSelection) === undefined) {
             sel = new EditorSelection(undefined)
             this.currentSelection = sel
         }
@@ -370,7 +370,7 @@ export class CursorMovementManager {
                 case "Backspace":
                 case "Delete": {
                     let selComp
-                    if (isDefined(selComp = this.currentSelection?.previouslySelectedElements) && selComp.size !== 0) {
+                    if ((selComp = this.currentSelection?.previouslySelectedElements) !== undefined && selComp.size !== 0) {
                         let anyDeleted = false
                         for (const comp of selComp) {
                             anyDeleted = editor.tryDeleteDrawable(comp).isChange || anyDeleted
@@ -475,7 +475,7 @@ export class CursorMovementManager {
                 // mouse down on component
                 const { wantsDragEvents } = this._currentHandlers.mouseDownOn(this._currentMouseOverComp, e)
                 if (wantsDragEvents) {
-                    const selectedComps = isUndefined(this.currentSelection) ? [] : [...this.currentSelection.previouslySelectedElements]
+                    const selectedComps = this.currentSelection === undefined ? [] : [...this.currentSelection.previouslySelectedElements]
                     for (const comp of selectedComps) {
                         if (comp !== this._currentMouseOverComp) {
                             this._currentHandlers.mouseDownOn(comp, e)
@@ -595,7 +595,7 @@ export class CursorMovementManager {
             const oldLastTouchEnd = this._lastTouchEnd
             const now = new Date().getTime()
             this._lastTouchEnd = [clickedComp, now]
-            if (!isDefined(oldLastTouchEnd)) {
+            if (oldLastTouchEnd === undefined) {
                 return false
             }
             const [lastComp, lastTime] = oldLastTouchEnd
@@ -616,7 +616,7 @@ export class CursorMovementManager {
                 e.preventDefault()
                 this.editor.cursorMovementMgr.currentSelection = undefined
                 const newComponent = editor.factory.makeFromButton(editor, compButton)
-                if (isUndefined(newComponent)) {
+                if (newComponent === undefined) {
                     return
                 }
                 this._currentMouseOverComp = newComponent
@@ -715,7 +715,7 @@ class EditHandlers extends ToolHandlers {
             return
         }
         const tooltip = comp.makeTooltip()
-        if (isDefined(tooltip)) {
+        if (tooltip !== undefined) {
             const rect = () => {
                 const containerRect = editor.html.canvasContainer.getBoundingClientRect()
                 const f = editor.actualZoomFactor
@@ -761,7 +761,7 @@ class EditHandlers extends ToolHandlers {
 
         const menuData = comp.makeContextMenu()
         // console.log("asking for menu: %o got: %o", comp, MenuData)
-        if (isDefined(menuData)) {
+        if (menuData !== undefined) {
 
             // console.log("setting triggered")
             const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
@@ -774,13 +774,13 @@ class EditHandlers extends ToolHandlers {
             const defToElem = (item: MenuItem): HTMLElement => {
                 function mkButton(spec: { icon?: IconName | undefined, caption: Modifier }, shortcut: string | undefined, danger: boolean) {
                     return button(type("button"), cls(`menu-btn${(danger ? " danger" : "")}`),
-                        isUndefined(spec.icon)
+                        spec.icon === undefined
                             ? spec.caption
                             : mods(
                                 makeIcon(spec.icon),
                                 span(cls("menu-text"), spec.caption)
                             ),
-                        isUndefined(shortcut) ? emptyMod : span(cls("menu-shortcut"), shortcut),
+                        shortcut === undefined ? emptyMod : span(cls("menu-shortcut"), shortcut),
                     )
                 }
 
@@ -837,10 +837,10 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         const cursorMovementMgr = editor.cursorMovementMgr
         const currentSelection = cursorMovementMgr.currentSelection
-        if (isDefined(currentSelection)) {
+        if (currentSelection !== undefined) {
             const allowSelection = editor.mode >= Mode.CONNECT
             if (e.shiftKey && allowSelection) {
-                if (isDefined(currentSelection.currentlyDrawnRect)) {
+                if (currentSelection.currentlyDrawnRect !== undefined) {
                     console.log("unexpected defined current rect when about to begin a new one")
                 }
                 // augment selection
@@ -861,12 +861,12 @@ class EditHandlers extends ToolHandlers {
             const cursorMovementMgr = editor.cursorMovementMgr
             const currentSelection = cursorMovementMgr.currentSelection
             const [x, y] = editor.offsetXY(e)
-            if (isUndefined(currentSelection)) {
+            if (currentSelection === undefined) {
                 const rect = new DOMRect(x, y, 1, 1)
                 cursorMovementMgr.currentSelection = new EditorSelection(rect)
             } else {
                 const rect = currentSelection.currentlyDrawnRect
-                if (isUndefined(rect)) {
+                if (rect === undefined) {
                     console.log("trying to update a selection rect that is not defined")
                 } else {
                     rect.width = x - rect.x
@@ -883,7 +883,7 @@ class EditHandlers extends ToolHandlers {
 
         const cursorMovementMgr = editor.cursorMovementMgr
         const currentSelection = cursorMovementMgr.currentSelection
-        if (isDefined(currentSelection)) {
+        if (currentSelection !== undefined) {
             currentSelection.finishCurrentRect(this.editor)
             editor.redrawMgr.addReason("selection rect changed", null)
         }

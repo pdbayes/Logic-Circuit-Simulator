@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, displayValuesFromArray, drawLabel, drawWireLineToComponent, GRID_STEP } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUndefined, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, isBoolean, isHighImpedance, isUnknown, LogicValue, typeOrUndefined, Unknown } from "../utils"
 import { defineParametrizedComponent, groupHorizontal, groupVertical, param, paramBool, ParametrizedComponentBase, Repr, ResolvedParams, Value } from "./Component"
 import { DrawableParent, DrawContext, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
@@ -390,7 +390,7 @@ export function doALUSub(a: readonly LogicValue[], b: readonly LogicValue[], cin
     const bInt = toInt(b)
     let cout: LogicValue = Unknown
     let v: LogicValue = Unknown
-    if (!isUndefined(aInt) && !isUndefined(bInt) && isBoolean(cin)) {
+    if (aInt !== undefined && bInt !== undefined && isBoolean(cin)) {
         // otherwise, stick with default Unset values everywhere
         let yInt = aInt - bInt - (cin ? 1 : 0)
         // console.log(`${aInt} - ${bInt} = ${yInt}`)

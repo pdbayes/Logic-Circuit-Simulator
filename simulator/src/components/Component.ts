@@ -1,10 +1,11 @@
 import * as t from "io-ts"
+import JSON5 from "json5"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, isTrivialNodeName, shouldShowNode, useCompact } from "../drawutils"
 import { IconName, ImageName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isDefined, isNumber, isRecord, isString, isUndefined, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isNumber, isRecord, isString, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
 import { DrawableParent, DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -114,7 +115,7 @@ export class NodeGroup<TNode extends Node> {
     }
 
     public addNode(node: TNode) {
-        if (isDefined(this._avgGridOffets)) {
+        if (this._avgGridOffets !== undefined) {
             console.warn("Adding nodes to a group after the group's position has been used")
         }
         this._nodes.push(node)
@@ -122,7 +123,7 @@ export class NodeGroup<TNode extends Node> {
     }
 
     private get avgGridOffsets(): [number, number] {
-        if (!isDefined(this._avgGridOffets)) {
+        if (this._avgGridOffets === undefined) {
             let x = 0
             let y = 0
             for (const node of this._nodes) {
@@ -305,7 +306,7 @@ export abstract class ComponentBase<
         const outs = def.nodeRecs.outs
 
         function countNodes(rec: NodeRec<NodeDesc> | undefined) {
-            if (isUndefined(rec)) {
+            if (rec === undefined) {
                 return 0
             }
             let count = 0
@@ -328,7 +329,7 @@ export abstract class ComponentBase<
         const numInputs = countNodes(ins)
         const numOutputs = countNodes(outs)
 
-        if (isDefined(saved)) {
+        if (saved !== undefined) {
             // restoring
             this._state = ComponentState.SPAWNED
         } else {
@@ -419,7 +420,7 @@ export abstract class ComponentBase<
         const allNodes: TNode[] = []
         const nodeGroups: Map<string, NodeGroup<TNode>> = new Map()
 
-        if (isDefined(nodeRec)) {
+        if (nodeRec !== undefined) {
             const makeNode = (group: NodeGroup<TNode> | undefined, shortName: string, desc: TDesc) => {
                 const spec = specs[nextSpecIndex++]
                 const [offsetX, offsetY, orient, nameOverride, options_] = desc
@@ -427,14 +428,14 @@ export abstract class ComponentBase<
                 const isClock = options?.isClock ?? false
                 const prefersSpike = options?.prefersSpike ?? false
                 const hasTriangle = options?.hasTriangle ?? false
-                if (isDefined(group) && isDefined(nameOverride)) {
+                if (group !== undefined && nameOverride !== undefined) {
                     // names in groups are considered short names to be used as labels
                     shortName = nameOverride
                     group.hasNameOverrides = true
-                } else if (isDefined(options?.labelName)) {
-                    shortName = options!.labelName
+                } else if (options?.labelName !== undefined) {
+                    shortName = options.labelName
                 }
-                const fullName = isUndefined(nameOverride) ? shortName : nameOverride
+                const fullName = nameOverride === undefined ? shortName : nameOverride
                 const newNode = new node(
                     this,
                     spec,
@@ -501,7 +502,7 @@ export abstract class ComponentBase<
         const makeDefaultSpec = () => ({ id: nodeMgr.newID() })
         const makeDefaultSpecArray = (len: number) => ArrayFillUsing(makeDefaultSpec, len)
 
-        if (isUndefined(_repr)) {
+        if (_repr === undefined) {
             return [
                 makeDefaultSpecArray(numInputs),
                 makeDefaultSpecArray(numOutputs),
@@ -516,7 +517,7 @@ export abstract class ComponentBase<
             num: number,
             seqRepr?: ArrayOrDirect<string | number | TNodeNormized>,
         ) => {
-            if (isUndefined(seqRepr)) {
+            if (seqRepr === undefined) {
                 return makeDefaultSpecArray(num)
             }
 
@@ -559,7 +560,7 @@ export abstract class ComponentBase<
         }
 
         const hasAnyPrecomputedInitialValues =
-            outputSpecs.some(spec => isDefined(spec.initialValue))
+            outputSpecs.some(spec => spec.initialValue !== undefined)
 
         return [inputSpecs, outputSpecs, hasAnyPrecomputedInitialValues]
     }
@@ -583,8 +584,8 @@ export abstract class ComponentBase<
         }
         function outNodeReprs(nodes: readonly Node[]): ArrayOrDirect<number | string | OutputNodeRepr> {
             const reprOne = (node: Node) => {
-                const valueNotForced = isUndefined(node.forceValue)
-                const noInitialValue = isUndefined(node.initialValue)
+                const valueNotForced = node.forceValue === undefined
+                const noInitialValue = node.initialValue === undefined
                 const hasStandardColor = node.color === DEFAULT_WIRE_COLOR
                 if (valueNotForced && hasStandardColor && noInitialValue) {
                     return node.id
@@ -610,7 +611,7 @@ export abstract class ComponentBase<
             let currentRangeStart: number | undefined = undefined
             let currentRangeEnd: number | undefined = undefined
             function pushRange() {
-                if (isDefined(currentRangeStart) && isDefined(currentRangeEnd)) {
+                if (currentRangeStart !== undefined && currentRangeEnd !== undefined) {
                     if (currentRangeStart === currentRangeEnd) {
                         newArray.push(currentRangeStart)
                     } else if (currentRangeEnd === currentRangeStart + 1) {
@@ -625,7 +626,7 @@ export abstract class ComponentBase<
             }
             for (const repr of reprs) {
                 if (isNumber(repr)) {
-                    if (isDefined(currentRangeStart) && repr - 1 === currentRangeEnd) {
+                    if (currentRangeStart !== undefined && repr - 1 === currentRangeEnd) {
                         currentRangeEnd = repr
                     } else {
                         pushRange()
@@ -665,7 +666,7 @@ export abstract class ComponentBase<
 
     protected override toStringDetails(): string {
         const maybeName = (this as any)._name
-        const name = isDefined(maybeName) ? `name='${maybeName}', ` : ''
+        const name = maybeName !== undefined ? `name='${maybeName}', ` : ''
         return name + String(this.value)
     }
 
@@ -821,8 +822,8 @@ export abstract class ComponentBase<
 
         // labels
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(opts?.componentName?.[0])) {
-                const [name, onRight, value] = opts!.componentName!
+            if (opts?.componentName?.[0] !== undefined) {
+                const [name, onRight, value] = opts.componentName
                 const val = isNumber(value) || isString(value) ? value : value()
                 drawComponentName(g, ctx, name, val, this, onRight)
             }
@@ -841,7 +842,7 @@ export abstract class ComponentBase<
 
                 g.font = `${labelSize}px sans-serif`
                 for (const node of this.allNodes()) {
-                    if (isUndefined(node.group) || node.group.hasNameOverrides) {
+                    if (node.group === undefined || node.group.hasNameOverrides) {
                         this.drawNodeLabel(ctx, node, bounds)
                     }
                 }
@@ -920,7 +921,7 @@ export abstract class ComponentBase<
             for (const node of nodes) {
                 const group = node.group
                 const wires = getWires(node)
-                if (isUndefined(group)) {
+                if (group === undefined) {
                     savedWires.set(node.shortName, wires)
                 } else {
                     let groupSavedNodes = savedWires.get(group.name) as TWires[]
@@ -943,7 +944,7 @@ export abstract class ComponentBase<
         const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
             for (const node of nodes) {
                 const group = node.group
-                if (isUndefined(group)) {
+                if (group === undefined) {
                     const wires = savedWires.get(node.shortName) as TWires | undefined
                     setWires(wires, node)
                 } else {
@@ -955,7 +956,7 @@ export abstract class ComponentBase<
         }
 
         restoreNodes(savedWiresIn, newComp.inputs._all, (wire, node) => {
-            if (wire === null || isUndefined(wire)) {
+            if (wire === null || wire === undefined) {
                 return
             }
             wire.setEndNode(node)
@@ -963,7 +964,7 @@ export abstract class ComponentBase<
 
         const now = this.parent.timeline.logicalTime()
         restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
-            if (isUndefined(wires) || wires.length === 0) {
+            if (wires === undefined || wires.length === 0) {
                 return
             }
             for (const wire of [...wires]) {
@@ -986,7 +987,7 @@ export abstract class ComponentBase<
     protected override makeClone(setSpawning: boolean): DrawableWithDraggablePosition | undefined {
         const repr = this.toNodelessJSON()
         const newComp = this._def.makeFromJSON(this.parent, repr)
-        if (isUndefined(newComp)) {
+        if (newComp === undefined) {
             console.warn("Could not create component clone")
         } else {
             if (setSpawning) {
@@ -1001,7 +1002,7 @@ export abstract class ComponentBase<
             // try clearing selection
             const mvtMgr = this.parent.cursorMovementMgr
             let elems
-            if (isDefined(mvtMgr.currentSelection)
+            if (mvtMgr.currentSelection !== undefined
                 && (elems = mvtMgr.currentSelection.previouslySelectedElements).size > 0
                 && !elems.has(this)) {
                 mvtMgr.currentSelection = undefined
@@ -1133,7 +1134,7 @@ export abstract class ComponentBase<
             editor.cursorMovementMgr.currentSelectionEmpty() ? [] : [
                 ["start", MenuData.item("newcomponent", s.MakeNewComponent, () => {
                     const error = editor.factory.tryMakeNewCustomComponent(editor)
-                    if (isDefined(error)) {
+                    if (error !== undefined) {
                         if (error.length > 0) {
                             window.alert(s.MakeNewComponentFailed + " " + error)
                         }
@@ -1231,7 +1232,7 @@ export abstract class ComponentBase<
         } else {
             items.push(["mid", MenuData.submenu("force", s.ForceOutputMultiple, [
                 ...this.outputs._all.map((out) => {
-                    const icon = isDefined(out.forceValue) ? "force" : "none"
+                    const icon = out.forceValue !== undefined ? "force" : "none"
                     return MenuData.submenu(icon, s.Output + " " + out.fullName,
                         makeOutputItems(out)
                     )
@@ -1245,12 +1246,12 @@ export abstract class ComponentBase<
 
     protected makeSetNameContextMenuItem(currentName: ComponentName, handler: (newName: ComponentName) => void): MenuItem {
         const s = S.Components.Generic.contextMenu
-        const caption = isUndefined(currentName) ? s.SetName : s.ChangeName
+        const caption = currentName === undefined ? s.SetName : s.ChangeName
         return MenuData.item("pen", caption, () => this.runSetNameDialog(currentName, handler), "↩︎")
     }
 
     protected runSetNameDialog(currentName: ComponentName, handler: (newName: ComponentName) => void): void {
-        const currentDisplayName = isUndefined(currentName) || isString(currentName) ? currentName : JSON.stringify(currentName)
+        const currentDisplayName = currentName === undefined || isString(currentName) ? currentName : JSON5.stringify(currentName)
         const promptReturnValue = window.prompt(S.Components.Generic.contextMenu.SetNamePrompt, currentDisplayName)
         if (promptReturnValue !== null) {
             // OK button pressed
@@ -1260,7 +1261,7 @@ export abstract class ComponentBase<
             } else {
                 // is it JSON that can be valid as a DynamicName?
                 try {
-                    const parsedValue: unknown = JSON.parse(promptReturnValue)
+                    const parsedValue: unknown = JSON5.parse(promptReturnValue)
                     if (isDynamicName(parsedValue)) {
                         newName = parsedValue
                     } else {
@@ -1337,7 +1338,7 @@ export abstract class ParametrizedComponentBase<
             return MenuData.item(icon, itemCaption.expand({ val }), action)
         }
 
-        if (isUndefined(values)) {
+        if (values === undefined) {
             values = (this._defP.paramDefs[fieldName] as ParamDef<TVal>).range
         }
         return ["mid", MenuData.submenu(icon, caption, values.map(makeChangeValueItem))]
@@ -1361,7 +1362,7 @@ export abstract class ParametrizedComponentBase<
         const newRepr = { ...currentRepr, ...newParams }
 
         const newComp = this._defP.makeFromJSON(this.parent, newRepr)
-        if (isUndefined(newComp)) {
+        if (newComp === undefined) {
             console.warn("Could not create component variant")
             return undefined
         }
@@ -1392,25 +1393,25 @@ export abstract class ParametrizedComponentBase<
         const paramName = params[paramIndex]
         let currentParamValue = (this.toJSON() as any)[paramName]
         const paramDef = this._defP.paramDefs[paramName]
-        if (isUndefined(currentParamValue)) {
+        if (currentParamValue === undefined) {
             currentParamValue = paramDef.defaultValue
         }
 
         let newParamValue: number | boolean | undefined
         if (isNumber(currentParamValue)) {
             newParamValue = (paramDef as ParamDef<number>).nextValue(currentParamValue, increase)
-            if (isUndefined(newParamValue) || newParamValue === currentParamValue) {
+            if (newParamValue === undefined || newParamValue === currentParamValue) {
                 return
             }
         } else if (isBoolean(currentParamValue)) {
             newParamValue = !currentParamValue
         }
-        if (isUndefined(newParamValue)) {
+        if (newParamValue === undefined) {
             return
         }
 
         const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
-        if (isDefined(newComp) && this.parent.isMainEditor()) {
+        if (newComp !== undefined && this.parent.isMainEditor()) {
             this.parent.cursorMovementMgr.setCurrentMouseOverComp(newComp)
         }
     }
@@ -1528,7 +1529,7 @@ function typeFieldProp<
     TTypeName extends string | undefined
 >(type: TTypeName): TypeFieldProp<TTypeName> {
 
-    if (isUndefined(type)) {
+    if (type === undefined) {
         return {} as any
     }
     return {
@@ -1602,7 +1603,7 @@ export class ComponentDef<
     }
 
     public isValid() {
-        return isDefined(this.impl)
+        return this.impl !== undefined
     }
 
     public initialValue(saved?: TRepr): TValue {
@@ -1627,7 +1628,7 @@ export class ComponentDef<
 
     public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
         const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
-        if (isUndefined(validated)) {
+        if (validated === undefined) {
             return undefined
         }
         const comp = new this.impl(parent, validated)
@@ -1724,7 +1725,7 @@ export class ParamDef<T> {
 }
 
 export function param<T>(defaultValue: T, range?: T[]): ParamDef<T> {
-    if (isUndefined(range)) {
+    if (range === undefined) {
         return new ParamDef(defaultValue, [], () => true)
     }
     return new ParamDef(defaultValue, range, val => range.includes(val as T))
@@ -1784,7 +1785,7 @@ export class ParametrizedComponentDef<
     }
 
     public isValid() {
-        return isDefined(this.impl)
+        return this.impl !== undefined
     }
 
     public with(params: TResolvedParams): [InstantiatedComponentDef<TRepr, TValue>, this] {
@@ -1812,7 +1813,7 @@ export class ParametrizedComponentDef<
     }
 
     public make<TComp extends Component>(parent: DrawableParent, params?: TParams): TComp {
-        const fullParams = isUndefined(params) ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
+        const fullParams = params === undefined ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
         const resolvedParams = this.doValidate(fullParams)
         const comp = new this.impl(parent, resolvedParams)
         parent.components.add(comp)
@@ -1821,7 +1822,7 @@ export class ParametrizedComponentDef<
 
     public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
         const validated = validateJson(data, this.repr, this.impl!.name ?? "component")
-        if (isUndefined(validated)) {
+        if (validated === undefined) {
             return undefined
         }
         const fullParams = mergeWhereDefined(this.defaultParams, validated)

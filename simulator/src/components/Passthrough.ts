@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_NODE_MOUSE_OVER, COLOR_UNKNOWN, drawWireLineToComponent, GRID_STEP, useCompact } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, isDefined, isUndefined, LogicValue, Mode, typeOrUndefined } from "../utils"
+import { ArrayFillWith, LogicValue, Mode, typeOrUndefined } from "../utils"
 import { defineParametrizedComponent, groupVertical, param, ParametrizedComponentBase, Repr, ResolvedParams } from "./Component"
 import { DrawableParent, DrawContext, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { NodeIn, NodeOut } from "./Node"
@@ -41,10 +41,10 @@ export const PassthroughDef =
         }),
         makeNodes: ({ numBits }) => ({
             ins: {
-                I: groupVertical("w", -1, 0, numBits),
+                In: groupVertical("w", -1, 0, numBits),
             },
             outs: {
-                O: groupVertical("e", +1, 0, numBits),
+                Out: groupVertical("e", +1, 0, numBits),
             },
         }),
         initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
@@ -83,12 +83,12 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
 
         const savedWireEnds: [NodeOut, EndNodes][] = []
         for (let i = 0; i < this.numBits; i++) {
-            const nodeOut = this.inputs.I[i].incomingWire?.startNode
-            if (isUndefined(nodeOut) || !(nodeOut instanceof NodeOut)) {
+            const nodeOut = this.inputs.In[i].incomingWire?.startNode
+            if (nodeOut === undefined || !(nodeOut instanceof NodeOut)) {
                 continue
             }
             const nodeIns: EndNodes = []
-            for (const wire of this.outputs.O[i].outgoingWires) {
+            for (const wire of this.outputs.Out[i].outgoingWires) {
                 const endNode = wire.endNode
                 if (endNode !== null) {
                     nodeIns.push([endNode, wire.style])
@@ -106,12 +106,12 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
             for (const [nodeOut, nodeIns] of savedWireEnds) {
                 for (const [nodeIn, style] of nodeIns) {
                     const wire = wireMgr.addWire(nodeOut, nodeIn, false)
-                    if (isUndefined(wire)) {
+                    if (wire === undefined) {
                         console.error("Failed to add wire back")
                         continue
                     }
                     // restore wire properties
-                    if (isDefined(style)) {
+                    if (style !== undefined) {
                         wire.doSetStyle(style)
                     }
                 }
@@ -124,11 +124,11 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
     }
 
     protected doRecalcValue(): LogicValue[] {
-        return this.inputValues(this.inputs.I)
+        return this.inputValues(this.inputs.In)
     }
 
     protected override propagateValue(newValue: LogicValue[]): void {
-        this.outputValues(this.outputs.O, newValue)
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     public override isOver(x: number, y: number): boolean {
@@ -140,11 +140,11 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
         let f = 0
         switch (this._slant) {
             case Slant.up:
-                yPosWithNoHOffset = this.inputs.I[0].posY
+                yPosWithNoHOffset = this.inputs.In[0].posY
                 f = -1
                 break
             case Slant.down:
-                yPosWithNoHOffset = this.inputs.I[this.numBits - 1].posY
+                yPosWithNoHOffset = this.inputs.In[this.numBits - 1].posY
                 f = 1
                 break
         }
@@ -235,8 +235,8 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
         switch (this._slant) {
             case "none":
                 for (let i = 0; i < n; i++) {
-                    this.inputs.I[i].gridOffsetX = -1
-                    this.outputs.O[i].gridOffsetX = +1
+                    this.inputs.In[i].gridOffsetX = -1
+                    this.outputs.Out[i].gridOffsetX = +1
                 }
                 this._hShift = [0, 0]
                 break
@@ -244,8 +244,8 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
                 const f = n > 4 ? 1 : 2
                 for (let i = 0; i < n; i++) {
                     const shift = f * (n - 1 - i)
-                    this.inputs.I[i].gridOffsetX = -1 + shift
-                    this.outputs.O[i].gridOffsetX = +1 + shift
+                    this.inputs.In[i].gridOffsetX = -1 + shift
+                    this.outputs.Out[i].gridOffsetX = +1 + shift
                 }
                 this._hShift = [f * (n - 0.5) * GRID_STEP, -f * GRID_STEP / 2]
                 break
@@ -254,8 +254,8 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
                 const f = n > 4 ? 1 : 2
                 for (let i = 0; i < n; i++) {
                     const shift = f * i
-                    this.inputs.I[i].gridOffsetX = -1 + shift
-                    this.outputs.O[i].gridOffsetX = +1 + shift
+                    this.inputs.In[i].gridOffsetX = -1 + shift
+                    this.outputs.Out[i].gridOffsetX = +1 + shift
                 }
                 this._hShift = [-f * GRID_STEP / 2, f * (n - 0.5) * GRID_STEP]
                 break

@@ -28,11 +28,11 @@ export const SwitchedInverterDef =
         }),
         makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
-                I: groupVertical("w", -3, 0, numBits),
+                In: groupVertical("w", -3, 0, numBits),
                 S: [0, -(gridHeight / 2 + 1), "n"],
             },
             outs: {
-                O: groupVertical("e", +3, 0, numBits),
+                Out: groupVertical("e", +3, 0, numBits),
             },
         }),
         initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
@@ -68,7 +68,7 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
     }
 
     protected doRecalcValue(): LogicValue[] {
-        const input = this.inputValues(this.inputs.I)
+        const input = this.inputValues(this.inputs.In)
         const switch_ = this.inputs.S.value
 
         if (isUnknown(switch_) || isHighImpedance(switch_)) {
@@ -83,7 +83,7 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
     }
 
     protected override propagateValue(newValue: LogicValue[]) {
-        this.outputValues(this.outputs.O, newValue)
+        this.outputValues(this.outputs.Out, newValue)
     }
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {

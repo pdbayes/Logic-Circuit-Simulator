@@ -1,8 +1,9 @@
 import * as t from "io-ts"
+import JSON5 from "json5"
 import { COLOR_COMPONENT_BORDER, COLOR_COMPONENT_INNER_LABELS, displayValuesFromArray } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUndefined, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
@@ -61,7 +62,7 @@ export const OutputShiftBufferDef =
             }
         },
         initialValue: saved => {
-            if (isUndefined(saved) || isUndefined(saved.state)) {
+            if (saved === undefined || saved.state === undefined) {
                 return { incoming: [], decoded: [] }
             }
             const incoming: LogicValue[] = []
@@ -124,7 +125,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
 
     public override makeTooltip() {
         return tooltipContent(S.Components.OutputShiftBuffer.tooltip, mods(
-            div(JSON.stringify(this.value)) // TODO more info
+            div(JSON5.stringify(this.value)) // TODO more info
         ))
     }
 
@@ -171,7 +172,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
                 const drawContents = () => {
                     const text = this.makeRepresentationString()
                     let toDraw
-                    if (isUndefined(text)) {
+                    if (text === undefined) {
                         g.fillStyle = COLOR_COMPONENT_INNER_LABELS
                         g.font = "15px sans-serif"
                         toDraw = S.Components.OutputShiftBuffer.EmptyCaption

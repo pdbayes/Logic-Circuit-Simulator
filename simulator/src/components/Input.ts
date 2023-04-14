@@ -3,7 +3,7 @@ import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, isTrivialNodeName, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayClampOrPad, ArrayFillWith, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isDefined, isNumber, isUndefined, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
+import { ArrayClampOrPad, ArrayFillWith, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, isArray, isNumber, toLogicValue, toLogicValueFromChar, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ClockDef, ClockRepr } from "./Clock"
 import { Component, ComponentName, ComponentNameRepr, ExtractParamDefs, ExtractParams, InstantiatedComponentDef, NodesIn, NodesOut, ParametrizedComponentBase, Repr, ResolvedParams, SomeParamCompDef, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
@@ -113,7 +113,7 @@ export abstract class InputBase<
         }
 
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(this._name)) {
+            if (this._name !== undefined) {
                 drawComponentName(g, ctx, this._name, toLogicValueRepr(displayValue), this, false)
             }
             const forcedFillStyle = !shouldDrawBorder ? g.fillStyle = COLOR_COMPONENT_BORDER : undefined
@@ -158,7 +158,7 @@ export abstract class InputBase<
 
         // labels
         ctx.inNonTransformedFrame(ctx => {
-            if (isDefined(this._name)) {
+            if (this._name !== undefined) {
                 const valueString = displayValues.map(toLogicValueRepr).reverse().join("")
                 drawComponentName(g, ctx, this._name, valueString, this, false)
             }
@@ -180,7 +180,7 @@ export abstract class InputBase<
             if (inNode.prefersSpike) {
                 this.doSetIsPushButton(true) // will do nothing for clocks
             }
-            if (isUndefined(this._name) && !isTrivialNodeName(inNode.shortName)) {
+            if (this._name === undefined && !isTrivialNodeName(inNode.shortName)) {
                 this.doSetName(inNode.shortName)
             }
         }
@@ -275,11 +275,11 @@ export const InputDef =
         }),
         initialValue: (saved, { numBits }) => {
             const allFalse = () => ArrayFillWith<LogicValue>(false, numBits)
-            if (isUndefined(saved)) {
+            if (saved === undefined) {
                 return allFalse()
             }
             let val
-            if (isDefined(val = saved.val)) {
+            if ((val = saved.val) !== undefined) {
                 if (isArray(val)) {
                     return ArrayClampOrPad(val.map(v => toLogicValue(v)), numBits, false)
                 } else if (isNumber(val)) {

@@ -1,6 +1,7 @@
 import * as t from "io-ts"
+import JSON5 from "json5"
 import { LogicEditor } from "./LogicEditor"
-import { PersistenceManager } from "./PersistenceManager"
+import { Serialization } from "./Serialization"
 import { ALUDef } from "./components/ALU"
 import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
@@ -44,7 +45,7 @@ import { SwitchedInverterDef } from "./components/SwitchedInverter"
 import { TriStateBufferDef } from "./components/TriStateBuffer"
 import { TriStateBufferArrayDef } from "./components/TriStateBufferArray"
 import { S } from "./strings"
-import { JSONParseObject, isDefined, isString, isUndefined, validateJson } from "./utils"
+import { JSONParseObject, isString, validateJson } from "./utils"
 
 // Generic interface to instantiate components from scratch (possibly with params) or from JSON
 type ComponentMaker<TParams extends Record<string, unknown>> = {
@@ -116,6 +117,7 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     TriStateBufferArrayDef,
     HalfAdderDef,
     AdderDef,
+    ComparatorDef,
     AdderArrayDef,
     ALUDef,
     MuxDef,
@@ -133,7 +135,6 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     Decoder7SegDef,
     Decoder16SegDef,
     DecoderBCD4Def,
-    ComparatorDef,
 
     // labels
     LabelStringDef,
@@ -160,7 +161,7 @@ export class ComponentFactory {
     public constructor(editor: LogicEditor) {
         this.editor = editor
         for (const maker of AllComponentDefs) {
-            const key = isDefined(maker.type) ? `${maker.category}.${maker.type}` : maker.category
+            const key = maker.type !== undefined ? `${maker.category}.${maker.type}` : maker.category
             if (!maker.isValid()) {
                 throw new Error(`Implementation missing for components of type '${key}'`)
             }
@@ -186,18 +187,18 @@ export class ComponentFactory {
         const compDataset = elem.dataset as ButtonDataset
         const paramsStr = compDataset.params
         const maker = this.getMaker(compDataset.category, compDataset.type)
-        const params = isUndefined(paramsStr) ? undefined : JSON.parse(paramsStr) as Record<string, unknown>
+        const params = paramsStr === undefined ? undefined : JSON5.parse(paramsStr) as Record<string, unknown>
         return maker?.make(parent, params)
 
         // TODO further general component customisation based on editor options
         // const classId = compDataset.componentId
-        // if (isUndefined(classId)) {
+        // if (classId === undefined) {
         //     console.warn("No class ID linked to elem " + elem.outerHTML)
         // } else {
         //     const compConfig = editor.options.initParams?.[classId]
-        //     if (isDefined(compConfig)) {
+        //     if (compConfig !== undefined) {
         //         let val
-        //         if (isDefined(val = compConfig.orient)) {
+        //         if ((val = compConfig.orient) !== undefined) {
         //             newComp.doSetOrient(val)
         //         }
         //     }
@@ -206,14 +207,14 @@ export class ComponentFactory {
 
     private getMaker(category: string, type?: string): ComponentMaker<any> | undefined {
         let maker
-        if (isDefined(type)) {
+        if (type !== undefined) {
             if (type.startsWith(CustomComponentPrefix)) {
                 const customId = type.substring(CustomComponentPrefix.length)
                 maker = this._customComponents.get(customId)
             } else {
                 // specific type
                 maker = this._predefinedComponents.get(`${category}.${type}`)
-                if (isUndefined(maker)) {
+                if (maker === undefined) {
                     // maybe a more generic maker handles it
                     maker = this._predefinedComponents.get(category)
                 }
@@ -222,7 +223,7 @@ export class ComponentFactory {
             // no type, use generic maker
             maker = this._predefinedComponents.get(category)
         }
-        if (isUndefined(maker)) {
+        if (maker === undefined) {
             console.warn(`Unknown component for '${category}.${type}'`)
         }
         return maker
@@ -257,11 +258,11 @@ export class ComponentFactory {
 
     public tryLoadCustomDefsFrom(defs: unknown) {
         // Calling this may change the list of custom defs, we may need to update the UI
-        if (isUndefined(defs)) {
+        if (defs === undefined) {
             return
         }
         const validatedDefs = validateJson(defs, t.array(CustomComponentDefRepr), "defs")
-        if (isDefined(validatedDefs)) {
+        if (validatedDefs !== undefined) {
             for (const validatedDef of validatedDefs) {
                 this.tryAddCustomDef(validatedDef)
             }
@@ -276,7 +277,7 @@ export class ComponentFactory {
         const s = S.Components.Custom.messages
 
         const selectionAll = editor.cursorMovementMgr.currentSelection?.previouslySelectedElements
-        if (isUndefined(selectionAll)) {
+        if (selectionAll === undefined) {
             return s.EmptySelection
         }
         const selectedComps = [...selectionAll].filter((e): e is Component => e instanceof ComponentBase)
@@ -322,7 +323,7 @@ export class ComponentFactory {
         // We don't complain about linked components that are not in the selection
         // as we allow inputs to connect to other stuff as well.
         queue.push(...inputs)
-        while (isDefined(comp = queue.shift())) {
+        while ((comp = queue.shift()) !== undefined) {
             for (const node of comp.outputs._all) {
                 for (const wire of node.outgoingWires) {
                     const otherComp = wire.endNode.component
@@ -339,7 +340,7 @@ export class ComponentFactory {
         // and make sure all necessary components are in the selection.
         queue.push(...outputs)
         const missingComponents: Component[] = []
-        while (isDefined(comp = queue.shift())) {
+        while ((comp = queue.shift()) !== undefined) {
             for (const node of comp.inputs._all) {
                 const wire = node.incomingWire
                 if (wire !== null) {
@@ -397,13 +398,13 @@ export class ComponentFactory {
         // we have to stringify and parse because stringifying actually calls toJSON()
         const circuit =
             JSONParseObject(
-                PersistenceManager.stringifyObject(
-                    PersistenceManager.buildComponentsObject(componentsToInclude), true
+                Serialization.stringifyObject(
+                    Serialization.buildComponentsObject(componentsToInclude), true
                 )
-            ) as ReturnType<typeof PersistenceManager.buildComponentsObject>
+            ) as ReturnType<typeof Serialization.buildComponentsObject>
 
         const maker = this.tryAddCustomDef({ id, caption, circuit })
-        if (isUndefined(maker)) {
+        if (maker === undefined) {
             return ""
         }
 

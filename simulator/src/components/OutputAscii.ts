@@ -2,7 +2,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_UNKNOWN, displayValuesFromArray, formatWithRadix } from "../drawutils"
 import { b, div, emptyMod, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { InteractionResult, Mode, isDefined, isUnknown, typeOrUndefined } from "../utils"
+import { InteractionResult, Mode, isUnknown, typeOrUndefined } from "../utils"
 import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
@@ -103,7 +103,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
             componentName: [this._name, true, mainText],
             drawLabels: (ctx, { width, height }) => {
                 const isVertical = Orientation.isVertical(this.orient)
-                const hasAdditionalRepresentation = isDefined(this._additionalReprRadix)
+                const hasAdditionalRepresentation = this._additionalReprRadix !== undefined
                 let mainTextPosY = this.posY + (isVertical ? 4 : 0)
 
                 g.font = "9px sans-serif"

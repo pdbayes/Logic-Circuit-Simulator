@@ -12,7 +12,7 @@ export const Decoder7SegDef =
         size: { gridWidth: 4, gridHeight: 8 },
         makeNodes: () => ({
             ins: {
-                I: group("w", [
+                In: group("w", [
                     [-3, -3, "A"],
                     [-3, -1, "B"],
                     [-3, +1, "C"],
@@ -56,7 +56,7 @@ export class Decoder7Seg extends ComponentBase<Decoder7SegRepr> {
     }
 
     protected doRecalcValue(): FixedArray<LogicValue, 7> {
-        const input = this.inputValues(this.inputs.I)
+        const input = this.inputValues(this.inputs.In)
         const [__, value] = displayValuesFromArray(input, false)
 
         let output
