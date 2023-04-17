@@ -1,12 +1,19 @@
+import { Serialization, stringifySmart } from "./Serialization"
 import { binaryStringRepr, isAllZeros, isArray, isRecord, isString, toLogicValue } from "./utils"
 
-export const CurrentFormatVersion = 5
+export const CurrentFormatVersion = 6
 
 export function migrateData(data: Record<string, unknown>) {
-    // console.log("BEFORE:\n" + (isString(content) ? content : JSON5.stringify(content)))
 
-    let jsonVersion = Number(data["v"]) ?? 0
+    const LogBeforeAfter = true
+
+    const initialRepr = !LogBeforeAfter ? undefined : isString(data) ? data : stringifySmart(data, { maxLength: 140 })
+
+    let jsonVersion = Number(data.v ?? 0)
     const savedVersion = jsonVersion
+    if (savedVersion > CurrentFormatVersion) {
+        throw new Error(`Data format v${savedVersion} is newer than what this editor can load (v ≤ ${CurrentFormatVersion}`)
+    }
     while (jsonVersion < CurrentFormatVersion) {
         const migrationFunc = migrateTo[++jsonVersion]
 
@@ -23,13 +30,17 @@ export function migrateData(data: Record<string, unknown>) {
                 }
             }
         }
+
+        data.v = jsonVersion
     }
     if (jsonVersion !== savedVersion) {
         console.log(`Migrated data format from v${savedVersion} to v${jsonVersion}, consider upgrading the source`)
-        // console.log("AFTER:\n" + this.stringifyObject(parsedContents, false))
-    }
-    if (jsonVersion > CurrentFormatVersion) {
-        console.log(`WARNING: data format v${jsonVersion} is newer than the current v${CurrentFormatVersion}, make sure the editor saves in the correct format`)
+        if (LogBeforeAfter) {
+            console.log("BEFORE:\n" + initialRepr)
+            console.log("AFTER:\n" + Serialization.stringifyObject(data, false))
+        }
+    } else if (LogBeforeAfter) {
+        console.log(`Data format ${savedVersion} is up to date, no migration necessary`)
     }
 }
 
@@ -37,113 +48,105 @@ export function migrateData(data: Record<string, unknown>) {
 
 const migrateTo: Record<number, (container: Record<string, unknown>) => void> = {
 
-    1: (container) => {
-        // all displays are now out
-        if ("displays" in container) {
-            const displays = container.displays
-            delete container.displays
-            if (!("out" in container)) {
-                container.out = []
-            }
-            if (isArray(displays) && isArray(container.out)) {
-                for (const display of displays) {
-                    container.out.push(display)
+    6: (container) => {
+        // replace separate lists with a single list of components with better type fields
+        const compFieldsAndCategories = {
+            in: "in",
+            out: "out",
+            gates: "gate",
+            ic: "ic",
+            labels: "label",
+            layout: "layout",
+        } as const
+
+        const oldToNewId: Record<string, string> = {
+            "in": "in",
+            "in.clock": "clock",
+            "in.random": "rand",
+            "out": "out",
+            "out.display": "display",
+            "out.7seg": "7seg",
+            "out.16seg": "16seg",
+            "out.ascii": "ascii",
+            "out.bar": "bar",
+            "out.shift-buffer": "shift-display",
+            "ic.switched-inverter": "cnot-array",
+            "ic.gate-array": "{gatetype}-array",
+            "ic.tristate-array": "tristate-array",
+            "label": "label",
+            "label.rect": "rect",
+            "layout.pass": "pass",
+            "ic.halfadder": "halfadder",
+            "ic.adder": "adder",
+            "ic.comparator": "comp",
+            "ic.adder-array": "adder-array",
+            "ic.alu": "alu",
+            "ic.mux": "mux",
+            "ic.demux": "demux",
+            "ic.latch-sr": "latch-sr",
+            "ic.flipflop-jk": "ff-jk",
+            "ic.flipflop-t": "ff-t",
+            "ic.flipflop-d": "ff-d",
+            "ic.register": "reg",
+            "ic.shift-register": "shift-reg",
+            "ic.counter": "counter",
+            "ic.ram": "ram",
+            "ic.rom": "rom",
+            "ic.decoder": "dec",
+            "ic.decoder-7seg": "dec-7seg",
+            "ic.decoder-16seg": "dec-16seg",
+            "ic.decoder-bcd4": "dec-bcd4",
+        }
+
+        function newTypeFor(category: string, item: Record<string, unknown>): string {
+            if (category === "gate") {
+                if (!isString(item.type)) {
+                    console.warn("Gate with no type found, assuming AND", item)
+                    return "and"
+                }
+                const gateType = item.type.toLowerCase()
+                return gateType === "tri" ? "tristate" : gateType
+            } else {
+                const id = isString(item.type) ? `${category}.${item.type}` : category
+                if (id === "ic.gate-array") {
+                    let gateType
+                    if (!isString(item.subtype)) {
+                        console.warn("Gate array with no subtype found, assuming AND", item)
+                        gateType = "and"
+                    } else {
+                        gateType = item.subtype.toLowerCase()
+                    }
+                    delete item.subtype
+                    return `${gateType}-array`
+                } else if (id in oldToNewId) {
+                    return oldToNewId[id]
+                } else if (id.startsWith("ic.custom-")) {
+                    return id.substring(3)
+                } else {
+                    console.error(`Unknown component type: ${id}`)
+                    return id
                 }
             }
         }
 
-        // all clocks are now in
-        if ("clocks" in container) {
-            const clocks = container.clocks
-            delete container.clocks
-            if (!("in" in container)) {
-                container.in = []
-            }
-            if (isArray(clocks) && isArray(container.in)) {
-                for (const clock of clocks) {
-                    clock.type = "clock"
-                    container.in.push(clock)
-                }
-            }
-        }
-
-        // flipflops have a different input node order
-        const components = container.components
-        if (isArray(components)) {
-            for (const comp of components) {
-                let type
-                if (isString(type = comp.type) && type.startsWith("flipflop")) {
-                    // extract last three inputs
-                    const inputs: Array<number> = comp.in
-                    const lastThree = inputs.splice(-3)
-                    comp.in = [...lastThree, ...inputs]
-                }
-            }
-        }
-    },
-
-
-    2: (container) => {
-        // waypoints -> via
-        const wires = container.wires
-        if (isArray(wires)) {
-            for (const wire of wires) {
-                if (isArray(wire) && wire.length === 3) {
-                    const wireOptions = wire[2]
-                    if ("waypoints" in wireOptions) {
-                        wireOptions.via = wireOptions.waypoints
-                        delete wireOptions.waypoints
+        const components: Record<string, unknown>[] = []
+        for (const [field, category] of Object.entries(compFieldsAndCategories)) {
+            const list = container[field]
+            if (isArray(list)) {
+                for (const compRepr of list) {
+                    if (isRecord(compRepr)) {
+                        const newType = newTypeFor(category, compRepr)
+                        compRepr.type = newType
+                        components.push(compRepr)
+                        if (newType === "NOT") {
+                            console.log(compRepr)
+                        }
                     }
                 }
             }
+            delete container[field]
         }
-    },
-
-
-    3: (container) => {
-        // alu has one more input
-        let nextNewId = findFirstFreeId(container)
-        const components = container.components
-        if (isArray(components)) {
-            for (const comp of components) {
-                if (comp.type === "alu") {
-                    if (isArray(comp.in)) {
-                        comp.in.push(nextNewId++)
-                    }
-                }
-            }
-        }
-    },
-
-
-    4: (container) => {
-        let nextNewId = findFirstFreeId(container)
-
-        // correct type of 4-bit display
-        const outs = container.out
-        if (isArray(outs)) {
-            for (const out of outs) {
-                if (out.type === "nibble") {
-                    out.type = "nibble-display"
-                }
-            }
-        }
-
-        // alu has one more output
-        const components = container.components
-        if (isArray(components)) {
-            for (const comp of components) {
-                if (comp.type === "alu") {
-                    if (isArray(comp.out)) {
-                        comp.out.push(nextNewId++) // add a new oVerflow output
-                        // replace carry output with overflow output as it was wrongly used before
-                        const t = comp.out[4]
-                        comp.out[4] = comp.out[6]
-                        comp.out[6] = t
-                    }
-                }
-            }
-        }
+        container.components = components
     },
 
 
@@ -274,6 +277,116 @@ const migrateTo: Record<number, (container: Record<string, unknown>) => void> = 
                         layout.type = "pass"
                         layout.bits = parseInt(match.groups?.bits ?? "1")
                     }
+                }
+            }
+        }
+    },
+
+
+    4: (container) => {
+        let nextNewId = findFirstFreeId(container)
+
+        // correct type of 4-bit display
+        const outs = container.out
+        if (isArray(outs)) {
+            for (const out of outs) {
+                if (out.type === "nibble") {
+                    out.type = "nibble-display"
+                }
+            }
+        }
+
+        // alu has one more output
+        const components = container.components
+        if (isArray(components)) {
+            for (const comp of components) {
+                if (comp.type === "alu") {
+                    if (isArray(comp.out)) {
+                        comp.out.push(nextNewId++) // add a new oVerflow output
+                        // replace carry output with overflow output as it was wrongly used before
+                        const t = comp.out[4]
+                        comp.out[4] = comp.out[6]
+                        comp.out[6] = t
+                    }
+                }
+            }
+        }
+    },
+
+
+    3: (container) => {
+        // alu has one more input
+        let nextNewId = findFirstFreeId(container)
+        const components = container.components
+        if (isArray(components)) {
+            for (const comp of components) {
+                if (comp.type === "alu") {
+                    if (isArray(comp.in)) {
+                        comp.in.push(nextNewId++)
+                    }
+                }
+            }
+        }
+    },
+
+
+    2: (container) => {
+        // waypoints -> via
+        const wires = container.wires
+        if (isArray(wires)) {
+            for (const wire of wires) {
+                if (isArray(wire) && wire.length === 3) {
+                    const wireOptions = wire[2]
+                    if ("waypoints" in wireOptions) {
+                        wireOptions.via = wireOptions.waypoints
+                        delete wireOptions.waypoints
+                    }
+                }
+            }
+        }
+    },
+
+
+    1: (container) => {
+        // all displays are now out
+        if ("displays" in container) {
+            const displays = container.displays
+            delete container.displays
+            if (!("out" in container)) {
+                container.out = []
+            }
+            if (isArray(displays) && isArray(container.out)) {
+                for (const display of displays) {
+                    container.out.push(display)
+                }
+            }
+        }
+
+        // all clocks are now in
+        if ("clocks" in container) {
+            const clocks = container.clocks
+            delete container.clocks
+            if (!("in" in container)) {
+                container.in = []
+            }
+            if (isArray(clocks) && isArray(container.in)) {
+                for (const clock of clocks) {
+                    clock.type = "clock"
+                    container.in.push(clock)
+                }
+            }
+        }
+
+        // flipflops have a different input node order
+        const components = container.components
+        if (isArray(components)) {
+            for (const comp of components) {
+                let type
+                if (isString(type = comp.type) && type.startsWith("flipflop")) {
+                    // extract last three inputs
+                    const inputs: Array<number> = comp.in
+                    const lastThree = inputs.splice(-3)
+                    comp.in = [...lastThree, ...inputs]
                 }
             }
         }

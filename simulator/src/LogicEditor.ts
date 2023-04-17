@@ -29,7 +29,7 @@ import { Timeline, TimelineState } from "./Timeline"
 import { UndoManager, UndoState } from './UndoManager'
 import { Component, ComponentBase } from "./components/Component"
 import { Drawable, DrawableParent, GraphicsRendering, Orientation } from "./components/Drawable"
-import { LabelRect, LabelRectDef } from "./components/LabelRect"
+import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
@@ -188,7 +188,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         zoomLevelField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
-    public userdata: any = undefined
+    public userdata: string | Record<string, unknown> | undefined = undefined
 
     private _baseDrawingScale = 1
     private _actualZoomFactor = 1
@@ -694,7 +694,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
 
         // TODO move this to the Def of LabelRect to be cleaner
-        const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-category=label][data-type=rect]")
+        const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-type=rect]")
         if (groupButton === null) {
             console.log("ERROR: Could not find group button")
         } else {
@@ -704,10 +704,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                     e.preventDefault()
                     e.stopImmediatePropagation()
 
-                    const newGroup = LabelRectDef.make<LabelRect>(this)
+                    const newGroup = RectangleDef.make<Rectangle>(this)
                     newGroup.setSpawned()
 
-                    if (newGroup instanceof LabelRect) {
+                    if (newGroup instanceof Rectangle) {
                         newGroup.wrapContents(selectedComps)
                     } else {
                         console.log("ERROR: created component is not a LabelRect")

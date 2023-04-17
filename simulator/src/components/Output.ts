@@ -10,8 +10,9 @@ import { Node, NodeIn, NodeOut } from "./Node"
 
 
 export const OutputDef =
-    defineParametrizedComponent("out", undefined, true, false, {
+    defineParametrizedComponent("out", true, false, {
         variantName: ({ bits }) => `out-${bits}`,
+        idPrefix: "out",
         button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -59,8 +60,8 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
 
     public toJSON() {
         return {
-            bits: this.numBits === OutputDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === OutputDef.aults.bits ? undefined : this.numBits,
             name: this._name,
         }
     }

@@ -3,15 +3,15 @@ import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, typeOrUndefined } from "../utils"
-import { doALUAdd } from "./ALU"
+import { ALUDef, doALUAdd } from "./ALU"
 import { ParametrizedComponentBase, Repr, ResolvedParams, Value, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
-import { GateArrayDef } from "./GateArray"
 
 
 export const AdderArrayDef =
-    defineParametrizedComponent("ic", "adder-array", true, true, {
+    defineParametrizedComponent("adder-array", true, true, {
         variantName: ({ bits }) => `adder-array-${bits}`,
+        idPrefix: "adder",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -25,7 +25,7 @@ export const AdderArrayDef =
         }),
         size: ({ numBits }) => ({
             gridWidth: 4, // constant
-            gridHeight: GateArrayDef.size({ numBits }).gridHeight, // mimic GateArray
+            gridHeight: ALUDef.size({ numBits, usesExtendedOpcode: false }).gridHeight, // mimic ALU
         }),
         makeNodes: ({ numBits, gridHeight }) => {
             const inputCenterY = 5 + Math.max(0, (numBits - 8) / 2)
@@ -65,10 +65,10 @@ export class AdderArray extends ParametrizedComponentBase<AdderArrayRepr> {
     }
 
     public toJSON() {
+        // TODO check if params can be serialized automatically
         return {
-            type: "adder-array" as const,
-            bits: this.numBits === AdderArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === AdderArrayDef.aults.bits ? undefined : this.numBits,
         }
     }
 

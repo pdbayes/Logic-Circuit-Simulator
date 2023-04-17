@@ -4,12 +4,13 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, Repr, defineComponent, group } from "./Component"
+import { DisplayBarBase, LedColors, ledColorForLogicValue } from "./DisplayBar"
 import { DrawContext, DrawableParent, GraphicsRendering } from "./Drawable"
-import { LedColors, OutputBarBase, ledColorForLogicValue } from "./OutputBar"
 
 
-export const Output7SegDef =
-    defineComponent("out", "7seg", {
+export const Display7SegDef =
+    defineComponent("7seg", {
+        idPrefix: "7seg",
         button: { imgWidth: 32 },
         repr: {
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
@@ -36,24 +37,21 @@ export const Output7SegDef =
     })
 
 
-export type Output7SegRepr = Repr<typeof Output7SegDef>
+export type Display7SegRepr = Repr<typeof Display7SegDef>
 
-export class Output7Seg extends OutputBarBase<Output7SegRepr, LogicValue[]> {
+export class Display7Seg extends DisplayBarBase<Display7SegRepr, LogicValue[]> {
 
-    public constructor(parent: DrawableParent, saved?: Output7SegRepr) {
-        super(parent, Output7SegDef, true, saved)
+    public constructor(parent: DrawableParent, saved?: Display7SegRepr) {
+        super(parent, Display7SegDef, true, saved)
     }
 
     public toJSON() {
-        return {
-            type: "7seg" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div(S.Components.Output7Seg.tooltip)
+            div(S.Components.Display7Seg.tooltip)
         ))
     }
 
@@ -129,4 +127,4 @@ export class Output7Seg extends OutputBarBase<Output7SegRepr, LogicValue[]> {
     }
 
 }
-Output7SegDef.impl = Output7Seg
+Display7SegDef.impl = Display7Seg

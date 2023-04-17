@@ -6,9 +6,10 @@ import { InteractionResult, Mode, Unknown, isUnknown, typeOrUndefined } from "..
 import { ComponentName, ComponentNameRepr, ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
-export const OutputDisplayDef =
-    defineParametrizedComponent("out", "display", true, false, {
+export const DisplayDef =
+    defineParametrizedComponent("display", true, false, {
         variantName: ({ bits }) => `display-${bits}`,
+        idPrefix: "disp",
         button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -43,35 +44,34 @@ export const OutputDisplayDef =
     })
 
 
-export type OutputDisplayRepr = Repr<typeof OutputDisplayDef>
-export type OutputDisplayParams = ResolvedParams<typeof OutputDisplayDef>
+export type DisplayRepr = Repr<typeof DisplayDef>
+export type DisplayParams = ResolvedParams<typeof DisplayDef>
 
 
-export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> {
+export class Display extends ParametrizedComponentBase<DisplayRepr> {
 
     public readonly numBits: number
     private _name: ComponentName
     private _radix: number
     private _showAsUnknown: boolean
 
-    public constructor(parent: DrawableParent, params: OutputDisplayParams, saved?: OutputDisplayRepr) {
-        super(parent, OutputDisplayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: DisplayParams, saved?: DisplayRepr) {
+        super(parent, DisplayDef.with(params), saved)
 
         this.numBits = params.numBits
 
         this._name = saved?.name ?? undefined
-        this._radix = saved?.radix ?? OutputDisplayDef.aults.radix
-        this._showAsUnknown = saved?.showAsUnknown ?? OutputDisplayDef.aults.showAsUnknown
+        this._radix = saved?.radix ?? DisplayDef.aults.radix
+        this._showAsUnknown = saved?.showAsUnknown ?? DisplayDef.aults.showAsUnknown
     }
 
     public toJSON() {
         return {
-            type: "display" as const,
-            bits: this.numBits === OutputDisplayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === DisplayDef.aults.bits ? undefined : this.numBits,
             name: this._name,
-            radix: this._radix === OutputDisplayDef.aults.radix ? undefined : this._radix,
-            showAsUnknown: this._showAsUnknown === OutputDisplayDef.aults.showAsUnknown ? undefined : this._showAsUnknown,
+            radix: this._radix === DisplayDef.aults.radix ? undefined : this._radix,
+            showAsUnknown: this._showAsUnknown === DisplayDef.aults.showAsUnknown ? undefined : this._showAsUnknown,
         }
     }
 
@@ -80,7 +80,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     }
 
     public override makeTooltip() {
-        const s = S.Components.OutputDisplay.tooltip
+        const s = S.Components.Display.tooltip
         const radixStr = (() => {
             switch (this._radix) {
                 case 2: return s.RadixBinary
@@ -172,7 +172,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
-        const s = S.Components.OutputDisplay.contextMenu
+        const s = S.Components.Display.contextMenu
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
             const icon = isCurrent ? "check" : "none"
             const caption = s.DisplayAs + " " + desc
@@ -211,7 +211,7 @@ export class OutputDisplay extends ParametrizedComponentBase<OutputDisplayRepr> 
     }
 
 }
-OutputDisplayDef.impl = OutputDisplay
+DisplayDef.impl = Display
 
 function repeatString(s: string, n: number) {
     let result = ""

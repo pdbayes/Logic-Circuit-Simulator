@@ -7,7 +7,8 @@ import { FlipflopOrLatch, FlipflopOrLatchDef } from "./FlipflopOrLatch"
 
 
 export const LatchSRDef =
-    defineComponent("ic", "latch-sr", {
+    defineComponent("latch-sr", {
+        idPrefix: "latch",
         ...FlipflopOrLatchDef,
         makeNodes: () => {
             const base = FlipflopOrLatchDef.makeNodes()
@@ -31,10 +32,7 @@ export class LatchSR extends FlipflopOrLatch<LatchSRRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "latch-sr" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

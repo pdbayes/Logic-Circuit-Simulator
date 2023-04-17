@@ -9,9 +9,10 @@ import { Flipflop, FlipflopOrLatch } from "./FlipflopOrLatch"
 import { RegisterBase } from "./Register"
 
 
-export const InputRandomDef =
-    defineParametrizedComponent("in", "random", true, true, {
-        variantName: ({ bits }) => `random-${bits}`,
+export const RandomDef =
+    defineParametrizedComponent("rand", true, true, {
+        variantName: ({ bits }) => `rand-${bits}`,
+        idPrefix: "rand",
         button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -50,11 +51,11 @@ export const InputRandomDef =
         initialValue: (saved, { numBits }) => ArrayFillWith<LogicValue>(false, numBits),
     })
 
-export type InputRandomRepr = Repr<typeof InputRandomDef>
-export type InputRandomParams = ResolvedParams<typeof InputRandomDef>
+export type RandomRepr = Repr<typeof RandomDef>
+export type RandomParams = ResolvedParams<typeof RandomDef>
 
 
-export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
+export class Random extends ParametrizedComponentBase<RandomRepr> {
 
     public readonly numBits: number
     private _prob1: number
@@ -63,27 +64,26 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     private _trigger: EdgeTrigger
     private _name: ComponentName
 
-    public constructor(parent: DrawableParent, params: InputRandomParams, saved?: InputRandomRepr) {
-        super(parent, InputRandomDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: RandomParams, saved?: RandomRepr) {
+        super(parent, RandomDef.with(params), saved)
 
         this.numBits = params.numBits
 
         this._prob1 = saved?.prob1 !== undefined
-            ? Math.max(0, Math.min(1, saved.prob1)) : InputRandomDef.aults.prob1
-        this._showProb = saved?.showProb ?? InputRandomDef.aults.showProb
-        this._trigger = saved?.trigger ?? InputRandomDef.aults.trigger
+            ? Math.max(0, Math.min(1, saved.prob1)) : RandomDef.aults.prob1
+        this._showProb = saved?.showProb ?? RandomDef.aults.showProb
+        this._trigger = saved?.trigger ?? RandomDef.aults.trigger
         this._name = saved?.name ?? undefined
     }
 
     public override toJSON() {
         return {
-            type: "random" as const,
-            bits: this.numBits === InputRandomDef.aults.bits ? undefined : this.numBits,
             ...super.toJSONBase(),
+            bits: this.numBits === RandomDef.aults.bits ? undefined : this.numBits,
             name: this._name,
-            prob1: (this._prob1 !== InputRandomDef.aults.prob1) ? this._prob1 : undefined,
-            showProb: (this._showProb !== InputRandomDef.aults.showProb) ? this._showProb : undefined,
-            trigger: (this._trigger !== InputRandomDef.aults.trigger) ? this._trigger : undefined,
+            prob1: (this._prob1 !== RandomDef.aults.prob1) ? this._prob1 : undefined,
+            showProb: (this._showProb !== RandomDef.aults.showProb) ? this._showProb : undefined,
+            trigger: (this._trigger !== RandomDef.aults.trigger) ? this._trigger : undefined,
         }
     }
 
@@ -92,7 +92,7 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     }
 
     public override makeTooltip() {
-        const s = S.Components.InputRandom.tooltip
+        const s = S.Components.Random.tooltip
         return tooltipContent(s.title,
             s.desc[0] + this._prob1 + s.desc[1]
         )
@@ -169,7 +169,7 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
-        const s = S.Components.InputRandom.contextMenu
+        const s = S.Components.Random.contextMenu
         const icon = this._showProb ? "check" : "none"
         const toggleShowProbItem = MenuData.item(icon, s.ShowProb,
             () => this.doSetShowProb(!this._showProb))
@@ -193,4 +193,4 @@ export class InputRandom extends ParametrizedComponentBase<InputRandomRepr> {
     }
 
 }
-InputRandomDef.impl = InputRandom
+RandomDef.impl = Random

@@ -32,8 +32,9 @@ export const CaptionPosition = {
 
 export type CaptionPosition = keyof typeof CaptionPosition
 
-export const LabelRectDef =
-    defineComponent("label", "rect", {
+export const RectangleDef =
+    defineComponent("rect", {
+        idPrefix: "rect",
         button: { imgWidth: 32 },
         repr: {
             w: t.number,
@@ -63,9 +64,9 @@ export const LabelRectDef =
         makeNodes: () => ({}),
     })
 
-export type LabelRectRepr = Repr<typeof LabelRectDef>
+export type RectangleRepr = Repr<typeof RectangleDef>
 
-export class LabelRect extends ComponentBase<LabelRectRepr> {
+export class Rectangle extends ComponentBase<RectangleRepr> {
 
     private _w: number
     private _h: number
@@ -78,34 +79,33 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     private _captionInside: boolean
     private _font: string
 
-    public constructor(parent: DrawableParent, saved?: LabelRectRepr) {
-        super(parent, LabelRectDef, saved)
-        this._w = saved?.w ?? LabelRectDef.aults.width
-        this._h = saved?.h ?? LabelRectDef.aults.height
-        this._color = saved?.color ?? LabelRectDef.aults.color
-        this._strokeWidth = saved?.strokeWidth ?? LabelRectDef.aults.strokeWidth
-        this._noFill = saved?.noFill ?? LabelRectDef.aults.noFill
-        this._rounded = saved?.rounded ?? LabelRectDef.aults.rounded
-        this._caption = saved?.caption ?? LabelRectDef.aults.caption
-        this._captionPos = saved?.captionPos ?? LabelRectDef.aults.captionPos
-        this._captionInside = saved?.captionInside ?? LabelRectDef.aults.captionInside
-        this._font = saved?.font ?? LabelRectDef.aults.font
+    public constructor(parent: DrawableParent, saved?: RectangleRepr) {
+        super(parent, RectangleDef, saved)
+        this._w = saved?.w ?? RectangleDef.aults.width
+        this._h = saved?.h ?? RectangleDef.aults.height
+        this._color = saved?.color ?? RectangleDef.aults.color
+        this._strokeWidth = saved?.strokeWidth ?? RectangleDef.aults.strokeWidth
+        this._noFill = saved?.noFill ?? RectangleDef.aults.noFill
+        this._rounded = saved?.rounded ?? RectangleDef.aults.rounded
+        this._caption = saved?.caption ?? RectangleDef.aults.caption
+        this._captionPos = saved?.captionPos ?? RectangleDef.aults.captionPos
+        this._captionInside = saved?.captionInside ?? RectangleDef.aults.captionInside
+        this._font = saved?.font ?? RectangleDef.aults.font
     }
 
     public toJSON() {
         return {
-            type: "rect" as const,
             ...this.toJSONBase(),
             w: this._w,
             h: this._h,
             color: this._color,
             strokeWidth: this._strokeWidth,
-            noFill: this._noFill === LabelRectDef.aults.noFill ? undefined : this._noFill,
-            rounded: this._rounded === LabelRectDef.aults.rounded ? undefined : this._rounded,
-            caption: this._caption === LabelRectDef.aults.caption ? undefined : this._caption,
-            captionPos: this._captionPos === LabelRectDef.aults.captionPos ? undefined : this._captionPos,
-            captionInside: this._captionInside === LabelRectDef.aults.captionInside ? undefined : this._captionInside,
-            font: this._font === LabelRectDef.aults.font ? undefined : this._font,
+            noFill: this._noFill === RectangleDef.aults.noFill ? undefined : this._noFill,
+            rounded: this._rounded === RectangleDef.aults.rounded ? undefined : this._rounded,
+            caption: this._caption === RectangleDef.aults.caption ? undefined : this._caption,
+            captionPos: this._captionPos === RectangleDef.aults.captionPos ? undefined : this._captionPos,
+            captionInside: this._captionInside === RectangleDef.aults.captionInside ? undefined : this._captionInside,
+            font: this._font === RectangleDef.aults.font ? undefined : this._font,
         }
     }
 
@@ -303,7 +303,7 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
         ]
 
         const setFontItem = MenuData.item("font", s.Font, () => {
-            this.runSetFontDialog(this._font, LabelRectDef.aults.font, this.doSetFont.bind(this))
+            this.runSetFontDialog(this._font, RectangleDef.aults.font, this.doSetFont.bind(this))
         })
 
         return [
@@ -430,4 +430,4 @@ export class LabelRect extends ComponentBase<LabelRectRepr> {
     }
 
 }
-LabelRectDef.impl = LabelRect
+RectangleDef.impl = Rectangle

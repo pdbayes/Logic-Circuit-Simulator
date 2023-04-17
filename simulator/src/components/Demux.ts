@@ -10,8 +10,9 @@ import { WireStyles } from "./Wire"
 
 
 export const DemuxDef =
-    defineParametrizedComponent("ic", "demux", true, true, {
+    defineParametrizedComponent("demux", true, true, {
         variantName: ({ from, to }) => `demux-${from}to${to}`,
+        idPrefix: "demux",
         button: { imgWidth: 50 },
         repr: {
             from: typeOrUndefined(t.number),
@@ -24,8 +25,8 @@ export const DemuxDef =
             disconnectedAsHighZ: false,
         },
         params: {
-            from: param(4, [1, 2, 4, 8, 16]),
-            to: param(8),
+            from: param(2, [1, 2, 4, 8, 16]),
+            to: param(4),
         },
         validateParams: ({ from, to }) => {
             // reference is 'from'; 'to' is clamped to be between 2*from and 16*from
@@ -90,8 +91,9 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
     public override toJSON() {
         return {
-            type: "demux" as const, from: this.numFrom, to: this.numTo,
             ...super.toJSONBase(),
+            from: this.numFrom,
+            to: this.numTo,
             showWiring: (this._showWiring !== DemuxDef.aults.showWiring) ? this._showWiring : undefined,
             disconnectedAsHighZ: (this._disconnectedAsHighZ !== DemuxDef.aults.disconnectedAsHighZ) ? this._disconnectedAsHighZ : undefined,
         }

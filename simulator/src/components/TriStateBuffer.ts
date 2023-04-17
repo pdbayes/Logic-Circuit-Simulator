@@ -5,8 +5,9 @@ import { HighImpedance, isHighImpedance, isUnknown, LogicValue, Unknown } from "
 import { ComponentBase, defineComponent, Repr } from "./Component"
 import { DrawableParent, DrawContext, GraphicsRendering } from "./Drawable"
 
-export const TriStateBufferDef =
-    defineComponent("gate", "TRI", {
+export const TristateBufferDef =
+    defineComponent("tristate", {
+        idPrefix: "tristate",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 4 },
@@ -22,24 +23,21 @@ export const TriStateBufferDef =
         initialValue: () => HighImpedance as LogicValue,
     })
 
-type TriStateBufferRepr = Repr<typeof TriStateBufferDef>
+type TristateBufferRepr = Repr<typeof TristateBufferDef>
 
-export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
+export class TristateBuffer extends ComponentBase<TristateBufferRepr> {
 
-    public constructor(parent: DrawableParent, saved?: TriStateBufferRepr) {
-        super(parent, TriStateBufferDef, saved)
+    public constructor(parent: DrawableParent, saved?: TristateBufferRepr) {
+        super(parent, TristateBufferDef, saved)
     }
 
     public toJSON() {
-        return {
-            type: "TRI" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div(S.Components.TriStateBuffer.tooltip) // TODO
+            div(S.Components.TristateBuffer.tooltip) // TODO
         ))
     }
 
@@ -107,4 +105,4 @@ export class TriStateBuffer extends ComponentBase<TriStateBufferRepr> {
     }
 
 }
-TriStateBufferDef.impl = TriStateBuffer
+TristateBufferDef.impl = TristateBuffer

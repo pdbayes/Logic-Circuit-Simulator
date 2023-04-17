@@ -7,7 +7,8 @@ import { DrawableParent, MenuItems } from "./Drawable"
 
 
 export const DecoderBCD4Def =
-    defineComponent("ic", "decoder-bcd4", {
+    defineComponent("dec-bcd4", {
+        idPrefix: "bcd",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 10 },
@@ -36,10 +37,7 @@ export class DecoderBCD4 extends ComponentBase<DecoderBCD4Repr> {
     }
 
     public toJSON() {
-        return {
-            type: "decoder-bcd4" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

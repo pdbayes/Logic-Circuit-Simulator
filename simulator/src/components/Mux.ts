@@ -9,8 +9,9 @@ import { WireStyles } from "./Wire"
 
 
 export const MuxDef =
-    defineParametrizedComponent("ic", "mux", true, true, {
+    defineParametrizedComponent("mux", true, true, {
         variantName: ({ from, to }) => `mux-${from}to${to}`,
+        idPrefix: "mux",
         button: { imgWidth: 50 },
         repr: {
             from: typeOrUndefined(t.number),
@@ -21,8 +22,8 @@ export const MuxDef =
             showWiring: true,
         },
         params: {
-            to: param(4, [1, 2, 4, 8, 16]),
-            from: param(8),
+            to: param(2, [1, 2, 4, 8, 16]),
+            from: param(4),
         },
         validateParams: ({ from, to }) => {
             // reference is 'to'; 'from' is clamped to be between 2*to and 16*to
@@ -85,8 +86,9 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
 
     public override toJSON() {
         return {
-            type: "mux" as const, from: this.numFrom, to: this.numTo,
             ...super.toJSONBase(),
+            from: this.numFrom,
+            to: this.numTo,
             showWiring: (this._showWiring !== MuxDef.aults.showWiring) ? this._showWiring : undefined,
         }
     }

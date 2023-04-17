@@ -9,8 +9,9 @@ import { ROMRAMBase, ROMRAMDef, ROMRAMValue } from "./ROM"
 
 
 export const RAMDef =
-    defineParametrizedComponent("ic", "ram", true, true, {
+    defineParametrizedComponent("ram", true, true, {
         variantName: ({ bits, lines }) => `ram-${lines}x${bits}`,
+        idPrefix: "ram",
         ...ROMRAMDef,
         repr: {
             ...ROMRAMDef.repr,
@@ -58,7 +59,6 @@ export class RAM extends ROMRAMBase<RAMRepr> {
 
     public toJSON() {
         return {
-            type: "ram" as const,
             ...super.toJSONBase(),
             trigger: (this._trigger !== RAMDef.aults.trigger) ? this._trigger : undefined,
         }

@@ -7,7 +7,8 @@ import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
 import { Clock, ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
-import { Component, ComponentBase, ComponentCategory, Params } from "./components/Component"
+import { Component, ComponentBase } from "./components/Component"
+import { ControlledInverterDef } from "./components/ControlledInverter"
 import { CounterDef } from "./components/Counter"
 import { CustomComponentDef, CustomComponentDefRepr, CustomComponentPrefix } from "./components/CustomComponent"
 import { DecoderDef } from "./components/Decoder"
@@ -15,6 +16,11 @@ import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
 import { DecoderBCD4Def } from "./components/DecoderBCD4"
 import { DemuxDef } from "./components/Demux"
+import { DisplayDef } from "./components/Display"
+import { Display16SegDef } from "./components/Display16Seg"
+import { Display7SegDef } from "./components/Display7Seg"
+import { DisplayAsciiDef } from "./components/DisplayAscii"
+import { DisplayBarDef } from "./components/DisplayBar"
 import { DrawableParent } from "./components/Drawable"
 import { FlipflopDDef } from "./components/FlipflopD"
 import { FlipflopJKDef } from "./components/FlipflopJK"
@@ -24,97 +30,62 @@ import { GateArrayDef } from "./components/GateArray"
 import { Gate1Types, GateNTypes } from "./components/GateTypes"
 import { HalfAdderDef } from "./components/HalfAdder"
 import { Input, InputDef } from "./components/Input"
-import { InputRandomDef } from "./components/InputRandom"
-import { LabelRectDef } from "./components/LabelRect"
-import { LabelString, LabelStringDef } from "./components/LabelString"
+import { Label, LabelDef } from "./components/Label"
 import { LatchSRDef } from "./components/LatchSR"
 import { MuxDef } from "./components/Mux"
 import { Output, OutputDef } from "./components/Output"
-import { Output16SegDef } from "./components/Output16Seg"
-import { Output7SegDef } from "./components/Output7Seg"
-import { OutputAsciiDef } from "./components/OutputAscii"
-import { OutputBarDef } from "./components/OutputBar"
-import { OutputDisplayDef } from "./components/OutputDisplay"
-import { OutputShiftBufferDef } from "./components/OutputShiftBuffer"
 import { PassthroughDef } from "./components/Passthrough"
 import { RAMDef } from "./components/RAM"
 import { ROMDef } from "./components/ROM"
+import { RandomDef } from "./components/Random"
+import { RectangleDef } from "./components/Rectangle"
 import { RegisterDef } from "./components/Register"
+import { ShiftDisplayDef } from "./components/ShiftDisplay"
 import { ShiftRegisterDef } from "./components/ShiftRegister"
-import { SwitchedInverterDef } from "./components/SwitchedInverter"
-import { TriStateBufferDef } from "./components/TriStateBuffer"
-import { TriStateBufferArrayDef } from "./components/TriStateBufferArray"
+import { TristateBufferDef } from "./components/TristateBuffer"
+import { TristateBufferArrayDef } from "./components/TristateBufferArray"
 import { S } from "./strings"
-import { JSONParseObject, isString, validateJson } from "./utils"
+import { isRecord, isString, validateJson } from "./utils"
 
 // Generic interface to instantiate components from scratch (possibly with params) or from JSON
 type ComponentMaker<TParams extends Record<string, unknown>> = {
     isValid(): boolean,
-    category: ComponentCategory,
-    type: string | undefined,
+    type: string,
     make(parent: DrawableParent, params?: TParams): Component,
     makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined,
 }
 
-// Gate is special and needs its own ComponentMaker adapter
-type GateParams = Params<typeof Gate1Def> | Params<typeof GateNDef> | { type: "TRI" }
-const GateAdapter: ComponentMaker<GateParams> = {
-    isValid: () => true,
-    category: "gate",
-    type: undefined,
-    make: (editor, params) => {
-        const type = params?.type ?? GateNDef.aults.type
-        if (Gate1Types.includes(type)) {
-            return Gate1Def.make(editor, params as Params<typeof Gate1Def>)
-        } else if (GateNTypes.includes(type)) {
-            return GateNDef.make(editor, params as Params<typeof GateNDef>)
-        } else if (type === "TRI") {
-            return TriStateBufferDef.make(editor)
-        }
-        // never reached
-        throw new Error(`Invalid gate type ${type}`)
-    },
-    makeFromJSON: (editor, data) => {
-        if (!isString(data.type)) {
-            console.warn(`Missing gate type in ${data}`)
-            return undefined
-        }
-        const type = data.type
-        if (Gate1Types.includes(type)) {
-            return Gate1Def.makeFromJSON(editor, data)
-        } else if (GateNTypes.includes(type)) {
-            return GateNDef.makeFromJSON(editor, data)
-        } else if (type === "TRI") {
-            return TriStateBufferDef.makeFromJSON(editor, data)
-        }
-        return undefined
-    },
-}
-
-// All predefined components
+// All predefined components except the ones which don't have
+// static type strings: Gate1, GateN, GateArray, CustomComponent
 const AllComponentDefs: ComponentMaker<any>[] = [
     // in
     InputDef,
     ClockDef,
-    InputRandomDef,
+    RandomDef,
 
     // out
     OutputDef,
-    OutputDisplayDef,
-    Output7SegDef,
-    Output16SegDef,
-    OutputAsciiDef,
-    OutputBarDef,
-    OutputShiftBufferDef,
+    DisplayDef,
+    Display7SegDef,
+    Display16SegDef,
+    DisplayAsciiDef,
+    DisplayBarDef,
+    ShiftDisplayDef,
 
     // gates
-    GateAdapter,
-    TriStateBufferDef,
+    Gate1Def,
+    GateNDef,
+    GateArrayDef,
+    TristateBufferDef,
+    TristateBufferArrayDef,
+    ControlledInverterDef,
+
+    // labels & layout
+    LabelDef,
+    RectangleDef,
+    PassthroughDef,
 
     // ic
-    SwitchedInverterDef,
-    GateArrayDef,
-    TriStateBufferArrayDef,
     HalfAdderDef,
     AdderDef,
     ComparatorDef,
@@ -135,19 +106,11 @@ const AllComponentDefs: ComponentMaker<any>[] = [
     Decoder7SegDef,
     Decoder16SegDef,
     DecoderBCD4Def,
-
-    // labels
-    LabelStringDef,
-    LabelRectDef,
-
-    // layout
-    PassthroughDef,
 ]
 
 // Data present in the HTMLElement of a component button
 export type ButtonDataset = {
-    category: ComponentCategory,
-    type?: string,
+    type: string,
     componentId?: string,
     params?: string,
 }
@@ -161,7 +124,7 @@ export class ComponentFactory {
     public constructor(editor: LogicEditor) {
         this.editor = editor
         for (const maker of AllComponentDefs) {
-            const key = maker.type !== undefined ? `${maker.category}.${maker.type}` : maker.category
+            const key = maker.type
             if (!maker.isValid()) {
                 throw new Error(`Implementation missing for components of type '${key}'`)
             }
@@ -176,17 +139,20 @@ export class ComponentFactory {
 
     // Component creation functions
 
-    public makeFromJSON(parent: DrawableParent, category: string, obj_: unknown): Component | undefined {
-        const obj = obj_ as Record<string, unknown>
-        const type = isString(obj.type) ? obj.type : undefined
-        const maker = this.getMaker(category, type)
+    public makeFromJSON(parent: DrawableParent, obj: unknown): Component | undefined {
+        if (!isRecord(obj)) {
+            console.warn(`Skipping invalid non-object component: ${JSON5.stringify(obj, null, 2)}`)
+            return undefined
+        }
+        const type = isString(obj.type) ? obj.type : "<unknown>"
+        const maker = this.getMaker(type)
         return maker?.makeFromJSON(parent, obj)
     }
 
     public makeFromButton(parent: DrawableParent, elem: HTMLElement) {
         const compDataset = elem.dataset as ButtonDataset
         const paramsStr = compDataset.params
-        const maker = this.getMaker(compDataset.category, compDataset.type)
+        const maker = this.getMaker(compDataset.type)
         const params = paramsStr === undefined ? undefined : JSON5.parse(paramsStr) as Record<string, unknown>
         return maker?.make(parent, params)
 
@@ -205,38 +171,51 @@ export class ComponentFactory {
 
     }
 
-    private getMaker(category: string, type?: string): ComponentMaker<any> | undefined {
+    private getMaker(type: string): ComponentMaker<any> | undefined {
         let maker
-        if (type !== undefined) {
+        // normal cases
+        if ((maker = this._predefinedComponents.get(type)) !== undefined) {
+            return maker
+        }
+
+        // gates
+        if (Gate1Types.includes(type)) {
+            return Gate1Def
+        } else if (GateNTypes.includes(type)) {
+            return GateNDef
+        }
+
+        const hyphenPos = type.indexOf("-")
+        if (hyphenPos !== -1) {
+
+            // gate arrays
+            const typeStart = type.substring(0, hyphenPos)
+            const typeEnd = type.substring(hyphenPos + 1)
+            if (typeEnd === "array" && GateNTypes.includes(typeStart)) {
+                return GateArrayDef
+            }
+
+            // custom components
             if (type.startsWith(CustomComponentPrefix)) {
                 const customId = type.substring(CustomComponentPrefix.length)
-                maker = this._customComponents.get(customId)
-            } else {
-                // specific type
-                maker = this._predefinedComponents.get(`${category}.${type}`)
-                if (maker === undefined) {
-                    // maybe a more generic maker handles it
-                    maker = this._predefinedComponents.get(category)
+                if ((maker = this._customComponents.get(customId)) !== undefined) {
+                    return maker
                 }
             }
-        } else {
-            // no type, use generic maker
-            maker = this._predefinedComponents.get(category)
         }
-        if (maker === undefined) {
-            console.warn(`Unknown component for '${category}.${type}'`)
-        }
-        return maker
+
+        console.warn(`Unknown component for '${type}'`)
+        return undefined
     }
 
 
     // Custom components handling
 
-    public customDefs(): CustomComponentDef[] | undefined {
+    public customDefs(): CustomComponentDefRepr[] | undefined {
         if (this._customComponents.size === 0) {
             return undefined
         }
-        return [...this._customComponents.values()]
+        return [...this._customComponents.values()].map(def => def.toJSON())
     }
 
     public clearCustomDefs() {
@@ -381,7 +360,7 @@ export class ComponentFactory {
         }
 
         let caption
-        const labels = selectedComps.filter((e): e is LabelString => e instanceof LabelString)
+        const labels = selectedComps.filter((e): e is Label => e instanceof Label)
         if (labels.length !== 1) {
             caption = window.prompt(s.EnterCaptionPrompt)
             if (caption === null) {
@@ -395,15 +374,12 @@ export class ComponentFactory {
             return s.ComponentAlreadyExists.expand({ id })
         }
 
-        // we have to stringify and parse because stringifying actually calls toJSON()
-        const circuit =
-            JSONParseObject(
-                Serialization.stringifyObject(
-                    Serialization.buildComponentsObject(componentsToInclude), true
-                )
-            ) as ReturnType<typeof Serialization.buildComponentsObject>
+        const { components, wires } = Serialization.buildComponentsObject(componentsToInclude)
+        if (components === undefined || wires === undefined) {
+            return ""
+        }
 
-        const maker = this.tryAddCustomDef({ id, caption, circuit })
+        const maker = this.tryAddCustomDef({ id, caption, circuit: { components, wires } })
         if (maker === undefined) {
             return ""
         }
@@ -424,6 +400,5 @@ function makeIdentifier(name: string): string {
         .trim()
         .normalize("NFKD")
         .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/\./g, "")
+        .replace(/[^a-z0-9]+/g, "")
 }

@@ -5,13 +5,13 @@ import { NodeManager } from "../NodeManager"
 import { RecalcManager } from "../RedrawRecalcManager"
 import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
-import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, templateLiteral, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, LogicValue, isString, typeOrUndefined, validateJson } from "../utils"
 import { Component, ComponentBase, ComponentRepr, NodeDesc, NodeGroupDesc, NodeInDesc, NodeOutDesc, NodeRec, defineComponent, groupHorizontal, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems, Orientation, Orientations } from "./Drawable"
-import { Input, InputRepr } from "./Input"
+import { Input } from "./Input"
 import { NodeIn, NodeOut } from "./Node"
-import { Output, OutputRepr } from "./Output"
-import { WireManager } from "./Wire"
+import { Output } from "./Output"
+import { Wire, WireManager } from "./Wire"
 
 type CustomComponentNodeSpec = {
     isIn: boolean,
@@ -27,16 +27,21 @@ export const CustomComponentPrefix = "custom-"
 export const CustomComponentDefRepr = t.type({
     id: t.string,
     caption: t.string,
-    circuit: t.record(t.string, t.array(t.unknown)),
+    circuit: t.type({
+        components: typeOrUndefined(t.record(t.string, t.record(t.string, t.unknown))),
+        wires: typeOrUndefined(t.array(Wire.Repr)),
+    }),
 })
 
 export type CustomComponentDefRepr = t.TypeOf<typeof CustomComponentDefRepr>
+type CircuitRepr = CustomComponentDefRepr["circuit"]
+
 
 export class CustomComponentDef {
 
-    public readonly id: string
+    public readonly customId: string
     public readonly caption: string
-    public readonly circuit: Record<string, unknown[]>
+    public readonly circuit: CircuitRepr
     public readonly gridWidth: number
     public readonly gridHeight: number
     public readonly ins: CustomComponentNodeSpec[]
@@ -47,37 +52,44 @@ export class CustomComponentDef {
 
     public toJSON(): CustomComponentDefRepr {
         return {
-            id: this.id,
+            id: this.customId,
             caption: this.caption,
             circuit: this.circuit,
         }
     }
 
     public constructor(data: CustomComponentDefRepr) {
-        this.id = data.id
+        this.customId = data.id
         this.caption = data.caption
         this.circuit = data.circuit
-        const numInOut = (obj: unknown, isIn: boolean): [CustomComponentNodeSpec[], number] => {
-            let num = 0
-            const names: CustomComponentNodeSpec[] = []
-            if (isArray(obj)) {
-                const arr = obj as Array<InputRepr | OutputRepr>
-                for (const inOutRepr of arr) {
+
+        const collectInOut = (reprs: Record<string, Record<string, unknown>>): [CustomComponentNodeSpec[], number, CustomComponentNodeSpec[], number] => {
+            const ins: CustomComponentNodeSpec[] = []
+            let totalIn = 0
+            const outs: CustomComponentNodeSpec[] = []
+            let totalOut = 0
+            for (const inOutRepr of Object.values(reprs)) {
+                const isIn = inOutRepr.type === "in"
+                const isOut = inOutRepr.type === "out"
+                if (isIn || isOut) {
                     const name = isString(inOutRepr.name) ? inOutRepr.name : "n/a"
                     let orient = Orientations.includes(inOutRepr.orient) ? inOutRepr.orient : Orientation.default
                     orient = isIn ? Orientation.invert(orient) : orient
-                    const numBits = inOutRepr.bits ?? 1
+                    const numBits = Number(inOutRepr.bits ?? 1)
                     this.numBySide[orient] += numBits
-                    num += numBits
                     const spec: CustomComponentNodeSpec = { isIn, name, orient, numBits }
-                    names.push(spec)
+                    if (isIn) {
+                        totalIn += numBits
+                        ins.push(spec)
+                    } else {
+                        totalOut += numBits
+                        outs.push(spec)
+                    }
                 }
             }
-            return [names, num]
+            return [ins, totalIn, outs, totalOut]
         }
-        [this.ins, this.numInputs] = numInOut(this.circuit.in, true);
-        [this.outs, this.numOutputs] = numInOut(this.circuit.out, false)
-        // TODO: find a way to keep these nodes in the same vertical/horizontal order as they were in the original circuit. This is quite a bit easier once we have a flat representation of all components in the JSON so that we can interleave inputs and outputs
+        [this.ins, this.numInputs, this.outs, this.numOutputs] = collectInOut(this.circuit.components ?? {})
 
         const spacing = 2
         const margin = 1.5
@@ -89,7 +101,7 @@ export class CustomComponentDef {
     // ComponentMaker interface
     public isValid() { return true }
     public get category() { return "ic" as const }
-    public get type() { return `${CustomComponentDef}${this.id}` }
+    public get type() { return `${CustomComponentDef}${this.customId}` }
 
     public make(parent: DrawableParent): Component {
         const comp = new CustomComponent(parent, this)
@@ -109,7 +121,8 @@ export class CustomComponentDef {
 
     // ComponentDef creation
     public toStandardDef() {
-        return defineComponent("ic", CustomComponentPrefix + this.id, {
+        return defineComponent(CustomComponentPrefix + this.customId, {
+            idPrefix: this.customId,
             button: { imgWidth: 50 },
             valueDefaults: {},
             size: { gridWidth: this.gridWidth, gridHeight: this.gridHeight },
@@ -160,17 +173,14 @@ export class CustomComponentDef {
     }
 }
 
-export const CustomComponentRepr =
-    t.intersection([ComponentRepr(true, true), t.type({
-        type: templateLiteral<`${typeof CustomComponentPrefix}${string}`>(new RegExp(`^${CustomComponentPrefix}.*`)),
-    })])
+export const CustomComponentRepr = ComponentRepr(true, true)
 
 export type CustomComponentRepr = t.TypeOf<typeof CustomComponentRepr>
 
 
 export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicValue[]> implements DrawableParent {
 
-    public readonly def: CustomComponentDef
+    public readonly customDef: CustomComponentDef
     public readonly numInputs: number
     public readonly numOutputs: number
 
@@ -188,13 +198,13 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
     private _subcircuitInputs: NodeOut[] = []
     private _subcircuitOutputs: NodeIn[] = []
 
-    public constructor(parent: DrawableParent, def: CustomComponentDef, saved?: CustomComponentRepr) {
-        super(parent, def.toStandardDef(), saved)
-        this.def = def
+    public constructor(parent: DrawableParent, customDef: CustomComponentDef, saved?: CustomComponentRepr) {
+        super(parent, customDef.toStandardDef(), saved)
+        this.customDef = customDef
         this.numInputs = this.inputs._all.length
         this.numOutputs = this.outputs._all.length
 
-        const error = Serialization.loadCircuit(this, def.circuit, { immediateWirePropagation: true, skipMigration: true })
+        const error = Serialization.loadCircuit(this, customDef.circuit, { immediateWirePropagation: true, skipMigration: true })
         if (error !== undefined) {
             console.error("Failed to load custom component:", error)
             this.setInvalid()
@@ -221,15 +231,16 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
     }
 
     public toJSON() {
-        return {
-            type: `${CustomComponentPrefix}${this.def.id}` as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
+    }
+
+    protected override jsonType() {
+        return CustomComponentPrefix + this.customDef.customId
     }
 
     protected override makeClone(setSpawning: boolean): CustomComponent {
         const repr = this.toNodelessJSON()
-        const clone = new CustomComponent(this.parent, this.def, repr)
+        const clone = new CustomComponent(this.parent, this.customDef, repr)
         this.parent.components.add(clone)
         if (setSpawning) {
             clone.setSpawning()
@@ -258,7 +269,7 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
             g.fillStyle = COLOR_COMPONENT_BORDER
             g.textAlign = "center"
             g.textBaseline = "middle"
-            g.fillText(this.def.caption, this.posX, this.posY)
+            g.fillText(this.customDef.caption, this.posX, this.posY)
         })
     }
 

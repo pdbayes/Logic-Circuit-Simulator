@@ -5,7 +5,7 @@ import { IconName, ImageName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../menuutils"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isNumber, isRecord, isString, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, RichStringEnum, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isNumber, isRecord, isString, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
 import { DrawableParent, DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
@@ -86,10 +86,16 @@ type NodeIDsRepr<THasIn extends boolean, THasOut extends boolean>
  * Base representation of a component: position & repr of nodes
  */
 export type ComponentRepr<THasIn extends boolean, THasOut extends boolean> =
-    PositionSupportRepr & NodeIDsRepr<THasIn, THasOut>
+    { type: string } & PositionSupportRepr & NodeIDsRepr<THasIn, THasOut>
 
 export const ComponentRepr = <THasIn extends boolean, THasOut extends boolean>(hasIn: THasIn, hasOut: THasOut) =>
-    t.intersection([PositionSupportRepr, NodeIDsRepr(hasIn, hasOut)], "Component")
+    t.intersection([
+        t.type({
+            type: t.string,
+        }),
+        PositionSupportRepr,
+        NodeIDsRepr(hasIn, hasOut),
+    ], "Component")
 
 export function isNodeArray<TNode extends Node>(obj: undefined | number | Node | ReadonlyGroupedNodeArray<TNode>): obj is ReadonlyGroupedNodeArray<TNode> {
     return isArray(obj)
@@ -169,26 +175,6 @@ export enum ComponentState {
 
 // Simplified, generics-free representation of a component
 export type Component = ComponentBase<any, any, NamedNodes<NodeIn>, NamedNodes<NodeOut>, any, any>
-
-export const JsonFieldsComponents = ["in", "out", "gates", "ic", "labels", "layout"] as const
-export type JsonFieldComponent = typeof JsonFieldsComponents[number]
-export const JsonFieldsAux = ["v", "opts", "userdata"] as const
-export type JsonFieldAux = typeof JsonFieldsAux[number]
-export type JsonField = JsonFieldComponent | JsonFieldAux
-
-export const ComponentCategories = RichStringEnum.withProps<{
-    jsonFieldName: JsonFieldComponent
-}>()({
-    in: { jsonFieldName: "in" },
-    out: { jsonFieldName: "out" },
-    gate: { jsonFieldName: "gates" },
-    ic: { jsonFieldName: "ic" },
-    label: { jsonFieldName: "labels" },
-    layout: { jsonFieldName: "layout" },
-})
-
-export type ComponentCategory = typeof ComponentCategories.type
-export type MainJsonFieldName = typeof ComponentCategories.props[ComponentCategory]["jsonFieldName"]
 
 export type DynamicName = Record<string | number, string>
 export function isDynamicName(obj: unknown): obj is DynamicName {
@@ -278,8 +264,7 @@ export abstract class ComponentBase<
     THasOut extends boolean = IsNonEmpty<TOutputNodes>, // in-out node presence
 > extends DrawableWithDraggablePosition {
 
-    private _def: InstantiatedComponentDef<TRepr, TValue>
-    public readonly category: ComponentCategory
+    public readonly def: InstantiatedComponentDef<TRepr, TValue>
     private _width: number
     private _height: number
     private _state: ComponentState
@@ -296,8 +281,7 @@ export abstract class ComponentBase<
     ) {
         super(parent, saved)
 
-        this._def = def
-        this.category = def.category
+        this.def = def
         this._width = def.size.gridWidth * GRID_STEP
         this._height = def.size.gridHeight * GRID_STEP
         this._value = def.initialValue(saved)
@@ -384,6 +368,7 @@ export abstract class ComponentBase<
         // useful to clone a component without its node numbers,
         // which will be reobtained when the new component is created
         const repr = this.toJSON()
+        delete repr.ref
         delete (repr as ComponentRepr<true, true>).in
         delete (repr as ComponentRepr<true, true>).out
         delete (repr as ComponentRepr<true, false>).id
@@ -393,10 +378,20 @@ export abstract class ComponentBase<
     // typically used by subclasses to provide only their specific JSON,
     // splatting in the result of super.toJSONBase() in the object
     protected override toJSONBase(): ComponentRepr<THasIn, THasOut> {
+        const typeHolder = {
+            // not sure why we need a separate object to splat in just
+            // a few lines below, but this makes the compiler happy
+            type: this.jsonType(),
+        }
         return {
+            ...typeHolder,
             ...super.toJSONBase(),
             ...this.buildNodesRepr(),
         }
+    }
+
+    protected jsonType(): string {
+        return this.def.type
     }
 
     // creates the input/output nodes based on array of offsets (provided
@@ -893,14 +888,15 @@ export abstract class ComponentBase<
     }
 
     protected drawNodeLabel(ctx: DrawContextExt, node: Node, bounds: DrawingRect): void {
-        if (node.isClock || isTrivialNodeName(node.shortName)) {
-            return
+        if (!node.isClock && !isTrivialNodeName(node.shortName)) {
+            drawLabel(ctx, this.orient, node.shortName, node.orient, ...this.anchorFor(node, bounds, 1), node)
         }
-        drawLabel(ctx, this.orient, node.shortName, node.orient, ...this.anchorFor(node, bounds, 1), node)
     }
 
     protected drawGroupLabel(ctx: DrawContextExt, group: NodeGroup<Node>, bounds: DrawingRect): void {
-        drawLabel(ctx, this.orient, group.name, group.orient, ...this.anchorFor(group, bounds, 1), group.nodes)
+        if (!isTrivialNodeName(group.name)) {
+            drawLabel(ctx, this.orient, group.name, group.orient, ...this.anchorFor(group, bounds, 1), group.nodes)
+        }
     }
 
     private anchorFor(elem: Node | NodeGroup<Node>, bounds: DrawingRect, offset: number): [number, number] {
@@ -938,9 +934,6 @@ export abstract class ComponentBase<
         const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
         const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
 
-        newComp.setPosition(this.posX, this.posY, false)
-        newComp.setSpawned()
-
         const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
             for (const node of nodes) {
                 const group = node.group
@@ -972,21 +965,30 @@ export abstract class ComponentBase<
             }
         })
 
-        const editor = this.parent
-        const deleted = editor.components.tryDelete(this)
+        // do this after restoring wires, otherwise wires are deleted
+        const componentList = this.parent.components
+        const deleted = componentList.tryDelete(this)
         if (!deleted) {
             console.warn("Could not delete old component")
         }
 
-        editor.undoMgr?.takeSnapshot()
-        editor.redrawMgr?.addReason("component replaced", newComp)
+        // restore component properties
+        if (this.ref !== undefined) {
+            componentList.changeIdOf(newComp, this.ref)
+        }
+        newComp.setPosition(this.posX, this.posY, false)
+        newComp.setSpawned()
+
+
+        this.parent.undoMgr?.takeSnapshot()
+        this.parent.redrawMgr?.addReason("component replaced", newComp)
 
         return newComp
     }
 
     protected override makeClone(setSpawning: boolean): DrawableWithDraggablePosition | undefined {
         const repr = this.toNodelessJSON()
-        const newComp = this._def.makeFromJSON(this.parent, repr)
+        const newComp = this.def.makeFromJSON(this.parent, repr)
         if (newComp === undefined) {
             console.warn("Could not create component clone")
         } else {
@@ -1147,7 +1149,7 @@ export abstract class ComponentBase<
 
         const setRefItems: MenuItems =
             editor.mode < Mode.FULL ? [] : [
-                ["end", this.makeSetRefContextMenuItem()],
+                ["end", this.makeSetIdContextMenuItem()],
                 ["end", MenuData.sep()],
             ]
 
@@ -1466,8 +1468,8 @@ export function groupHorizontal(orient: "n" | "s", xCenter: number, y: number, n
 /** Represents the JSON object holding properties from the passed component def */
 export type Repr<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer TTypeName, infer THasIn, infer THasOut, infer __TVariantName, infer TProps, infer TParamDefs, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr>
-    ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
+    = TDef extends ParametrizedComponentDef<infer THasIn, infer THasOut, infer TProps, infer TParamDefs, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr>
+    ? t.TypeOf<t.TypeC<TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
@@ -1476,8 +1478,8 @@ export type Repr<TDef>
         }
     }
     // case: Unparameterized component def
-    : TDef extends ComponentDef<infer TTypeName, infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TProps, infer THasIn, infer THasOut, infer __TWeakRepr>
-    ? t.TypeOf<t.TypeC<TypeFieldProp<TTypeName> & TProps>> & ComponentRepr<THasIn, THasOut> & {
+    : TDef extends ComponentDef<infer TInOutRecs, infer TValue, infer __TValueDefaults, infer TProps, infer THasIn, infer THasOut, infer __TWeakRepr>
+    ? t.TypeOf<t.TypeC<TProps>> & ComponentRepr<THasIn, THasOut> & {
         _META?: {
             nodeRecs: TInOutRecs,
             value: TValue,
@@ -1517,34 +1519,17 @@ export type Repr<TDef>
     : never
 
 export type Value<TDef>
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer TValue, infer __TValueDefaults, infer __TParams, infer __TResolvedParams, infer __TWeakRepr>
+    = TDef extends ParametrizedComponentDef<infer __THasIn, infer __THasOut, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer TValue, infer __TValueDefaults, infer __TParams, infer __TResolvedParams, infer __TWeakRepr>
     ? TValue : never
 
-type TypeFieldProp<TTypeName extends string | undefined>
-    = undefined extends TTypeName ? {}
-    : TTypeName extends string ? { type: t.LiteralC<TTypeName> }
-    : never
-
-function typeFieldProp<
-    TTypeName extends string | undefined
->(type: TTypeName): TypeFieldProp<TTypeName> {
-
-    if (type === undefined) {
-        return {} as any
-    }
-    return {
-        type: t.literal(type),
-    } as any
-}
 
 function makeComponentRepr<
-    TTypeName extends string | undefined,
     TProps extends t.Props,
     THasIn extends boolean,
     THasOut extends boolean,
->(type: TTypeName, hasIn: THasIn, hasOut: THasOut, props: TProps) {
+>(type: string, hasIn: THasIn, hasOut: THasOut, props: TProps) {
     return t.intersection([t.type({
-        ...typeFieldProp(type),
+        type: t.string,
         ...props,
     }), ComponentRepr(hasIn, hasOut)], type)
 }
@@ -1561,7 +1546,8 @@ export type InstantiatedComponentDef<
     TRepr extends t.TypeOf<t.Mixed>,
     TValue,
 > = {
-    category: ComponentCategory,
+    type: string,
+    idPrefix: string | ((self: any) => string),
     size: ComponentGridSize,
     nodeRecs: InOutRecs,
     initialValue: (saved: TRepr | undefined) => TValue,
@@ -1569,14 +1555,13 @@ export type InstantiatedComponentDef<
 }
 
 export class ComponentDef<
-    TTypeName extends string | undefined,
     TInOutRecs extends InOutRecs,
     TValue,
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
     TProps extends t.Props = {},
     THasIn extends boolean = HasField<TInOutRecs, "ins">,
     THasOut extends boolean = HasField<TInOutRecs, "outs">,
-    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
+    TRepr extends ReprWith<THasIn, THasOut, TProps> = ReprWith<THasIn, THasOut, TProps>,
 > implements InstantiatedComponentDef<TRepr, TValue> {
 
     public readonly nodeRecs: TInOutRecs
@@ -1585,8 +1570,8 @@ export class ComponentDef<
     public impl: (new (parent: DrawableParent, saved?: TRepr) => Component) = undefined as any
 
     public constructor(
-        public readonly category: ComponentCategory,
-        public readonly type: TTypeName,
+        public readonly type: string,
+        public readonly idPrefix: string,
         public readonly aults: TValueDefaults,
         public readonly size: ComponentGridSize,
         private readonly _buttonProps: LibraryButtonProps,
@@ -1612,7 +1597,6 @@ export class ComponentDef<
 
     public button(visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem {
         return {
-            category: this.category,
             type: this.type,
             visual,
             width: this._buttonProps.imgWidth,
@@ -1635,20 +1619,18 @@ export class ComponentDef<
         parent.components.add(comp)
         return comp
     }
-
 }
 
 
-
 export function defineComponent<
-    TTypeName extends string | undefined,
     TInOutRecs extends InOutRecs,
     TValue,
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
     TProps extends t.Props = {},
 >(
-    category: ComponentCategory, type: TTypeName,
-    { button, repr, valueDefaults, size, makeNodes, initialValue }: {
+    type: string,
+    { idPrefix, button, repr, valueDefaults, size, makeNodes, initialValue }: {
+        idPrefix: string,
         button: LibraryButtonProps,
         repr?: TProps,
         valueDefaults: TValueDefaults,
@@ -1657,7 +1639,7 @@ export function defineComponent<
         initialValue?: (saved: t.TypeOf<t.TypeC<TProps>> | undefined, defaults: TValueDefaults) => TValue
     }
 ) {
-    return new ComponentDef(category, type, valueDefaults, size, button, initialValue ?? (() => undefined as TValue), makeNodes, repr,)
+    return new ComponentDef(type, idPrefix, valueDefaults, size, button, initialValue ?? (() => undefined as TValue), makeNodes, repr)
 }
 
 
@@ -1691,7 +1673,7 @@ export function defineAbstractComponent<
 // ParameterizedComponentDef and friends
 //
 
-export type SomeParamCompDef<TParamDefs extends Record<string, ParamDef<unknown>>> = ParametrizedComponentDef<string | undefined, boolean, boolean, any, t.Props, TParamDefs, InOutRecs, unknown, any, ParamsFromDefs<TParamDefs>, any, any>
+export type SomeParamCompDef<TParamDefs extends Record<string, ParamDef<unknown>>> = ParametrizedComponentDef<boolean, boolean, t.Props, TParamDefs, InOutRecs, unknown, any, ParamsFromDefs<TParamDefs>, any, any>
 
 export class ParamDef<T> {
 
@@ -1724,7 +1706,7 @@ export class ParamDef<T> {
 
 }
 
-export function param<T>(defaultValue: T, range?: T[]): ParamDef<T> {
+export function param<T>(defaultValue: T, range?: readonly T[]): ParamDef<T> {
     if (range === undefined) {
         return new ParamDef(defaultValue, [], () => true)
     }
@@ -1744,10 +1726,8 @@ function paramDefaults<TParamDefs extends Record<string, ParamDef<unknown>>>(def
 }
 
 export class ParametrizedComponentDef<
-    TTypeName extends string | undefined,
     THasIn extends boolean,
     THasOut extends boolean,
-    TVariantName extends (undefined extends TTypeName ? string : `${TTypeName}-${string}`),
     TProps extends t.Props,
     TParamDefs extends Record<string, ParamDef<unknown>>,
     TInOutRecs extends InOutRecs,
@@ -1755,21 +1735,21 @@ export class ParametrizedComponentDef<
     TValueDefaults extends Record<string, unknown> = Record<string, unknown>,
     TParams extends ParamsFromDefs<TParamDefs> = ParamsFromDefs<TParamDefs>,
     TResolvedParams extends Record<string, unknown> = TParams,
-    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
+    TRepr extends ReprWith<THasIn, THasOut, TProps> = ReprWith<THasIn, THasOut, TProps>,
 > {
 
     public readonly defaultParams: TParams
     public readonly aults: TValueDefaults & TParams
     public readonly repr: t.Decoder<Record<string, unknown>, TRepr>
 
-    public impl: (new (parent: DrawableParent, params: TResolvedParams, saved?: TRepr) => Component) = undefined as any
+    public impl: (new (parent: DrawableParent, params: TResolvedParams, saved?: TRepr) => Component & TResolvedParams) = undefined as any
 
     public constructor(
-        public readonly category: ComponentCategory,
-        public readonly type: TTypeName,
+        public readonly type: string,
+        public readonly idPrefix: string | ((params: TResolvedParams) => string),
         hasIn: THasIn,
         hasOut: THasOut,
-        public readonly variantName: (params: TParams) => TVariantName,
+        public readonly variantName: (params: TParams) => string | string[],
         private readonly _buttonProps: LibraryButtonProps,
         repr: TProps,
         valueDefaults: TValueDefaults,
@@ -1777,7 +1757,7 @@ export class ParametrizedComponentDef<
         public readonly size: (params: TResolvedParams) => ComponentGridSize,
         private readonly _makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         private readonly _initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
-        private readonly _validateParams: (params: TParams, paramDefs: TParamDefs) => TResolvedParams,
+        private readonly _validateParams: (params: TParams, jsonType: string | undefined, defaults: TParamDefs) => TResolvedParams,
     ) {
         this.defaultParams = paramDefaults(paramDefs) as TParams
         this.aults = { ...valueDefaults, ...this.defaultParams }
@@ -1792,7 +1772,8 @@ export class ParametrizedComponentDef<
         const size = this.size(params)
         const nodes = this._makeNodes({ ...size, ...params }, this.aults)
         return [{
-            category: this.category,
+            type: this.type,
+            idPrefix: this.idPrefix,
             size,
             nodeRecs: nodes,
             initialValue: (saved: TRepr | undefined) => this._initialValue(saved, params),
@@ -1801,10 +1782,8 @@ export class ParametrizedComponentDef<
     }
 
     public button(params: TParams, visual: ComponentKey & ImageName | [ComponentKey, ImageName], options?: LibraryButtonOptions): LibraryItem {
-        const completedType = isString(params.type) ? params.type : this.type
         return {
-            category: this.category,
-            type: completedType,
+            type: this.type,
             params: defParams<TParamDefs, TParams>(this, params),
             visual,
             width: this._buttonProps.imgWidth,
@@ -1814,10 +1793,10 @@ export class ParametrizedComponentDef<
 
     public make<TComp extends Component>(parent: DrawableParent, params?: TParams): TComp {
         const fullParams = params === undefined ? this.defaultParams : mergeWhereDefined(this.defaultParams, params)
-        const resolvedParams = this.doValidate(fullParams)
+        const resolvedParams = this.doValidate(fullParams, undefined)
         const comp = new this.impl(parent, resolvedParams)
         parent.components.add(comp)
-        return comp as TComp
+        return comp as unknown as TComp
     }
 
     public makeFromJSON(parent: DrawableParent, data: Record<string, unknown>): Component | undefined {
@@ -1826,34 +1805,40 @@ export class ParametrizedComponentDef<
             return undefined
         }
         const fullParams = mergeWhereDefined(this.defaultParams, validated)
-        const resolvedParams = this.doValidate(fullParams)
+        const resolvedParams = this.doValidate(fullParams, validated.type)
         const comp = new this.impl(parent, resolvedParams, validated)
         parent.components.add(comp)
         return comp
     }
 
-    private doValidate(fullParams: TParams) {
+    private doValidate(fullParams: TParams, jsonType: string | undefined) {
         const className = this.impl?.name ?? "component"
+        // auto validate params
         fullParams = Object.fromEntries(Object.entries(this.paramDefs).map(([paramName, paramDef]) => {
             const paramValue = fullParams[paramName] ?? paramDef.defaultValue
-            const validatedValue = paramDef.validate(paramValue, `${className}.${paramName}`)
-            return [paramName, validatedValue]
+            if (paramName === "type") {
+                // skip type param, validated separately for Gate and GateArray
+                return [paramName, paramValue]
+            } else {
+                const validatedValue = paramDef.validate(paramValue, `${className}.${paramName}`)
+                return [paramName, validatedValue]
+            }
         })) as TParams
-        return this._validateParams(fullParams, this.paramDefs)
+        return this._validateParams(fullParams, jsonType, this.paramDefs)
     }
 
 }
 
 export type Params<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr> ? TParams
+    = TDef extends ParametrizedComponentDef<infer __THasIn, infer __THasOut, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer TParams, infer __TResolvedParams, infer __TWeakRepr> ? TParams
     // case: Abstract base component def
     : TDef extends { paramDefs: infer TParamDefs extends Record<string, ParamDef<unknown>> } ? ParamsFromDefs<TParamDefs>
     : never
 
 export type ResolvedParams<TDef>
     // case: Parameterized component def
-    = TDef extends ParametrizedComponentDef<infer __TTypeName, infer __THasIn, infer __THasOut, infer __TVariantName, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer __TParams, infer TResolvedParams, infer __TWeakRepr> ? TResolvedParams
+    = TDef extends ParametrizedComponentDef<infer __THasIn, infer __THasOut, infer __TProps, infer __TParamDefs, infer __TInOutRecs, infer __TValue, infer __TValueDefaults, infer __TParams, infer TResolvedParams, infer __TWeakRepr> ? TResolvedParams
     // case: Abstract base component def
     : TDef extends { validateParams?: infer TFunc } ?
     TFunc extends (...args: any) => any ? ReturnType<TFunc> : never
@@ -1861,18 +1846,15 @@ export type ResolvedParams<TDef>
 
 
 type ReprWith<
-    TTypeName extends string | undefined,
     THasIn extends boolean,
     THasOut extends boolean,
     TProps extends t.Props,
-> = t.TypeOf<t.TypeC<TProps & TypeFieldProp<TTypeName>>> & ComponentRepr<THasIn, THasOut>
+> = t.TypeOf<t.TypeC<TProps>> & ComponentRepr<THasIn, THasOut>
 
 
 export function defineParametrizedComponent<
-    TTypeName extends string | undefined,
     THasIn extends boolean,
     THasOut extends boolean,
-    TVariantName extends (undefined extends TTypeName ? string : `${TTypeName}-${string}`),
     TProps extends t.Props,
     TValueDefaults extends Record<string, unknown>,
     TParamDefs extends Record<string, ParamDef<unknown>>,
@@ -1880,29 +1862,30 @@ export function defineParametrizedComponent<
     TValue,
     TParams extends ParamsFromDefs<TParamDefs> = ParamsFromDefs<TParamDefs>,
     TResolvedParams extends Record<string, unknown> = TParams,
-    TRepr extends ReprWith<TTypeName, THasIn, THasOut, TProps> = ReprWith<TTypeName, THasIn, THasOut, TProps>,
+    TRepr extends ReprWith<THasIn, THasOut, TProps> = ReprWith<THasIn, THasOut, TProps>,
 >(
-    category: ComponentCategory, type: TTypeName, hasIn: THasIn, hasOut: THasOut,
-    { variantName, button, repr, valueDefaults, params, validateParams, size, makeNodes, initialValue }: {
-        variantName: (params: TParams) => TVariantName,
+    type: string, hasIn: THasIn, hasOut: THasOut,
+    { variantName, idPrefix, button, repr, valueDefaults, params, validateParams, size, makeNodes, initialValue }: {
+        variantName: (params: TParams) => string | string[],
+        idPrefix: string | ((params: TResolvedParams) => string),
         button: LibraryButtonProps,
         repr: TProps,
         valueDefaults: TValueDefaults,
         params: TParamDefs,
-        validateParams?: (params: TParams, paramDefs: TParamDefs) => TResolvedParams,
+        validateParams?: (params: TParams, jsonType: string | undefined, defaults: TParamDefs) => TResolvedParams,
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,
     },
 ) {
-    return new ParametrizedComponentDef(category, type, hasIn, hasOut, variantName, button, repr, valueDefaults, params, size, makeNodes, initialValue, validateParams ?? ((params: TParams) => params as unknown as TResolvedParams))
+    return new ParametrizedComponentDef(type, idPrefix, hasIn, hasOut, variantName, button, repr, valueDefaults, params, size, makeNodes, initialValue, validateParams ?? ((params: TParams) => params as unknown as TResolvedParams))
 }
 
 function defParams<
     TParamDefs extends Record<string, ParamDef<unknown>>,
     TParams extends ParamsFromDefs<TParamDefs>
 >(
-    def: ParametrizedComponentDef<string | undefined, boolean, boolean, any, any, TParamDefs, InOutRecs, any, any, TParams, any, any>,
+    def: ParametrizedComponentDef<boolean, boolean, any, TParamDefs, InOutRecs, any, any, TParams, any, any>,
     params: TParams
 ): t.Branded<DefAndParams<TParamDefs, TParams>, "params"> {
     return brand<"params">()({ def, params } as DefAndParams<TParamDefs, TParams>)
@@ -1923,7 +1906,7 @@ export function defineAbstractParametrizedComponent<
         repr: TProps,
         valueDefaults: TValueDefaults,
         params: TParamDefs,
-        validateParams?: (params: TParams, paramDefs: TParamDefs) => TResolvedParams
+        validateParams?: (params: TParams, jsonType: string | undefined, defaults: TParamDefs) => TResolvedParams
         size: (params: TResolvedParams) => ComponentGridSize,
         makeNodes: (params: TResolvedParams & ComponentGridSize, valueDefaults: TValueDefaults) => TInOutRecs,
         initialValue: (saved: TRepr | undefined, params: TResolvedParams) => TValue,

@@ -52,7 +52,7 @@ export class RichStringEnum<K extends keyof any, P> {
         return defs
     }
 
-    public includes(val: string | number | symbol | null | undefined): val is K {
+    public includes(val: unknown): val is K {
         return this.values.includes(val as any)
     }
 

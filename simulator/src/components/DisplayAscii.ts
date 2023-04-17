@@ -7,8 +7,9 @@ import { ComponentBase, ComponentName, ComponentNameRepr, Repr, defineComponent,
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems, Orientation } from "./Drawable"
 
 
-export const OutputAsciiDef =
-    defineComponent("out", "ascii", {
+export const DisplayAsciiDef =
+    defineComponent("ascii", {
+        idPrefix: "disp",
         button: { imgWidth: 32 },
         repr: {
             name: ComponentNameRepr,
@@ -25,16 +26,16 @@ export const OutputAsciiDef =
         initialValue: (): [string, number | "?"] => ["0000000", 0],
     })
 
-type OutputAsciiRepr = Repr<typeof OutputAsciiDef>
+export type DisplayAsciiRepr = Repr<typeof DisplayAsciiDef>
 
-export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
+export class DisplayAscii extends ComponentBase<DisplayAsciiRepr> {
 
     private _name: ComponentName
     private _additionalReprRadix: number | undefined
     private _showAsUnknown: boolean
 
-    public constructor(parent: DrawableParent, saved?: OutputAsciiRepr) {
-        super(parent, OutputAsciiDef, saved)
+    public constructor(parent: DrawableParent, saved?: DisplayAsciiRepr) {
+        super(parent, DisplayAsciiDef, saved)
         this._name = saved?.name ?? undefined
         this._additionalReprRadix = saved?.additionalReprRadix ?? undefined
         this._showAsUnknown = saved?.showAsUnknown ?? false
@@ -42,7 +43,6 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
     public toJSON() {
         return {
-            type: "ascii" as const,
             ...this.toJSONBase(),
             name: this._name,
             additionalReprRadix: this._additionalReprRadix,
@@ -55,7 +55,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     }
 
     public override makeTooltip() {
-        const s = S.Components.OutputAscii.tooltip
+        const s = S.Components.DisplayAscii.tooltip
         const [binaryStringRep, value] = this.value
 
         return tooltipContent(s.title, mods(
@@ -89,7 +89,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
             }
             mainText = "?"
         } else {
-            mainText = OutputAscii.numberToAscii(value)
+            mainText = DisplayAscii.numberToAscii(value)
             if (value < 32) {
                 // non-printable
                 mainTextFont = "16px sans-serif"
@@ -192,7 +192,7 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
-        const s = S.Components.OutputAscii.contextMenu
+        const s = S.Components.DisplayAscii.contextMenu
 
         const makeItemShowAs = (desc: string, handler: () => void, isCurrent: boolean,) => {
             const icon = isCurrent ? "check" : "none"
@@ -230,4 +230,4 @@ export class OutputAscii extends ComponentBase<OutputAsciiRepr> {
     }
 
 }
-OutputAsciiDef.impl = OutputAscii
+DisplayAsciiDef.impl = DisplayAscii

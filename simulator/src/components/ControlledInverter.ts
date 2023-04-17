@@ -7,9 +7,10 @@ import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComp
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 
-export const SwitchedInverterDef =
-    defineParametrizedComponent("ic", "switched-inverter", true, true, {
-        variantName: ({ bits }) => `switched-inverter-${bits}`,
+export const ControlledInverterDef =
+    defineParametrizedComponent("cnot-array", true, true, {
+        variantName: ({ bits }) => `cnot-array-${bits}`,
+        idPrefix: "cnot",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -39,29 +40,28 @@ export const SwitchedInverterDef =
     })
 
 
-export type SwitchedInverterRepr = Repr<typeof SwitchedInverterDef>
-export type SwitchedInverterParams = ResolvedParams<typeof SwitchedInverterDef>
+export type ControlledInverterRepr = Repr<typeof ControlledInverterDef>
+export type ControlledInverterParams = ResolvedParams<typeof ControlledInverterDef>
 
 
-export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverterRepr> {
+export class ControlledInverter extends ParametrizedComponentBase<ControlledInverterRepr> {
 
     public readonly numBits: number
 
-    public constructor(parent: DrawableParent, params: SwitchedInverterParams, saved?: SwitchedInverterRepr) {
-        super(parent, SwitchedInverterDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: ControlledInverterParams, saved?: ControlledInverterRepr) {
+        super(parent, ControlledInverterDef.with(params), saved)
         this.numBits = params.numBits
     }
 
     public toJSON() {
         return {
-            type: "switched-inverter" as const,
-            bits: this.numBits === SwitchedInverterDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === ControlledInverterDef.aults.bits ? undefined : this.numBits,
         }
     }
 
     public override makeTooltip() {
-        const s = S.Components.SwitchedInverter.tooltip
+        const s = S.Components.ControlledInverter.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc)
         ))
@@ -121,4 +121,4 @@ export class SwitchedInverter extends ParametrizedComponentBase<SwitchedInverter
     }
 
 }
-SwitchedInverterDef.impl = SwitchedInverter
+ControlledInverterDef.impl = ControlledInverter

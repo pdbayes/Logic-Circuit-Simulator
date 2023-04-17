@@ -6,7 +6,8 @@ import { ComponentBase, Repr, defineComponent, group } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const Decoder16SegDef =
-    defineComponent("ic", "decoder-16seg", {
+    defineComponent("dec-16seg", {
+        idPrefix: "dec",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 10 },
@@ -57,10 +58,7 @@ export class Decoder16Seg extends ComponentBase<Decoder16SegRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "decoder-16seg" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

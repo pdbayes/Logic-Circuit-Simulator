@@ -562,7 +562,7 @@ export class Wire extends Drawable {
         const setRefItems =
             this.parent.mode < Mode.FULL ? [] : [
                 MenuData.sep(),
-                this.makeSetRefContextMenuItem(),
+                this.makeSetIdContextMenuItem(),
             ]
 
         return [

@@ -9,8 +9,9 @@ import { Flipflop, FlipflopOrLatch, makeTriggerItems } from "./FlipflopOrLatch"
 
 
 export const CounterDef =
-    defineParametrizedComponent("ic", "counter", true, true, {
+    defineParametrizedComponent("counter", true, true, {
         variantName: ({ bits }) => `counter-${bits}`,
+        idPrefix: "counter",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -98,9 +99,8 @@ export class Counter extends ParametrizedComponentBase<CounterRepr> {
         const currentCount = isUnknown(currentCountOrUnknown) ? 0 : currentCountOrUnknown
         const displayRadix = this._displayRadix === undefined ? null : this._displayRadix
         return {
-            type: "counter" as const,
-            bits: this.numBits === CounterDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === CounterDef.aults.bits ? undefined : this.numBits,
             count: currentCount === 0 ? undefined : currentCount,
             trigger: (this._trigger !== CounterDef.aults.trigger) ? this._trigger : undefined,
             displayRadix: (displayRadix !== CounterDef.aults.displayRadix) ? displayRadix : undefined,

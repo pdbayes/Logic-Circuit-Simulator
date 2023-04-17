@@ -1,13 +1,33 @@
 import { saveAs } from 'file-saver'
+import * as t from "io-ts"
 import JSON5 from "json5"
 import * as json5util from "json5/lib/util"
 import { CurrentFormatVersion, migrateData } from './DataMigration'
 import { LogicEditor } from "./LogicEditor"
-import { Component, ComponentCategories, JsonFieldsComponents, MainJsonFieldName } from "./components/Component"
+import { type Component } from "./components/Component"
 import { type CustomComponentDefRepr } from './components/CustomComponent'
 import { DrawableParent } from './components/Drawable'
 import { Wire } from "./components/Wire"
-import { JSONParseObject, isArray, isString, keysOf, validateJson } from "./utils"
+import { JSONParseObject, isArray, isRecord, isString, keysOf, validateJson } from "./utils"
+
+
+export type Circuit = CommonFields & {
+    opts?: Record<string, unknown>,
+    userdata?: string | Record<string, unknown> | undefined
+} & ComponentAndWires
+
+export type Library = CommonFields
+
+type CommonFields = {
+    v: typeof CurrentFormatVersion,
+    defs?: CustomComponentDefRepr[],
+}
+
+type WireRepr = t.TypeOf<typeof Wire.Repr>
+export type ComponentAndWires = {
+    components?: Record<string, Record<string, unknown>>,
+    wires?: WireRepr[],
+}
 
 class _Serialization {
 
@@ -38,12 +58,15 @@ class _Serialization {
     }
 
     public loadCircuit(
-        parent: DrawableParent, content: string | Record<string, unknown>,
+        parent: DrawableParent,
+        content: string | Record<string, unknown>,
         opts?: {
             isUndoRedoAction?: boolean,
             immediateWirePropagation?: boolean,
             skipMigration?: boolean
-        }): undefined | string { // string is an error
+        }
+    ): undefined | string { // string is an error
+
         const nodeMgr = parent.nodeMgr
         const wireMgr = parent.wireMgr
         const components = parent.components
@@ -54,17 +77,15 @@ class _Serialization {
         } else {
             try {
                 parsed = JSONParseObject(content)
+                if (!(opts?.skipMigration ?? false)) {
+                    migrateData(parsed)
+                }
+                delete parsed.v
             } catch (err) {
                 console.error(err)
                 return "can't load this JSON - error “" + err + `”, length = ${content.length}, JSON:\n` + content
             }
         }
-
-
-        if (!(opts?.skipMigration ?? false)) {
-            migrateData(parsed)
-        }
-        delete parsed.v
 
         if (parent.isMainEditor()) {
             parent.factory.clearCustomDefs()
@@ -82,28 +103,25 @@ class _Serialization {
             parent.timeline.reset()
         }
 
-        function loadField(fieldName: MainJsonFieldName | "wires", process: (obj: unknown) => any) {
-            if (!(fieldName in parsed)) {
-                return
-            }
-            const objects = parsed[fieldName]
-            delete parsed[fieldName]
-
-            if (!isArray(objects)) {
-                return
-            }
-            for (const obj of objects) {
-                process(obj)
-            }
-        }
-
         const factory = parent.editor.factory
-        for (const category of ComponentCategories) {
-            const fieldName = ComponentCategories.props[category].jsonFieldName
-            loadField(fieldName, obj => {
-                factory.makeFromJSON(parent, category, obj)
-            })
+        const compReprs = parsed.components
+        if (isArray(compReprs)) {
+            // parse using ids from attributes
+            for (const compRepr of compReprs as unknown[]) {
+                factory.makeFromJSON(parent, compRepr)
+            }
+        } else if (isRecord(compReprs)) {
+            // parse using ids from keys
+            for (const [id, compRepr] of Object.entries(compReprs)) {
+                if (isRecord(compRepr)) {
+                    compRepr.ref = id
+                    factory.makeFromJSON(parent, compRepr)
+                } else {
+                    console.error(`Invalid non-object component repr: '${compRepr}'`)
+                }
+            }
         }
+        delete parsed.components
 
         // recalculating all the unconnected gates here allows
         // to avoid spurious circular dependency messages, as right
@@ -112,7 +130,7 @@ class _Serialization {
         recalcMgr.recalcAndPropagateIfNeeded()
 
         const immediateWirePropagation = opts?.immediateWirePropagation ?? false
-        loadField("wires", obj => {
+        for (const obj of (isArray(parsed.wires) ? parsed.wires as unknown[] : [])) {
             const wireData = validateJson(obj, Wire.Repr, "wire")
             if (wireData === undefined) {
                 return
@@ -125,7 +143,7 @@ class _Serialization {
                 const completedWire = wireMgr.addWire(node1, node2, false)
                 if (completedWire !== undefined) {
                     if (wireOptions !== undefined) {
-                        completedWire.ref = wireOptions.ref
+                        completedWire.doSetValidatedId(wireOptions.ref)
                         if (wireOptions.via !== undefined) {
                             completedWire.setWaypoints(wireOptions.via)
                         }
@@ -143,7 +161,8 @@ class _Serialization {
                 }
                 recalcMgr.recalcAndPropagateIfNeeded()
             }
-        })
+        }
+        delete parsed.wires
 
         if (parent.isMainEditor()) {
             // load userdata, keeping already existing data
@@ -181,30 +200,27 @@ class _Serialization {
         return undefined // meaning no error
     }
 
-    public buildCircuitObject(editor: LogicEditor): Record<string, unknown> {
-        const dataObject: Record<string, unknown> = {
-            "v": CurrentFormatVersion,
-            "opts": editor.nonDefaultOptions(),
-            "defs": editor.factory.customDefs(),
-        }
-
-        if (editor.userdata !== undefined) {
-            dataObject["userdata"] = editor.userdata
+    public buildCircuitObject(editor: LogicEditor): Circuit {
+        const dataObject: Circuit = {
+            v: CurrentFormatVersion,
+            opts: editor.nonDefaultOptions(),
+            defs: editor.factory.customDefs(),
+            userdata: editor.userdata,
         }
 
         this.buildComponentReprsInto(dataObject, editor.components.all(), editor.wireMgr.wires)
         return dataObject
     }
 
-    public buildLibraryObject(editor: LogicEditor): Record<string, unknown> {
+    public buildLibraryObject(editor: LogicEditor): Library {
         return {
-            "v": CurrentFormatVersion,
-            "defs": editor.factory.customDefs(),
+            v: CurrentFormatVersion,
+            defs: editor.factory.customDefs(),
         }
     }
 
-    public buildComponentsObject(components: readonly Component[]): Record<string, unknown[]> {
-        const dataObject: Record<string, unknown[]> = {}
+    public buildComponentsObject(components: readonly Component[]): ComponentAndWires {
+        const dataObject: ComponentAndWires = {}
 
         // collect all wires that connect to components within the list
         const wires: Wire[] = []
@@ -220,18 +236,27 @@ class _Serialization {
         return dataObject
     }
 
-    private buildComponentReprsInto(dataObject: Record<string, unknown>, components: Iterable<Component>, wires: readonly Wire[]): void {
+    private buildComponentReprsInto(dataObject: ComponentAndWires, components: Iterable<Component>, wires: readonly Wire[]): void {
         for (const comp of components) {
-            const fieldName = ComponentCategories.props[comp.category].jsonFieldName
-            let arr = dataObject[fieldName]
-            if (arr === undefined) {
-                dataObject[fieldName] = (arr = [comp])
-            } else if (isArray(arr)) {
-                arr.push(comp)
+            if (dataObject.components === undefined) {
+                dataObject.components = {}
             }
+
+            const id = comp.ref
+            if (id === undefined) {
+                console.error("Skipping component with no id: " + comp)
+                continue
+            }
+
+            if (dataObject.components[id] !== undefined) {
+                console.error("Skipping component with duplicate id: " + comp)
+            }
+
+            const compRepr = comp.toJSON()
+            dataObject.components[id] = compRepr
         }
         if (wires.length !== 0) {
-            dataObject.wires = wires
+            dataObject.wires = wires.map(w => w.toJSON())
         }
         // TODO: better way of representing the wires, along these lines:
         // const nodeName = (node: Node) => {
@@ -261,14 +286,13 @@ class _Serialization {
         // }
     }
 
-    public removeShowOnlyFrom(dataObject: Record<string, unknown>): void {
-        const opts = dataObject.opts as any
-        if (typeof opts === "object" && opts !== null && Object.prototype.hasOwnProperty.call(opts, "showOnly")) {
-            delete opts.showOnly
+    public removeShowOnlyFrom(dataObject: Circuit): void {
+        if (dataObject.opts !== undefined) {
+            delete dataObject.opts.showOnly
         }
     }
 
-    public stringifyObject(_dataObject: Readonly<Record<string, unknown>>, compact: boolean): string {
+    public stringifyObject(_dataObject: Partial<Circuit>, compact: boolean): string {
 
         // TODO: refactor this to not touch input object and not do this "delete dataObject.key" thing
         if (compact) {
@@ -320,7 +344,7 @@ class _Serialization {
 export const Serialization = new _Serialization()
 
 
-function stringifyCompactReprTo(parts: string[], container: Record<string, unknown>, key: string) {
+function stringifyCompactReprTo<TRec extends Record<string, unknown>>(parts: string[], container: TRec, key: keyof TRec & string) {
     const value = container[key]
     if (value !== undefined) {
         parts.push(`${stringifyKey(key)}: ${stringifySmart(value, { maxLength: Infinity })}`)
@@ -328,20 +352,32 @@ function stringifyCompactReprTo(parts: string[], container: Record<string, unkno
     delete container[key]
 }
 
-function stringifyComponentAndWiresReprsTo(parts: string[], container: Record<string, unknown>, inDef: boolean) {
+function stringifyComponentAndWiresReprsTo(parts: string[], container: ComponentAndWires, inDef: boolean) {
     const innerIndent = "  ".repeat(inDef ? 4 : 2)
     const outerIndent = "  ".repeat(inDef ? 3 : 1)
-    for (const jsonField of JsonFieldsComponents) {
-        const arr = container[jsonField]
-        if (arr !== undefined && isArray(arr)) {
+    const comps = container.components
+    let entries
+    if (comps !== undefined) {
+
+        if (isArray(comps) && comps.length !== 0) {
+            // array style
             const subparts: string[] = []
-            for (const comp of arr) {
-                subparts.push(stringifySmart(comp, { maxLength: Infinity }))
+            for (const compRepr of comps) {
+                subparts.push(stringifySmart(compRepr, { maxLength: Infinity }))
             }
-            parts.push(`${stringifyKey(jsonField)}: [\n${innerIndent}` + subparts.join(`,\n${innerIndent}`) + `,\n${outerIndent}]`)
-            delete container[jsonField]
+            parts.push(`components: [\n${innerIndent}` + subparts.join(`,\n${innerIndent}`) + `,\n${outerIndent}]`)
+
+        } else if ((entries = Object.entries(comps)).length !== 0) {
+            // object style
+            const subparts: string[] = []
+            for (const [id, compRepr] of entries) {
+                delete compRepr.ref
+                subparts.push(`${stringifyKey(id)}: ${stringifySmart(compRepr, { maxLength: Infinity })}`)
+            }
+            parts.push(`components: {\n${innerIndent}` + subparts.join(`,\n${innerIndent}`) + `,\n${outerIndent}}`)
         }
     }
+    delete container.components
     stringifyCompactReprTo(parts, container, "wires")
 }
 
@@ -352,7 +388,7 @@ function stringifyComponentAndWiresReprsTo(parts: string[], container: Record<st
 // that case we don’t care since the output would be invalid anyway).
 const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
 
-function stringifySmart(
+export function stringifySmart(
     passedObj: any,
     options?: {
         replacer?: (this: any, key: string, value: any) => any,
@@ -362,7 +398,7 @@ function stringifySmart(
 ): string {
 
     options ??= {}
-    const indent: string = JSON5.stringify([1], undefined, options.indent ?? 2).slice(2, -3)
+    const indent: string = JSON.stringify([1], undefined, options.indent ?? 2).slice(2, -3)
     const maxLength: number =
         indent === ""
             ? Infinity

@@ -8,8 +8,9 @@ import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Dra
 
 
 export const DecoderDef =
-    defineParametrizedComponent("ic", "decoder", true, true, {
-        variantName: ({ bits }) => `decoder-${bits}`,
+    defineParametrizedComponent("dec", true, true, {
+        variantName: ({ bits }) => `dec-${bits}`,
+        idPrefix: "dec",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -53,9 +54,8 @@ export class Decoder extends ParametrizedComponentBase<DecoderRepr> {
 
     public toJSON() {
         return {
-            type: "decoder" as const,
-            bits: this.numFrom === DecoderDef.aults.bits ? undefined : this.numFrom,
             ...this.toJSONBase(),
+            bits: this.numFrom === DecoderDef.aults.bits ? undefined : this.numFrom,
         }
     }
 

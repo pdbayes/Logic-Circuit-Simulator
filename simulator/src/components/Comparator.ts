@@ -6,7 +6,8 @@ import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const ComparatorDef =
-    defineComponent("ic", "comparator", {
+    defineComponent("comp", {
+        idPrefix: "comp",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 5, gridHeight: 7 },
@@ -36,10 +37,7 @@ export class Comparator extends ComponentBase<ComparatorRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "comparator" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

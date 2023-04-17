@@ -1,8 +1,8 @@
 import { Component, ComponentName, isNodeArray, ReadonlyGroupedNodeArray } from "./components/Component"
+import { LedColor } from "./components/DisplayBar"
 import { DrawContext, DrawContextExt, GraphicsRendering, HasPosition, Orientation } from "./components/Drawable"
-import { RectangleColor } from "./components/LabelRect"
 import { Node, WireColor } from "./components/Node"
-import { LedColor } from "./components/OutputBar"
+import { RectangleColor } from "./components/Rectangle"
 import { LogicEditor } from "./LogicEditor"
 import { EdgeTrigger, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 

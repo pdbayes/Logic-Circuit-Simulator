@@ -9,8 +9,9 @@ import { Gate1Types, Gate2toNType, Gate2toNTypes } from "./GateTypes"
 
 
 export const ALUDef =
-    defineParametrizedComponent("ic", "alu", true, true, {
+    defineParametrizedComponent("alu", true, true, {
         variantName: ({ bits }) => `alu-${bits}`,
+        idPrefix: "alu",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -117,7 +118,6 @@ export class ALU extends ParametrizedComponentBase<ALURepr> {
 
     public toJSON() {
         return {
-            type: "alu" as const,
             bits: this.numBits === ALUDef.aults.bits ? undefined : this.numBits,
             ext: this.usesExtendedOpcode === ALUDef.aults.ext ? undefined : this.usesExtendedOpcode,
             ...this.toJSONBase(),
@@ -320,11 +320,11 @@ export function doALUOp(op: ALUOp, a: readonly LogicValue[], b: readonly LogicVa
             let cout: LogicValue = false
             const s: LogicValue[] = (() => {
                 switch (op) {
-                    case "A|B": return doALUBinOp("OR", a, b)
-                    case "A&B": return doALUBinOp("AND", a, b)
-                    case "A^B": return doALUBinOp("XOR", a, b)
-                    case "A|~B": return doALUBinOp("OR", a, doALUNot(b))
-                    case "A&~B": return doALUBinOp("AND", a, doALUNot(b))
+                    case "A|B": return doALUBinOp("or", a, b)
+                    case "A&B": return doALUBinOp("and", a, b)
+                    case "A^B": return doALUBinOp("xor", a, b)
+                    case "A|~B": return doALUBinOp("or", a, doALUNot(b))
+                    case "A&~B": return doALUBinOp("and", a, doALUNot(b))
                     case "~A": return doALUNot(a)
                     case "A>>": return [...a.slice(1), cin]
                     case "A<<":
@@ -423,7 +423,7 @@ export function doALUSub(a: readonly LogicValue[], b: readonly LogicValue[], cin
 }
 
 function doALUNot(a: readonly LogicValue[]): LogicValue[] {
-    const not = Gate1Types.props["NOT"].out
+    const not = Gate1Types.props.not.out
     return ArrayFillUsing(i => not([a[i]]), a.length)
 }
 

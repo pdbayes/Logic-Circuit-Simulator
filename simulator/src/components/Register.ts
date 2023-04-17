@@ -190,8 +190,9 @@ export abstract class RegisterBase<
 }
 
 export const RegisterDef =
-    defineParametrizedComponent("ic", "register", true, true, {
-        variantName: ({ bits }) => `register-${bits}`,
+    defineParametrizedComponent("reg", true, true, {
+        variantName: ({ bits }) => `reg-${bits}`,
+        idPrefix: "reg",
         ...RegisterBaseDef,
         repr: {
             ...RegisterBaseDef.repr,
@@ -238,9 +239,8 @@ export class Register extends RegisterBase<RegisterRepr> {
 
     public toJSON() {
         return {
-            type: "register" as const,
-            inc: this.hasIncDec === RegisterDef.aults.inc ? undefined : this.hasIncDec,
             ...this.toJSONBase(),
+            inc: this.hasIncDec === RegisterDef.aults.inc ? undefined : this.hasIncDec,
         }
     }
 

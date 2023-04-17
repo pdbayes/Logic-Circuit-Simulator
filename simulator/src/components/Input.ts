@@ -234,8 +234,9 @@ export abstract class InputBase<
 
 
 export const InputDef =
-    defineParametrizedComponent("in", undefined, false, true, {
+    defineParametrizedComponent("in", false, true, {
         variantName: ({ bits }) => `in-${bits}`,
+        idPrefix: "in",
         button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -315,8 +316,8 @@ export class Input extends InputBase<InputRepr> {
 
     public toJSON() {
         return {
-            bits: this.numBits === InputDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === InputDef.aults.bits ? undefined : this.numBits,
             val: this.contentRepr(),
             isPushButton: (this._isPushButton !== InputDef.aults.isPushButton) ? this._isPushButton : undefined,
             isConstant: (this._isConstant !== InputDef.aults.isConstant) ? this._isConstant : undefined,

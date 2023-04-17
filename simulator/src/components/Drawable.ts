@@ -12,6 +12,7 @@ import { Modifier, ModifierObject, span, style } from "../htmlgen"
 import { IconName } from "../images"
 import { S } from "../strings"
 import { Expand, FixedArray, InteractionResult, Mode, RichStringEnum, typeOrUndefined } from "../utils"
+import { ComponentBase } from "./Component"
 import { type WireManager } from "./Wire"
 
 export type GraphicsRendering =
@@ -145,11 +146,22 @@ export interface DrawableParent {
 export abstract class Drawable {
 
     public readonly parent: DrawableParent
-    public ref: string | undefined = undefined
+    private _ref: string | undefined = undefined
 
     protected constructor(parent: DrawableParent) {
         this.parent = parent
         this.setNeedsRedraw("newly created")
+    }
+
+    public get ref() {
+        return this._ref
+    }
+
+    public doSetValidatedId(id: string | undefined) {
+        // For components, the id must have been validated by a component list;
+        // for other drawbles, ids are largely unregulated, they can be 
+        // undefined or even duplicated since we don't refer to them for nodes
+        this._ref = id
     }
 
     protected setNeedsRedraw(reason: string) {
@@ -211,25 +223,55 @@ export abstract class Drawable {
         return undefined
     }
 
-    protected makeSetRefContextMenuItem(): MenuItem {
-        const currentRef = this.ref
+    protected makeSetIdContextMenuItem(): MenuItem {
+        const currentId = this._ref
         const s = S.Components.Generic.contextMenu
-        const caption: Modifier = currentRef === undefined ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentRef), s.ChangeIdentifier[1])
+        const caption: Modifier = currentId === undefined ? s.SetIdentifier : span(s.ChangeIdentifier[0], span(style("font-family: monospace; font-weight: bolder; font-size: 90%"), currentId), s.ChangeIdentifier[1])
         return MenuData.item("ref", caption, () => {
-            this.runSetRefDialog()
+            this.runSetIdDialog()
         }, "⌥↩︎")
     }
 
-    private runSetRefDialog() {
+    private runSetIdDialog() {
         const s = S.Components.Generic.contextMenu
-        const currentRef = this.ref
-        const newRef = window.prompt(s.SetIdentifierPrompt, currentRef)
-        if (newRef !== null) {
-            // OK button pressed
-            this.ref = newRef.length === 0 ? undefined : newRef
-            if (currentRef !== this.ref) {
-                this.setNeedsRedraw("ref changed")
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const currentId = this._ref
+            const newId = window.prompt(s.SetIdentifierPrompt, currentId)
+            if (newId === null) {
+                // cancel button pressed
+                break
             }
+            if (newId === currentId) {
+                // no change
+                break
+            }
+
+            if (!(this instanceof ComponentBase)) {
+                // ids are unregulated
+                this.doSetValidatedId(newId.length === 0 ? undefined : newId)
+
+            } else {
+                // we're a component, check with the component list
+                if (newId.length === 0) {
+                    window.alert(s.IdentifierCannotBeEmpty)
+                    continue
+                }
+                const componentList = this.parent.components
+                const otherComp = componentList.get(newId)
+                if (otherComp === undefined) {
+                    // OK button pressed
+                    componentList.changeIdOf(this, newId)
+                } else {
+                    if (window.confirm(s.IdentifierAlreadyInUseShouldSwap)) {
+                        componentList.swapIdsOf(otherComp, this)
+                    } else {
+                        continue
+                    }
+                }
+            }
+            this.setNeedsRedraw("ref changed")
+            break
         }
     }
 
@@ -266,7 +308,7 @@ export abstract class Drawable {
 
     public keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter" && e.altKey) {
-            this.runSetRefDialog()
+            this.runSetIdDialog()
         }
     }
 
@@ -361,7 +403,7 @@ export abstract class DrawableWithPosition extends Drawable implements HasPositi
 
         if (saved !== undefined) {
             // restoring from saved object
-            this.ref = saved.ref
+            this.doSetValidatedId(saved.ref)
             this._posX = saved.pos[0]
             this._posY = saved.pos[1]
             this._lockPos = saved.lockPos ?? false

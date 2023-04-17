@@ -7,8 +7,9 @@ import { DrawableParent, GraphicsRendering } from "./Drawable"
 import { RegisterBase, RegisterBaseDef } from "./Register"
 
 export const ShiftRegisterDef =
-    defineParametrizedComponent("ic", "shift-register", true, true, {
-        variantName: ({ bits }) => `shift-register-${bits}`,
+    defineParametrizedComponent("shift-reg", true, true, {
+        variantName: ({ bits }) => `shift-reg-${bits}`,
+        idPrefix: "reg",
         ...RegisterBaseDef,
         makeNodes: (params, defaults) => {
             const base = RegisterBaseDef.makeNodes(params, defaults)
@@ -34,10 +35,7 @@ export class ShiftRegister extends RegisterBase<ShiftRegisterRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "shift-register" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

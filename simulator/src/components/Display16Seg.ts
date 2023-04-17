@@ -4,12 +4,13 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, LogicValue, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentNameRepr, Repr, defineComponent, group } from "./Component"
+import { DisplayBarBase, LedColors, ledColorForLogicValue } from "./DisplayBar"
 import { DrawContext, DrawableParent, GraphicsRendering } from "./Drawable"
-import { LedColors, OutputBarBase, ledColorForLogicValue } from "./OutputBar"
 
 
-export const Output16SegDef =
-    defineComponent("out", "16seg", {
+export const Display16SegDef =
+    defineComponent("16seg", {
+        idPrefix: "16seg",
         button: { imgWidth: 32 },
         repr: {
             color: typeOrUndefined(t.keyof(LedColors, "LedColor")),
@@ -44,24 +45,21 @@ export const Output16SegDef =
         initialValue: () => ArrayFillWith<LogicValue>(false, 17),
     })
 
-export type Output16SegRepr = Repr<typeof Output16SegDef>
+export type Display16SegRepr = Repr<typeof Display16SegDef>
 
-export class Output16Seg extends OutputBarBase<Output16SegRepr, LogicValue[]> {
+export class Display16Seg extends DisplayBarBase<Display16SegRepr, LogicValue[]> {
 
-    public constructor(parent: DrawableParent, saved?: Output16SegRepr) {
-        super(parent, Output16SegDef, true, saved)
+    public constructor(parent: DrawableParent, saved?: Display16SegRepr) {
+        super(parent, Display16SegDef, true, saved)
     }
 
     public toJSON() {
-        return {
-            type: "16seg" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {
         return tooltipContent(undefined, mods(
-            div(S.Components.Output16Seg.tooltip),
+            div(S.Components.Display16Seg.tooltip),
         ))
     }
 
@@ -177,4 +175,4 @@ export class Output16Seg extends OutputBarBase<Output16SegRepr, LogicValue[]> {
     }
 
 }
-Output16SegDef.impl = Output16Seg
+Display16SegDef.impl = Display16Seg

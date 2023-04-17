@@ -7,7 +7,8 @@ import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Dra
 
 
 export const HalfAdderDef =
-    defineComponent("ic", "halfadder", {
+    defineComponent("halfadder", {
+        idPrefix: "hadder",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 4, gridHeight: 6 },
@@ -36,10 +37,7 @@ export class HalfAdder extends ComponentBase<HalfAdderRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "halfadder" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {

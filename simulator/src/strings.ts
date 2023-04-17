@@ -46,53 +46,53 @@ const Strings_fr = {
             InputN: ["Entrée multiple", "IN mult."],
             Input8: ["Entrée octet (8 bits)", "IN 8 bits"],
             Clock: ["Générateur de signal d’horloge", "Horloge"],
-            InputRandom: ["Entrée aléatoire", "Aléatoire"],
+            Random: ["Entrée aléatoire", "Aléatoire"],
             Output1: ["Sortie", "OUT"],
             OutputN: ["Sortie multiple", "OUT mult."],
             Output8: ["Sortie octet (8 bits)", "OUT 8 bits"],
-            OutputDisplayN: ["Afficheur d’une valeur", "Afficheur"],
-            OutputDisplay8: ["Affichage de 8 bits", "Aff. 8 bits"],
-            Output7Seg: ["Afficheur à 7 segments", "7 segments"],
-            Output16Seg: ["Afficheur à 16 segments", "16 segments"],
-            OutputAscii: ["Affichage d’un caractère ASCII (sur 7 bits)", "Caractère"],
-            OutputBar: ["Affichage d’un bit sous forme de segment lumineux", "Segment"],
-            OutputShiftBuffer: ["Affichage avec buffer à décalage", "Affichage à décalage"],
+            DisplayN: ["Afficheur d’une valeur", "Afficheur"],
+            Display8: ["Affichage de 8 bits", "Aff. 8 bits"],
+            Display7Seg: ["Afficheur à 7 segments", "7 segments"],
+            Display16Seg: ["Afficheur à 16 segments", "16 segments"],
+            DisplayAscii: ["Affichage d’un caractère ASCII (sur 7 bits)", "Caractère"],
+            DisplayBar: ["Affichage d’un bit sous forme de segment lumineux", "Segment"],
+            ShiftDisplay: ["Affichage avec buffer à décalage", "Affichage à décalage"],
 
             Passthrough1: ["Broche", "Broche"],
             PassthroughN: ["Broche à plusieurs entrées-sortes", "Broche (n)"],
-            LabelString: ["Étiquette", "Label"],
-            LabelRectangle: ["Rectangle de regroupement", "Groupe"],
+            Label: ["Étiquette", "Label"],
+            Rectangle: ["Rectangle de regroupement", "Groupe"],
 
-            NOT: ["Porte NON", "NON"],
-            BUF: ["Buffer (porte OUI)", "OUI"],
-            TRI: ["Sortie à 3 états", "3 états"],
-            AND: ["Porte ET", "ET"],
-            OR: ["Porte OU", "OU"],
-            XOR: ["Porte OU-X", "OU-X"],
-            NAND: ["Porte NON-ET", "NON-ET"],
-            NOR: ["Porte NON-OU", "NON-OU"],
-            XNOR: ["Porte NON-OU-X", "NON-OU-X"],
-            IMPLY: ["Porte IMPLIQUE", "IMPLIQUE"],
-            NIMPLY: ["Porte NON-IMPLIQUE", "NON-IMPL."],
-            TRANSFER: ["Fausse porte TRANSFERT à deux entrées", "TRANSF."],
+            not: ["Porte NON", "NON"],
+            buf: ["Buffer (porte OUI)", "OUI"],
+            tri: ["Sortie à 3 états", "3 états"],
+            and: ["Porte ET", "ET"],
+            or: ["Porte OU", "OU"],
+            xor: ["Porte OU-X", "OU-X"],
+            nand: ["Porte NON-ET", "NON-ET"],
+            nor: ["Porte NON-OU", "NON-OU"],
+            xnor: ["Porte NON-OU-X", "NON-OU-X"],
+            imply: ["Porte IMPLIQUE", "IMPLIQUE"],
+            nimply: ["Porte NON-IMPLIQUE", "NON-IMPL."],
+            transfer: ["Fausse porte TRANSFERT à deux entrées", "TRANSF."],
 
-            AND3: ["Porte ET à 3 entrées", "ET (3)"],
-            OR3: ["Porte OU à 3 entrées", "OU (3)"],
-            XOR3: ["Porte OU-X à 3 entrées", "OU-X (3)"],
-            NAND3: ["Porte NON-ET à 3 entrées", "NON-ET (3)"],
-            NOR3: ["Porte NON-OU à 3 entrées", "NON-OU (3)"],
-            XNOR3: ["Porte NON-OU-X à 3 entrées", "NON-OU-X (3)"],
+            and3: ["Porte ET à 3 entrées", "ET (3)"],
+            or3: ["Porte OU à 3 entrées", "OU (3)"],
+            xor3: ["Porte OU-X à 3 entrées", "OU-X (3)"],
+            nand3: ["Porte NON-ET à 3 entrées", "NON-ET (3)"],
+            nor3: ["Porte NON-OU à 3 entrées", "NON-OU (3)"],
+            xnor3: ["Porte NON-OU-X à 3 entrées", "NON-OU-X (3)"],
 
-            AND4: ["Porte ET à 4 entrées", "ET (4)"],
-            OR4: ["Porte OU à 4 entrées", "OU (4)"],
-            XOR4: ["Porte OU-X à 4 entrées", "OU-X (4)"],
-            NAND4: ["Porte NON-ET à 4 entrées", "NON-ET (4)"],
-            NOR4: ["Porte NON-OU à 4 entrées", "NON-OU (4)"],
-            XNOR4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
+            and4: ["Porte ET à 4 entrées", "ET (4)"],
+            or4: ["Porte OU à 4 entrées", "OU (4)"],
+            xor4: ["Porte OU-X à 4 entrées", "OU-X (4)"],
+            nand4: ["Porte NON-ET à 4 entrées", "NON-ET (4)"],
+            nor4: ["Porte NON-OU à 4 entrées", "NON-OU (4)"],
+            xnor4: ["Porte NON-OU-X à 4 entrées", "NON-OU-X (4)"],
 
-            SwitchedInverter: ["Inverseur commuté", "Inv. comm."],
+            ControlledInverter: ["Inverseur commuté", "Inv. comm."],
             GateArray: ["Porte multiple", "Porte mult."],
-            TriStateBufferArray: ["Sortie à 3 états multiple", "3 états mult."],
+            TristateBufferArray: ["Sortie à 3 états multiple", "3 états mult."],
 
             HalfAdder: ["Demi-additionneur", "Demi-add."],
             Adder: ["Additionneur", "Addit."],
@@ -194,7 +194,9 @@ const Strings_fr = {
 
                 SetIdentifier: "Attribuer un identifiant…",
                 ChangeIdentifier: tuple("Changer l’identifiant (", ")…"),
-                SetIdentifierPrompt: "Choisissez l’identifiant à attribuer à ce composant ou laissez vide pour le supprimer:\n\n(L’identifiant sert uniquement à faire référence à ce composant via du code JavaScript externe.)",
+                SetIdentifierPrompt: "Choisissez l’identifiant unique à attribuer à ce composant:",
+                IdentifierCannotBeEmpty: "L’identifiant ne peut pas être vide.",
+                IdentifierAlreadyInUseShouldSwap: "L’identifiant est déjà utilisé par un autre composant. Voulez-vous inverser les identifiants?",
 
                 Orientation: "Orientation",
                 ChangeOrientationDesc: "Changez l’orientation avec Commande + double-clic sur le composant",
@@ -373,25 +375,25 @@ const Strings_fr = {
             },
         },
         Gate: {
-            NOT: tuple("NON", "NON", "La sortie est égale à l’entrée inversée."),
-            BUF: tuple("OUI", "OUI", "La sortie est égale à l’entrée."),
+            not: tuple("NON", "NON", "La sortie est égale à l’entrée inversée."),
+            buf: tuple("OUI", "OUI", "La sortie est égale à l’entrée."),
 
-            AND: tuple("ET", "ET", "La sortie vaut 1 lorsque toutes les entrées valent 1."),
-            OR: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des entrées vaut 1."),
-            XOR: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1."),
-            NAND: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que toutes les entrées ne valent 1."),
-            NOR: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque toutes les entrées valent 0."),
-            XNOR: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1."),
+            and: tuple("ET", "ET", "La sortie vaut 1 lorsque toutes les entrées valent 1."),
+            or: tuple("OU", "OU", "La sortie vaut 1 lorsqu’au moins une des entrées vaut 1."),
+            xor: tuple("OU-X", "OU-X", "La sortie vaut 1 lorsqu’un nombre impair d’entrées valent 1."),
+            nand: tuple("NON-ET", "N-ET", "Porte ET inversée: la sortie vaut 1 à moins que toutes les entrées ne valent 1."),
+            nor: tuple("NON-OU", "N-OU", "Porte OU inversée: la sortie vaut 1 lorsque toutes les entrées valent 0."),
+            xnor: tuple("NON-OU-X", "N-OU-X", "Porte OU-X inversée: la sortie vaut 1 lorsqu’un nombre pair d’entrées valent 1."),
 
-            IMPLY: tuple("IMPLIQUE", "IMPL", "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1."),
-            RIMPLY: tuple("IMPLIQUE (bis)", "IMPL", "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1."),
-            NIMPLY: tuple("NON-IMPLIQUE", "N-IMPL", "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0."),
-            RNIMPLY: tuple("NON-IMPLIQUE (bis)", "N-IMPL", "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1."),
+            imply: tuple("IMPLIQUE", "IMPL", "La sortie vaut 1 si la première entrée vaut 0 ou si les deux entrées valent 1."),
+            rimply: tuple("IMPLIQUE (bis)", "IMPL", "La sortie vaut 1 si la seconde entrée vaut 0 ou si les deux entrées valent 1."),
+            nimply: tuple("NON-IMPLIQUE", "N-IMPL", "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 1 et la seconde 0."),
+            rnimply: tuple("NON-IMPLIQUE (bis)", "N-IMPL", "Porte IMPLIQUE inversée: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1."),
 
-            TXA: tuple("TRANSFERT-A", undefined, "La sortie est égale à la première entrée; la seconde entrée est ignorée."),
-            TXB: tuple("TRANSFERT-B", undefined, "La sortie est égale à la seconde entrée; la première entrée est ignorée."),
-            TXNA: tuple("TRANSFERT-NON-A", undefined, "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée."),
-            TXNB: tuple("TRANSFERT-NON-B", undefined, "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée."),
+            txa: tuple("TRANSFERT-A", undefined, "La sortie est égale à la première entrée; la seconde entrée est ignorée."),
+            txb: tuple("TRANSFERT-B", undefined, "La sortie est égale à la seconde entrée; la première entrée est ignorée."),
+            txna: tuple("TRANSFERT-NON-A", undefined, "La sortie est égale à la première entrée inversée; la seconde entrée est ignorée."),
+            txnb: tuple("TRANSFERT-NON-B", undefined, "La sortie est égale à la seconde entrée inversée; la première entrée est ignorée."),
 
 
             tooltip: {
@@ -436,7 +438,7 @@ const Strings_fr = {
                 ReplaceWithClock: "Remplacer par horloge",
             },
         },
-        InputRandom: {
+        Random: {
             tooltip: {
                 title: "Valeur aléatoire",
                 desc: tuple("À chaque coup d’horloge, la valeur de sortie sera 1 avec une probabilité de ", "."),
@@ -485,7 +487,7 @@ const Strings_fr = {
                 PlacementCenter: "Au centre",
             },
         },
-        LabelString: {
+        Label: {
             contextMenu: {
                 ChangeText: "Changer le texte…",
                 ChangeTextPrompt: "Choisissez le texte à afficher:",
@@ -515,13 +517,13 @@ const Strings_fr = {
                 title: template("Sortie (${numBits} bits)"),
             },
         },
-        Output7Seg: {
+        Display7Seg: {
             tooltip: "Afficheur 7 segments",
         },
-        Output16Seg: {
+        Display16Seg: {
             tooltip: "Afficheur 16 segments",
         },
-        OutputAscii: {
+        DisplayAscii: {
             tooltip: {
                 title: "Afficheur de caractère ASCII",
                 desc: tuple("Affiche le caractère ASCII représenté par ses 7 entrées, actuellement ", "."),
@@ -537,7 +539,7 @@ const Strings_fr = {
                 ChangeDisplayDesc: "Changez l’affichage supplémentaire avec un double-clic sur le composant",
             },
         },
-        OutputBar: {
+        DisplayBar: {
             tooltip: {
                 title: "Afficheur lumineux",
                 ValueUnknown: "Son état est indéterminé car son entrée n’est pas connue.",
@@ -561,7 +563,7 @@ const Strings_fr = {
                 ColorYellow: "Jaune",
             },
         },
-        OutputDisplay: {
+        Display: {
             tooltip: {
                 title: template("Afficheur ${numBits} bits"),
                 desc: tuple(template("Affiche la valeur ${radixStr} de ses ${numBits} entrées, actuellement "), "."),
@@ -584,7 +586,7 @@ const Strings_fr = {
                 DisplayAsUnknown: "comme inconnu",
             },
         },
-        OutputShiftBuffer: {
+        ShiftDisplay: {
             tooltip: "Affichage à décalage",
             contextMenu: {
                 Decoding: "Décodage",
@@ -626,7 +628,7 @@ const Strings_fr = {
                 ShowAsUnknown: "Masquer le type",
             },
         },
-        TriStateBufferArray: {
+        TristateBufferArray: {
             tooltip: {
                 title: "Sortie à 3 états multiple",
                 desc: "Représente plusieurs sorties à trois états, contrôlées par un seul bit de contrôle.",
@@ -667,13 +669,13 @@ const Strings_fr = {
                 desc: template("Stocke ${numBits} bits et les décale à chaque activation."),
             },
         },
-        SwitchedInverter: {
+        ControlledInverter: {
             tooltip: {
                 title: "Inverseur commuté",
                 desc: "Inverse ses entrées si le bit de contrôle S vaut 1; sinon, les sorties sont égales aux entrées.",
             },
         },
-        TriStateBuffer: {
+        TristateBuffer: {
             tooltip: "Sortie à 3 états",
         },
         Wire: {
@@ -743,53 +745,53 @@ const Strings_en: Strings = {
             InputN: ["Multiple Inputs", "IN Mult."],
             Input8: ["Byte (8-Bit) Input", "IN (8-Bit)"],
             Clock: ["Clock Generator", "Clock"],
-            InputRandom: ["Random Input", "Random"],
+            Random: ["Random Input", "Random"],
             Output1: ["Output", "OUT"],
             OutputN: ["Multiple Outputs", "OUT Mult."],
             Output8: ["Byte (8-Bit) Output", "OUT (8-Bit)"],
-            OutputDisplayN: ["Value Display", "Display"],
-            OutputDisplay8: ["Byte (8-Bit) Display", "8-Bit Displ."],
-            Output7Seg: ["7-Segment Display", "7-Segment"],
-            Output16Seg: ["16-Segment Display", "16-Segment"],
-            OutputAscii: ["ASCII Character (7-Bit) Display", "Character"],
-            OutputBar: ["Bit Display as a Light Bar", "Bar"],
-            OutputShiftBuffer: ["Display with Shift Buffer", "Shift Displ."],
+            DisplayN: ["Value Display", "Display"],
+            Display8: ["Byte (8-Bit) Display", "8-Bit Displ."],
+            Display7Seg: ["7-Segment Display", "7-Segment"],
+            Display16Seg: ["16-Segment Display", "16-Segment"],
+            DisplayAscii: ["ASCII Character (7-Bit) Display", "Character"],
+            DisplayBar: ["Bit Display as a Light Bar", "Bar"],
+            ShiftDisplay: ["Display with Shift Buffer", "Shift Displ."],
 
             Passthrough1: ["Passthrough", "Passthrough"],
             PassthroughN: ["Passthrough with multiple inputs-outputs", "Passthr. (n)"],
-            LabelString: ["Label", "Label"],
-            LabelRectangle: ["Grouping Rectangle", "Group"],
+            Label: ["Label", "Label"],
+            Rectangle: ["Grouping Rectangle", "Group"],
 
-            NOT: ["NOT Gate", "NOT"],
-            BUF: ["Buffer", "BUF"],
-            TRI: ["Tri-State Buffer", "Tri-state"],
-            AND: ["AND Gate", "AND"],
-            OR: ["OR Gate", "OR"],
-            XOR: ["XOR Gate", "XOR"],
-            NAND: ["NAND Gate", "NAND"],
-            NOR: ["NOR Gate", "NOR"],
-            XNOR: ["XNOR Gate", "XNOR"],
-            IMPLY: ["IMPLY Gate", "IMPLY"],
-            NIMPLY: ["NIMPLY Gate", "NIMPLY"],
-            TRANSFER: ["Fake 2-Input TRANSFER Gate", "TRANSF."],
+            not: ["NOT Gate", "NOT"],
+            buf: ["Buffer", "BUF"],
+            tri: ["Tristate Buffer", "Tristate"],
+            and: ["AND Gate", "AND"],
+            or: ["OR Gate", "OR"],
+            xor: ["XOR Gate", "XOR"],
+            nand: ["NAND Gate", "NAND"],
+            nor: ["NOR Gate", "NOR"],
+            xnor: ["XNOR Gate", "XNOR"],
+            imply: ["IMPLY Gate", "IMPLY"],
+            nimply: ["NIMPLY Gate", "NIMPLY"],
+            transfer: ["Fake 2-Input TRANSFER Gate", "TRANSF."],
 
-            AND3: ["3-Input AND Gate", "AND (3)"],
-            OR3: ["3-Input OR Gate", "OR (3)"],
-            XOR3: ["3-Input XOR Gate", "XOR (3)"],
-            NAND3: ["3-Input NAND Gate", "NAND (3)"],
-            NOR3: ["3-Input NOR Gate", "NOR (3)"],
-            XNOR3: ["3-Input XNOR Gate", "XNOR (3)"],
+            and3: ["3-Input AND Gate", "AND (3)"],
+            or3: ["3-Input OR Gate", "OR (3)"],
+            xor3: ["3-Input XOR Gate", "XOR (3)"],
+            nand3: ["3-Input NAND Gate", "NAND (3)"],
+            nor3: ["3-Input NOR Gate", "NOR (3)"],
+            xnor3: ["3-Input XNOR Gate", "XNOR (3)"],
 
-            AND4: ["4-Input AND Gate", "AND (4)"],
-            OR4: ["4-Input AND Gate", "OR (4)"],
-            XOR4: ["4-Input AND Gate", "XOR (4)"],
-            NAND4: ["4-Input AND Gate", "NAND (4)"],
-            NOR4: ["4-Input AND Gate", "NOR (4)"],
-            XNOR4: ["4-Input AND Gate", "XNOR (4)"],
+            and4: ["4-Input AND Gate", "AND (4)"],
+            or4: ["4-Input AND Gate", "OR (4)"],
+            xor4: ["4-Input AND Gate", "XOR (4)"],
+            nand4: ["4-Input AND Gate", "NAND (4)"],
+            nor4: ["4-Input AND Gate", "NOR (4)"],
+            xnor4: ["4-Input AND Gate", "XNOR (4)"],
 
-            SwitchedInverter: ["Switched Inverter", "Switched Inv."],
+            ControlledInverter: ["Switched Inverter", "Switched Inv."],
             GateArray: ["Gate Array", "Gate Array"],
-            TriStateBufferArray: ["Tri-State Buffer Array", "Tri-state Arr."],
+            TristateBufferArray: ["Tristate Buffer Array", "Tristate Arr."],
 
             HalfAdder: ["Half Adder", "Half Adder"],
             Adder: ["Full Adder", "Full Adder"],
@@ -891,7 +893,9 @@ const Strings_en: Strings = {
 
                 SetIdentifier: "Set Identifier…",
                 ChangeIdentifier: tuple("Change Identifier (", ")…"),
-                SetIdentifierPrompt: "Choose the identifier to use for this component or leave empty to remove it:\n\n(The identifier is only used to refer to this component from external JavaScript code.)",
+                SetIdentifierPrompt: "Choose the unique identifier to use for this component:",
+                IdentifierCannotBeEmpty: "The identifier cannot be empty.",
+                IdentifierAlreadyInUseShouldSwap: "The identifier is already in use. Do you want to swap the component identifiers?",
 
                 Orientation: "Orientation",
                 ChangeOrientationDesc: "Change the orientation with Command + double click on the component",
@@ -1070,25 +1074,25 @@ const Strings_en: Strings = {
             },
         },
         Gate: {
-            NOT: tuple("NOT", "NOT", "The output is the inverted input."),
-            BUF: tuple("BUF", "BUF", "The output is the same as the input."),
+            not: tuple("NOT", "NOT", "The output is the inverted input."),
+            buf: tuple("BUF", "BUF", "The output is the same as the input."),
 
-            AND: tuple("AND", "AND", "The output is 1 when all inputs are 1."),
-            OR: tuple("OR", "OR", "The output is 1 when at least one of the inputs is 1."),
-            XOR: tuple("XOR", "XOR", "The output is 1 when an odd number of inputs are 1."),
-            NAND: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless all inputs are 1."),
-            NOR: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when all inputs are 0."),
-            XNOR: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when an even number of inputs are 1."),
+            and: tuple("AND", "AND", "The output is 1 when all inputs are 1."),
+            or: tuple("OR", "OR", "The output is 1 when at least one of the inputs is 1."),
+            xor: tuple("XOR", "XOR", "The output is 1 when an odd number of inputs are 1."),
+            nand: tuple("NAND", "NAND", "Inverted AND gate: the output is 1 unless all inputs are 1."),
+            nor: tuple("NOR", "NOR", "Inverted OR gate: the output is 1 when all inputs are 0."),
+            xnor: tuple("XNOR", "XNOR", "Inverted XOR gate: the output is 1 when an even number of inputs are 1."),
 
-            IMPLY: tuple("IMPLY", "IMPL", "The output is 1 if the first input is 0 or if both inputs are 1."),
-            RIMPLY: tuple("IMPLY (bis)", "IMPL", "The output is 1 if the second input is 0 or if both inputs are 1."),
-            NIMPLY: tuple("NIMPLY", "N-IMPL", "Inverted IMPLY gate: the output is only 1 if the first input is 1 and the second one 0."),
-            RNIMPLY: tuple("NIMPLY (bis)", "N-IMPL", "Inverted IMPLY gate: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1."),
+            imply: tuple("IMPLY", "IMPL", "The output is 1 if the first input is 0 or if both inputs are 1."),
+            rimply: tuple("IMPLY (bis)", "IMPL", "The output is 1 if the second input is 0 or if both inputs are 1."),
+            nimply: tuple("NIMPLY", "N-IMPL", "Inverted IMPLY gate: the output is only 1 if the first input is 1 and the second one 0."),
+            rnimply: tuple("NIMPLY (bis)", "N-IMPL", "Inverted IMPLY gate: la sortie ne vaut 1 que lorsque la première entrée vaut 0 et la seconde 1."),
 
-            TXA: tuple("TRANSFER-A", undefined, "The output is the same as the first input; the second input is ignored."),
-            TXB: tuple("TRANSFER-B", undefined, "The output is the same as the second input; the first input is ignored."),
-            TXNA: tuple("TRANSFER-NOT-A", undefined, "The output is the inverted first input; the second input is ignored."),
-            TXNB: tuple("TRANSFER-NOT-B", undefined, "The output is the inverted second input; the first input is ignored."),
+            txa: tuple("TRANSFER-A", undefined, "The output is the same as the first input; the second input is ignored."),
+            txb: tuple("TRANSFER-B", undefined, "The output is the same as the second input; the first input is ignored."),
+            txna: tuple("TRANSFER-NOT-A", undefined, "The output is the inverted first input; the second input is ignored."),
+            txnb: tuple("TRANSFER-NOT-B", undefined, "The output is the inverted second input; the first input is ignored."),
 
             tooltip: {
                 GateTitle: (gateType: Modifier) => mods(gateType, " Gate"),
@@ -1132,7 +1136,7 @@ const Strings_en: Strings = {
                 ReplaceWithClock: "Replace With Clock",
             },
         },
-        InputRandom: {
+        Random: {
             tooltip: {
                 title: "Random Input",
                 desc: tuple("When triggered by the clock, the output value will be 1 with probability ", "."),
@@ -1181,7 +1185,7 @@ const Strings_en: Strings = {
                 PlacementCenter: "Center",
             },
         },
-        LabelString: {
+        Label: {
             contextMenu: {
                 ChangeText: "Change Text…",
                 ChangeTextPrompt: "Type the text to display:",
@@ -1211,13 +1215,13 @@ const Strings_en: Strings = {
                 title: template("Output (${numBits}-Bit)"),
             },
         },
-        Output7Seg: {
+        Display7Seg: {
             tooltip: "7-Segment Display",
         },
-        Output16Seg: {
+        Display16Seg: {
             tooltip: "16-Segment Display",
         },
-        OutputAscii: {
+        DisplayAscii: {
             tooltip: {
                 title: "ASCII Character Display",
                 desc: tuple("Displays the ASCII character represented by the 7 inputs, currently ", "."),
@@ -1233,7 +1237,7 @@ const Strings_en: Strings = {
                 ChangeDisplayDesc: "Change the additional display with a double-click on the component",
             },
         },
-        OutputBar: {
+        DisplayBar: {
             tooltip: {
                 title: "Bar/LED Display",
                 ValueUnknown: "Its state is undefined because its input is unknown.",
@@ -1257,7 +1261,7 @@ const Strings_en: Strings = {
                 ColorYellow: "Yellow",
             },
         },
-        OutputDisplay: {
+        Display: {
             tooltip: {
                 title: template("${numBits}-Bit Display"),
                 desc: tuple(template("Displays the ${radixStr} value of its ${numBits} inputs, which is currently "), "."),
@@ -1281,7 +1285,7 @@ const Strings_en: Strings = {
                 DisplayAsUnknown: "Unkown",
             },
         },
-        OutputShiftBuffer: {
+        ShiftDisplay: {
             tooltip: "Shift Buffer Display",
             contextMenu: {
                 Decoding: "Decoding",
@@ -1323,10 +1327,10 @@ const Strings_en: Strings = {
                 ShowAsUnknown: "Hide Type",
             },
         },
-        TriStateBufferArray: {
+        TristateBufferArray: {
             tooltip: {
-                title: "Tri-State Buffer Array",
-                desc: "Represents multiple tri-state buffers switched by a single control bit.",
+                title: "Tristate Buffer Array",
+                desc: "Represents multiple tristate buffers switched by a single control bit.",
             },
         },
         RAM: {
@@ -1364,14 +1368,14 @@ const Strings_en: Strings = {
                 desc: template("Stores ${numBits} bits and shifts them left or right at each activation."),
             },
         },
-        SwitchedInverter: {
+        ControlledInverter: {
             tooltip: {
                 title: "Switched Inverter",
                 desc: "Inverts its inputs when the control bit S is on; otherwise, just outputs the inputs.",
             },
         },
-        TriStateBuffer: {
-            tooltip: "Tri-State Buffer",
+        TristateBuffer: {
+            tooltip: "Tristate Buffer",
         },
         Wire: {
             contextMenu: {

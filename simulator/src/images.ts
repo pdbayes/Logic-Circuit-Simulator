@@ -51,71 +51,71 @@ import wirestyle from '../img/icons/wirestyle.icon.svg'; // @ts-ignore
 
 // images
 import ALU from '../img/ALU.svg'; // @ts-ignore
-import AND from '../img/AND.svg'; // @ts-ignore
-import AND3 from '../img/AND3.svg'; // @ts-ignore
-import AND4 from '../img/AND4.svg'; // @ts-ignore
 import Adder from '../img/Adder.svg'; // @ts-ignore
 import AdderArray from '../img/AdderArray.svg'; // @ts-ignore
-import BUF from '../img/BUF.svg'; // @ts-ignore
 import Clock from '../img/Clock.svg'; // @ts-ignore
 import Comparator from '../img/Comparator.svg'; // @ts-ignore
+import ControlledInverter from '../img/ControlledInverter.svg'; // @ts-ignore
 import Counter from '../img/Counter.svg'; // @ts-ignore
 import Decoder from '../img/Decoder.svg'; // @ts-ignore
 import Decoder16Seg from '../img/Decoder16Seg.svg'; // @ts-ignore
 import Decoder7Seg from '../img/Decoder7Seg.svg'; // @ts-ignore
 import DecoderBCD4 from '../img/DecoderBCD4.svg'; // @ts-ignore
 import Demux from '../img/Demux.svg'; // @ts-ignore
+import Display16Seg from '../img/Display16Seg.svg'; // @ts-ignore
+import Display4 from '../img/Display4.svg'; // @ts-ignore
+import Display7Seg from '../img/Display7Seg.svg'; // @ts-ignore
+import Display8 from '../img/Display8.svg'; // @ts-ignore
+import DisplayAscii from '../img/DisplayAscii.svg'; // @ts-ignore
+import DisplayBar from '../img/DisplayBar.svg'; // @ts-ignore
 import FlipflopD from '../img/FlipflopD.svg'; // @ts-ignore
 import FlipflopJK from '../img/FlipflopJK.svg'; // @ts-ignore
 import FlipflopT from '../img/FlipflopT.svg'; // @ts-ignore
 import GateArray from '../img/GateArray.svg'; // @ts-ignore
 import HalfAdder from '../img/HalfAdder.svg'; // @ts-ignore
-import IMPLY from '../img/IMPLY.svg'; // @ts-ignore
 import Input1 from '../img/Input1.svg'; // @ts-ignore
 import Input4 from '../img/Input4.svg'; // @ts-ignore
 import Input8 from '../img/Input8.svg'; // @ts-ignore
-import InputRandom from '../img/InputRandom.svg'; // @ts-ignore
-import LabelRectangle from '../img/LabelRectangle.svg'; // @ts-ignore
-import LabelString from '../img/LabelString.svg'; // @ts-ignore
+import Label from '../img/Label.svg'; // @ts-ignore
 import LatchSR from '../img/LatchSR.svg'; // @ts-ignore
 import Mux from '../img/Mux.svg'; // @ts-ignore
-import NAND from '../img/NAND.svg'; // @ts-ignore
-import NAND3 from '../img/NAND3.svg'; // @ts-ignore
-import NAND4 from '../img/NAND4.svg'; // @ts-ignore
-import NIMPLY from '../img/NIMPLY.svg'; // @ts-ignore
-import NOR from '../img/NOR.svg'; // @ts-ignore
-import NOR3 from '../img/NOR3.svg'; // @ts-ignore
-import NOR4 from '../img/NOR4.svg'; // @ts-ignore
-import NOT from '../img/NOT.svg'; // @ts-ignore
-import OR from '../img/OR.svg'; // @ts-ignore
-import OR3 from '../img/OR3.svg'; // @ts-ignore
-import OR4 from '../img/OR4.svg'; // @ts-ignore
 import Output1 from '../img/Output1.svg'; // @ts-ignore
-import Output16Seg from '../img/Output16Seg.svg'; // @ts-ignore
 import Output4 from '../img/Output4.svg'; // @ts-ignore
-import Output7Seg from '../img/Output7Seg.svg'; // @ts-ignore
 import Output8 from '../img/Output8.svg'; // @ts-ignore
-import OutputAscii from '../img/OutputAscii.svg'; // @ts-ignore
-import OutputBar from '../img/OutputBar.svg'; // @ts-ignore
-import OutputDisplay4 from '../img/OutputDisplay4.svg'; // @ts-ignore
-import OutputDisplay8 from '../img/OutputDisplay8.svg'; // @ts-ignore
-import OutputShiftBuffer from '../img/OutputShiftBuffer.svg'; // @ts-ignore
 import Passthrough1 from '../img/Passthrough1.svg'; // @ts-ignore
 import PassthroughN from '../img/PassthroughN.svg'; // @ts-ignore
 import RAM from '../img/RAM.svg'; // @ts-ignore
 import ROM from '../img/ROM.svg'; // @ts-ignore
+import Random from '../img/Random.svg'; // @ts-ignore
+import Rectangle from '../img/Rectangle.svg'; // @ts-ignore
 import Register from '../img/Register.svg'; // @ts-ignore
+import ShiftDisplay from '../img/ShiftDisplay.svg'; // @ts-ignore
 import ShiftRegister from '../img/ShiftRegister.svg'; // @ts-ignore
-import SwitchedInverter from '../img/SwitchedInverter.svg'; // @ts-ignore
-import TRI from '../img/TRI.svg'; // @ts-ignore
-import TXA from '../img/TXA.svg'; // @ts-ignore
-import TriStateBufferArray from '../img/TriStateBufferArray.svg'; // @ts-ignore
-import XNOR from '../img/XNOR.svg'; // @ts-ignore
-import XNOR3 from '../img/XNOR3.svg'; // @ts-ignore
-import XNOR4 from '../img/XNOR4.svg'; // @ts-ignore
-import XOR from '../img/XOR.svg'; // @ts-ignore
-import XOR3 from '../img/XOR3.svg'; // @ts-ignore
-import XOR4 from '../img/XOR4.svg'; // @ts-ignore
+import TristateBufferArray from '../img/TristateBufferArray.svg'; // @ts-ignore
+import and from '../img/and.svg'; // @ts-ignore
+import and3 from '../img/and3.svg'; // @ts-ignore
+import and4 from '../img/and4.svg'; // @ts-ignore
+import buf from '../img/buf.svg'; // @ts-ignore
+import imply from '../img/imply.svg'; // @ts-ignore
+import nand from '../img/nand.svg'; // @ts-ignore
+import nand3 from '../img/nand3.svg'; // @ts-ignore
+import nand4 from '../img/nand4.svg'; // @ts-ignore
+import nimply from '../img/nimply.svg'; // @ts-ignore
+import nor from '../img/nor.svg'; // @ts-ignore
+import nor3 from '../img/nor3.svg'; // @ts-ignore
+import nor4 from '../img/nor4.svg'; // @ts-ignore
+import not from '../img/not.svg'; // @ts-ignore
+import or from '../img/or.svg'; // @ts-ignore
+import or3 from '../img/or3.svg'; // @ts-ignore
+import or4 from '../img/or4.svg'; // @ts-ignore
+import tri from '../img/tri.svg'; // @ts-ignore
+import txa from '../img/txa.svg'; // @ts-ignore
+import xnor from '../img/xnor.svg'; // @ts-ignore
+import xnor3 from '../img/xnor3.svg'; // @ts-ignore
+import xnor4 from '../img/xnor4.svg'; // @ts-ignore
+import xor from '../img/xor.svg'; // @ts-ignore
+import xor3 from '../img/xor3.svg'; // @ts-ignore
+import xor4 from '../img/xor4.svg'; // @ts-ignore
 
 
 void 0 // dummy line to consume the last 'ts-ignore'
@@ -169,10 +169,10 @@ const images = {
     Adder,
     AdderArray,
     ALU,
-    AND,
-    AND3,
-    AND4,
-    BUF,
+    and,
+    and3,
+    and4,
+    buf,
     Clock,
     Comparator,
     Counter,
@@ -186,52 +186,52 @@ const images = {
     FlipflopT,
     GateArray,
     HalfAdder,
-    IMPLY,
+    imply,
     Input1,
     Input4,
     Input8,
-    InputRandom,
-    LabelRectangle,
-    LabelString,
+    Random,
+    Rectangle,
+    Label,
     LatchSR,
     Mux,
-    NAND,
-    NAND3,
-    NAND4,
-    NIMPLY,
-    NOR,
-    NOR3,
-    NOR4,
-    NOT,
-    OR,
-    OR3,
-    OR4,
+    nand,
+    nand3,
+    nand4,
+    nimply,
+    nor,
+    nor3,
+    nor4,
+    not,
+    or,
+    or3,
+    or4,
     Output1,
     Output4,
     Output8,
-    Output7Seg,
-    Output16Seg,
-    OutputAscii,
-    OutputBar,
-    OutputDisplay4,
-    OutputDisplay8,
-    OutputShiftBuffer,
+    Display7Seg,
+    Display16Seg,
+    DisplayAscii,
+    DisplayBar,
+    Display4,
+    Display8,
+    ShiftDisplay,
     Passthrough1,
     PassthroughN,
     RAM,
     ROM,
     Register,
     ShiftRegister,
-    SwitchedInverter,
-    TRI,
-    TriStateBufferArray,
-    TXA,
-    XNOR,
-    XNOR3,
-    XNOR4,
-    XOR,
-    XOR3,
-    XOR4,
+    ControlledInverter,
+    tri,
+    TristateBufferArray,
+    txa,
+    xnor,
+    xnor3,
+    xnor4,
+    xor,
+    xor3,
+    xor4,
 }
 
 export type IconName = keyof typeof icons

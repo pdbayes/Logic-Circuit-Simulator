@@ -8,7 +8,8 @@ import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } f
 import { InputBase, InputDef } from "./Input"
 
 export const ClockDef =
-    defineComponent("in", "clock", {
+    defineComponent("clock", {
+        idPrefix: "clock",
         button: { imgWidth: 50 },
         repr: {
             name: ComponentNameRepr,
@@ -60,7 +61,6 @@ export class Clock extends InputBase<ClockRepr> {
 
     public toJSON() {
         return {
-            type: "clock" as const,
             ...this.toJSONBase(),
             period: this._period,
             dutycycle: (this._dutycycle === ClockDef.aults.dutycycle) ? undefined : this._dutycycle,

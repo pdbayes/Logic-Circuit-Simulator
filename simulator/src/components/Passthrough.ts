@@ -19,8 +19,9 @@ export type Slant = keyof typeof Slant
 
 
 export const PassthroughDef =
-    defineParametrizedComponent("layout", "pass", true, true, {
+    defineParametrizedComponent("pass", true, true, {
         variantName: ({ bits }) => `pass-${bits}`,
+        idPrefix: "pass",
         button: { imgWidth: 32 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -70,9 +71,8 @@ export class Passthrough extends ParametrizedComponentBase<PassthroughRepr> {
 
     public toJSON() {
         return {
-            type: "pass" as const,
-            bits: this.numBits === PassthroughDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === PassthroughDef.aults.bits ? undefined : this.numBits,
             slant: this._slant === PassthroughDef.aults.slant ? undefined : this._slant,
         }
     }

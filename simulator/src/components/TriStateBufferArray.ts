@@ -4,13 +4,14 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { ArrayFillWith, HighImpedance, LogicValue, Unknown, isHighImpedance, isUnknown, typeOrUndefined } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineParametrizedComponent, groupVertical, param } from "./Component"
+import { ControlledInverterDef } from "./ControlledInverter"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
-import { SwitchedInverterDef } from "./SwitchedInverter"
 
 
-export const TriStateBufferArrayDef =
-    defineParametrizedComponent("ic", "tristate-array", true, true, {
+export const TristateBufferArrayDef =
+    defineParametrizedComponent("tristate-array", true, true, {
         variantName: ({ bits }) => `tristate-array-${bits}`,
+        idPrefix: "tristate",
         button: { imgWidth: 50 },
         repr: {
             bits: typeOrUndefined(t.number),
@@ -22,7 +23,7 @@ export const TriStateBufferArrayDef =
         validateParams: ({ bits }) => ({
             numBits: bits,
         }),
-        size: SwitchedInverterDef.size,
+        size: ControlledInverterDef.size,
         makeNodes: ({ numBits, gridHeight }) => ({
             ins: {
                 In: groupVertical("w", -3, 0, numBits),
@@ -36,28 +37,27 @@ export const TriStateBufferArrayDef =
     })
 
 
-export type TriStateBufferArrayRepr = Repr<typeof TriStateBufferArrayDef>
-export type TriStateBufferArrayParams = ResolvedParams<typeof TriStateBufferArrayDef>
+export type TristateBufferArrayRepr = Repr<typeof TristateBufferArrayDef>
+export type TristateBufferArrayParams = ResolvedParams<typeof TristateBufferArrayDef>
 
-export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBufferArrayRepr> {
+export class TristateBufferArray extends ParametrizedComponentBase<TristateBufferArrayRepr> {
 
     public readonly numBits: number
 
-    public constructor(parent: DrawableParent, params: TriStateBufferArrayParams, saved?: TriStateBufferArrayRepr) {
-        super(parent, TriStateBufferArrayDef.with(params), saved)
+    public constructor(parent: DrawableParent, params: TristateBufferArrayParams, saved?: TristateBufferArrayRepr) {
+        super(parent, TristateBufferArrayDef.with(params), saved)
         this.numBits = params.numBits
     }
 
     public toJSON() {
         return {
-            type: "tristate-array" as const,
-            bits: this.numBits === TriStateBufferArrayDef.aults.bits ? undefined : this.numBits,
             ...this.toJSONBase(),
+            bits: this.numBits === TristateBufferArrayDef.aults.bits ? undefined : this.numBits,
         }
     }
 
     public override makeTooltip() {
-        const s = S.Components.TriStateBufferArray.tooltip
+        const s = S.Components.TristateBufferArray.tooltip
         return tooltipContent(s.title, mods(
             div(s.desc)
         ))
@@ -113,4 +113,4 @@ export class TriStateBufferArray extends ParametrizedComponentBase<TriStateBuffe
     }
 
 }
-TriStateBufferArrayDef.impl = TriStateBufferArray
+TristateBufferArrayDef.impl = TristateBufferArray

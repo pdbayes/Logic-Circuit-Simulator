@@ -5,17 +5,17 @@ import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
 import { EdgeTrigger, LogicValue, RichStringEnum, Unknown, isUnknown, repeatString, toLogicValueRepr, typeOrUndefined } from "../utils"
 import { ComponentBase, Repr, defineComponent } from "./Component"
+import { DisplayAscii } from "./DisplayAscii"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItems } from "./Drawable"
 import { Flipflop, makeTriggerItems } from "./FlipflopOrLatch"
-import { OutputAscii } from "./OutputAscii"
 
 
-export const ShiftBufferDecoders_ = {
+export const ShiftDisplayDecoders_ = {
     "raw": { decodeWidth: 1, maxDisplayWidth: 16, decode: (v: number) => v.toString() },
     "octal": { decodeWidth: 3, maxDisplayWidth: 16, decode: (v: number) => v.toString() },
     "hex": { decodeWidth: 4, maxDisplayWidth: 16, decode: (v: number) => v.toString(16).toUpperCase() },
-    "ascii": { decodeWidth: 7, maxDisplayWidth: 12, decode: (v: number) => OutputAscii.numberToAscii(v) },
-    "ascii8": { decodeWidth: 8, maxDisplayWidth: 12, decode: (v: number) => OutputAscii.numberToAscii(v & 0x7F) },
+    "ascii": { decodeWidth: 7, maxDisplayWidth: 12, decode: (v: number) => DisplayAscii.numberToAscii(v) },
+    "ascii8": { decodeWidth: 8, maxDisplayWidth: 12, decode: (v: number) => DisplayAscii.numberToAscii(v & 0x7F) },
     "uint4": { decodeWidth: 4, maxDisplayWidth: 8, decode: (v: number) => v.toString() },
     "int4": { decodeWidth: 4, maxDisplayWidth: 8, decode: (v: number) => (v > 7 ? v - 16 : v).toString() },
     "uint8": { decodeWidth: 8, maxDisplayWidth: 4, decode: (v: number) => v.toString() },
@@ -24,24 +24,25 @@ export const ShiftBufferDecoders_ = {
     "int16": { decodeWidth: 16, maxDisplayWidth: 1, decode: (v: number) => (v > 32767 ? v - 65536 : v).toString() },
 } as const
 
-type ShiftBufferDecoderProps = {
+type ShiftDisplayDecoderProps = {
     decodeWidth: number,
     maxDisplayWidth: number,
     decode: (n: number) => string,
 }
 
-export const ShiftBufferDecoders =
-    RichStringEnum.withProps<ShiftBufferDecoderProps>()(ShiftBufferDecoders_)
+export const ShiftDisplayDecoders =
+    RichStringEnum.withProps<ShiftDisplayDecoderProps>()(ShiftDisplayDecoders_)
 
-export type ShiftBufferDecoder = keyof typeof ShiftBufferDecoders_
+export type ShiftBufferDecoder = keyof typeof ShiftDisplayDecoders_
 
 
-export const OutputShiftBufferDef =
-    defineComponent("out", "shift-buffer", {
+export const ShiftDisplayDef =
+    defineComponent("shift-display", {
+        idPrefix: "shiftdisp",
         button: { imgWidth: 50 },
         repr: {
             state: typeOrUndefined(t.string),
-            decodeAs: typeOrUndefined(t.keyof(ShiftBufferDecoders_)),
+            decodeAs: typeOrUndefined(t.keyof(ShiftDisplayDecoders_)),
             groupEvery: typeOrUndefined(t.number),
             maxItems: typeOrUndefined(t.number),
             trigger: typeOrUndefined(t.keyof(EdgeTrigger)),
@@ -80,14 +81,14 @@ export const OutputShiftBufferDef =
         },
     })
 
-type OutputShiftBufferRepr = Repr<typeof OutputShiftBufferDef>
+type ShiftDisplayRepr = Repr<typeof ShiftDisplayDef>
 
-type OutputShiftBufferState = {
+type ShiftDisplayState = {
     incoming: LogicValue[]
     decoded: [string, LogicValue[]][]
 }
 
-export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, OutputShiftBufferState> {
+export class ShiftDisplay extends ComponentBase<ShiftDisplayRepr, ShiftDisplayState> {
 
     protected _decodeAs: ShiftBufferDecoder
     protected _groupEvery: number | undefined
@@ -95,13 +96,13 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     protected _trigger: EdgeTrigger
     protected _lastClock: LogicValue = Unknown
 
-    public constructor(parent: DrawableParent, saved?: OutputShiftBufferRepr) {
-        super(parent, OutputShiftBufferDef, saved)
+    public constructor(parent: DrawableParent, saved?: ShiftDisplayRepr) {
+        super(parent, ShiftDisplayDef, saved)
 
-        this._decodeAs = saved?.decodeAs ?? OutputShiftBufferDef.aults.decodeAs
+        this._decodeAs = saved?.decodeAs ?? ShiftDisplayDef.aults.decodeAs
         this._groupEvery = saved?.groupEvery ?? undefined
         this._maxItems = saved?.maxItems ?? undefined
-        this._trigger = saved?.trigger ?? OutputShiftBufferDef.aults.trigger
+        this._trigger = saved?.trigger ?? ShiftDisplayDef.aults.trigger
 
         this.redecodeAll()
     }
@@ -109,13 +110,12 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     public toJSON() {
         const stateArray = allBitsOf(this.value).map(b => toLogicValueRepr(b))
         return {
-            type: "shift-buffer" as const,
             ...this.toJSONBase(),
             state: stateArray.length === 0 ? undefined : stateArray.join(""),
-            decodeAs: (this._decodeAs !== OutputShiftBufferDef.aults.decodeAs) ? this._decodeAs : undefined,
+            decodeAs: (this._decodeAs !== ShiftDisplayDef.aults.decodeAs) ? this._decodeAs : undefined,
             groupEvery: this._groupEvery,
             maxItems: this._maxItems,
-            trigger: (this._trigger !== OutputShiftBufferDef.aults.trigger) ? this._trigger : undefined,
+            trigger: (this._trigger !== ShiftDisplayDef.aults.trigger) ? this._trigger : undefined,
         }
     }
 
@@ -124,12 +124,12 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     public override makeTooltip() {
-        return tooltipContent(S.Components.OutputShiftBuffer.tooltip, mods(
+        return tooltipContent(S.Components.ShiftDisplay.tooltip, mods(
             div(JSON5.stringify(this.value)) // TODO more info
         ))
     }
 
-    protected doRecalcValue(): OutputShiftBufferState {
+    protected doRecalcValue(): ShiftDisplayState {
         if (this.inputs.Clr.value === true) {
             return { incoming: [], decoded: [] }
         }
@@ -139,21 +139,21 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
 
         if (Flipflop.isClockTrigger(this._trigger, prevClock, clock)) {
             const newBit = this.inputs.D.value
-            const decoder = ShiftBufferDecoders.props[this._decodeAs]
+            const decoder = ShiftDisplayDecoders.props[this._decodeAs]
             const maxItems = this._maxItems ?? decoder.maxDisplayWidth
-            return OutputShiftBuffer.valueByAddingNewBit(newBit, oldValue, decoder, maxItems)
+            return ShiftDisplay.valueByAddingNewBit(newBit, oldValue, decoder, maxItems)
         }
         return oldValue
     }
 
-    private static valueByAddingNewBit(newBit: LogicValue, oldValue: OutputShiftBufferState, decoder: ShiftBufferDecoderProps, maxItems: number): OutputShiftBufferState {
+    private static valueByAddingNewBit(newBit: LogicValue, oldValue: ShiftDisplayState, decoder: ShiftDisplayDecoderProps, maxItems: number): ShiftDisplayState {
         const newIncoming = [newBit, ...oldValue.incoming]
         if (newIncoming.length < decoder.decodeWidth) {
             return { incoming: newIncoming, decoded: oldValue.decoded }
         }
         const valAsInt = displayValuesFromArray(newIncoming, true)[1]
         const decoded = isUnknown(valAsInt) ? Unknown : decoder.decode(valAsInt)
-        const newDecoded: OutputShiftBufferState["decoded"] = [[decoded, newIncoming], ...oldValue.decoded]
+        const newDecoded: ShiftDisplayState["decoded"] = [[decoded, newIncoming], ...oldValue.decoded]
         if (newDecoded.length > maxItems) {
             newDecoded.splice(maxItems, newDecoded.length - maxItems)
         }
@@ -175,7 +175,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
                     if (text === undefined) {
                         g.fillStyle = COLOR_COMPONENT_INNER_LABELS
                         g.font = "15px sans-serif"
-                        toDraw = S.Components.OutputShiftBuffer.EmptyCaption
+                        toDraw = S.Components.ShiftDisplay.EmptyCaption
                     } else {
                         g.fillStyle = COLOR_COMPONENT_BORDER
                         g.font = "bold 16px sans-serif"
@@ -203,7 +203,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         }
 
         const decodeAs = this._decodeAs
-        const decoder = ShiftBufferDecoders.props[decodeAs]
+        const decoder = ShiftDisplayDecoders.props[decodeAs]
         const toPad = decoder.decodeWidth - incoming.length
         const padding = repeatString("_ ", toPad)
         const undecodedStr = padding + displayValuesFromArray(incoming, true)[0]
@@ -246,12 +246,12 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
     }
 
     private redecodeAll() {
-        const decoder = ShiftBufferDecoders.props[this._decodeAs]
+        const decoder = ShiftDisplayDecoders.props[this._decodeAs]
         const allBits = allBitsOf(this.value)
         const maxItems = this._maxItems ?? decoder.maxDisplayWidth
-        let value: OutputShiftBufferState = { incoming: [], decoded: [] }
+        let value: ShiftDisplayState = { incoming: [], decoded: [] }
         for (const newBit of allBits.reverse()) {
-            value = OutputShiftBuffer.valueByAddingNewBit(newBit, value, decoder, maxItems)
+            value = ShiftDisplay.valueByAddingNewBit(newBit, value, decoder, maxItems)
         }
         this.doSetValue(value)
     }
@@ -268,7 +268,7 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
 
-        const s = S.Components.OutputShiftBuffer.contextMenu
+        const s = S.Components.ShiftDisplay.contextMenu
         const makeItemDecodeAs = (decoder: ShiftBufferDecoder, desc: string) => {
             const isCurrent = this._decodeAs === decoder
             const icon = isCurrent ? "check" : "none"
@@ -312,9 +312,9 @@ export class OutputShiftBuffer extends ComponentBase<OutputShiftBufferRepr, Outp
         ]
     }
 }
-OutputShiftBufferDef.impl = OutputShiftBuffer
+ShiftDisplayDef.impl = ShiftDisplay
 
-function allBitsOf({ incoming, decoded }: OutputShiftBufferState): LogicValue[] {
+function allBitsOf({ incoming, decoded }: ShiftDisplayState): LogicValue[] {
     const allBits = [...incoming]
     for (const [__stringRep, bits] of decoded) {
         allBits.push(...bits)

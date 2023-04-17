@@ -3,7 +3,7 @@ import * as t from "io-ts"
 import { COLOR_COMPONENT_BORDER, COLOR_EMPTY, colorForBoolean, displayValuesFromArray, formatWithRadix, strokeSingleLine } from "../drawutils"
 import { div, mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillWith, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
+import { ArrayFillWith, InteractionResult, LogicValue, Unknown, allBooleans, binaryStringRepr, hexStringRepr, isAllZeros, isArray, isUnknown, typeOrUndefined, wordFromBinaryOrHexRepr } from "../utils"
 import { ParametrizedComponentBase, Repr, ResolvedParams, defineAbstractParametrizedComponent, defineParametrizedComponent, groupHorizontal, groupVertical, param } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation } from "./Drawable"
 import { RAM, RAMDef } from "./RAM"
@@ -114,9 +114,9 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
 
     public override toJSONBase() {
         return {
+            ...super.toJSONBase(),
             bits: this.numDataBits === RAMDef.aults.bits ? undefined : this.numDataBits,
             lines: this.numWords === RAMDef.aults.lines ? undefined : this.numWords,
-            ...super.toJSONBase(),
             showContent: (!this.canShowContent()) ? undefined : (this._showContent !== RAMDef.aults.showContent) ? this._showContent : undefined,
             displayRadix: this._displayRadix !== RAMDef.aults.displayRadix ? this._displayRadix : undefined,
             content: this.contentRepr(" ", true),
@@ -242,7 +242,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
         const s = S.Components.RAM.contextMenu
         const sg = S.Components.Generic.contextMenu
-        const ss = S.Components.OutputDisplay.contextMenu
+        const ss = S.Components.Display.contextMenu
 
         const makeItemShowRadix = (radix: number | undefined, desc: string) => {
             const icon = this._displayRadix === radix ? "check" : "none"
@@ -282,9 +282,10 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
                 const newComp = otherDef.makeFromJSON(this.parent, repr)
                 if (newComp === undefined) {
                     console.warn("Could not swap ROM/RAM from repr:", repr)
-                    return
+                    return InteractionResult.NoChange
                 }
                 this.replaceWithComponent(newComp)
+                return InteractionResult.SimpleChange
             })]
 
         const additionalDisplayItems: [MenuItemPlacement, MenuItem] =
@@ -385,8 +386,9 @@ function drawMemoryCells(g: GraphicsRendering, mem: LogicValue[][], numDataBits:
 
 
 export const ROMDef =
-    defineParametrizedComponent("ic", "rom", true, true, {
+    defineParametrizedComponent("rom", true, true, {
         variantName: ({ bits, lines }) => `rom-${lines}x${bits}`,
+        idPrefix: "rom",
         ...ROMRAMDef,
     })
 
@@ -399,10 +401,7 @@ export class ROM extends ROMRAMBase<ROMRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "rom" as const,
-            ...super.toJSONBase(),
-        }
+        return super.toJSONBase()
     }
 
     protected get moduleName() {

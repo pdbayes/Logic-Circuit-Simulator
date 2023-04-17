@@ -6,7 +6,8 @@ import { ComponentBase, Repr, defineComponent } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems } from "./Drawable"
 
 export const AdderDef =
-    defineComponent("ic", "adder", {
+    defineComponent("adder", {
+        idPrefix: "adder",
         button: { imgWidth: 50 },
         valueDefaults: {},
         size: { gridWidth: 7, gridHeight: 5 },
@@ -36,10 +37,7 @@ export class Adder extends ComponentBase<AdderRepr> {
     }
 
     public toJSON() {
-        return {
-            type: "adder" as const,
-            ...this.toJSONBase(),
-        }
+        return this.toJSONBase()
     }
 
     public override makeTooltip() {
