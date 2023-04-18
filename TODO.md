@@ -13,6 +13,7 @@
 
 ## Medium priority
 
+ * Allow editing custom component
  * High-Z bus logic
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage

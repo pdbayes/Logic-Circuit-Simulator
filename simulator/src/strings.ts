@@ -255,7 +255,8 @@ const Strings_fr = {
                 ChangeNameEmpty: "Le nom ne peut pas être vide.",
                 ChangeCircuit: "Modifier le circuit…",
                 Delete: "Supprimer ce composant",
-                CannotDeleteInUse: "Impossible de supprimer un composant utilisé dans le circuit.",
+                CannotDeleteInUse: "Impossible de supprimer ce composant car il est utilisé dans le circuit.",
+                CannotDeleteInUseBy: template("Impossible de supprimer ce composant car il est utilisé dans la définition d’un autre composant (${caption})."),
                 ConfirmDelete: "Voulez-vous vraiment supprimer ce composant personnalisé?",
             },
             messages: {
@@ -459,7 +460,7 @@ const Strings_fr = {
                 ShowProb: "Montrer la probabilité",
             },
         },
-        LabelRect: {
+        Rectangle: {
             contextMenu: {
                 Size: "Taille",
                 SizePrompt: "Entrez la taille de ce rectangle:",
@@ -673,6 +674,7 @@ const Strings_fr = {
             },
             contextMenu: {
                 ParamHasIncDec: "Avec incrémentaiton",
+                Saturating: "Avec saturation",
             },
         },
         ShiftRegister: {
@@ -966,7 +968,8 @@ const Strings_en: Strings = {
                 ChangeNameEmpty: "The name cannot be empty.",
                 ChangeCircuit: "Change Circuit…",
                 Delete: "Delete Custom Component",
-                CannotDeleteInUse: "Cannot delete a custom component that is still in use.",
+                CannotDeleteInUse: "Cannot delete this custom component because it is in use in the circuit.",
+                CannotDeleteInUseBy: template("Cannot delete this custom component because it is used to define another component (${caption})."),
                 ConfirmDelete: "Are you sure you want to delete this custom component?",
             },
             messages: {
@@ -1169,7 +1172,7 @@ const Strings_en: Strings = {
                 ShowProb: "Show Probability",
             },
         },
-        LabelRect: {
+        Rectangle: {
             contextMenu: {
                 Size: "Size",
                 SizePrompt: "Enter the size of this rectangle:",
@@ -1384,6 +1387,7 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 ParamHasIncDec: "With Increment/Decrement",
+                Saturating: "Saturating",
             },
         },
         ShiftRegister: {

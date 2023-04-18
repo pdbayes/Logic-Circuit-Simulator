@@ -123,7 +123,7 @@ export class CustomComponentDef {
 
     // ComponentMaker interface
     public isValid() { return true }
-    public get type() { return `${CustomComponentPrefix}${this.customId}` }
+    public get type() { return CustomComponentPrefix + this.customId }
 
     public uses(type: string): boolean {
         const compReprs = this.circuit.components

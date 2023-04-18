@@ -321,9 +321,15 @@ export class ComponentFactory {
             }, undefined),
             MenuData.sep(),
             MenuData.item("trash", s.Delete, () => {
-                if (this.isInUse(id)) {
+                if (this.editor.components.contains(id)) {
                     window.alert(s.CannotDeleteInUse)
                     return
+                }
+                for (const compDef of this._customComponents.values()) {
+                    if (compDef.uses(def.type)) {
+                        window.alert(s.CannotDeleteInUseBy.expand({ caption: compDef.caption }))
+                        return
+                    }
                 }
                 if (window.confirm(s.ConfirmDelete)) {
                     this._customComponents.delete(customId)
@@ -331,11 +337,6 @@ export class ComponentFactory {
                 }
             }, undefined, true),
         ]
-    }
-
-    private isInUse(type: string) {
-        return this.editor.components.contains(type) ||
-            [...this._customComponents.values()].some(def => def.uses(type))
     }
 
     public tryMakeNewCustomComponent(editor: LogicEditor): undefined | string {

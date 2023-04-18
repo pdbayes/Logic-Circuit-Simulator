@@ -25,14 +25,14 @@ export const RegisterBaseDef =
             trigger: EdgeTrigger.rising,
         },
         params: {
-            bits: param(4, [4, 8, 16]),
+            bits: param(4, [2, 4, 8, 16]),
         },
         validateParams: ({ bits }) => ({
             numBits: bits,
         }),
         size: ({ numBits }) => ({
             gridWidth: 7,
-            gridHeight: Math.max(16, 5 + numBits),
+            gridHeight: numBits === 2 ? 11 : Math.max(15, 5 + numBits),
         }),
         makeNodes: ({ numBits, gridHeight }) => {
             const bottomOffset = (gridHeight + 1) / 2
@@ -197,6 +197,11 @@ export const RegisterDef =
         repr: {
             ...RegisterBaseDef.repr,
             inc: typeOrUndefined(t.boolean),
+            saturating: typeOrUndefined(t.boolean),
+        },
+        valueDefaults: {
+            ...RegisterBaseDef.valueDefaults,
+            saturating: false,
         },
         params: {
             bits: RegisterBaseDef.params.bits,
@@ -231,16 +236,20 @@ export type RegisterParams = ResolvedParams<typeof RegisterDef>
 export class Register extends RegisterBase<RegisterRepr> {
 
     public readonly hasIncDec: boolean
+    private _saturating: boolean
 
     public constructor(parent: DrawableParent, params: RegisterParams, saved?: RegisterRepr) {
         super(parent, RegisterDef, params, saved)
         this.hasIncDec = params.hasIncDec
+
+        this._saturating = this.hasIncDec && (saved?.saturating ?? RegisterDef.aults.saturating)
     }
 
     public toJSON() {
         return {
             ...this.toJSONBase(),
             inc: this.hasIncDec === RegisterDef.aults.inc ? undefined : this.hasIncDec,
+            saturating: this._saturating === RegisterDef.aults.saturating ? undefined : this._saturating,
         }
     }
 
@@ -275,12 +284,18 @@ export class Register extends RegisterBase<RegisterRepr> {
                 // increment
                 newVal = val + 1
                 if (newVal >= 2 ** this.numBits) {
+                    if (this._saturating) {
+                        return ArrayFillWith(true, this.numBits)
+                    }
                     return ArrayFillWith(false, this.numBits)
                 }
             } else {
                 // decrement
                 newVal = val - 1
                 if (newVal < 0) {
+                    if (this._saturating) {
+                        return ArrayFillWith(false, this.numBits)
+                    }
                     return ArrayFillWith(true, this.numBits)
                 }
             }
@@ -301,10 +316,25 @@ export class Register extends RegisterBase<RegisterRepr> {
         g.fillText(`${this.numBits} bits`, this.posX, this.posY + 10)
     }
 
+    private doSetSaturating(saturating: boolean) {
+        this._saturating = saturating
+        this.setNeedsRedraw("saturating changed")
+    }
+
     protected override makeRegisterSpecificContextMenuItems(): MenuItems {
         const s = S.Components.Register.contextMenu
+
+        const toggleSaturatingItem: MenuItems = !this.hasIncDec ? [] : [
+            ["mid", MenuData.item(
+                this._saturating ? "check" : "none",
+                s.Saturating,
+                () => this.doSetSaturating(!this._saturating)
+            )],
+        ]
+
         return [
             this.makeChangeBooleanParamsContextMenuItem(s.ParamHasIncDec, this.hasIncDec, "inc"),
+            ...toggleSaturatingItem,
         ]
     }
 

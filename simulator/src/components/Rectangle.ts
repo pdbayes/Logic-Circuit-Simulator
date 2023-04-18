@@ -250,7 +250,7 @@ export class Rectangle extends ComponentBase<RectangleRepr> {
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
-        const s = S.Components.LabelRect.contextMenu
+        const s = S.Components.Rectangle.contextMenu
         const currentSizeStr = this.makeCurrentSizeString()
         const setSizeItem = MenuData.item("dimensions", s.Size + ` (${currentSizeStr})…`, () => this.runSetSizeDialog(currentSizeStr))
 
@@ -347,7 +347,7 @@ export class Rectangle extends ComponentBase<RectangleRepr> {
     }
 
     private runSetSizeDialog(currentSizeStr: string) {
-        const promptReturnValue = window.prompt(S.Components.LabelRect.contextMenu.SizePrompt, currentSizeStr)
+        const promptReturnValue = window.prompt(S.Components.Rectangle.contextMenu.SizePrompt, currentSizeStr)
         if (promptReturnValue !== null) {
             let match
             if ((match = /^(?<w>\d*)(?:(?:\s+|(?: *[×x,;] *))(?<h>\d*))?$/.exec(promptReturnValue)) !== null) {
@@ -406,7 +406,7 @@ export class Rectangle extends ComponentBase<RectangleRepr> {
     }
 
     private runSetCaptionDialog() {
-        const promptReturnValue = window.prompt(S.Components.LabelRect.contextMenu.SetTitlePrompt, this._caption)
+        const promptReturnValue = window.prompt(S.Components.Rectangle.contextMenu.SetTitlePrompt, this._caption)
         if (promptReturnValue !== null) {
             // OK button pressed
             const newCaption = promptReturnValue.length === 0 ? undefined : promptReturnValue
