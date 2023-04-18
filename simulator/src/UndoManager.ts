@@ -126,7 +126,7 @@ export class UndoManager {
     }
 
     private loadSnapshot(snapshot: Snapshot) {
-        Serialization.loadCircuit(this.editor, snapshot.circuitStr, { isUndoRedoAction: true })
+        Serialization.loadCircuitOrLibrary(this.editor, snapshot.circuitStr, { isUndoRedoAction: true })
     }
 
     private fireStateChangedIfNeeded() {

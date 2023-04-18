@@ -3,6 +3,7 @@ import { ComponentList } from "../ComponentList"
 import { LogicEditor } from "../LogicEditor"
 import { NodeManager } from "../NodeManager"
 import { RecalcManager } from "../RedrawRecalcManager"
+import { SVGRenderingContext } from "../SVGRenderingContext"
 import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, typeOrUndefined, validateJson } from "../utils"
@@ -25,6 +26,8 @@ type CustomComponentNodeSpec = {
 
 // How custom components are identied in their type
 export const CustomComponentPrefix = "custom-"
+export const CustomComponentImageWidth = 50
+export const CustomComponentImageHeight = 34
 
 // How custom component definitions are stored in JSON
 export const CustomComponentDefRepr = t.type({
@@ -107,8 +110,7 @@ export class CustomComponentDef {
 
     // ComponentMaker interface
     public isValid() { return true }
-    public get category() { return "ic" as const }
-    public get type() { return `${CustomComponentDef}${this.customId}` }
+    public get type() { return `${CustomComponentPrefix}${this.customId}` }
 
     public make(parent: DrawableParent): Component {
         const comp = new CustomComponent(parent, this)
@@ -124,6 +126,63 @@ export class CustomComponentDef {
         const comp = new CustomComponent(parent, this, validated)
         parent.components.add(comp)
         return comp
+    }
+
+    public makeButtonSVG() {
+        const width = CustomComponentImageWidth
+        const height = CustomComponentImageHeight
+        const g = new SVGRenderingContext(width, height)
+
+        // frame
+        g.rect(10, 2, 30, 30)
+        g.strokeStyle = "currentColor"
+        g.lineWidth = 2
+        g.stroke()
+
+        // in/out
+        const maxHeight = 24
+        const stdSep = 6
+        const drawInsOuts = (n: number, left: number, right: number) => {
+            const sep = ((n - 1) * stdSep <= maxHeight) ? stdSep : maxHeight / (n - 1)
+            const top = height / 2 - (n - 1) * sep / 2
+            for (let i = 0; i < n; i++) {
+                const y = top + i * sep
+                g.moveTo(left, y)
+                g.lineTo(right, y)
+            }
+        }
+        g.lineWidth = 1
+        const maxDrawnIO = 10
+        drawInsOuts(Math.min(maxDrawnIO, this.numInputs), 2, 10)
+        drawInsOuts(Math.min(maxDrawnIO, this.numOutputs), 40, 48)
+        g.stroke()
+
+        // caption
+        let drawCaption = this.caption
+        let shortened = false
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            let fontSize = 15
+            g.font = `${fontSize}px sans-serif`
+            const textWidth = g.measureText(drawCaption).width
+            const scale = (width - 24) / textWidth
+            if (scale < 1) {
+                fontSize = Math.floor(scale * fontSize)
+                g.font = `${fontSize}px sans-serif`
+            }
+            if (fontSize >= 8) {
+                g.textAlign = "center"
+                g.textBaseline = "middle"
+                g.fillText(drawCaption + (shortened ? "." : ""), width / 2, height / 2)
+                break
+            }
+            // else, try again with a shorter caption
+            drawCaption = drawCaption.slice(0, -1)
+            shortened = true
+        }
+
+        return g.getSvg()
     }
 
     // ComponentDef creation

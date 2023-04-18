@@ -18,6 +18,7 @@ import * as LZString from "lz-string"
 import * as pngMeta from 'png-metadata-writer'
 import { ComponentFactory } from "./ComponentFactory"
 import { ComponentList, DrawZIndex } from "./ComponentList"
+import { ComponentMenu } from "./ComponentMenu"
 import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
@@ -35,7 +36,6 @@ import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_C
 import { gallery } from './gallery'
 import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
 import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
-import { makeComponentMenuInto } from "./menuutils"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
 import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, setEnabled, setVisible, showModal } from "./utils"
 
@@ -146,6 +146,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     private _options: EditorOptions = { ...DEFAULT_EDITOR_OPTIONS }
     private _hideResetButton = false
 
+    private _menu: ComponentMenu | undefined = undefined
     private _currentMouseAction: MouseAction = "edit"
     private _toolCursor: string | null = null
     private _highlightedItems: HighlightedItems | undefined = undefined
@@ -435,7 +436,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                         if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
                             dataItem.getAsString(content => {
                                 e.dataTransfer!.dropEffect = "copy"
-                                this.loadCircuit(content)
+                                this.loadCircuitOrLibrary(content)
                             })
                             break
                         }
@@ -560,7 +561,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
             // make load function available globally
             window.Logic.singleton = this
-            window.load = this.loadCircuit.bind(this)
+            window.load = this.loadCircuitOrLibrary.bind(this)
             window.save = this.save.bind(this)
             window.highlight = this.highlight.bind(this)
 
@@ -691,7 +692,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             setCaption("shareDialogClose", S.Dialogs.Generic.Close)
         }
 
-        makeComponentMenuInto(this.html.leftToolbar, this._options.showOnly)
+        this._menu = new ComponentMenu(this.html.leftToolbar, this._options.showOnly)
 
         // TODO move this to the Def of LabelRect to be cleaner
         const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-type=rect]")
@@ -716,7 +717,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }))
         }
 
-        this.cursorMovementMgr.registerButtonListenersOn(this.root.querySelectorAll(".sim-component-button"))
+        this.cursorMovementMgr.registerButtonListenersOn(this._menu.allFixedButtons())
 
         const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
         for (const but of modifButtons) {
@@ -1171,15 +1172,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public updateCustomComponentButtons() {
-        // TODO
-        const customDefs = this.factory.customDefs()
-        if (customDefs === undefined) {
-            console.log("no custom components")
-        } else {
-            console.log("Custom components:")
-            for (const customDef of customDefs) {
-                console.log("  " + customDef.id)
-            }
+        if (this._menu !== undefined) {
+            this._menu.updateCustomComponentButtons(this.factory.customDefs())
+            this.cursorMovementMgr.registerButtonListenersOn(this._menu.allCustomButtons())
         }
     }
 
@@ -1190,11 +1185,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             reader.onload = () => {
                 const content = reader.result?.toString()
                 if (content !== undefined) {
-                    if (file.name.endsWith("lib.json")) {
-                        Serialization.loadLibrary(this, content)
-                    } else {
-                        this.loadCircuit(content)
-                    }
+                    this.loadCircuitOrLibrary(content)
                 }
             }
             reader.readAsText(file, "utf-8")
@@ -1231,7 +1222,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                     const json = metadata?.textContent
                     temp.remove()
                     if (json !== undefined && json !== null) {
-                        this.loadCircuit(json)
+                        this.loadCircuitOrLibrary(json)
                     }
                 }
             }
@@ -1267,7 +1258,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (this._initialData._type === "json") {
             // already decompressed
             try {
-                error = Serialization.loadCircuit(this, this._initialData.json)
+                error = Serialization.loadCircuitOrLibrary(this, this._initialData.json)
             } catch (e) {
                 error = String(e) + " (JSON)"
             }
@@ -1293,7 +1284,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
             if (error === undefined && isString(decodedData)) {
                 // remember the decompressed/decoded value
-                error = Serialization.loadCircuit(this, decodedData)
+                error = Serialization.loadCircuitOrLibrary(this, decodedData)
                 if (error === undefined) {
                     this._initialData = { _type: "json", json: decodedData }
                 }
@@ -1306,10 +1297,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         }
     }
 
-    public loadCircuit(jsonStringOrObject: string | Record<string, unknown>) {
+    public loadCircuitOrLibrary(jsonStringOrObject: string | Record<string, unknown>) {
         this.wrapHandler(
             (jsonStringOrObject: string | Record<string, unknown>) =>
-                Serialization.loadCircuit(this, jsonStringOrObject)
+                Serialization.loadCircuitOrLibrary(this, jsonStringOrObject)
         )(jsonStringOrObject)
     }
 

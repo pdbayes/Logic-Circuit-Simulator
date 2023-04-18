@@ -9,6 +9,7 @@ import { ComparatorDef } from "./components/Comparator"
 import { ParamDef, ParametrizedComponentDef, ParamsFromDefs } from "./components/Component"
 import { ControlledInverterDef } from "./components/ControlledInverter"
 import { CounterDef } from "./components/Counter"
+import { CustomComponentDef, CustomComponentImageHeight, CustomComponentImageWidth } from "./components/CustomComponent"
 import { DecoderDef } from "./components/Decoder"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
@@ -41,7 +42,7 @@ import { ShiftRegisterDef } from "./components/ShiftRegister"
 import { TristateBufferDef } from "./components/TristateBuffer"
 import { TristateBufferArrayDef } from "./components/TristateBufferArray"
 import { a, button, cls, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
-import { ImageName, makeImage } from "./images"
+import { ImageName, makeImage, makeSvgHolder } from "./images"
 import { S, Strings } from "./strings"
 import { deepObjectEquals, isArray, isString } from "./utils"
 
@@ -181,92 +182,137 @@ const componentsMenu: Array<Section> = [{
 }]
 
 
-export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] | undefined) {
+type HtmlSection = {
+    separator?: HTMLElement
+    header: HTMLDivElement
+    buttons: HTMLButtonElement[]
+    showMoreLink?: HTMLAnchorElement
+}
 
-    let showOnly: string[] | undefined = undefined
-    if (_showOnly !== undefined) {
-        showOnly = [..._showOnly]
+
+export class ComponentMenu {
+
+    private readonly _htmlSections: HtmlSection[]
+    private _customComponentSection?: HtmlSection
+
+    public constructor(
+        public readonly parent: HTMLElement,
+        public readonly showOnly: readonly string[] | undefined,
+    ) {
+        this._htmlSections = []
+
+        const showOnlyBuf = showOnly === undefined ? undefined : [...showOnly]
+        let lastSectionNonEmpty = false
+
+        for (const section of componentsMenu) {
+            const { allButtons, buttonsShowWithMore, buttonsShowWithURLParam } =
+                makeButtons(section, showOnlyBuf)
+            const htmlSection = this.makeSection(section.nameKey, allButtons, buttonsShowWithMore, buttonsShowWithURLParam, showOnlyBuf, lastSectionNonEmpty)
+            if (htmlSection !== undefined) {
+                this._htmlSections.push(htmlSection)
+                lastSectionNonEmpty = true
+            }
+        }
+
+        if (showOnlyBuf !== undefined && showOnlyBuf.length > 0) {
+            console.log(`ERROR Supposed to show unknown elems: ${showOnlyBuf.join("; ")}`)
+        }
     }
 
-    // console.log("makeComponentMenuInto; showOnly", showOnly)
+    public allFixedButtons() {
+        return this._htmlSections.flatMap(s => s.buttons)
+    }
 
-    let lastSectionNonEmpty = false
+    public allCustomButtons() {
+        return this._customComponentSection === undefined ? [] : this._customComponentSection.buttons
+    }
 
-    for (const section of componentsMenu) {
+    public updateCustomComponentButtons(defs: readonly CustomComponentDef[] | undefined) {
+        const oldSec = this._customComponentSection
+        if (oldSec !== undefined) {
+            // clear old buttons
+            if (oldSec.header !== undefined) {
+                oldSec.header.remove()
+            }
+            if (oldSec.separator !== undefined) {
+                oldSec.separator.remove()
+            }
+            for (const button of oldSec.buttons) {
+                button.remove()
+            }
+            if (oldSec.showMoreLink !== undefined) {
+                oldSec.showMoreLink.remove()
+            }
+        }
+        this._customComponentSection = defs === undefined ? undefined : this.makeCustomComponentSection(defs)
+    }
 
-        // separator from previous section
+    private makeCustomComponentSection(defs: readonly CustomComponentDef[]): HtmlSection | undefined {
+        const showOnlyBuf = this.showOnly === undefined ? undefined : [...this.showOnly]
+
+        const allButtons: HTMLButtonElement[] = []
+        const buttonsShowWithMore: HTMLButtonElement[] = []
+        for (const def of defs) {
+            const type = def.type
+            const icon = makeSvgHolder("svgimg", def.makeButtonSVG(),
+                CustomComponentImageWidth, CustomComponentImageHeight)
+            const caption = def.caption
+            const [compButton, hiddenNow] = makeButton(
+                type, false, [type], showOnlyBuf,
+                icon, caption, caption + S.Components.Custom.MenuButtonSuffix, undefined, true
+            )
+
+            if (hiddenNow) {
+                buttonsShowWithMore.push(compButton)
+            }
+            allButtons.push(compButton)
+        }
+
+        const makeSeparator = this._htmlSections.length > 0
+        return this.makeSection("Custom", allButtons, buttonsShowWithMore, [], showOnlyBuf, makeSeparator)
+    }
+
+    private makeSection(nameKey: SectionNameKey, allButtons: HTMLButtonElement[], buttonsShowWithMore: HTMLButtonElement[], buttonsShowWithURLParam: HTMLButtonElement[], showOnlyBuf: string[] | undefined, makeSeparator: boolean): HtmlSection | undefined {
+        // component buttons
+
+        const numShowWithMoreButton = buttonsShowWithMore.length
+        const numAdded = allButtons.length
+        const numVisible = numAdded - numShowWithMoreButton - buttonsShowWithURLParam.length
+
+        if (numVisible === 0) {
+            return undefined
+        }
+
+        // separator
         let separator: HTMLElement | undefined = undefined
-        const lastSectionNonEmptyPrev: boolean = lastSectionNonEmpty
-
-        if (lastSectionNonEmpty) {
+        if (makeSeparator) {
             separator =
                 div(style("height: 20px"),
                     raw("&nbsp;")
                 ).render()
-
-            target.appendChild(separator)
+            this.parent.appendChild(separator)
         }
 
         // section header
-        const header =
+        const header: HTMLDivElement =
             div(cls("leftToolbarHeader"),
-                S.ComponentBar.SectionNames[section.nameKey]
+                S.ComponentBar.SectionNames[nameKey]
             ).render()
-        target.appendChild(header)
+        this.parent.appendChild(header)
 
-        // section content
-        let numAdded = 0
-        const showWithMoreButton: HTMLButtonElement[] = []
-        const showOnlyWithURLParam: HTMLButtonElement[] = []
-        for (const item of section.items) {
-            const normallyHidden = item.visible !== undefined && item.visible !== "always"
-            const hiddenNow = showOnly !== undefined ? !shouldShow(item, showOnly) : normallyHidden
-
-            const buttonStyle = !hiddenNow ? "" : "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
-            const visual = item.visual
-            const [stringsKey, img] = isString(visual) ? [visual, visual] : visual
-            const compStrings = S.ComponentBar.Components.props[stringsKey]
-            const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
-            const caption = captionStr === undefined ? emptyMod : span(cls("gate-label"), captionStr)
-            const classIds = componentIdsFor(item)
-            const buttonTitle = title(titleStr === undefined ? "" : (titleStr + " \n") + `(“${classIds[0]}”)`)
-            const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
-            const params = item.params?.params
-            const compButton =
-                button(type("button"), style(buttonStyle), cls(`list-group-item list-group-item-action sim-component-button${extraClasses}`),
-                    makeImage(img, item.width),
-                    caption, buttonTitle
-                ).render()
-
-            const compDataset = compButton.dataset as ButtonDataset
-            if (item.type !== undefined) {
-                compDataset.type = item.type
-            }
-            compDataset.componentId = classIds[0]
-            if (params !== undefined) {
-                compDataset.params = JSON5.stringify(params)
-            }
-
-            if (hiddenNow) {
-                const targetArray = item.visible === "withButton" ? showWithMoreButton : showOnlyWithURLParam
-                targetArray.push(compButton)
-            }
-
-            target.appendChild(compButton)
-            numAdded++
+        for (const compButton of allButtons) {
+            this.parent.appendChild(compButton)
         }
 
-        const numShowWithMoreButton = showWithMoreButton.length
-        const numVisible = numAdded - numShowWithMoreButton - showOnlyWithURLParam.length
-
         // link to show more if needed
-        if (numShowWithMoreButton !== 0 && showOnly === undefined) {
+        let showMoreLink: HTMLAnchorElement | undefined = undefined
+        if (numShowWithMoreButton !== 0 && showOnlyBuf === undefined) {
             let moreShown = false
             const names = [S.ComponentBar.Labels.More + " ↓", S.ComponentBar.Labels.Less + " ↑"]
-            const linkShowMore = a(cls("leftToolbarMore"), names[0]).render()
-            linkShowMore.addEventListener("click", () => {
+            showMoreLink = a(cls("leftToolbarMore"), names[0]).render()
+            showMoreLink.addEventListener("click", () => {
                 moreShown = !moreShown
-                for (const button of showWithMoreButton) {
+                for (const button of buttonsShowWithMore) {
                     if (moreShown) {
                         button.style.removeProperty("padding")
                         button.style.removeProperty("border")
@@ -281,34 +327,69 @@ export function makeComponentMenuInto(target: HTMLElement, _showOnly: string[] |
                         button.style.overflow = "hidden"
                     }
                 }
-                linkShowMore.innerHTML = names[Number(moreShown)]
+                showMoreLink!.innerHTML = names[Number(moreShown)]
             })
-            target.appendChild(linkShowMore)
+            this.parent.appendChild(showMoreLink)
         }
 
-        if (numVisible === 0) {
-            if (separator !== undefined) {
-                separator.remove()
-            }
-            header.remove()
-
-            // as we removed our sep, keep nonempty value for next section from previous one
-            lastSectionNonEmpty = lastSectionNonEmptyPrev
-        } else {
-            // if we're visible, we're nonempty
-            lastSectionNonEmpty = true
-        }
-
-    }
-
-    if (showOnly !== undefined && showOnly.length > 0) {
-        console.log(`ERROR Supposed to show unknown elems: ${showOnly.join("; ")}`)
+        return { separator, header, buttons: allButtons, showMoreLink }
     }
 }
 
-function shouldShow(item: LibraryItem, showOnly: string[]) {
-    const componentIds = componentIdsFor(item)
 
+// Helper functions
+
+function makeButtons(section: Section, showOnlyBuf: string[] | undefined) {
+    const allButtons: HTMLButtonElement[] = []
+    const buttonsShowWithMore: HTMLButtonElement[] = []
+    const buttonsShowWithURLParam: HTMLButtonElement[] = []
+    for (const item of section.items) {
+        const normallyHidden = item.visible !== undefined && item.visible !== "always"
+        const [stringsKey, img] = isString(item.visual) ? [item.visual, item.visual] : item.visual
+        const compStrings = S.ComponentBar.Components.props[stringsKey]
+        const [titleStr, captionStr] = isString(compStrings) ? [compStrings, undefined] : compStrings
+        const [compButton, hiddenNow] = makeButton(
+            item.type, normallyHidden, componentIdsFor(item), showOnlyBuf,
+            makeImage(img, item.width), captionStr, titleStr, item.params?.params, false
+        )
+
+        if (hiddenNow) {
+            const targetArray = item.visible === "withButton" ? buttonsShowWithMore : buttonsShowWithURLParam
+            targetArray.push(compButton)
+        }
+        allButtons.push(compButton)
+    }
+    return { allButtons, buttonsShowWithMore, buttonsShowWithURLParam }
+}
+
+
+function makeButton(typeStr: string, normallyHidden: boolean, componentIds: string[], showOnlyBuf: string[] | undefined, buttonIcon: Element, captionStr: string | undefined, titleStr: string | undefined, params: Record<string, unknown> | undefined, isCustom: boolean): [HTMLButtonElement, boolean] {
+
+    const hiddenNow = showOnlyBuf !== undefined ? !shouldShow(componentIds, showOnlyBuf) : normallyHidden
+
+    const buttonStyle = !hiddenNow ? "" : "max-height: 0; transition: all 0.25s ease-out; overflow: hidden; padding: 0; border: 0; margin-bottom: 0;"
+    const extraClasses = hiddenNow ? " sim-component-button-extra" : ""
+    const customClasses = isCustom ? " sim-component-button-custom" : ""
+    const caption = captionStr === undefined ? emptyMod : span(cls("gate-label"), captionStr)
+    const buttonTitle = title(titleStr === undefined ? "" : (titleStr + " \n") + `(“${componentIds[0]}”)`)
+    const compButton = button(
+        type("button"), style(buttonStyle),
+        cls(`list-group-item list-group-item-action sim-component-button${extraClasses}${customClasses}`),
+        buttonIcon, caption, buttonTitle
+    ).render()
+
+    const compDataset = compButton.dataset as ButtonDataset
+    compDataset.type = typeStr
+    compDataset.componentId = componentIds[0]
+    if (params !== undefined) {
+        compDataset.params = JSON5.stringify(params)
+    }
+
+    return [compButton, hiddenNow]
+}
+
+
+function shouldShow(componentIds: string[], showOnly: string[]) {
     let visible = false
     for (const componentId of componentIds) {
         if (showOnly.includes(componentId)) {
@@ -323,6 +404,7 @@ function shouldShow(item: LibraryItem, showOnly: string[]) {
 
     return visible
 }
+
 
 function componentIdsFor(item: LibraryItem): string[] {
     const ids: string[] = []
@@ -362,4 +444,3 @@ function componentIdsFor(item: LibraryItem): string[] {
 
     return ids
 }
-

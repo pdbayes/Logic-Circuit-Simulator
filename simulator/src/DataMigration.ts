@@ -5,7 +5,7 @@ export const CurrentFormatVersion = 6
 
 export function migrateData(data: Record<string, unknown>) {
 
-    const LogBeforeAfter = true
+    const LogBeforeAfter = false
 
     const initialRepr = !LogBeforeAfter ? undefined : isString(data) ? data : stringifySmart(data, { maxLength: 140 })
 

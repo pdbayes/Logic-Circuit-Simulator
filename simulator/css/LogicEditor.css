@@ -121,6 +121,7 @@ logic-editor:not(:defined) {
   font-size: 52%;
   font-weight: bold;
   text-align: center;
+  word-break: break-all;
 }
 
 .truth-table {

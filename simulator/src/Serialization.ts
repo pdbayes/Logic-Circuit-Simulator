@@ -16,7 +16,9 @@ export type Circuit = CommonFields & {
     userdata?: string | Record<string, unknown> | undefined
 } & ComponentAndWires
 
-export type Library = CommonFields
+export type Library = CommonFields & {
+    type: "lib",
+}
 
 type CommonFields = {
     v: typeof CurrentFormatVersion,
@@ -29,26 +31,15 @@ export type ComponentAndWires = {
     wires?: WireRepr[],
 }
 
+type LoadOptions = {
+    isUndoRedoAction?: boolean,
+    immediateWirePropagation?: boolean,
+    skipMigration?: boolean
+}
+
 class _Serialization {
 
-    // Library
-
-    public saveLibraryToFile(editor: LogicEditor) {
-        const jsonStr = this.stringifyObject(this.buildLibraryObject(editor), false)
-        const blob = new Blob([jsonStr], { type: 'application/json' })
-        const filename = (editor.options.name ?? "circuit") + ".lib.json"
-        saveAs(blob, filename)
-    }
-
-    public loadLibrary(editor: LogicEditor, content: string) {
-        const parsed = JSONParseObject(content)
-        migrateData(parsed)
-        editor.factory.tryLoadCustomDefsFrom(parsed.defs)
-        editor.updateCustomComponentButtons()
-    }
-
-
-    // Circuit
+    // Top-level
 
     public saveCircuitToFile(editor: LogicEditor) {
         const jsonStr = this.stringifyObject(this.buildCircuitObject(editor), false)
@@ -57,35 +48,64 @@ class _Serialization {
         saveAs(blob, filename)
     }
 
-    public loadCircuit(
-        parent: DrawableParent,
-        content: string | Record<string, unknown>,
-        opts?: {
-            isUndoRedoAction?: boolean,
-            immediateWirePropagation?: boolean,
-            skipMigration?: boolean
-        }
-    ): undefined | string { // string is an error
+    public saveLibraryToFile(editor: LogicEditor) {
+        const jsonStr = this.stringifyObject(this.buildLibraryObject(editor), false)
+        const blob = new Blob([jsonStr], { type: 'application/json' })
+        const filename = (editor.options.name ?? "circuit") + "-lib.json"
+        saveAs(blob, filename)
+    }
 
-        const nodeMgr = parent.nodeMgr
-        const wireMgr = parent.wireMgr
-        const components = parent.components
-
+    public loadCircuitOrLibrary(editor: LogicEditor, content: string | Record<string, unknown>, opts?: LoadOptions) {
         let parsed: Record<string, unknown>
         if (!isString(content)) {
-            parsed = { ...content } // copy
+            parsed = content
         } else {
             try {
                 parsed = JSONParseObject(content)
-                if (!(opts?.skipMigration ?? false)) {
-                    migrateData(parsed)
-                }
-                delete parsed.v
             } catch (err) {
                 console.error(err)
                 return "can't load this JSON - error “" + err + `”, length = ${content.length}, JSON:\n` + content
             }
         }
+        const isLib = (parsed as Partial<Library>).type === "lib"
+        if (isLib) {
+            return this.doLoadLibrary(editor, parsed)
+        } else {
+            return this.loadCircuit(editor, parsed, opts)
+        }
+    }
+
+
+    // Private
+
+    private doLoadLibrary(editor: LogicEditor, parsed: Record<string, unknown>) {
+        migrateData(parsed)
+        const numLoaded = editor.factory.tryLoadCustomDefsFrom(parsed.defs)
+        editor.updateCustomComponentButtons()
+        console.log(`Loaded ${numLoaded} custom component definitions`)
+        return undefined // no error
+    }
+
+    public loadCircuit(
+        parent: DrawableParent,
+        parsed_: Record<string, unknown>,
+        opts?: LoadOptions,
+    ): undefined | string { // string is an error
+
+        const nodeMgr = parent.nodeMgr
+        const wireMgr = parent.wireMgr
+        const components = parent.components
+        const parsed = { ...parsed_ } // copy because we delete stuff from it
+
+        try {
+            if (!(opts?.skipMigration ?? false)) {
+                migrateData(parsed)
+            }
+        } catch (err) {
+            console.error(err)
+            return "can't migrate JSON - error “" + err + `”, JSON:\n` + stringifySmart(parsed, { maxLength: 120 })
+        }
+        delete parsed.v
 
         if (parent.isMainEditor()) {
             parent.factory.clearCustomDefs()
@@ -204,7 +224,7 @@ class _Serialization {
         const dataObject: Circuit = {
             v: CurrentFormatVersion,
             opts: editor.nonDefaultOptions(),
-            defs: editor.factory.customDefs(),
+            defs: editor.factory.customDefReprs(),
             userdata: editor.userdata,
         }
 
@@ -215,7 +235,8 @@ class _Serialization {
     public buildLibraryObject(editor: LogicEditor): Library {
         return {
             v: CurrentFormatVersion,
-            defs: editor.factory.customDefs(),
+            defs: editor.factory.customDefReprs(),
+            type: 'lib',
         }
     }
 
@@ -307,6 +328,7 @@ class _Serialization {
         const parts: string[] = []
 
         stringifyCompactReprTo(parts, dataObject, "v")
+        stringifyCompactReprTo(parts, dataObject, "type")
         stringifyCompactReprTo(parts, dataObject, "opts")
         stringifyCompactReprTo(parts, dataObject, "userdata")
 
@@ -324,7 +346,7 @@ class _Serialization {
                 subpart = subpart.slice(0, subpart.length - 1) + `, "circuit": ` + circuitRepr + "}"
                 defparts.push(subpart)
             }
-            parts.push(`"defs": [\n    ` + defparts.join(",\n    ") + "\n  ]")
+            parts.push(`defs: [\n    ` + defparts.join(",\n    ") + "\n  ]")
         }
         delete dataObject.defs
 
@@ -336,7 +358,7 @@ class _Serialization {
             console.error("ERROR: unprocessed fields in stringified JSON: " + unprocessedFields.join(", "))
         }
 
-        return "{ //JSON5\n  " + parts.join(",\n  ") + "\n}"
+        return "{ // JSON5\n  " + parts.join(",\n  ") + "\n}"
     }
 
 }
@@ -344,7 +366,7 @@ class _Serialization {
 export const Serialization = new _Serialization()
 
 
-function stringifyCompactReprTo<TRec extends Record<string, unknown>>(parts: string[], container: TRec, key: keyof TRec & string) {
+function stringifyCompactReprTo(parts: string[], container: Record<string, unknown>, key: string) {
     const value = container[key]
     if (value !== undefined) {
         parts.push(`${stringifyKey(key)}: ${stringifySmart(value, { maxLength: Infinity })}`)

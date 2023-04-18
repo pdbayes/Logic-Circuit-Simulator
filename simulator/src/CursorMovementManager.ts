@@ -608,7 +608,7 @@ export class CursorMovementManager {
         }
     }
 
-    public registerButtonListenersOn(componentButtons: NodeListOf<HTMLElement>) {
+    public registerButtonListenersOn(componentButtons: HTMLButtonElement[]) {
         const editor = this.editor
         for (const compButton of componentButtons) {
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {

@@ -116,6 +116,7 @@ import xnor4 from '../img/xnor4.svg'; // @ts-ignore
 import xor from '../img/xor.svg'; // @ts-ignore
 import xor3 from '../img/xor3.svg'; // @ts-ignore
 import xor4 from '../img/xor4.svg'; // @ts-ignore
+import { Modifier, applyModifierTo, raw } from './htmlgen';
 
 
 void 0 // dummy line to consume the last 'ts-ignore'
@@ -245,14 +246,14 @@ export function isImageName(name: string): name is ImageName {
 }
 
 export function makeImage(name: ImageName, width?: number, height?: number): HTMLElement {
-    return makeSvgHolder("svgimg", images, name, width, height)
+    return makeSvgHolder("svgimg", raw(inlineSvgFor(images, name)), width, height)
 }
 
 export function makeIcon(name: IconName, width?: number, height?: number): HTMLElement {
-    return makeSvgHolder("svgicon", icons, name, width, height)
+    return makeSvgHolder("svgicon", raw(inlineSvgFor(icons, name)), width, height)
 }
 
-function makeSvgHolder<TImages extends Record<string, string>>(className: string, svgData: TImages, name: string & keyof TImages, width?: number, height?: number): HTMLElement {
+export function makeSvgHolder(className: string, content: Modifier, width?: number, height?: number): HTMLElement {
     const elem = document.createElement('i')
     elem.classList.add(className)
     if (width !== undefined) {
@@ -261,8 +262,7 @@ function makeSvgHolder<TImages extends Record<string, string>>(className: string
     if (height !== undefined) {
         elem.style.height = `${height}px`
     }
-    elem.dataset.icon = name
-    elem.innerHTML = inlineSvgFor(svgData, name)
+    applyModifierTo(elem, content)
     return elem
 }
 

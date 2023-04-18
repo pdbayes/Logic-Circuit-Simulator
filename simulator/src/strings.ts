@@ -40,6 +40,7 @@ const Strings_fr = {
             Layout: "Dispo- sition",
             Gates: "Portes",
             Components: "Compo- sants",
+            Custom: "Person- nalisé",
         },
         Components: RichStringEnum.withProps<ComponentStrings>()({
             Input1: ["Entrée", "IN"],
@@ -246,6 +247,8 @@ const Strings_fr = {
             OutputQBarDesc: "Q̅ (sortie inversée)",
         },
         Custom: {
+            MenuButtonSuffix: " (composant personnalisé)",
+
             messages: {
                 EmptySelection: "Aucun composant n’est sélectionné.",
                 NoInput: "Aucune entrée n’est sélectionnée.",
@@ -735,6 +738,7 @@ const Strings_en: Strings = {
             Gates: "Gates",
             Layout: "Layout",
             Components: "Compo- nents",
+            Custom: "Custom",
         },
         Labels: {
             More: "More",
@@ -945,6 +949,8 @@ const Strings_en: Strings = {
             OutputQBarDesc: "Q̅ (Inverted Output)",
         },
         Custom: {
+            MenuButtonSuffix: " (custom component)",
+
             messages: {
                 EmptySelection: "No components are selected.",
                 NoInput: "No input is selected.",

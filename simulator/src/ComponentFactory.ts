@@ -211,11 +211,19 @@ export class ComponentFactory {
 
     // Custom components handling
 
-    public customDefs(): CustomComponentDefRepr[] | undefined {
+    public customDefs(): CustomComponentDef[] | undefined {
         if (this._customComponents.size === 0) {
             return undefined
         }
-        return [...this._customComponents.values()].map(def => def.toJSON())
+        return [...this._customComponents.values()]
+    }
+
+    public customDefReprs(): CustomComponentDefRepr[] | undefined {
+        const defs = this.customDefs()
+        if (defs === undefined) {
+            return undefined
+        }
+        return defs.map(def => def.toJSON())
     }
 
     public clearCustomDefs() {
@@ -235,17 +243,23 @@ export class ComponentFactory {
         return def
     }
 
-    public tryLoadCustomDefsFrom(defs: unknown) {
+    public tryLoadCustomDefsFrom(defs: unknown): number {
         // Calling this may change the list of custom defs, we may need to update the UI
         if (defs === undefined) {
-            return
+            return 0
         }
         const validatedDefs = validateJson(defs, t.array(CustomComponentDefRepr), "defs")
-        if (validatedDefs !== undefined) {
-            for (const validatedDef of validatedDefs) {
-                this.tryAddCustomDef(validatedDef)
+        if (validatedDefs === undefined) {
+            return 0
+        }
+        let numLoaded = 0
+        for (const validatedDef of validatedDefs) {
+            const maker = this.tryAddCustomDef(validatedDef)
+            if (maker !== undefined) {
+                numLoaded++
             }
         }
+        return numLoaded
     }
 
     public hasCustomComponents() {
