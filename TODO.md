@@ -28,9 +28,8 @@
 
 ## Low priority
 
- * Alternative representation for push or toggle buttons
- * Edge detector?
  * Add rich HTML annotations
+ * Computation delay for components with inputs and outputs
  * Disable/hide input of component (e.g., to make exercise to prevent alu from knowing how to do a subtraction)
  * Lock component to some "parent" to move them more intuitively?
  * Implement Quine–McCluskey algorithm for function normalization

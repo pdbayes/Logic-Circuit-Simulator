@@ -813,9 +813,33 @@ class EditHandlers extends ToolHandlers {
             const mainContextMenu = this.editor.html.mainContextMenu
             applyModifiersTo(mainContextMenu, items)
             const em = e as MouseEvent
-            mainContextMenu.style.left = em.pageX + 'px'
-            mainContextMenu.style.top = em.pageY + 'px'
             mainContextMenu.classList.add("show-menu")
+
+            let menuTop = em.pageY
+            mainContextMenu.style.top = menuTop + 'px'
+            mainContextMenu.style.left = em.pageX + 'px'
+
+            let needsScrollY = false
+            const menuRect = mainContextMenu.getBoundingClientRect()
+            const hOverflow = window.innerHeight - menuRect.bottom
+            if (hOverflow < 0) {
+                menuTop += Math.min(0, hOverflow)
+                if (menuTop < 5) {
+                    menuTop = 5
+                    needsScrollY = true
+                }
+                mainContextMenu.style.top = menuTop + 'px'
+            }
+
+            if (needsScrollY) {
+                mainContextMenu.style.setProperty("max-height", (window.innerHeight - 10) + "px")
+                mainContextMenu.style.setProperty("overflow-y", "scroll")
+            } else {
+                mainContextMenu.style.removeProperty("max-height")
+                mainContextMenu.style.removeProperty("overflow-y")
+            }
+
+
             this._openedContextMenu = mainContextMenu
 
             const clickHandler = () => {
