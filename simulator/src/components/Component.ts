@@ -364,6 +364,11 @@ export abstract class ComponentBase<
 
     public abstract toJSON(): TRepr
 
+    /**
+     * Returns the JSON representation of this component, but without nodes
+     * and without the id. This is useful to clone a component. Nodes and ids
+     * can then be restored on the clone.
+     */
     protected toNodelessJSON(): TRepr {
         // useful to clone a component without its node numbers,
         // which will be reobtained when the new component is created
@@ -375,8 +380,11 @@ export abstract class ComponentBase<
         return repr
     }
 
-    // typically used by subclasses to provide only their specific JSON,
-    // splatting in the result of super.toJSONBase() in the object
+    /**
+     * Returns the JSON representation of the fields this superclass knows
+     * about. Typically used by subclasses to provide only their specific JSON,
+     * splatting in the result of super.toJSONBase() in the object.
+     */
     protected override toJSONBase(): ComponentRepr<THasIn, THasOut> {
         const typeHolder = {
             // not sure why we need a separate object to splat in just

@@ -5,19 +5,22 @@ import { NodeManager } from "../NodeManager"
 import { RecalcManager } from "../RedrawRecalcManager"
 import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
-import { ArrayFillUsing, ArrayFillWith, LogicValue, isString, typeOrUndefined, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, typeOrUndefined, validateJson } from "../utils"
 import { Component, ComponentBase, ComponentRepr, NodeDesc, NodeGroupDesc, NodeInDesc, NodeOutDesc, NodeRec, defineComponent, groupHorizontal, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems, Orientation, Orientations } from "./Drawable"
-import { Input } from "./Input"
+import { Input, InputRepr } from "./Input"
 import { NodeIn, NodeOut } from "./Node"
-import { Output } from "./Output"
+import { Output, OutputRepr } from "./Output"
 import { Wire, WireManager } from "./Wire"
 
 type CustomComponentNodeSpec = {
     isIn: boolean,
+    id: string,
     name: string,
     orient: Orientation,
     numBits: number,
+    sourcePos: [number, number],
+    sourceRepr: Record<string, unknown>,
 }
 
 // How custom components are identied in their type
@@ -44,8 +47,7 @@ export class CustomComponentDef {
     public readonly circuit: CircuitRepr
     public readonly gridWidth: number
     public readonly gridHeight: number
-    public readonly ins: CustomComponentNodeSpec[]
-    public readonly outs: CustomComponentNodeSpec[]
+    public readonly insOuts: CustomComponentNodeSpec[]
     public readonly numBySide: Record<Orientation, number> = { n: 0, e: 0, s: 0, w: 0 }
     public readonly numInputs: number
     public readonly numOutputs: number
@@ -63,33 +65,38 @@ export class CustomComponentDef {
         this.caption = data.caption
         this.circuit = data.circuit
 
-        const collectInOut = (reprs: Record<string, Record<string, unknown>>): [CustomComponentNodeSpec[], number, CustomComponentNodeSpec[], number] => {
-            const ins: CustomComponentNodeSpec[] = []
-            let totalIn = 0
-            const outs: CustomComponentNodeSpec[] = []
-            let totalOut = 0
-            for (const inOutRepr of Object.values(reprs)) {
-                const isIn = inOutRepr.type === "in"
-                const isOut = inOutRepr.type === "out"
-                if (isIn || isOut) {
-                    const name = isString(inOutRepr.name) ? inOutRepr.name : "n/a"
-                    let orient = Orientations.includes(inOutRepr.orient) ? inOutRepr.orient : Orientation.default
-                    orient = isIn ? Orientation.invert(orient) : orient
-                    const numBits = Number(inOutRepr.bits ?? 1)
-                    this.numBySide[orient] += numBits
-                    const spec: CustomComponentNodeSpec = { isIn, name, orient, numBits }
-                    if (isIn) {
-                        totalIn += numBits
-                        ins.push(spec)
-                    } else {
-                        totalOut += numBits
-                        outs.push(spec)
-                    }
+        this.insOuts = []
+        let totalIn = 0
+        let totalOut = 0
+        const components = this.circuit.components ?? {}
+        for (const [id, repr_] of Object.entries(components)) {
+            const repr = repr_ as ComponentRepr<true, true>
+            const isIn = repr.type === "in" && !((repr as InputRepr).isConstant ?? false)
+            const isOut = repr.type === "out"
+            if (isIn || isOut) {
+                const inOutRepr = repr as InputRepr | OutputRepr
+                const name = isString(inOutRepr.name) ? inOutRepr.name : (isIn ? "In" : "Out")
+                let orient = Orientations.includes(inOutRepr.orient) ? inOutRepr.orient : Orientation.default
+                orient = isIn ? Orientation.invert(orient) : orient
+                const numBits = Number(inOutRepr.bits ?? 1)
+                this.numBySide[orient] += numBits
+                const sourcePos = (isArray(inOutRepr.pos) && inOutRepr.pos.length === 2 ? inOutRepr.pos.map(Number) : [0, 0]) as [number, number]
+                this.insOuts.push({ isIn, id, name, orient, numBits, sourcePos, sourceRepr: inOutRepr })
+                delete components[id] // add them back after 2D sorting
+                if (isIn) {
+                    totalIn += numBits
+                } else {
+                    totalOut += numBits
                 }
             }
-            return [ins, totalIn, outs, totalOut]
         }
-        [this.ins, this.numInputs, this.outs, this.numOutputs] = collectInOut(this.circuit.components ?? {})
+        sortInputsOutputs(this.insOuts)
+        for (const spec of this.insOuts) {
+            components[spec.id] = spec.sourceRepr
+        }
+
+        this.numInputs = totalIn
+        this.numOutputs = totalOut
 
         const spacing = 2
         const margin = 1.5
@@ -160,10 +167,9 @@ export class CustomComponentDef {
 
                 const ins: NodeRec<NodeInDesc> = {}
                 const outs: NodeRec<NodeOutDesc> = {}
-                const sortedSpecs = [...this.ins, ...this.outs]
                 //.sort((a, b) => a.sortIndex - b.sortIndex)
                 // console.log(sortedSpecs)
-                for (const spec of sortedSpecs) {
+                for (const spec of this.insOuts) {
                     (spec.isIn ? ins : outs)[spec.name] = make(spec)
                 }
                 return { ins, outs }
@@ -278,3 +284,20 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
     }
 
 }
+
+
+function sortInputsOutputs(insOuts: CustomComponentNodeSpec[]) {
+    const orientValue = {
+        e: 0,
+        w: 1,
+        n: 2,
+        s: 3,
+    }
+    const criterion = (spec: CustomComponentNodeSpec) => {
+        return Orientation.isVertical(spec.orient) ? -spec.sourcePos[0] : spec.sourcePos[1]
+    }
+    insOuts.sort((a, b) => {
+        return orientValue[a.orient] - orientValue[b.orient] || criterion(a) - criterion(b)
+    })
+}
+
