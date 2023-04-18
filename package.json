@@ -22,7 +22,7 @@
     "@types/qrcode": "^1.4.2",
     "@typescript-eslint/eslint-plugin": "^4.30.0",
     "@typescript-eslint/parser": "^4.30.0",
-    "esbuild": "^0.17.11",
+    "esbuild": "^0.17.17",
     "eslint": "^7.32.0",
     "npm-watch": "^0.9.0",
     "ts-arithmetic": "^0.1.1",
@@ -46,9 +46,11 @@
     "bundle": {
       "patterns": [
         "simulator",
-        "package.json"
+        "package.json",
+        "tools"
       ],
-      "extensions": "ts,html,css,svg,json"
+      "ignore": "simulator/lib",
+      "extensions": "ts,js,html,css,svg,json"
     },
     "lint": {
       "patterns": [
