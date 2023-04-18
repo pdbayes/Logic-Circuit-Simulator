@@ -21,7 +21,7 @@ import { Display16SegDef } from "./components/Display16Seg"
 import { Display7SegDef } from "./components/Display7Seg"
 import { DisplayAsciiDef } from "./components/DisplayAscii"
 import { DisplayBarDef } from "./components/DisplayBar"
-import { DrawableParent } from "./components/Drawable"
+import { DrawableParent, MenuData } from "./components/Drawable"
 import { FlipflopDDef } from "./components/FlipflopD"
 import { FlipflopJKDef } from "./components/FlipflopJK"
 import { FlipflopTDef } from "./components/FlipflopT"
@@ -266,6 +266,78 @@ export class ComponentFactory {
         return this._customComponents.size > 0
     }
 
+    public makeContextMenu(id: string): MenuData | undefined {
+        const customId = id.substring(CustomComponentPrefix.length)
+        const def = this._customComponents.get(customId)
+        if (def === undefined) {
+            return undefined
+        }
+
+        const s = S.Components.Custom.contextMenu
+        return [
+            MenuData.item("pen", s.ChangeName, () => {
+                const oldCaption = def.caption
+                const oldType = def.type
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    const newCaption = window.prompt(s.ChangeNamePrompt, oldCaption)
+                    if (newCaption === null || newCaption === oldCaption) {
+                        return
+                    }
+                    if (newCaption.length === 0) {
+                        window.alert(s.ChangeNameEmpty)
+                        continue
+                    }
+                    def.doSetCaption(newCaption)
+                    const oldDefaultCustomId = makeCustomIdFromCaption(oldCaption)
+                    if (def.customId === oldDefaultCustomId) {
+                        // The ID was automatically generated from the caption, so we'll try to update it as well
+                        const newCustomId = makeCustomIdFromCaption(newCaption)
+                        if (!this._customComponents.has(newCustomId)) {
+                            // we can actually change it without conflicts
+                            this._customComponents.delete(oldDefaultCustomId)
+                            def.customId = newCustomId
+                            const newType = def.type
+
+                            // update the type in all custom conponent definitions
+                            for (const compDef of this._customComponents.values()) {
+                                for (const compRepr of Object.values(compDef.circuit.components ?? {})) {
+                                    if (compRepr.type === oldType) {
+                                        compRepr.type = newType
+                                    }
+                                }
+                            }
+                            this._customComponents.set(newCustomId, def)
+                        }
+                    }
+
+                    this.editor.updateCustomComponentButtons()
+                    this.editor.components.updateCustomComponents(oldType) // they still have the old type
+                    break
+                }
+            }, undefined),
+            MenuData.item("connect", s.ChangeCircuit, () => {
+                window.alert(S.Messages.NotImplemented)
+            }, undefined),
+            MenuData.sep(),
+            MenuData.item("trash", s.Delete, () => {
+                if (this.isInUse(id)) {
+                    window.alert(s.CannotDeleteInUse)
+                    return
+                }
+                if (window.confirm(s.ConfirmDelete)) {
+                    this._customComponents.delete(customId)
+                    this.editor.updateCustomComponentButtons()
+                }
+            }, undefined, true),
+        ]
+    }
+
+    private isInUse(type: string) {
+        return this.editor.components.contains(type) ||
+            [...this._customComponents.values()].some(def => def.uses(type))
+    }
+
     public tryMakeNewCustomComponent(editor: LogicEditor): undefined | string {
         const s = S.Components.Custom.messages
 
@@ -383,7 +455,7 @@ export class ComponentFactory {
         } else {
             caption = labels[0].text
         }
-        const id = makeIdentifier(caption)
+        const id = makeCustomIdFromCaption(caption)
         if (this._customComponents.has(id)) {
             return s.ComponentAlreadyExists.expand({ id })
         }
@@ -409,8 +481,8 @@ export class ComponentFactory {
 }
 
 
-function makeIdentifier(name: string): string {
-    return name
+function makeCustomIdFromCaption(caption: string): string {
+    return caption
         .trim()
         .normalize("NFKD")
         .toLowerCase()

@@ -151,12 +151,12 @@ export type DisplayBarRepr = Repr<typeof DisplayBarDef>
 
 export class DisplayBar extends DisplayBarBase<DisplayBarRepr, LogicValue> {
 
-    private _display: DisplayBarType
+    private _display!: DisplayBarType
 
     public constructor(parent: DrawableParent, saved?: DisplayBarRepr) {
         super(parent, DisplayBarDef, false, saved)
 
-        this._display = this.doSetDisplay(saved?.display ?? DisplayBarDef.aults.display)
+        this.doSetDisplay(saved?.display ?? DisplayBarDef.aults.display)
     }
 
     public toJSON() {
@@ -247,7 +247,6 @@ export class DisplayBar extends DisplayBarBase<DisplayBarRepr, LogicValue> {
         this._display = newDisplay
         this.updateInputOffsetX()
         this.setNeedsRedraw("display mode changed")
-        return newDisplay // to make compiler happy for constructor
     }
 
     private updateInputOffsetX() {

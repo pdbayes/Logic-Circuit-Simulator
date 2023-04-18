@@ -11,6 +11,7 @@ import add from '../img/icons/add.icon.svg'; // @ts-ignore
 import bordercolor from '../img/icons/bordercolor.icon.svg'; // @ts-ignore
 import check from '../img/icons/check.icon.svg'; // @ts-ignore
 import close from '../img/icons/close.icon.svg'; // @ts-ignore
+import connect from '../img/icons/connect.icon.svg'; // @ts-ignore
 import dimensions from '../img/icons/dimensions.icon.svg'; // @ts-ignore
 import direction from '../img/icons/direction.icon.svg'; // @ts-ignore
 import download from '../img/icons/download.icon.svg'; // @ts-ignore
@@ -127,6 +128,7 @@ const icons = {
     bordercolor,
     check,
     close,
+    connect,
     dimensions,
     direction,
     download,

@@ -1,12 +1,12 @@
 import * as t from "io-ts"
 import JSON5 from "json5"
 import type { ComponentKey, DefAndParams, LibraryButtonOptions, LibraryButtonProps, LibraryItem } from "../ComponentMenu"
-import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, drawClockInput, drawComponentName, DrawingRect, drawLabel, drawWireLineToComponent, GRID_STEP, isTrivialNodeName, shouldShowNode, useCompact } from "../drawutils"
-import { IconName, ImageName } from "../images"
 import { DrawParams, LogicEditor } from "../LogicEditor"
+import { COLOR_BACKGROUND, COLOR_COMPONENT_INNER_LABELS, COLOR_GROUP_SPAN, DrawingRect, GRID_STEP, drawClockInput, drawComponentName, drawLabel, drawWireLineToComponent, isTrivialNodeName, shouldShowNode, useCompact } from "../drawutils"
+import { IconName, ImageName } from "../images"
 import { S, Template } from "../strings"
-import { ArrayFillUsing, ArrayOrDirect, brand, deepEquals, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, isArray, isBoolean, isNumber, isRecord, isString, LogicValue, LogicValueRepr, mergeWhereDefined, Mode, toLogicValueRepr, typeOrUndefined, Unknown, validateJson } from "../utils"
-import { DrawableParent, DrawableWithDraggablePosition, DrawContext, DrawContextExt, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
+import { ArrayFillUsing, ArrayOrDirect, EdgeTrigger, Expand, FixedArrayMap, HasField, HighImpedance, InteractionResult, LogicValue, LogicValueRepr, Mode, Unknown, brand, deepEquals, isArray, isBoolean, isNumber, isRecord, isString, mergeWhereDefined, toLogicValueRepr, typeOrUndefined, validateJson } from "../utils"
+import { DrawContext, DrawContextExt, DrawableParent, DrawableWithDraggablePosition, GraphicsRendering, MenuData, MenuItem, MenuItemPlacement, MenuItems, Orientation, PositionSupportRepr } from "./Drawable"
 import { DEFAULT_WIRE_COLOR, Node, NodeBase, NodeIn, NodeOut, WireColor } from "./Node"
 
 
@@ -267,7 +267,7 @@ export abstract class ComponentBase<
     public readonly def: InstantiatedComponentDef<TRepr, TValue>
     private _width: number
     private _height: number
-    private _state: ComponentState
+    private _state!: ComponentState
     private _value: TValue
     public readonly inputs: TInputNodes
     public readonly outputs: TOutputNodes
@@ -318,7 +318,7 @@ export abstract class ComponentBase<
             this._state = ComponentState.SPAWNED
         } else {
             // newly placed
-            this._state = this.setSpawning()
+            this.setSpawning()
         }
 
         // build node specs either from scratch if new or from saved data
@@ -350,7 +350,6 @@ export abstract class ComponentBase<
     public setSpawning() {
         this._state = ComponentState.SPAWNING
         this.parent.moveMgr?.setDrawableMoving(this)
-        return this._state // make compiler happy for constructor
     }
 
     public setSpawned() {

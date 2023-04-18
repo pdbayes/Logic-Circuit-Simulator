@@ -324,6 +324,10 @@ export class Input extends InputBase<InputRepr> {
         }
     }
 
+    public get isConstant() {
+        return this._isConstant
+    }
+
     private contentRepr(): LogicValueRepr | string | undefined {
         if (this.numBits === 1) {
             const value = this.value[0]

@@ -1,4 +1,5 @@
 import { Component } from "./components/Component"
+import { CustomComponent } from "./components/CustomComponent"
 import { ArrayFillUsing, isString } from "./utils"
 
 export const DrawZIndex = {
@@ -53,6 +54,23 @@ export class ComponentList {
             this._componentsById.set(idForOldComp, oldComp)
         }
         this._componentsById.set(id, comp)
+    }
+
+    public contains(type: string): boolean {
+        for (const comp of this.all()) {
+            if (comp.def.type === type) {
+                return true
+            }
+        }
+        return false
+    }
+
+    public updateCustomComponents(type: string) {
+        for (const comp of [...this.all()]) {
+            if (comp.def.type === type && comp instanceof CustomComponent) {
+                comp.updateFromDef()
+            }
+        }
     }
 
     public changeIdOf(comp: Component, newId: string) {

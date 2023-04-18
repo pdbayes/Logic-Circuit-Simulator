@@ -45,27 +45,36 @@ type CircuitRepr = CustomComponentDefRepr["circuit"]
 
 export class CustomComponentDef {
 
-    public readonly customId: string
-    public readonly caption: string
+    public customId: string
     public readonly circuit: CircuitRepr
-    public readonly gridWidth: number
-    public readonly gridHeight: number
-    public readonly insOuts: CustomComponentNodeSpec[]
-    public readonly numBySide: Record<Orientation, number> = { n: 0, e: 0, s: 0, w: 0 }
     public readonly numInputs: number
+    public readonly insOuts: CustomComponentNodeSpec[]
     public readonly numOutputs: number
+    private readonly numBySide: Record<Orientation, number> = { n: 0, e: 0, s: 0, w: 0 }
+    private _caption: string
+    public gridWidth!: number
+    public gridHeight!: number
 
     public toJSON(): CustomComponentDefRepr {
         return {
             id: this.customId,
-            caption: this.caption,
+            caption: this._caption,
             circuit: this.circuit,
         }
     }
 
+    public get caption() {
+        return this._caption
+    }
+
+    public doSetCaption(caption: string) {
+        this._caption = caption
+        this.recalcSize()
+    }
+
     public constructor(data: CustomComponentDefRepr) {
         this.customId = data.id
-        this.caption = data.caption
+        this._caption = data.caption
         this.circuit = data.circuit
 
         this.insOuts = []
@@ -101,9 +110,13 @@ export class CustomComponentDef {
         this.numInputs = totalIn
         this.numOutputs = totalOut
 
+        this.recalcSize()
+    }
+
+    private recalcSize() {
         const spacing = 2
         const margin = 1.5
-        const minSize = 1.5 * this.caption.length + 2
+        const minSize = 1 * this._caption.length + 2
         this.gridWidth = Math.ceil(Math.max(minSize, (Math.max(this.numBySide.s, this.numBySide.n) - 1) * spacing + 2 * margin))
         this.gridHeight = Math.ceil(Math.max(minSize, (Math.max(this.numBySide.e, this.numBySide.w) - 1) * spacing + 2 * margin))
     }
@@ -111,6 +124,19 @@ export class CustomComponentDef {
     // ComponentMaker interface
     public isValid() { return true }
     public get type() { return `${CustomComponentPrefix}${this.customId}` }
+
+    public uses(type: string): boolean {
+        const compReprs = this.circuit.components
+        if (compReprs === undefined) {
+            return false
+        }
+        for (const compRepr of Object.values(compReprs)) {
+            if (compRepr.type === type) {
+                return true
+            }
+        }
+        return false
+    }
 
     public make(parent: DrawableParent): Component {
         const comp = new CustomComponent(parent, this)
@@ -158,7 +184,7 @@ export class CustomComponentDef {
         g.stroke()
 
         // caption
-        let drawCaption = this.caption
+        let drawCaption = this._caption
         let shortened = false
 
         // eslint-disable-next-line no-constant-condition
@@ -174,6 +200,7 @@ export class CustomComponentDef {
             if (fontSize >= 8) {
                 g.textAlign = "center"
                 g.textBaseline = "middle"
+                g.fillStyle = "currentColor"
                 g.fillText(drawCaption + (shortened ? "." : ""), width / 2, height / 2)
                 break
             }
@@ -278,7 +305,7 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
         let iIn = 0
         for (const comp of this.components.all()) {
             // assume they have been kept in the right order
-            if (comp instanceof Input) {
+            if (comp instanceof Input && !comp.isConstant) {
                 const nodes = comp.outputs._all
                 this._subcircuitInputs.push(...nodes)
                 const num = nodes.length
@@ -311,6 +338,11 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
             clone.setSpawning()
         }
         return clone
+    }
+
+    public updateFromDef() {
+        // we need to recreate it to regenerate the properties from the new def
+        this.replaceWithComponent(this.makeClone(false))
     }
 
     protected doRecalcValue(): LogicValue[] {

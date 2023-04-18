@@ -181,6 +181,7 @@ const Strings_fr = {
         Redo: tuple(undefined, "Rétablit la dernière action annulée ou répète l’action précédente"),
     },
     Messages: {
+        NotImplemented: "Cette fonctionnalité n’est pas encore implémentée.",
         ReallyCloseWindow: "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?",
         DevelopedBy: "Développé par ",
     },
@@ -248,7 +249,15 @@ const Strings_fr = {
         },
         Custom: {
             MenuButtonSuffix: " (composant personnalisé)",
-
+            contextMenu: {
+                ChangeName: "Renommer…",
+                ChangeNamePrompt: "Choisissez le nom de ce composant personnalité:",
+                ChangeNameEmpty: "Le nom ne peut pas être vide.",
+                ChangeCircuit: "Modifier le circuit…",
+                Delete: "Supprimer ce composant",
+                CannotDeleteInUse: "Impossible de supprimer un composant utilisé dans le circuit.",
+                ConfirmDelete: "Voulez-vous vraiment supprimer ce composant personnalisé?",
+            },
             messages: {
                 EmptySelection: "Aucun composant n’est sélectionné.",
                 NoInput: "Aucune entrée n’est sélectionnée.",
@@ -883,6 +892,7 @@ const Strings_en: Strings = {
         Redo: tuple(undefined, "Redo the last undone action or repeat the last action"),
     },
     Messages: {
+        NotImplemented: "This feature is not implemented yet.",
         ReallyCloseWindow: "Do you really want to close the window without saving the changes?",
         DevelopedBy: "Developed by",
     },
@@ -950,7 +960,15 @@ const Strings_en: Strings = {
         },
         Custom: {
             MenuButtonSuffix: " (custom component)",
-
+            contextMenu: {
+                ChangeName: "Rename…",
+                ChangeNamePrompt: "Enter the name of this custom component:",
+                ChangeNameEmpty: "The name cannot be empty.",
+                ChangeCircuit: "Change Circuit…",
+                Delete: "Delete Custom Component",
+                CannotDeleteInUse: "Cannot delete a custom component that is still in use.",
+                ConfirmDelete: "Are you sure you want to delete this custom component?",
+            },
             messages: {
                 EmptySelection: "No components are selected.",
                 NoInput: "No input is selected.",

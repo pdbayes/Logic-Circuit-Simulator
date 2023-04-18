@@ -717,7 +717,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }))
         }
 
-        this.cursorMovementMgr.registerButtonListenersOn(this._menu.allFixedButtons())
+        this.cursorMovementMgr.registerButtonListenersOn(this._menu.allFixedButtons(), false)
 
         const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
         for (const but of modifButtons) {
@@ -1174,7 +1174,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public updateCustomComponentButtons() {
         if (this._menu !== undefined) {
             this._menu.updateCustomComponentButtons(this.factory.customDefs())
-            this.cursorMovementMgr.registerButtonListenersOn(this._menu.allCustomButtons())
+            this.cursorMovementMgr.registerButtonListenersOn(this._menu.allCustomButtons(), true)
         }
     }
 

@@ -1,7 +1,8 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
+import { ButtonDataset } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
 import { ComponentBase, ComponentState } from './components/Component'
-import { Drawable, DrawableWithPosition, MenuItem } from "./components/Drawable"
+import { Drawable, DrawableWithPosition, MenuData, MenuItem } from "./components/Drawable"
 import { Node } from "./components/Node"
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, emptyMod, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
@@ -608,7 +609,7 @@ export class CursorMovementManager {
         }
     }
 
-    public registerButtonListenersOn(componentButtons: HTMLButtonElement[]) {
+    public registerButtonListenersOn(componentButtons: HTMLButtonElement[], isCustomElement: boolean) {
         const editor = this.editor
         for (const compButton of componentButtons) {
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
@@ -634,22 +635,37 @@ export class CursorMovementManager {
             }
 
             compButton.addEventListener("mousedown", editor.wrapHandler((e) => {
+                // console.log("button mousedown %o %o", editor.offsetXY(e), e)
+                if (e.ctrlKey || e.button === 2) {
+                    // will be handled by context menu
+                    return
+                }
                 buttonMouseDownTouchStart(e)
             }))
             compButton.addEventListener("touchstart", editor.wrapHandler((e) => {
-                // console.log("button touchstart %o %o", offsetXY(e), e)
+                // console.log("button touchstart %o %o", editor.offsetXY(e), e)
                 buttonMouseDownTouchStart(e)
             }))
             compButton.addEventListener("touchmove", editor.wrapHandler((e) => {
-                // console.log("button touchmove %o %o", offsetXY(e), e)
+                // console.log("button touchmove %o %o", editor.offsetXY(e), e)
                 e.preventDefault()
                 this._mouseMoveTouchMove(e)
             }))
             compButton.addEventListener("touchend", editor.wrapHandler((e) => {
-                // console.log("button touchend %o %o", offsetXY(e), e)
+                // console.log("button touchend %o %o", editor.offsetXY(e), e)
                 e.preventDefault() // otherwise, may generate mouseclick, etc.
                 this._mouseUpTouchEnd(e)
                 this.setCurrentMouseOverComp(null)
+            }))
+
+            compButton.addEventListener("contextmenu", editor.wrapHandler((e) => {
+                // console.log("button contextmenu %o %o", editor.offsetXY(e), e)
+                e.preventDefault()
+                e.stopPropagation()
+
+                if (isCustomElement && this.editor.mode >= Mode.DESIGN) {
+                    this._currentHandlers.contextMenuOnButton(compButton.dataset as ButtonDataset, e)
+                }
             }))
         }
     }
@@ -684,6 +700,9 @@ abstract class ToolHandlers {
     }
     public contextMenuOn(__comp: Drawable, __e: MouseEvent | TouchEvent): boolean {
         return false // false means unhandled
+    }
+    public contextMenuOnButton(__props: ButtonDataset, __e: MouseEvent | TouchEvent) {
+        // empty
     }
     public mouseDownOnBackground(__e: MouseEvent | TouchEvent) {
         // empty
@@ -748,7 +767,69 @@ class EditHandlers extends ToolHandlers {
     }
     public override contextMenuOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         // console.log("contextMenuOn: %o", comp)
+        return this.showContextMenu(comp.makeContextMenu(), e)
+    }
+    public override contextMenuOnButton(props: ButtonDataset, e: MouseEvent | TouchEvent) {
+        return this.showContextMenu(this.editor.factory.makeContextMenu(props.type), e)
+    }
 
+    public override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
+        const editor = this.editor
+        const cursorMovementMgr = editor.cursorMovementMgr
+        const currentSelection = cursorMovementMgr.currentSelection
+        if (currentSelection !== undefined) {
+            const allowSelection = editor.mode >= Mode.CONNECT
+            if (e.shiftKey && allowSelection) {
+                if (currentSelection.currentlyDrawnRect !== undefined) {
+                    console.log("unexpected defined current rect when about to begin a new one")
+                }
+                // augment selection
+                const [left, top] = editor.offsetXY(e)
+                const rect = new DOMRect(left, top, 1, 1)
+                currentSelection.currentlyDrawnRect = rect
+            } else {
+                // clear selection
+                cursorMovementMgr.currentSelection = undefined
+            }
+            editor.redrawMgr.addReason("selection rect changed", null)
+        }
+    }
+    public override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
+        const editor = this.editor
+        const allowSelection = editor.mode >= Mode.CONNECT
+        if (allowSelection) {
+            const cursorMovementMgr = editor.cursorMovementMgr
+            const currentSelection = cursorMovementMgr.currentSelection
+            const [x, y] = editor.offsetXY(e)
+            if (currentSelection === undefined) {
+                const rect = new DOMRect(x, y, 1, 1)
+                cursorMovementMgr.currentSelection = new EditorSelection(rect)
+            } else {
+                const rect = currentSelection.currentlyDrawnRect
+                if (rect === undefined) {
+                    console.log("trying to update a selection rect that is not defined")
+                } else {
+                    rect.width = x - rect.x
+                    rect.height = y - rect.y
+                    editor.redrawMgr.addReason("selection rect changed", null)
+                }
+            }
+        }
+    }
+
+    public override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
+        const editor = this.editor
+        editor.wireMgr.tryCancelWire()
+
+        const cursorMovementMgr = editor.cursorMovementMgr
+        const currentSelection = cursorMovementMgr.currentSelection
+        if (currentSelection !== undefined) {
+            currentSelection.finishCurrentRect(this.editor)
+            editor.redrawMgr.addReason("selection rect changed", null)
+        }
+    }
+
+    private showContextMenu(menuData: MenuData | undefined, e: MouseEvent | TouchEvent) {
         const hideMenu = () => {
             if (this._openedContextMenu !== null) {
                 this._openedContextMenu.classList.remove('show-menu')
@@ -759,7 +840,6 @@ class EditHandlers extends ToolHandlers {
 
         hideMenu()
 
-        const menuData = comp.makeContextMenu()
         // console.log("asking for menu: %o got: %o", comp, MenuData)
         if (menuData !== undefined) {
 
@@ -831,6 +911,7 @@ class EditHandlers extends ToolHandlers {
                 mainContextMenu.style.top = menuTop + 'px'
             }
 
+            // TODO this causes some weird behavior with submenus, to be fixed
             if (needsScrollY) {
                 mainContextMenu.style.setProperty("max-height", (window.innerHeight - 10) + "px")
                 mainContextMenu.style.setProperty("overflow-y", "scroll")
@@ -838,7 +919,6 @@ class EditHandlers extends ToolHandlers {
                 mainContextMenu.style.removeProperty("max-height")
                 mainContextMenu.style.removeProperty("overflow-y")
             }
-
 
             this._openedContextMenu = mainContextMenu
 
@@ -854,63 +934,6 @@ class EditHandlers extends ToolHandlers {
             return true // handled
         }
         return false // unhandled
-    }
-
-
-    public override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
-        const editor = this.editor
-        const cursorMovementMgr = editor.cursorMovementMgr
-        const currentSelection = cursorMovementMgr.currentSelection
-        if (currentSelection !== undefined) {
-            const allowSelection = editor.mode >= Mode.CONNECT
-            if (e.shiftKey && allowSelection) {
-                if (currentSelection.currentlyDrawnRect !== undefined) {
-                    console.log("unexpected defined current rect when about to begin a new one")
-                }
-                // augment selection
-                const [left, top] = editor.offsetXY(e)
-                const rect = new DOMRect(left, top, 1, 1)
-                currentSelection.currentlyDrawnRect = rect
-            } else {
-                // clear selection
-                cursorMovementMgr.currentSelection = undefined
-            }
-            editor.redrawMgr.addReason("selection rect changed", null)
-        }
-    }
-    public override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
-        const editor = this.editor
-        const allowSelection = editor.mode >= Mode.CONNECT
-        if (allowSelection) {
-            const cursorMovementMgr = editor.cursorMovementMgr
-            const currentSelection = cursorMovementMgr.currentSelection
-            const [x, y] = editor.offsetXY(e)
-            if (currentSelection === undefined) {
-                const rect = new DOMRect(x, y, 1, 1)
-                cursorMovementMgr.currentSelection = new EditorSelection(rect)
-            } else {
-                const rect = currentSelection.currentlyDrawnRect
-                if (rect === undefined) {
-                    console.log("trying to update a selection rect that is not defined")
-                } else {
-                    rect.width = x - rect.x
-                    rect.height = y - rect.y
-                    editor.redrawMgr.addReason("selection rect changed", null)
-                }
-            }
-        }
-    }
-
-    public override mouseUpOnBackground(__e: MouseEvent | TouchEvent) {
-        const editor = this.editor
-        editor.wireMgr.tryCancelWire()
-
-        const cursorMovementMgr = editor.cursorMovementMgr
-        const currentSelection = cursorMovementMgr.currentSelection
-        if (currentSelection !== undefined) {
-            currentSelection.finishCurrentRect(this.editor)
-            editor.redrawMgr.addReason("selection rect changed", null)
-        }
     }
 }
 
