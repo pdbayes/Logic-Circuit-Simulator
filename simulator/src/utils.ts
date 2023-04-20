@@ -342,6 +342,29 @@ export function setVisible(elem: HTMLElement, visible: boolean) {
     }
 }
 
+export function toggleVisible(elem: HTMLElement) {
+    setVisible(elem, elem.style.display === "none")
+}
+
+export type UIDisplay = "show" | "hide" | "inactive"
+
+export function setDisplay(elem: HTMLElement, display: UIDisplay) {
+    setVisible(elem, display !== "hide")
+    if (display === "inactive") {
+        elem.style.visibility = "hidden"
+    } else {
+        elem.style.removeProperty("visibility")
+    }
+}
+
+export function setActive(elem: HTMLButtonElement, active: boolean) {
+    if (active) {
+        elem.classList.add("active")
+    } else {
+        elem.classList.remove("active")
+    }
+}
+
 export function showModal(dlog: HTMLDialogElement): boolean {
     if (typeof (dlog as any).showModal === "function") {
         dlog.style.display = "initial";
@@ -672,7 +695,7 @@ export function targetIsFieldOrOtherInput(e: Event) {
 export function getScrollParent(element: HTMLElement): HTMLElement | Document {
     let style = getComputedStyle(element)
     const excludeStaticParent = style.position === "absolute"
-    const overflowRegex = /(?:auto|scroll)/
+    const overflowRegex = /(auto|scroll)/
 
     if (style.position === "fixed") {
         return document

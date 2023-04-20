@@ -342,7 +342,7 @@ export class ComponentFactory {
     public tryMakeNewCustomComponent(editor: LogicEditor): undefined | string {
         const s = S.Components.Custom.messages
 
-        const selectionAll = editor.cursorMovementMgr.currentSelection?.previouslySelectedElements
+        const selectionAll = editor.eventMgr.currentSelection?.previouslySelectedElements
         if (selectionAll === undefined) {
             return s.EmptySelection
         }
@@ -474,8 +474,8 @@ export class ComponentFactory {
         const customComp = maker.make(editor)
         customComp.setSpawned()
         customComp.setPosition(editor.mouseX + customComp.unrotatedWidth / 2 - 5, editor.mouseY, true)
-        editor.cursorMovementMgr.currentSelection = undefined
-        editor.cursorMovementMgr.setCurrentMouseOverComp(customComp)
+        editor.eventMgr.currentSelection = undefined
+        editor.eventMgr.setCurrentMouseOverComp(customComp)
 
         return undefined // success
     }

@@ -1009,7 +1009,7 @@ export abstract class ComponentBase<
     public override mouseDown(e: MouseEvent | TouchEvent) {
         if (this.parent.mode >= Mode.CONNECT && !e.shiftKey && this.parent.isMainEditor()) {
             // try clearing selection
-            const mvtMgr = this.parent.cursorMovementMgr
+            const mvtMgr = this.parent.eventMgr
             let elems
             if (mvtMgr.currentSelection !== undefined
                 && (elems = mvtMgr.currentSelection.previouslySelectedElements).size > 0
@@ -1056,7 +1056,7 @@ export abstract class ComponentBase<
 
     public override mouseClicked(e: MouseEvent | TouchEvent): InteractionResult {
         if (this.parent.mode >= Mode.CONNECT && e.shiftKey && this.parent.isMainEditor()) {
-            this.parent.cursorMovementMgr.toggleSelect(this)
+            this.parent.eventMgr.toggleSelect(this)
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
@@ -1140,7 +1140,7 @@ export abstract class ComponentBase<
         const s = S.Components.Generic.contextMenu
 
         const makeNewComponentItems: MenuItems =
-            editor.cursorMovementMgr.currentSelectionEmpty() ? [] : [
+            editor.eventMgr.currentSelectionEmpty() ? [] : [
                 ["start", MenuData.item("newcomponent", s.MakeNewComponent, () => {
                     const error = editor.factory.tryMakeNewCustomComponent(editor)
                     if (error !== undefined) {
@@ -1421,7 +1421,7 @@ export abstract class ParametrizedComponentBase<
 
         const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
         if (newComp !== undefined && this.parent.isMainEditor()) {
-            this.parent.cursorMovementMgr.setCurrentMouseOverComp(newComp)
+            this.parent.eventMgr.setCurrentMouseOverComp(newComp)
         }
     }
 

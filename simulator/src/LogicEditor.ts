@@ -19,25 +19,26 @@ import * as pngMeta from 'png-metadata-writer'
 import { ComponentFactory } from "./ComponentFactory"
 import { ComponentList, DrawZIndex } from "./ComponentList"
 import { ComponentMenu } from "./ComponentMenu"
-import { CursorMovementManager, EditorSelection } from "./CursorMovementManager"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
 import { SVGRenderingContext } from "./SVGRenderingContext"
 import { Serialization } from "./Serialization"
 import { Tests } from "./Tests"
-import { Timeline, TimelineState } from "./Timeline"
-import { UndoManager, UndoState } from './UndoManager'
+import { Timeline } from "./Timeline"
+import { TopBar } from "./TopBar"
+import { EditorSelection, UIEventManager } from "./UIEventManager"
+import { UndoManager } from './UndoManager'
 import { Component, ComponentBase } from "./components/Component"
 import { Drawable, DrawableParent, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
-import { a, applyModifierTo, attr, attrBuilder, button, cls, div, emptyMod, href, input, label, mods, option, raw, select, span, style, target, title, type } from "./htmlgen"
-import { IconName, inlineIconSvgFor, isIconName, makeIcon } from "./images"
+import { a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
+import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, setEnabled, setVisible, showModal } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
 
 
 
@@ -132,7 +133,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public readonly redrawMgr = new RedrawManager()
     public readonly recalcMgr = new RecalcManager()
     public readonly moveMgr = new MoveManager(this)
-    public readonly cursorMovementMgr = new CursorMovementManager(this)
+    public readonly eventMgr = new UIEventManager(this)
     public readonly undoMgr = new UndoManager(this)
 
     public readonly components = new ComponentList()
@@ -147,7 +148,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     private _hideResetButton = false
 
     private _menu: ComponentMenu | undefined = undefined
-    private _currentMouseAction: MouseAction = "edit"
+    private _topBar: TopBar | undefined = undefined
     private _toolCursor: string | null = null
     private _highlightedItems: HighlightedItems | undefined = undefined
     private _nextAnimationFrameHandle: number | null = null
@@ -155,9 +156,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public root: ShadowRoot
     public readonly html: {
         rootDiv: HTMLDivElement,
+        centerCol: HTMLDivElement,
         canvasContainer: HTMLElement,
         mainCanvas: HTMLCanvasElement,
         leftToolbar: HTMLElement,
+        rightToolbarContainer: HTMLElement,
+        rightResetButton: HTMLButtonElement,
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
@@ -172,10 +176,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         embedMarkdown: HTMLTextAreaElement,
     }
     public optionsHtml: {
-        undoButton: HTMLButtonElement,
-        redoButton: HTMLButtonElement,
-
-        nameField: HTMLInputElement,
         showGateTypesCheckbox: HTMLInputElement,
         showDisconnectedPinsCheckbox: HTMLInputElement,
         wireStylePopup: HTMLSelectElement,
@@ -186,7 +186,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         hideTooltipsCheckbox: HTMLInputElement,
         groupParallelWiresCheckbox: HTMLInputElement,
         propagationDelayField: HTMLInputElement,
-        zoomLevelField: HTMLInputElement,
         showUserDataLinkContainer: HTMLDivElement,
     } | undefined = undefined
     public userdata: string | Record<string, unknown> | undefined = undefined
@@ -204,9 +203,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const html: typeof this.html = {
             rootDiv: this.elemWithId("logicEditorRoot"),
+            centerCol: this.elemWithId("centerCol"),
             canvasContainer: this.elemWithId("canvas-sim"),
             mainCanvas: this.elemWithId("mainCanvas"),
             leftToolbar: this.elemWithId("leftToolbar"),
+            rightToolbarContainer: this.elemWithId("rightToolbarContainer"),
+            rightResetButton: this.elemWithId("rightResetButton"),
             tooltipElem: this.elemWithId("tooltip"),
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
@@ -268,6 +270,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         return this._options
     }
 
+    public get documentDisplayName(): string {
+        return this._options.name ?? S.Settings.DefaultFileName
+    }
+
     public setPartialOptions(opts: Partial<EditorOptions>) {
         const newOptions = { ...DEFAULT_EDITOR_OPTIONS, ...opts }
         if (this._isSingleton) {
@@ -278,8 +284,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         let optionsHtml
 
         if ((optionsHtml = this.optionsHtml) !== undefined) {
-            this.setDocumentName(newOptions.name)
-            optionsHtml.nameField.value = newOptions.name ?? ""
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.hideInputColorsCheckbox.checked = newOptions.hideInputColors
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
@@ -290,7 +294,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             optionsHtml.hideTooltipsCheckbox.checked = newOptions.hideTooltips
             optionsHtml.groupParallelWiresCheckbox.checked = newOptions.groupParallelWires
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
-            optionsHtml.zoomLevelField.valueAsNumber = newOptions.zoom
+
+            this.setWindowTitleFrom(newOptions.name)
+            this._topBar?.setCircuitName(this.documentDisplayName)
+            this._topBar?.setZoomLevel(newOptions.zoom)
 
             optionsHtml.showUserDataLinkContainer.style.display = this.userdata !== undefined ? "initial" : "none"
         }
@@ -300,15 +307,15 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         this.redrawMgr.addReason("options changed", null)
     }
 
-    private setDocumentName(name: string | undefined) {
+    private setWindowTitleFrom(docName: string | undefined) {
         if (!this._isSingleton) {
             return
         }
         const defaultTitle = "Logic"
-        if (name === undefined) {
+        if (docName === undefined) {
             document.title = defaultTitle
         } else {
-            document.title = `${name} – ${defaultTitle}`
+            document.title = `${docName} – ${defaultTitle}`
         }
     }
 
@@ -328,7 +335,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public runFileChooser(accept: string, callback: (file: File) => void) {
         const chooser = this.html.fileChooser
         chooser.setAttribute("accept", accept)
-        chooser.addEventListener("change", __ => {
+        chooser.addEventListener("change", () => {
             const files = this.html.fileChooser.files
             if (files !== null && files.length > 0) {
                 callback(files[0])
@@ -337,64 +344,17 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         chooser.click()
     }
 
-    public setActiveTool(toolElement: HTMLElement, e: MouseEvent) {
-        const tool = toolElement.getAttribute("tool")
-        if (tool === null || tool === undefined) {
-            return
-        }
-
-        // Main edit buttons on the right
-        if (MouseActions.includes(tool)) {
-            this.wrapHandler(() => {
-                this.setCurrentMouseAction(tool)
-            })()
-            return
-        }
-
-        if (tool === "save") {
-            if (e.altKey && this.editor.factory.hasCustomComponents()) {
-                Serialization.saveLibraryToFile(this)
-            } else {
-                Serialization.saveCircuitToFile(this)
-            }
-            return
-        }
-
-        if (tool === "screenshot") {
-            if (e.altKey) {
-                this.download(this.toSVG(true), ".svg")
-            } else {
-                this.download(this.toPNG(true), ".png")
-            }
-            return
-        }
-
-        if (tool === "open") {
-            this.runFileChooser("text/plain|image/png|application/json", file => {
-                this.tryLoadFrom(file)
-            })
-            return
-        }
-
-        this.setCurrentMouseAction("edit")
-        if (tool === "reset") {
-            this.wrapHandler(() => {
-                this.tryLoadCircuitFromData()
-            })()
-            return
-        }
-    }
-
     public setToolCursor(cursor: string | null) {
         this._toolCursor = cursor
     }
 
     private setCanvasSize() {
-        const { canvasContainer } = this.html
+        const { canvasContainer, mainCanvas } = this.html
+        mainCanvas.style.setProperty("width", "0")
+        mainCanvas.style.setProperty("height", "0")
         const w = canvasContainer.clientWidth
         const h = canvasContainer.clientHeight
         const f = window.devicePixelRatio ?? 1
-        const mainCanvas = this.html.mainCanvas
         mainCanvas.setAttribute("width", String(w * f))
         mainCanvas.setAttribute("height", String(h * f))
         mainCanvas.style.setProperty("width", w + "px")
@@ -403,50 +363,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public connectedCallback() {
-        const { rootDiv, mainCanvas } = this.html
-
-        const parentStyles = this.getAttribute("style")
-        if (parentStyles !== null) {
-            rootDiv.setAttribute("style", rootDiv.getAttribute("style") + parentStyles)
-        }
-
-        // TODO move this in SelectionMgr?
-        mainCanvas.ondragenter = () => {
-            return false
-        }
-        mainCanvas.ondragover = () => {
-            return false
-        }
-        mainCanvas.ondragend = () => {
-            return false
-        }
-        mainCanvas.ondrop = e => {
-            if (e.dataTransfer === null) {
-                return false
-            }
-
-            e.preventDefault()
-            const file = e.dataTransfer.files?.[0]
-            if (file !== undefined) {
-                this.tryLoadFrom(file)
-            } else {
-                const dataItems = e.dataTransfer.items
-                if (dataItems !== undefined) {
-                    for (const dataItem of dataItems) {
-                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
-                            dataItem.getAsString(content => {
-                                e.dataTransfer!.dropEffect = "copy"
-                                this.loadCircuitOrLibrary(content)
-                            })
-                            break
-                        }
-                    }
-                }
-            }
-            return false
-        }
-
-        this.cursorMovementMgr.registerCanvasListenersOn(this.html.mainCanvas)
         if (LogicEditor._allConnectedEditors.length === 0) {
             // set lang on first instance of editor on the page
             this.setupLang()
@@ -460,10 +376,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         insts.splice(insts.indexOf(this), 1)
 
         // TODO
-        // this.cursorMovementManager.unregisterCanvasListenersOn(this.html.mainCanvas)
+        // this.eventMgr.unregisterCanvasListenersOn(this.html.mainCanvas)
     }
 
     private setupLang() {
+
         const getNavigatorLanguage = () => {
             const lang = navigator.languages?.[0] ?? navigator.language
             if (lang.length > 2) {
@@ -489,6 +406,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     private setup() {
+        const rootDiv = this.html.rootDiv
+        const parentStyles = this.getAttribute("style")
+        if (parentStyles !== null) {
+            rootDiv.setAttribute("style", rootDiv.getAttribute("style") + parentStyles)
+        }
+
         this._isEmbedded = isEmbeddedInIframe()
         const singletonAttr = this.getAttribute(ATTRIBUTE_NAMES.singleton)
         this._isSingleton = !this._isEmbedded && singletonAttr !== null && !isFalsyString(singletonAttr)
@@ -593,7 +516,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 }
             }
 
-            this.html.mainCanvas.focus()
+            this.focus()
         }
 
         // Load parameters from attributes
@@ -669,29 +592,17 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }
         }
 
-        {
-            // set strings in the UI
-            const s = S.Palette
-            setCaption("editToolButton", s.Design)
-            setCaption("deleteToolButton", s.Delete)
-            setCaption("moveToolButton", s.Move)
-            setCaption("saveToolButton", s.Download)
-            setCaption("screenshotToolButton", s.Screenshot)
-            setCaption("openToolButton", s.Open)
-            setCaption("resetToolButtonCaption", s.Reset)
-            setCaption("settingsTitle", S.Settings.Settings)
-        }
+        // set strings in the UI
+        const s = S.Dialogs.Share
+        setCaption("settingsTitle", S.Settings.Settings)
+        setCaption("shareDialogTitle", s.title)
+        setCaption("shareDialogUrl", s.URL)
+        setCaption("shareDialogIframe", s.EmbedInIframe)
+        setCaption("shareDialogWebComp", s.EmbedWithWebComp)
+        setCaption("shareDialogMarkdown", s.EmbedInMarkdown)
+        setCaption("shareDialogClose", S.Dialogs.Generic.Close)
 
-        {
-            const s = S.Dialogs.Share
-            setCaption("shareDialogTitle", s.title)
-            setCaption("shareDialogUrl", s.URL)
-            setCaption("shareDialogIframe", s.EmbedInIframe)
-            setCaption("shareDialogWebComp", s.EmbedWithWebComp)
-            setCaption("shareDialogMarkdown", s.EmbedInMarkdown)
-            setCaption("shareDialogClose", S.Dialogs.Generic.Close)
-        }
-
+        this._topBar = new TopBar(this)
         this._menu = new ComponentMenu(this.html.leftToolbar, this._options.showOnly)
 
         // TODO move this to the Def of LabelRect to be cleaner
@@ -700,7 +611,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             console.log("ERROR: Could not find group button")
         } else {
             groupButton.addEventListener("mousedown", this.wrapHandler(e => {
-                const selectedComps = this.cursorMovementMgr.currentSelection?.previouslySelectedElements || new Set()
+                const selectedComps = this.eventMgr.currentSelection?.previouslySelectedElements || new Set()
                 if (selectedComps.size !== 0) {
                     e.preventDefault()
                     e.stopImmediatePropagation()
@@ -717,14 +628,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }))
         }
 
-        this.cursorMovementMgr.registerButtonListenersOn(this._menu.allFixedButtons(), false)
+        this.eventMgr.registerCanvasListenersOn(this.html.mainCanvas)
 
-        const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
-        for (const but of modifButtons) {
-            but.addEventListener("click", e => {
-                this.setActiveTool(but, e)
-            })
-        }
+        this.eventMgr.registerButtonListenersOn(this._menu.allFixedButtons(), false)
+
+        this.html.rightResetButton.addEventListener("click", this.wrapHandler(this.resetCircuit.bind(this)))
 
         const showModeChange = this._maxInstanceMode >= Mode.FULL
         if (showModeChange) {
@@ -744,7 +652,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                                     ).render()
 
                                 optionsDiv.addEventListener("click", () => {
-                                    setVisible(this.html.optionsZone, true)
+                                    toggleVisible(this.html.optionsZone)
                                 })
 
                                 return [S.Modes.FULL, optionsDiv]
@@ -787,7 +695,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         // this.html.embedUrlQRCode.addEventListener("click", __ => {
         //     // download
         //     const dataUrl = this.html.embedUrlQRCode.src
-        //     const filename = (this.options.name ?? "circuit") + "_qrcode.png"
+        //     const filename = this.documentDisplayName + "_qrcode.png"
         //     downloadDataUrl(dataUrl, filename)
         // })
 
@@ -802,59 +710,8 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             textArea.addEventListener("focus", selectAllListener)
         }
 
-
-        const timelineControls: HTMLElement = this.elemWithId("timelineControls")!
-        const makeRightControlButton = (icon: IconName, [text, expl]: [string | undefined, string], action: () => unknown) => {
-            const but =
-                button(cls("btn btn-sm btn-outline-light sim-toolbar-button-right"),
-                    text === undefined ? style("text-align: center") : emptyMod,
-                    title(expl),
-                    makeIcon(icon, 20, 20),
-                    text === undefined ? raw("&nbsp;") : text,
-                ).render()
-            but.addEventListener("click", this.wrapHandler(action))
-            return but
-        }
-        const playButton = makeRightControlButton("play", S.ControlBar.TimelinePlay, () => this.timeline.play())
-        const pauseButton = makeRightControlButton("pause", S.ControlBar.TimelinePause, () => this.timeline.pause())
-        const stepButton = makeRightControlButton("step", S.ControlBar.TimelineStep, () => this.timeline.step())
-        applyModifierTo(timelineControls, mods(playButton, pauseButton, stepButton))
-
-        const showTimelineButtons = true
-        setVisible(timelineControls, showTimelineButtons)
-
-        const setTimelineButtonsVisible = ({ enablesPause, hasCallbacks, isPaused, nextStepDesc }: TimelineState) => {
-            if (enablesPause || (this.options.allowPausePropagation && hasCallbacks)) {
-                // show part of the interface
-                setVisible(playButton, isPaused)
-                setVisible(pauseButton, !isPaused)
-                setVisible(stepButton, nextStepDesc !== undefined)
-                stepButton.title = S.ControlBar.TimelineStep[1] + "\n" + (nextStepDesc ?? "")
-            } else {
-                // show nothing
-                setVisible(playButton, false)
-                setVisible(pauseButton, false)
-                setVisible(stepButton, false)
-            }
-        }
-
+        this.setCurrentMouseAction("edit")
         this.timeline.reset()
-        this.timeline.onStateChanged = newState => setTimelineButtonsVisible(newState)
-        setTimelineButtonsVisible(this.timeline.state)
-
-        const undoRedoControls: HTMLElement = this.elemWithId("undoRedoControls")!
-        const undoButton = makeRightControlButton("undo", S.ControlBar.Undo, this.wrapHandler(() => this.undoMgr.undo()))
-        const redoButton = makeRightControlButton("redo", S.ControlBar.Redo, this.wrapHandler(() => this.undoMgr.redoOrRepeat()))
-
-        const setUndoButtonsVisible = (state: UndoState) => {
-            setEnabled(undoButton, state.canUndo)
-            setEnabled(redoButton, state.canRedoOrRepeat)
-        }
-
-        applyModifierTo(undoRedoControls, mods(undoButton, redoButton))
-        setUndoButtonsVisible({ canUndo: false, canRedoOrRepeat: false })
-        this.undoMgr.onStateChanged = setUndoButtonsVisible
-
 
         // Options
         const optionsZone = this.html.optionsZone
@@ -881,24 +738,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }
             return checkbox
         }
-
-        const nameField = input(type("text"),
-            style("margin-left: 4px"),
-            attr("value", this.options.name ?? ""),
-            attr("placeholder", "circuit"),
-            attr("title", S.Settings.NameOfDownloadedFile),
-        ).render()
-        nameField.addEventListener("change", () => {
-            const newName = nameField.value
-            this._options.name = newName.length === 0 ? undefined : newName
-            this.setDocumentName(this._options.name)
-        })
-        optionsZone.appendChild(
-            div(
-                style("height: 20px; margin-bottom: 4px"),
-                S.Settings.CircuitName, nameField
-            ).render()
-        )
 
         const hideWireColorsCheckbox = makeCheckbox("hideWireColors", S.Settings.hideWireColors)
         const hideInputColorsCheckbox = makeCheckbox("hideInputColors", S.Settings.hideInputColors)
@@ -941,25 +780,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             ).render()
         )
 
-        const zoomLevelField = input(type("number"),
-            style("margin: 0 2px 0 5px; width: 4em"),
-            attr("min", "0"), attr("step", "10"),
-            attr("value", String(this.options.zoom)),
-            attr("title", S.Settings.zoomLevel),
-        ).render()
-        zoomLevelField.addEventListener("change", this.wrapHandler(() => {
-            const zoom = zoomLevelField.valueAsNumber
-            this._options.zoom = zoom
-            this._actualZoomFactor = clampZoom(zoom)
-            this.redrawMgr.addReason("zoom level changed", null)
-        }))
-        optionsZone.appendChild(
-            div(
-                style("height: 20px"),
-                S.Settings.zoomLevelField[0], zoomLevelField, S.Settings.zoomLevelField[1]
-            ).render()
-        )
-
         const showUserdataLink = a(S.Settings.showUserDataLink[1], style("text-decoration: underline; cursor: pointer")).render()
         showUserdataLink.addEventListener("click", () => {
             alert(S.Settings.userDataHeader + "\n\n" + JSON5.stringify(this.userdata, undefined, 4))
@@ -971,10 +791,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         optionsZone.appendChild(showUserDataLinkContainer)
 
         this.optionsHtml = {
-            undoButton,
-            redoButton,
-
-            nameField,
             hideWireColorsCheckbox,
             hideInputColorsCheckbox,
             hideOutputColorsCheckbox,
@@ -985,7 +801,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             hideTooltipsCheckbox,
             groupParallelWiresCheckbox,
             propagationDelayField,
-            zoomLevelField,
             showUserDataLinkContainer,
         }
 
@@ -1065,6 +880,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             pixelRatioMediaQuery.onchange = () => {
                 for (const editor of LogicEditor._allConnectedEditors) {
                     editor.wrapHandler(() => {
+                        editor.setCanvasSize()
                         editor.redrawMgr.addReason("devicePixelRatio changed", null)
                     })()
                 }
@@ -1108,58 +924,29 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 this.setCurrentMouseAction("edit")
             }
 
-            type LeftMenuDisplay = "show" | "hide" | "inactive"
+            const showComponentsAndEditControls: UIDisplay =
+                mode >= Mode.DESIGN ? "show" :
+                    (this._maxInstanceMode === Mode.FULL ? "inactive" : "hide")
 
-            const showLeftMenu: LeftMenuDisplay =
-                (this._maxInstanceMode !== Mode.FULL)
-                    ? (mode >= Mode.DESIGN) ? "show" : "hide"
-                    : (mode >= Mode.DESIGN) ? "show" : "inactive"
-
-            const showRightEditControls = mode >= Mode.CONNECT
-            const modifButtons = this.root.querySelectorAll<HTMLElement>("button.sim-modification-tool")
-
-            for (const but of modifButtons) {
-                setVisible(but, showRightEditControls)
-            }
-
+            const showEditControls = showComponentsAndEditControls === "show"
             const showReset = mode >= Mode.TRYOUT && !this._hideResetButton
-            const showUndoRedo = mode >= Mode.CONNECT
-            const showRightMenu = showReset || showRightEditControls || showUndoRedo
-            const showOnlyReset = showReset && !showRightEditControls
+            const showOnlyReset = showReset && !showEditControls
             const hideSettings = mode < Mode.FULL
 
-            setVisible(this.optionsHtml!.undoButton, showUndoRedo)
-            setVisible(this.optionsHtml!.redoButton, showUndoRedo)
-            setVisible(this.elemWithId("resetToolButton"), showReset)
-            setVisible(this.elemWithId("resetToolButtonCaption"), !showOnlyReset)
-            setVisible(this.elemWithId("resetToolButtonDummyCaption"), showOnlyReset)
+            this._topBar?.setButtonStateFromMode({ showComponentsAndEditControls, showReset }, mode)
+
+            setVisible(this.html.rightToolbarContainer, showOnlyReset)
 
             if (hideSettings) {
                 setVisible(this.html.optionsZone, false)
             }
 
-            const leftToolbar = this.html.leftToolbar
-            switch (showLeftMenu) {
-                case "hide":
-                    leftToolbar.style.removeProperty("visibility")
-                    leftToolbar.style.display = "none"
-                    break
-                case "show":
-                    leftToolbar.style.removeProperty("visibility")
-                    leftToolbar.style.removeProperty("display")
-                    break
-                case "inactive":
-                    leftToolbar.style.visibility = "hidden"
-                    leftToolbar.style.removeProperty("display")
-                    break
-            }
+            setDisplay(this.html.leftToolbar, showComponentsAndEditControls)
 
             // const showTxGates = mode >= Mode.FULL && (showOnly === undefined || showOnly.includes("TX") || showOnly.includes("TXA"))
             // const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
             // setVisible(txGateButton, showTxGates)
 
-            const rightToolbarContainer: HTMLElement = this.elemWithId("rightToolbarContainer")
-            setVisible(rightToolbarContainer, showRightMenu)
         })()
     }
 
@@ -1171,11 +958,27 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         this.setMode(mode)
     }
 
+    public setCircuitName(name: string | undefined) {
+        this._options.name = (name === undefined || name.length === 0) ? undefined : name
+        this._topBar?.setCircuitName(this.documentDisplayName)
+        this.setWindowTitleFrom(this._options.name)
+    }
+
+    public setZoomLevel(zoom: number) {
+        this._options.zoom = zoom
+        this._actualZoomFactor = clampZoom(zoom)
+        this.redrawMgr.addReason("zoom level changed", null)
+    }
+
     public updateCustomComponentButtons() {
         if (this._menu !== undefined) {
             this._menu.updateCustomComponentButtons(this.factory.customDefs())
-            this.cursorMovementMgr.registerButtonListenersOn(this._menu.allCustomButtons(), true)
+            this.eventMgr.registerButtonListenersOn(this._menu.allCustomButtons(), true)
         }
+    }
+
+    public override focus() {
+        this.html.mainCanvas.focus()
     }
 
     public tryLoadFrom(file: File) {
@@ -1294,7 +1097,13 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         if (error !== undefined) {
             console.log("ERROR could not not load initial data: " + error)
+        } else {
+            this.clearDirty()
         }
+    }
+
+    public resetCircuit() {
+        this.editor.tryLoadCircuitFromData()
     }
 
     public loadCircuitOrLibrary(jsonStringOrObject: string | Record<string, unknown>) {
@@ -1308,7 +1117,13 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (this.mode >= Mode.CONNECT) {
             // other modes can't be dirty
             this._isDirty = true
+            this._topBar?.setDirty(true)
         }
+    }
+
+    public clearDirty() {
+        this._isDirty = false
+        this._topBar?.setDirty(false)
     }
 
     public setDark(dark: boolean) {
@@ -1331,27 +1146,16 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
         const numDeleted = this.components.tryDeleteWhere(cond, onlyOne)
         if (numDeleted > 0) {
-            this.cursorMovementMgr.clearPopperIfNecessary()
+            this.eventMgr.clearPopperIfNecessary()
             this.redrawMgr.addReason("component(s) deleted", null)
         }
         return numDeleted
     }
 
     public setCurrentMouseAction(action: MouseAction) {
-        this._currentMouseAction = action
         this.setToolCursor(MouseActions.props[action].cursor)
-
-        const toolButtons = this.root.querySelectorAll<HTMLElement>(".sim-modification-tool")
-        for (const toolButton of toolButtons) {
-            const setActive = toolButton.getAttribute("tool") === action
-            if (setActive) {
-                toolButton.classList.add("active")
-            } else {
-                toolButton.classList.remove("active")
-            }
-        }
-
-        this.cursorMovementMgr.setHandlersFor(action)
+        this._topBar?.setActiveTool(action)
+        this.eventMgr.setHandlersFor(action)
         this.redrawMgr.addReason("mouse action changed", null)
     }
 
@@ -1360,7 +1164,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             this.moveMgr.areDrawablesMoving()
                 ? "grabbing"
                 : this._toolCursor
-                ?? this.cursorMovementMgr.currentMouseOverComp?.cursorWhenMouseover(e)
+                ?? this.eventMgr.currentMouseOverComp?.cursorWhenMouseover(e)
                 ?? "default"
     }
 
@@ -1559,7 +1363,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     public saveToUrl(compressedUriSafeJson: string) {
         if (this._isSingleton) {
             history.pushState(null, "", this.fullUrlForMode(MAX_MODE_WHEN_SINGLETON, compressedUriSafeJson))
-            this._isDirty = false
+            this.clearDirty()
         }
     }
 
@@ -1665,7 +1469,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (blob === undefined) {
             return
         }
-        const filename = (this.options.name ?? "circuit") + extension
+        const filename = this.documentDisplayName + extension
         saveAs(blob, filename)
     }
 
@@ -1742,6 +1546,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     private doRedraw() {
         // const timeBefore = performance.now()
+        this._topBar?.updateTimeLabelIfNeeded()
         const g = LogicEditor.getGraphics(this.html.mainCanvas)
         const mainCanvas = this.html.mainCanvas
         const baseDrawingScale = this._baseDrawingScale
@@ -1883,7 +1688,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const drawTime = this.timeline.logicalTime()
         g.strokeStyle = COLOR_COMPONENT_BORDER
-        const currentMouseOverComp = this.cursorMovementMgr.currentMouseOverComp
+        const currentMouseOverComp = this.eventMgr.currentMouseOverComp
         const drawParams: DrawParams = {
             drawTime,
             currentMouseOverComp,
@@ -1892,7 +1697,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             currentSelection: undefined,
             anythingMoving: this.moveMgr.areDrawablesMoving(),
         }
-        const currentSelection = this.cursorMovementMgr.currentSelection
+        const currentSelection = this.eventMgr.currentSelection
         drawParams.currentSelection = currentSelection
         const drawComp = (comp: Component) => {
             g.beginGroup(comp.constructor.name)
@@ -1954,7 +1759,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public copy() {
-        if (this.cursorMovementMgr.currentSelection === undefined) {
+        if (this.eventMgr.currentSelection === undefined) {
             // copy URL
             copyToClipboard(window.location.href)
             return
@@ -1973,6 +1778,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         return (...params: T) => {
             const result = f(...params)
             this.recalcPropagateAndDrawIfNeeded()
+            this.focus()
             return result
         }
     }

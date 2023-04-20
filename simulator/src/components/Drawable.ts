@@ -692,7 +692,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             let clone
             if (e.altKey && this.parent.mode >= Mode.DESIGN && this.parent.isMainEditor() && (clone = this.makeClone(true)) !== undefined) {
                 this._isMovingWithContext.createdClone = clone
-                this.parent.cursorMovementMgr.setCurrentMouseOverComp(clone)
+                this.parent.eventMgr.setCurrentMouseOverComp(clone)
             } else {
                 this.doSetPosition(...newPos)
             }

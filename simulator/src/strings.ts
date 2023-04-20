@@ -9,7 +9,7 @@ type ComponentStrings = string | [string, string]
 export class Template<TPlaceholders extends string[]> {
     public constructor(public readonly templateString: string) { }
     public expand(values: { [K in TPlaceholders[number]]: any }) {
-        return this.templateString.replace(/\$\{(?:\w+)\}/g, (placeholder) => {
+        return this.templateString.replace(/\$\{(\w+)\}/g, (placeholder) => {
             const key = placeholder.slice(2, -1)
             return String((values as any)[key] ?? "<<" + key + ">>")
         })
@@ -152,6 +152,7 @@ const Strings_fr = {
     Settings: {
         Settings: "Réglages",
         CircuitName: "Nom:",
+        DefaultFileName: "circuit",
         NameOfDownloadedFile: "Ceci sera le nom du fichier téléchargé.",
         hideWireColors: tuple("Cacher l’état des fils", "Si coché, les fils sont affichés avec une couleur neutre plutôt que de montrer s’ils véhiculent un 1 ou un 0."),
         hideInputColors: tuple("Cacher l’état des entrées", "Si coché, les entrées sont affichées avec une couleur neutre, même si elles livrent au circuit une valeur bien déterminée. S’utilise volontiers en cachant aussi l’état des fils."),
@@ -173,12 +174,26 @@ const Strings_fr = {
         WireStyleLine: "Ligne",
         WireStyleCurve: "Courbe",
     },
-    ControlBar: {
+    TopBar: {
+        SetCircuitName: "Tapez le nom du circuit (ou laissez vide pour le nom par défaut):",
+
+        Design: tuple("Concevoir", "Compose ou modifie le circuit"),
+        Delete: tuple("Supprimer", "Supprime des éléments du circuit"),
+        Move: tuple("Déplacer", "Déplace tout le circuit"),
+
+        Download: tuple("Télécharger", "Télécharge le circuit (ou les composants personnalisés avec la touche Option/Alt)"),
+        Screenshot: tuple("Screenshot", "Télécharge le circuit sous forme d’image (PNG ou SVG avec touche Option/Alt)"),
+        Open: tuple("Ouvrir", "Ouvre un circuit précédemment téléchargé"),
+        Reset: tuple("Réinitialiser", "Réinitialise l’état de ce circuit"),
+        CloseCircuit: "Retour au circuit complet",
+
         TimelinePlay: tuple("Play", "Démarre l’écoulement du temps"),
         TimelinePause: tuple("Pause", "Arrête l’écoulement du temps"),
-        TimelineStep: tuple(undefined, "Avance au prochain événement"),
-        Undo: tuple(undefined, "Annule la dernière action"),
-        Redo: tuple(undefined, "Rétablit la dernière action annulée ou répète l’action précédente"),
+        TimelineStep: tuple("Pas à pas", "Avance au prochain événement"),
+        TimeLabel: "Temps: ",
+
+        Undo: tuple("Annuler", "Annule la dernière action"),
+        Redo: tuple("Rétablir", "Rétablit la dernière action annulée ou répète l’action précédente"),
     },
     Messages: {
         NotImplemented: "Cette fonctionnalité n’est pas encore implémentée.",
@@ -719,15 +734,6 @@ const Strings_fr = {
             },
         },
     },
-    Palette: {
-        Design: tuple("Concevoir", "Compose ou modifie le circuit"),
-        Delete: tuple("Supprimer", "Supprime des éléments du circuit"),
-        Move: tuple("Déplacer", "Déplace tout le circuit"),
-        Download: tuple("Télécharger", "Télécharge le circuit (ou les composants personnalisés avec la touche Option/Alt)"),
-        Screenshot: tuple("Screenshot", "Télécharge le circuit sous forme d’image (PNG ou SVG avec touche Option/Alt)"),
-        Open: tuple("Ouvrir", "Ouvre un circuit précédemment téléchargé"),
-        Reset: tuple("Réinitialiser", "Réinitialise l’état de ce circuit"),
-    },
     Dialogs: {
         Generic: {
             Close: "Fermer",
@@ -865,6 +871,7 @@ const Strings_en: Strings = {
     Settings: {
         Settings: "Settings",
         CircuitName: "Name:",
+        DefaultFileName: "circuit",
         NameOfDownloadedFile: "This will be the name of the downloaded file.",
         hideWireColors: tuple("Hide wire colors", "If checked, wires are shown with a neutral color instead of showing whether they carry a 1 or a 0."),
         hideInputColors: tuple("Hide input colors", "If checked, inputs are shown with a neutral color, even if they still deliver a well determined value. Can be used together with hidden wire colors."),
@@ -886,12 +893,26 @@ const Strings_en: Strings = {
         WireStyleLine: "Line",
         WireStyleCurve: "Curve",
     },
-    ControlBar: {
+    TopBar: {
+        SetCircuitName: "Set the name of the circuit (or leave empty to use the default name):",
+
+        Design: tuple("Design", "Create or modify the circuit"),
+        Delete: tuple("Delete", "Delete elements from the circuit"),
+        Move: tuple("Move", "Move the whole circuit"),
+
+        Download: tuple("Download", "Download the circuit (or the custom components with Option/Alt key down)"),
+        Screenshot: tuple("Screenshot", "Download the circuit as an image (PNG or SVG with Option/Alt key down)"),
+        Open: tuple("Open", "Open a previously downloaded circuit"),
+        Reset: tuple("Reset", "Reset the state of this circuit"),
+        CloseCircuit: "Back to the main circuit",
+
         TimelinePlay: tuple("Play", "Starts logical time"),
         TimelinePause: tuple("Pause", "Stops logical time"),
-        TimelineStep: tuple(undefined, "Moves logical time to the next scheduled event"),
-        Undo: tuple(undefined, "Undo the last action"),
-        Redo: tuple(undefined, "Redo the last undone action or repeat the last action"),
+        TimelineStep: tuple("Step", "Moves logical time to the next scheduled event"),
+        TimeLabel: "Time: ",
+
+        Undo: tuple("Undo", "Undo the last action"),
+        Redo: tuple("Redo", "Redo the last undone action or repeat the last action"),
     },
     Messages: {
         NotImplemented: "This feature is not implemented yet.",
@@ -1431,15 +1452,6 @@ const Strings_en: Strings = {
                 PropagatingValue: template("Propagation of value ${val} on wire"),
             },
         },
-    },
-    Palette: {
-        Design: tuple("Design", "Create or modify the circuit"),
-        Delete: tuple("Delete", "Delete elements from the circuit"),
-        Move: tuple("Move", "Move the whole circuit"),
-        Download: tuple("Download", "Download the circuit (or the custom components with Option/Alt key down)"),
-        Screenshot: tuple("Screenshot", "Download the circuit as an image (PNG or SVG with Option/Alt key down)"),
-        Open: tuple("Open", "Open a previously downloaded circuit"),
-        Reset: tuple("Reset", "Reset the state of this circuit"),
     },
     Dialogs: {
         Generic: {

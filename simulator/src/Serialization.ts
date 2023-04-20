@@ -44,14 +44,14 @@ class _Serialization {
     public saveCircuitToFile(editor: LogicEditor) {
         const jsonStr = this.stringifyObject(this.buildCircuitObject(editor), false)
         const blob = new Blob([jsonStr], { type: 'application/json' })
-        const filename = (editor.options.name ?? "circuit") + ".json"
+        const filename = editor.documentDisplayName + ".json"
         saveAs(blob, filename)
     }
 
     public saveLibraryToFile(editor: LogicEditor) {
         const jsonStr = this.stringifyObject(this.buildLibraryObject(editor), false)
         const blob = new Blob([jsonStr], { type: 'application/json' })
-        const filename = (editor.options.name ?? "circuit") + "-lib.json"
+        const filename = editor.documentDisplayName + "-lib.json"
         saveAs(blob, filename)
     }
 
@@ -343,7 +343,7 @@ class _Serialization {
                 const compparts: string[] = []
                 stringifyComponentAndWiresReprsTo(compparts, { ...circuit }, true)
                 const circuitRepr = compparts.length === 0 ? "{}" : "{\n      " + compparts.join(",\n      ") + "\n    }"
-                subpart = subpart.slice(0, subpart.length - 1) + `, "circuit": ` + circuitRepr + "}"
+                subpart = subpart.slice(0, subpart.length - 1) + `, circuit: ` + circuitRepr + "}"
                 defparts.push(subpart)
             }
             parts.push(`defs: [\n    ` + defparts.join(",\n    ") + "\n  ]")
@@ -408,7 +408,7 @@ function stringifyComponentAndWiresReprsTo(parts: string[], container: Component
 // working on the output of `JSON.stringify` we know that only valid strings
 // are present (unless the user supplied a weird `options.indent` but in
 // that case we don’t care since the output would be invalid anyway).
-const stringOrChar = /("(?:[^\\"]|\\.)*")|[:,]/g
+const stringOrChar = /("([^\\"]|\\.)*")|[:,]/g
 
 export function stringifySmart(
     passedObj: any,

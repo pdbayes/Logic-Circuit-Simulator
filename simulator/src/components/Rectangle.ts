@@ -350,7 +350,7 @@ export class Rectangle extends ComponentBase<RectangleRepr> {
         const promptReturnValue = window.prompt(S.Components.Rectangle.contextMenu.SizePrompt, currentSizeStr)
         if (promptReturnValue !== null) {
             let match
-            if ((match = /^(?<w>\d*)(?:(?:\s+|(?: *[×x,;] *))(?<h>\d*))?$/.exec(promptReturnValue)) !== null) {
+            if ((match = /^(?<w>\d*)((\s+|( *[×x,;] *))(?<h>\d*))?$/.exec(promptReturnValue)) !== null) {
                 const parse = (s: string | undefined, dflt: number) => {
                     if (s === undefined) {
                         return dflt

@@ -44,7 +44,7 @@ export class UndoManager {
     public canRedoOrRepeat() {
         return this._redoSnapshots.length > 0 ||
             (this._undoSnapshots.length > 0 &&
-                this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction) !== undefined
+                this._undoSnapshots[this._undoSnapshots.length - 1].repeatAction !== undefined)
     }
 
     public takeSnapshot(interactionResult?: InteractionResult) {

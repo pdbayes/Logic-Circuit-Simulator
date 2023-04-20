@@ -69,7 +69,7 @@ export class EditorSelection {
 }
 
 
-export class CursorMovementManager {
+export class UIEventManager {
 
     public readonly editor: LogicEditor
     private _currentMouseOverComp: Drawable | null = null
@@ -295,6 +295,37 @@ export class CursorMovementManager {
 
     public registerCanvasListenersOn(canvas: HTMLCanvasElement) {
         const editor = this.editor
+        const returnFalse = () => false
+        canvas.ondragenter = returnFalse
+        canvas.ondragover = returnFalse
+        canvas.ondragend = returnFalse
+
+        canvas.ondrop = e => {
+            if (e.dataTransfer === null) {
+                return false
+            }
+
+            e.preventDefault()
+            const file = e.dataTransfer.files?.[0]
+            if (file !== undefined) {
+                editor.tryLoadFrom(file)
+            } else {
+                const dataItems = e.dataTransfer.items
+                if (dataItems !== undefined) {
+                    for (const dataItem of dataItems) {
+                        if (dataItem.kind === "string" && (dataItem.type === "application/json" || dataItem.type === "text/plain")) {
+                            dataItem.getAsString(content => {
+                                e.dataTransfer!.dropEffect = "copy"
+                                editor.loadCircuitOrLibrary(content)
+                            })
+                            break
+                        }
+                    }
+                }
+            }
+            return false
+        }
+
         canvas.addEventListener("touchstart", editor.wrapHandler((e) => {
             // console.log("canvas touchstart %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
             if (this.editor.mode >= Mode.CONNECT) {
@@ -303,6 +334,7 @@ export class CursorMovementManager {
             }
             this._mouseDownTouchStart(e)
         }))
+
         canvas.addEventListener("touchmove", editor.wrapHandler((e) => {
             // console.log("canvas touchmove %o %o, composedPath = %o", offsetXY(e), e, e.composedPath())
             if (this.editor.mode >= Mode.CONNECT) {
@@ -319,7 +351,7 @@ export class CursorMovementManager {
             e.preventDefault()
             this._mouseUpTouchEnd(e)
             this.setCurrentMouseOverComp(null)
-            this.editor.html.mainCanvas.focus()
+            this.editor.focus()
         }))
 
         // canvasContainer.addEventListener("touchcancel", wrapHandler((e) => {
@@ -346,7 +378,7 @@ export class CursorMovementManager {
             this._mouseUpTouchEnd(e)
             this.updateMouseOver(this.editor.offsetXY(e), false)
             this.editor.updateCursor(e)
-            this.editor.html.mainCanvas.focus()
+            this.editor.focus()
         }))
 
         canvas.addEventListener("contextmenu", editor.wrapHandler((e) => {
@@ -615,7 +647,7 @@ export class CursorMovementManager {
             const buttonMouseDownTouchStart = (e: MouseEvent | TouchEvent) => {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
-                this.editor.cursorMovementMgr.currentSelection = undefined
+                this.editor.eventMgr.currentSelection = undefined
                 const newComponent = editor.factory.makeFromButton(editor, compButton)
                 if (newComponent === undefined) {
                     return
@@ -725,7 +757,7 @@ class EditHandlers extends ToolHandlers {
 
     public override mouseHoverOn(comp: Drawable) {
         const editor = this.editor
-        editor.cursorMovementMgr.clearPopperIfNecessary()
+        editor.eventMgr.clearPopperIfNecessary()
         if (editor.options.hideTooltips) {
             return
         }
@@ -744,7 +776,7 @@ class EditHandlers extends ToolHandlers {
                         : [editor.mouseX, editor.mouseY, 4, 4]
                 return new DOMRect(containerRect.x + cx - w / 2, containerRect.y + cy - h / 2, w, h)
             }
-            editor.cursorMovementMgr.makePopper(tooltip, rect)
+            editor.eventMgr.makePopper(tooltip, rect)
         }
     }
     public override mouseDownOn(comp: Drawable, e: MouseEvent | TouchEvent) {
@@ -775,8 +807,8 @@ class EditHandlers extends ToolHandlers {
 
     public override mouseDownOnBackground(e: MouseEvent | TouchEvent) {
         const editor = this.editor
-        const cursorMovementMgr = editor.cursorMovementMgr
-        const currentSelection = cursorMovementMgr.currentSelection
+        const eventMgr = editor.eventMgr
+        const currentSelection = eventMgr.currentSelection
         if (currentSelection !== undefined) {
             const allowSelection = editor.mode >= Mode.CONNECT
             if (e.shiftKey && allowSelection) {
@@ -789,7 +821,7 @@ class EditHandlers extends ToolHandlers {
                 currentSelection.currentlyDrawnRect = rect
             } else {
                 // clear selection
-                cursorMovementMgr.currentSelection = undefined
+                eventMgr.currentSelection = undefined
             }
             editor.redrawMgr.addReason("selection rect changed", null)
         }
@@ -798,12 +830,12 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         const allowSelection = editor.mode >= Mode.CONNECT
         if (allowSelection) {
-            const cursorMovementMgr = editor.cursorMovementMgr
-            const currentSelection = cursorMovementMgr.currentSelection
+            const eventMgr = editor.eventMgr
+            const currentSelection = eventMgr.currentSelection
             const [x, y] = editor.offsetXY(e)
             if (currentSelection === undefined) {
                 const rect = new DOMRect(x, y, 1, 1)
-                cursorMovementMgr.currentSelection = new EditorSelection(rect)
+                eventMgr.currentSelection = new EditorSelection(rect)
             } else {
                 const rect = currentSelection.currentlyDrawnRect
                 if (rect === undefined) {
@@ -821,8 +853,8 @@ class EditHandlers extends ToolHandlers {
         const editor = this.editor
         editor.wireMgr.tryCancelWire()
 
-        const cursorMovementMgr = editor.cursorMovementMgr
-        const currentSelection = cursorMovementMgr.currentSelection
+        const eventMgr = editor.eventMgr
+        const currentSelection = eventMgr.currentSelection
         if (currentSelection !== undefined) {
             currentSelection.finishCurrentRect(this.editor)
             editor.redrawMgr.addReason("selection rect changed", null)
@@ -844,7 +876,7 @@ class EditHandlers extends ToolHandlers {
         if (menuData !== undefined) {
 
             // console.log("setting triggered")
-            const currentMouseDownData = this.editor.cursorMovementMgr.currentMouseDownData
+            const currentMouseDownData = this.editor.eventMgr.currentMouseDownData
             if (currentMouseDownData !== null) {
                 currentMouseDownData.triggeredContextMenu = true
             }
@@ -865,15 +897,16 @@ class EditHandlers extends ToolHandlers {
                 }
 
                 switch (item._tag) {
-                    case 'sep':
+                    case "sep":
                         return li(cls("menu-separator")).render()
-                    case 'text':
+                    case "text":
                         return li(cls("menu-item-static"), item.caption).render()
                     case "item": {
                         const but = mkButton(item, item.shortcut, item.danger ?? false).render()
                         but.addEventListener("click", this.editor.wrapHandler((itemEvent: MouseEvent | TouchEvent) => {
                             const result = item.action(itemEvent, e)
                             this.editor.undoMgr.takeSnapshot(result as Exclude<typeof result, void>)
+                            this.editor.focus()
                         }))
                         return li(cls("menu-item"), but).render()
                     }

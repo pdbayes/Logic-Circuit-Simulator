@@ -261,7 +261,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
         const saveContentItem: [MenuItemPlacement, MenuItem] =
             ["mid", MenuData.item("download", s.SaveContent, () => {
                 const blob = new Blob([this.contentRepr("\n", false)], { type: "text/plain" })
-                const filename = (this.parent.options.name ?? "circuit") + "." + (this.ref ?? this.moduleName.toLowerCase()) + "-content.txt"
+                const filename = this.parent.editor.documentDisplayName + "." + (this.ref ?? this.moduleName.toLowerCase()) + "-content.txt"
                 saveAs(blob, filename)
             })]
 

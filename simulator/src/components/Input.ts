@@ -96,10 +96,13 @@ export abstract class InputBase<
             }
             g.lineWidth = 3
             g.beginPath()
+            const triangleLeft = this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1
+            const triangleRight = this.posX + INPUT_OUTPUT_DIAMETER / 2 + 5
+            const triangleVOffset = 6.75
             triangle(g,
-                this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY - 7,
-                this.posX + INPUT_OUTPUT_DIAMETER / 2 - 1, this.posY + 7,
-                this.posX + INPUT_OUTPUT_DIAMETER / 2 + 5, this.posY,
+                triangleLeft, this.posY + triangleVOffset,
+                triangleRight, this.posY,
+                triangleLeft, this.posY - triangleVOffset,
             )
             g.fill()
             g.stroke()
@@ -445,7 +448,7 @@ export class Input extends InputBase<InputRepr> {
             && this._isPushButton
             && !this._isConstant
             && this.parent.isMainEditor()
-            && this.parent.cursorMovementMgr.currentSelectionEmpty()
+            && this.parent.eventMgr.currentSelectionEmpty()
             && (i = this.clickedBitIndex(e, this.parent)) !== -1) {
             this.doSetValueChangingBit(i, v)
         }

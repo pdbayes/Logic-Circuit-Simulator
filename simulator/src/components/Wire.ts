@@ -483,7 +483,7 @@ export class Wire extends Drawable {
         if (this._waypointBeingDragged !== undefined) {
             this._waypointBeingDragged.mouseDragged(e)
         } else {
-            if (this.parent.isMainEditor() && this.parent.cursorMovementMgr.currentSelectionEmpty()) {
+            if (this.parent.isMainEditor() && this.parent.eventMgr.currentSelectionEmpty()) {
                 const waypoint = this.addWaypointFrom(e)
                 this._waypointBeingDragged = waypoint
                 waypoint.mouseDown(e)
