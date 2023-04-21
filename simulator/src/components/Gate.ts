@@ -233,14 +233,13 @@ export abstract class GateBase<
             drawWireLineToComponent(g, output, gateRight - 1, this.posY)
         }
 
+        const showAsFake = isFake && this.parent.mode >= Mode.FULL
+        const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+        const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
         const prepareMainFill = () => {
-            const showAsFake = isFake && this.parent.mode >= Mode.FULL
-            const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
-            const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
             g.lineWidth = 3
             g.strokeStyle = gateBorderColor
             g.fillStyle = gateFill
-            return gateBorderColor
         }
 
         switch (type) {
@@ -269,7 +268,7 @@ export abstract class GateBase<
                 const shortDown = type === "nimply"
                 const shortUp = type === "rnimply"
                 drawWireEnds(shortUp, shortDown)
-                const gateBorderColor = prepareMainFill()
+                prepareMainFill()
                 g.beginPath()
                 g.moveTo(this.posX, bottom)
                 g.lineTo(gateLeft, bottom)
@@ -305,7 +304,7 @@ export abstract class GateBase<
                 const shortUp = type === "imply"
                 const shortDown = type === "rimply"
                 drawWireEnds(shortUp, shortDown, true)
-                const gateBorderColor = prepareMainFill()
+                prepareMainFill()
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(this.posX - 15, top)
@@ -349,8 +348,8 @@ export abstract class GateBase<
                 g.beginPath()
                 g.moveTo(gateLeft, bottom)
                 g.lineTo(gateLeft, top)
-                g.lineTo(gateRight, this.posY)
-                g.lineTo(gateLeft + 2, this.posY)
+                g.lineTo(gateRight, this.posY + 0.5)
+                g.lineTo(gateLeft + 2, this.posY + 0.5)
                 g.fill()
                 g.stroke()
                 if (shortLeft) {
@@ -367,8 +366,8 @@ export abstract class GateBase<
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateLeft, bottom)
-                g.lineTo(gateRight, this.posY)
-                g.lineTo(gateLeft + 2, this.posY)
+                g.lineTo(gateRight, this.posY - 0.5)
+                g.lineTo(gateLeft + 2, this.posY - 0.5)
                 g.fill()
                 g.stroke()
                 if (shortLeft) {
@@ -378,9 +377,9 @@ export abstract class GateBase<
             }
 
             case "?": {
-                g.strokeStyle = COLOR_UNKNOWN
                 drawWireEnds()
                 prepareMainFill()
+                g.strokeStyle = COLOR_UNKNOWN
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateRight, top)

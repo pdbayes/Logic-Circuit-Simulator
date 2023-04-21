@@ -477,13 +477,13 @@ export class UIEventManager {
                         e.preventDefault()
                     }
                     return
-                // case "c":
-                // NO: this prevents the sharing code from being copied
-                // if (ctrlOrCommand && !targetIsField()) {
-                //     this.copy()
-                //     e.preventDefault()
-                // }
-                // return
+                case "c":
+                    if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
+                        if (editor.copy()) {
+                            e.preventDefault()
+                        }
+                    }
+                    return
                 case "v":
                     if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                         editor.paste()

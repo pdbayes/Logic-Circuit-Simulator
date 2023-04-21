@@ -1070,7 +1070,7 @@ export class WireManager {
         return true
     }
 
-    public clearAllWires() {
+    public clearAll() {
         // TODO clear ribbons
         for (const wire of this._wires) {
             wire.destroy()

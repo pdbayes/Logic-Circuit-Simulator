@@ -38,7 +38,7 @@ import { gallery } from './gallery'
 import { a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
+import { InteractionResult, KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
 
 
 
@@ -1758,21 +1758,50 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         console.log("cut")
     }
 
-    public copy() {
-        if (this.eventMgr.currentSelection === undefined) {
-            // copy URL
-            copyToClipboard(window.location.href)
-            return
+    public copy(): boolean {
+        if (this.eventMgr.currentSelectionEmpty()) {
+            return false
         }
-        // TODO stubs
-        console.log("copy")
+        const componentsToInclude: Component[] = []
+        for (const elem of this.eventMgr.currentSelection?.previouslySelectedElements ?? []) {
+            if (elem instanceof ComponentBase) {
+                componentsToInclude.push(elem)
+            }
+        }
+
+        // TODO check if we're copying custom components to include their def?
+        // ... but then, beware of duplicated custom components if pasting into the same circuit,
+        // or find some compatibility criterion for component defs (e.g., number of in/out nodes
+        // and names) that would seem enough to determine they are the same (beyond their id/name)
+        const reprs = Serialization.buildComponentsObject(componentsToInclude, [this.mouseX, this.mouseY])
+        if (reprs.components === undefined && reprs.wires === undefined) {
+            return false
+        }
+
+        const jsonStr = Serialization.stringifyObject(reprs, false)
+        console.log("Copied:\n" + jsonStr)
+        copyToClipboard(jsonStr)
+        this.focus()
+        return true
     }
 
     public paste() {
-        // TODO stubs
-        console.log("paste")
+        const jsonStr = pasteFromClipboard()
+        if (jsonStr === undefined) {
+            return
+        }
+        const errorOrComps = Serialization.pasteComponents(this, jsonStr)
+        if (isString(errorOrComps)) {
+            console.log(errorOrComps)
+        } else {
+            const selection = new EditorSelection(undefined)
+            for (const comp of errorOrComps) {
+                selection.toggle(comp)
+            }
+            this.eventMgr.currentSelection = selection
+        }
+        this.focus()
     }
-
 
     public wrapHandler<T extends unknown[], R>(f: (...params: T) => R): (...params: T) => R {
         return (...params: T) => {

@@ -4,6 +4,7 @@ import JSON5 from "json5"
 import * as json5util from "json5/lib/util"
 import { CurrentFormatVersion, migrateData } from './DataMigration'
 import { LogicEditor } from "./LogicEditor"
+import { NodeMapping } from './NodeManager'
 import { type Component } from "./components/Component"
 import { type CustomComponentDefRepr } from './components/CustomComponent'
 import { DrawableParent } from './components/Drawable'
@@ -27,6 +28,7 @@ type CommonFields = {
 
 type WireRepr = t.TypeOf<typeof Wire.Repr>
 export type ComponentAndWires = {
+    pos?: [number, number],
     components?: Record<string, Record<string, unknown>>,
     wires?: WireRepr[],
 }
@@ -75,6 +77,35 @@ class _Serialization {
         }
     }
 
+    public pasteComponents(parent: DrawableParent, content: string): Component[] | string {
+        let parsed: Record<string, unknown>
+        try {
+            parsed = JSONParseObject(content)
+        } catch (err) {
+            console.error(err)
+            return "can't load this JSON - error “" + err + `”, length = ${content.length}, JSON:\n` + content
+        }
+
+        // find difference of mouse position and honor it in the new components' positions
+        // to avoid pasting new components on top of the old ones
+        let offsetPos: [number, number] | undefined = undefined
+        if (isArray(parsed.pos)) {
+            const editor = parent.editor
+            const ceil10 = (x: number) => Math.ceil(x / 10) * 10
+            offsetPos = [ceil10(editor.mouseX - parsed.pos[0]), ceil10(editor.mouseY - parsed.pos[1])]
+            // console.log(`offsetPos = ${offsetPos}`)
+        }
+
+        const compReprs = parsed.components
+        if (!isArray(compReprs) && !isRecord(compReprs)) {
+            return "invalid JSON: 'components' must be an array or an object"
+        }
+
+        const { nodeMapping, createdComponents } = this.makeComponents(parent, compReprs, offsetPos)
+        this.makeWires(parent, parsed.wires, nodeMapping, false)
+        return createdComponents
+    }
+
 
     // Private
 
@@ -92,9 +123,7 @@ class _Serialization {
         opts?: LoadOptions,
     ): undefined | string { // string is an error
 
-        const nodeMgr = parent.nodeMgr
-        const wireMgr = parent.wireMgr
-        const components = parent.components
+        const componentList = parent.components
         const parsed = { ...parsed_ } // copy because we delete stuff from it
 
         try {
@@ -113,75 +142,22 @@ class _Serialization {
             delete parsed.defs
         }
 
-        for (const elem of components.all()) {
+        for (const elem of componentList.all()) {
             elem.destroy()
         }
-        components.clearAll()
-        wireMgr.clearAllWires()
-        nodeMgr.clearAllLiveNodes()
+        componentList.clearAll()
+        parent.wireMgr.clearAll()
+        parent.nodeMgr.clearAll()
         if (parent.isMainEditor()) {
             parent.timeline.reset()
         }
 
-        const factory = parent.editor.factory
         const compReprs = parsed.components
-        if (isArray(compReprs)) {
-            // parse using ids from attributes
-            for (const compRepr of compReprs as unknown[]) {
-                factory.makeFromJSON(parent, compRepr)
-            }
-        } else if (isRecord(compReprs)) {
-            // parse using ids from keys
-            for (const [id, compRepr] of Object.entries(compReprs)) {
-                if (isRecord(compRepr)) {
-                    compRepr.ref = id
-                    factory.makeFromJSON(parent, compRepr)
-                } else {
-                    console.error(`Invalid non-object component repr: '${compRepr}'`)
-                }
-            }
-        }
+        const { nodeMapping } = this.makeComponents(parent, compReprs, undefined)
         delete parsed.components
 
-        // recalculating all the unconnected gates here allows
-        // to avoid spurious circular dependency messages, as right
-        // now all components are marked as needing recalculating
-        const recalcMgr = parent.recalcMgr
-        recalcMgr.recalcAndPropagateIfNeeded()
-
         const immediateWirePropagation = opts?.immediateWirePropagation ?? false
-        for (const obj of (isArray(parsed.wires) ? parsed.wires as unknown[] : [])) {
-            const wireData = validateJson(obj, Wire.Repr, "wire")
-            if (wireData === undefined) {
-                return
-            }
-
-            const [nodeID1, nodeID2, wireOptions] = wireData
-            const node1 = nodeMgr.findNode(nodeID1)
-            const node2 = nodeMgr.findNode(nodeID2)
-            if (node1 !== undefined && node2 !== undefined && node1.isOutput() && !node2.isOutput()) {
-                const completedWire = wireMgr.addWire(node1, node2, false)
-                if (completedWire !== undefined) {
-                    if (wireOptions !== undefined) {
-                        completedWire.doSetValidatedId(wireOptions.ref)
-                        if (wireOptions.via !== undefined) {
-                            completedWire.setWaypoints(wireOptions.via)
-                        }
-                        if (wireOptions.propagationDelay !== undefined) {
-                            completedWire.customPropagationDelay = wireOptions.propagationDelay
-                        }
-                        if (wireOptions.style !== undefined) {
-                            completedWire.doSetStyle(wireOptions.style)
-                        }
-                    }
-
-                    if (immediateWirePropagation) {
-                        completedWire.customPropagationDelay = 0
-                    }
-                }
-                recalcMgr.recalcAndPropagateIfNeeded()
-            }
-        }
+        this.makeWires(parent, parsed.wires, nodeMapping, immediateWirePropagation)
         delete parsed.wires
 
         if (parent.isMainEditor()) {
@@ -220,6 +196,83 @@ class _Serialization {
         return undefined // meaning no error
     }
 
+    private makeComponents(parent: DrawableParent, compReprs: unknown, offsetPos: [number, number] | undefined): { nodeMapping: NodeMapping, createdComponents: Component[] } {
+        // TODO also return a mapping for renamed component ids according to the same principle
+        const createdComponents: Component[] = []
+        const add = (c: Component | undefined) => {
+            if (c !== undefined) {
+                createdComponents.push(c)
+            }
+        }
+
+        const nodeMapping = parent.nodeMgr.recordMappingWhile(() => {
+            const factory = parent.editor.factory
+            if (isArray(compReprs)) {
+                // parse using ids from attributes
+                for (const compRepr of compReprs as unknown[]) {
+                    add(factory.makeFromJSON(parent, compRepr, offsetPos))
+                }
+            } else if (isRecord(compReprs)) {
+                // parse using ids from keys
+                for (const [id, compRepr] of Object.entries(compReprs)) {
+                    if (isRecord(compRepr)) {
+                        compRepr.ref = id
+                        add(factory.makeFromJSON(parent, compRepr, offsetPos))
+                    } else {
+                        console.error(`Invalid non-object component repr: '${compRepr}'`)
+                    }
+                }
+            }
+        })
+
+        return { nodeMapping, createdComponents }
+    }
+
+
+    private makeWires(parent: DrawableParent, wires: unknown, nodeMapping: NodeMapping, immediateWirePropagation: boolean) {
+        const wireMgr = parent.wireMgr
+        const nodeMgr = parent.nodeMgr
+
+        // recalculating all the unconnected gates here allows
+        // to avoid spurious circular dependency messages, as right
+        // now all components are marked as needing recalculating
+        const recalcMgr = parent.recalcMgr
+        recalcMgr.recalcAndPropagateIfNeeded()
+
+        for (const obj of (isArray(wires) ? wires as unknown[] : [])) {
+            const wireData = validateJson(obj, Wire.Repr, "wire")
+            if (wireData === undefined) {
+                return
+            }
+
+            const [nodeID1, nodeID2, wireOptions] = wireData
+            const node1 = nodeMgr.findNode(nodeID1, nodeMapping)
+            const node2 = nodeMgr.findNode(nodeID2, nodeMapping)
+            if (node1 !== undefined && node2 !== undefined && node1.isOutput() && !node2.isOutput()) {
+                const completedWire = wireMgr.addWire(node1, node2, false)
+                if (completedWire !== undefined) {
+                    if (wireOptions !== undefined) {
+                        completedWire.doSetValidatedId(wireOptions.ref)
+                        if (wireOptions.via !== undefined) {
+                            completedWire.setWaypoints(wireOptions.via)
+                        }
+                        if (wireOptions.propagationDelay !== undefined) {
+                            completedWire.customPropagationDelay = wireOptions.propagationDelay
+                        }
+                        if (wireOptions.style !== undefined) {
+                            completedWire.doSetStyle(wireOptions.style)
+                        }
+                    }
+
+                    if (immediateWirePropagation) {
+                        completedWire.customPropagationDelay = 0
+                    }
+                }
+                recalcMgr.recalcAndPropagateIfNeeded()
+            }
+        }
+    }
+
     public buildCircuitObject(editor: LogicEditor): Circuit {
         const dataObject: Circuit = {
             v: CurrentFormatVersion,
@@ -240,8 +293,11 @@ class _Serialization {
         }
     }
 
-    public buildComponentsObject(components: readonly Component[]): ComponentAndWires {
+    public buildComponentsObject(components: readonly Component[], sourcePos: [number, number] | undefined): ComponentAndWires {
         const dataObject: ComponentAndWires = {}
+        if (sourcePos !== undefined) {
+            dataObject.pos = sourcePos
+        }
 
         // collect all wires that connect to components within the list
         const wires: Wire[] = []
@@ -331,6 +387,7 @@ class _Serialization {
         stringifyCompactReprTo(parts, dataObject, "type")
         stringifyCompactReprTo(parts, dataObject, "opts")
         stringifyCompactReprTo(parts, dataObject, "userdata")
+        stringifyCompactReprTo(parts, dataObject, "pos")
 
         const defs = dataObject.defs
         if (defs !== undefined && isArray(defs)) {

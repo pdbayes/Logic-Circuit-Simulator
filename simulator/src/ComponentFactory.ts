@@ -7,7 +7,7 @@ import { AdderDef } from "./components/Adder"
 import { AdderArrayDef } from "./components/AdderArray"
 import { Clock, ClockDef } from "./components/Clock"
 import { ComparatorDef } from "./components/Comparator"
-import { Component, ComponentBase } from "./components/Component"
+import { Component, ComponentBase, ComponentRepr } from "./components/Component"
 import { ControlledInverterDef } from "./components/ControlledInverter"
 import { CounterDef } from "./components/Counter"
 import { CustomComponentDef, CustomComponentDefRepr, CustomComponentPrefix } from "./components/CustomComponent"
@@ -45,7 +45,7 @@ import { ShiftRegisterDef } from "./components/ShiftRegister"
 import { TristateBufferDef } from "./components/TristateBuffer"
 import { TristateBufferArrayDef } from "./components/TristateBufferArray"
 import { S } from "./strings"
-import { isRecord, isString, validateJson } from "./utils"
+import { isArray, isRecord, isString, validateJson } from "./utils"
 
 // Generic interface to instantiate components from scratch (possibly with params) or from JSON
 type ComponentMaker<TParams extends Record<string, unknown>> = {
@@ -139,10 +139,16 @@ export class ComponentFactory {
 
     // Component creation functions
 
-    public makeFromJSON(parent: DrawableParent, obj: unknown): Component | undefined {
-        if (!isRecord(obj)) {
-            console.warn(`Skipping invalid non-object component: ${JSON5.stringify(obj, null, 2)}`)
+    public makeFromJSON(parent: DrawableParent, obj_: unknown, offsetPos?: [number, number]): Component | undefined {
+        if (!isRecord(obj_)) {
+            console.warn(`Skipping invalid non-object component: ${JSON5.stringify(obj_, null, 2)}`)
             return undefined
+        }
+        const obj = obj_ as Partial<ComponentRepr<boolean, boolean>>
+        if (offsetPos !== undefined) {
+            if (isArray(obj.pos)) {
+                obj.pos = [obj.pos[0] + offsetPos[0], obj.pos[1] + offsetPos[1]]
+            }
         }
         const type = isString(obj.type) ? obj.type : "<unknown>"
         const maker = this.getMaker(type)
@@ -461,7 +467,7 @@ export class ComponentFactory {
             return s.ComponentAlreadyExists.expand({ id })
         }
 
-        const { components, wires } = Serialization.buildComponentsObject(componentsToInclude)
+        const { components, wires } = Serialization.buildComponentsObject(componentsToInclude, undefined)
         if (components === undefined || wires === undefined) {
             return ""
         }

@@ -501,7 +501,7 @@ export abstract class ComponentBase<
         hasAnyPrecomputedInitialValues: boolean
     ] {
         const nodeMgr = this.parent.nodeMgr
-        const makeDefaultSpec = () => ({ id: nodeMgr.newID() })
+        const makeDefaultSpec = () => ({ id: nodeMgr.getFreeId() })
         const makeDefaultSpecArray = (len: number) => ArrayFillUsing(makeDefaultSpec, len)
 
         if (_repr === undefined) {
@@ -515,18 +515,18 @@ export abstract class ComponentBase<
         let inputSpecs: InputNodeRepr[] = []
         let outputSpecs: OutputNodeRepr[] = []
 
-        const makeNormalizedSpecs = <TNodeNormized extends InputNodeRepr | OutputNodeRepr>(
+        const makeNormalizedSpecs = <TNodeRepr extends InputNodeRepr | OutputNodeRepr>(
             num: number,
-            seqRepr?: ArrayOrDirect<string | number | TNodeNormized>,
+            seqRepr?: ArrayOrDirect<string | number | TNodeRepr>,
         ) => {
             if (seqRepr === undefined) {
                 return makeDefaultSpecArray(num)
             }
 
-            const specs: Array<TNodeNormized> = []
-            function pushId(id: number) {
-                specs.push({ id } as TNodeNormized)
-                nodeMgr.markIDUsed(id)
+            const specs: Array<TNodeRepr> = []
+            function pushId(sourceId: number) {
+                const id = nodeMgr.getFreeIdFrom(sourceId)
+                specs.push({ id } as TNodeRepr)
             }
 
             for (const spec of (isArray(seqRepr) ? seqRepr : [seqRepr])) {
@@ -538,8 +538,8 @@ export abstract class ComponentBase<
                         pushId(i)
                     }
                 } else {
+                    spec.id = nodeMgr.getFreeIdFrom(spec.id)
                     specs.push(spec)
-                    nodeMgr.markIDUsed(spec.id)
                 }
             }
             return specs

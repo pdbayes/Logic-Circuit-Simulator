@@ -5,7 +5,6 @@
 
  * Fix moving: ctr-click then drag -> shouldn't starts moving; long click -> should start moving
  * Take undo snapshot after key events too
- * Copy-paste
  * Adder orientation
  * Prevent click event if right-click and when dragging
  * More consistently set things dirty
@@ -38,6 +37,7 @@
 
 ### DONE
 
+ * Copy-paste
  * Add external component library by drag-and-drop from file
  * Custom component creation
  * Get key events also when multiple editors are on the same page

@@ -686,6 +686,19 @@ export function copyToClipboard(textToCopy: string): boolean {
     return ok
 }
 
+export function pasteFromClipboard(): string | undefined {
+    const textArea = document.createElement('textarea')
+    textArea.readOnly = false
+    textArea.contentEditable = "true"
+    document.body.appendChild(textArea)
+
+    textArea.focus()
+    const ok = document.execCommand('paste')
+    const result = ok ? textArea.value : undefined
+    document.body.removeChild(textArea)
+    return result
+}
+
 export function targetIsFieldOrOtherInput(e: Event) {
     const targets = e.composedPath()
     let elem, tagName
