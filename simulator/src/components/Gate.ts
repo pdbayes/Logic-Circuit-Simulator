@@ -129,7 +129,7 @@ export abstract class GateBase<
         const gateIsUnspecified = myIns.includes(Unknown)
         const explanation = gateIsUnspecified
             ? mods(desc + " " + s.UndeterminedOutputBecauseInputUnknown)
-            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.BecauseInputIs + " ", ...myIns.map(asValue), ", " + s.AccordingToTruthTable)
+            : mods(desc + " " + s.ThisOutput + " ", asValue(myOut), " " + s.BecauseInputIs + " ", ...myIns.map(asValue))
 
         const fullShortDesc = gateProps.fullShortDesc()
         const header = (() => {
@@ -140,11 +140,14 @@ export abstract class GateBase<
             }
         })()
 
+        const explanationAndTable = this.numBits <= 4 ?
+            mods(explanation, ", " + s.AccordingToTruthTable, div(makeTruthTable(genTruthTableData())))
+            : mods(explanation, ".")
+
         return makeGateTooltip(this.numBits,
             header,
             fullShortDesc[2],
-            explanation,
-            makeTruthTable(genTruthTableData())
+            explanationAndTable,
         )
     }
 
@@ -206,39 +209,46 @@ export abstract class GateBase<
             for (let i = 0; i < numBits; i++) {
                 const input = this.inputs.In[i]
                 const short = i === 0 ? shortUp : shortDown
-                let rightEnd = gateLeft - 1
+                let rightEnd = gateLeft + (isORLike ? type.includes("x") ? -1 : 5 : 0)
                 if (short) {
                     rightEnd -= 9
                 }
                 if (isORLike) {
                     if (numBits === 3) {
-                        rightEnd += 3
+                        rightEnd += 1
                         if (i === 1) {
                             rightEnd += 4
                         }
                     } else if (numBits === 4) {
-                        rightEnd += 3
+                        rightEnd += 2
                         if (i === 1 || i === 2) {
                             rightEnd += 8
                         }
+                    } else if (numBits > 4) {
+                        rightEnd += 76
                     }
                 }
                 drawWireLineToComponent(g, input, rightEnd, input.posYInParentTransform)
             }
-            drawWireLineToComponent(g, output, gateRight + 1, this.posY)
+            drawWireLineToComponent(g, output, gateRight - 1, this.posY)
         }
 
-        const showAsFake = isFake && this.parent.mode >= Mode.FULL
-        const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
-        const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
-        g.lineWidth = 3
-        g.strokeStyle = gateBorderColor
-        g.fillStyle = gateFill
-        g.beginPath()
+        const prepareMainFill = () => {
+            const showAsFake = isFake && this.parent.mode >= Mode.FULL
+            const gateBorderColor: ColorString = showAsFake ? COLOR_DARK_RED : COLOR_COMPONENT_BORDER
+            const gateFill = showAsFake ? PATTERN_STRIPED_GRAY : COLOR_BACKGROUND
+            g.lineWidth = 3
+            g.strokeStyle = gateBorderColor
+            g.fillStyle = gateFill
+            return gateBorderColor
+        }
 
         switch (type) {
             case "not":
-            case "buf":
+            case "buf": {
+                drawWireEnds()
+                prepareMainFill()
+                g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateRight, this.posY)
                 g.lineTo(gateLeft, bottom)
@@ -248,16 +258,19 @@ export abstract class GateBase<
                 if (type === "not") {
                     drawRightCircle()
                 }
-                drawWireEnds()
                 nameDeltaX -= 6
                 break
-
-
+            }
 
             case "and":
             case "nand":
             case "nimply":
             case "rnimply": {
+                const shortDown = type === "nimply"
+                const shortUp = type === "rnimply"
+                drawWireEnds(shortUp, shortDown)
+                const gateBorderColor = prepareMainFill()
+                g.beginPath()
                 g.moveTo(this.posX, bottom)
                 g.lineTo(gateLeft, bottom)
                 g.lineTo(gateLeft, top)
@@ -274,20 +287,14 @@ export abstract class GateBase<
                 if (type.startsWith("nand")) {
                     drawRightCircle()
                 }
-                let shortUp = false, shortDown = false
-                if (type === "nimply") {
+                if (shortDown) {
                     drawLeftCircle(false)
-                    shortDown = true
-                } else if (type === "rnimply") {
+                } else if (shortUp) {
                     drawLeftCircle(true)
-                    shortUp = true
                 }
-                drawWireEnds(shortUp, shortDown)
                 nameDeltaX -= 1
                 break
             }
-
-
 
             case "or":
             case "nor":
@@ -295,6 +302,10 @@ export abstract class GateBase<
             case "xnor":
             case "imply":
             case "rimply": {
+                const shortUp = type === "imply"
+                const shortDown = type === "rimply"
+                drawWireEnds(shortUp, shortDown, true)
+                const gateBorderColor = prepareMainFill()
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(this.posX - 15, top)
@@ -312,13 +323,10 @@ export abstract class GateBase<
                 if (type.startsWith("nor") || type.startsWith("xnor")) {
                     drawRightCircle()
                 }
-                let shortUp = false, shortDown = false
-                if (type === "imply") {
+                if (shortUp) {
                     drawLeftCircle(true)
-                    shortUp = true
-                } else if (type === "rimply") {
+                } else if (shortDown) {
                     drawLeftCircle(false)
-                    shortDown = true
                 }
                 if (type.startsWith("x")) {
                     gateLeft = savedGateLeft - 2
@@ -329,13 +337,15 @@ export abstract class GateBase<
                     g.strokeStyle = gateBorderColor
                     g.stroke()
                 }
-                drawWireEnds(shortUp, shortDown, true)
                 nameDeltaX -= 1
                 break
             }
 
             case "txa":
             case "txna": {
+                const shortLeft = type === "txna"
+                drawWireEnds(shortLeft, false)
+                prepareMainFill()
                 g.beginPath()
                 g.moveTo(gateLeft, bottom)
                 g.lineTo(gateLeft, top)
@@ -343,17 +353,17 @@ export abstract class GateBase<
                 g.lineTo(gateLeft + 2, this.posY)
                 g.fill()
                 g.stroke()
-                let shortLeft = false
-                if (type === "txna") {
+                if (shortLeft) {
                     drawLeftCircle(true)
-                    shortLeft = true
                 }
-                drawWireEnds(shortLeft, false)
                 break
             }
 
             case "txb":
             case "txnb": {
+                const shortLeft = type === "txnb"
+                drawWireEnds(false, shortLeft)
+                prepareMainFill()
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateLeft, bottom)
@@ -361,17 +371,16 @@ export abstract class GateBase<
                 g.lineTo(gateLeft + 2, this.posY)
                 g.fill()
                 g.stroke()
-                let shortLeft = false
-                if (type === "txnb") {
+                if (shortLeft) {
                     drawLeftCircle(false)
-                    shortLeft = true
                 }
-                drawWireEnds(false, shortLeft)
                 break
             }
 
-            case "?":
+            case "?": {
                 g.strokeStyle = COLOR_UNKNOWN
+                drawWireEnds()
+                prepareMainFill()
                 g.beginPath()
                 g.moveTo(gateLeft, top)
                 g.lineTo(gateRight, top)
@@ -381,7 +390,6 @@ export abstract class GateBase<
                 g.fill()
                 g.stroke()
                 g.lineWidth = 0
-                drawWireEnds()
 
                 ctx.inNonTransformedFrame(() => {
                     g.fillStyle = COLOR_UNKNOWN
@@ -390,6 +398,7 @@ export abstract class GateBase<
                     g.fillText('?', this.posX, this.posY)
                 })
                 break
+            }
         }
 
         if (this.parent.options.showGateTypes && !isUnknown(type)) {
@@ -698,7 +707,8 @@ function makeTruthTable([header, rows]: readonly [string[], TruthTableRowData[]]
         tbody(...htmlRows)
     )
 }
-function makeGateTooltip(nInput: number, title: Modifier, description: Modifier, explanation: Modifier, truthTable: Modifier): ModifierObject {
-    const maxWidth = 200 + (Math.max(0, nInput - 2)) * 50
-    return tooltipContent(title, mods(div(description), div(explanation), div(truthTable)), maxWidth)
+function makeGateTooltip(numBits: number, title: Modifier, description: Modifier, explanationAndTable: Modifier): ModifierObject {
+    const numBitsDisplay = Math.min(4, numBits)
+    const maxWidth = 200 + (Math.max(0, numBitsDisplay - 2)) * 50
+    return tooltipContent(title, mods(div(description), div(explanationAndTable)), maxWidth)
 }

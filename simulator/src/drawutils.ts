@@ -48,9 +48,14 @@ export class DrawingRect {
     public readonly bottom: number
     public readonly right: number
 
-    public constructor(comp: Component) {
+    public constructor(comp: Component, honorRotation: boolean) {
         this.width = comp.unrotatedWidth
         this.height = comp.unrotatedHeight
+
+        const swapDims = honorRotation && Orientation.isVertical(comp.orient)
+        if (swapDims) {
+            [this.width, this.height] = [this.height, this.width]
+        }
 
         this.top = comp.posY - this.height / 2
         this.left = comp.posX - this.width / 2

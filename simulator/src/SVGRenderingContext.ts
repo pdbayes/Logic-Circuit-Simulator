@@ -226,7 +226,7 @@ export class SVGRenderingContext {
                             }
                         } else if (key === 'lineWidth') {
                             const scale = this._getTransformScale()
-                            value = value * Math.max(scale.x, scale.y) // TODO error here?
+                            value = value * Math.max(scale.x, scale.y)
                         }
                         // otherwise only update attribute if right type, and not svg default
                         elem.setAttribute(attr, value)

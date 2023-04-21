@@ -1778,7 +1778,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         return (...params: T) => {
             const result = f(...params)
             this.recalcPropagateAndDrawIfNeeded()
-            this.focus()
             return result
         }
     }

@@ -758,8 +758,8 @@ export abstract class ComponentBase<
         }
     }
 
-    protected bounds(): DrawingRect {
-        return new DrawingRect(this)
+    protected bounds(honorRotation: boolean = false): DrawingRect {
+        return new DrawingRect(this, honorRotation)
         // use with:
         // const bounds = this.bounds()
         // const { top, left, bottom, right, width, height } = bounds
@@ -768,10 +768,9 @@ export abstract class ComponentBase<
 
     public override draw(g: GraphicsRendering, drawParams: DrawParams): void {
         super.draw(g, drawParams)
-        // TODO this doesn't honor the rotation
         if (this._state === ComponentState.INVALID) {
             g.fillStyle = "rgba(255, 0, 0, 0.3)"
-            const bounds = this.bounds()
+            const bounds = this.bounds(true)
             g.fill(bounds.outline(g, 5))
         }
     }

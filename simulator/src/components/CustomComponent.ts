@@ -6,6 +6,8 @@ import { RecalcManager } from "../RedrawRecalcManager"
 import { SVGRenderingContext } from "../SVGRenderingContext"
 import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
+import { b, div, mods, span, tooltipContent } from "../htmlgen"
+import { S } from "../strings"
 import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, typeOrUndefined, validateJson } from "../utils"
 import { Component, ComponentBase, ComponentRepr, NodeDesc, NodeGroupDesc, NodeInDesc, NodeOutDesc, NodeRec, defineComponent, groupHorizontal, groupVertical } from "./Component"
 import { DrawContext, DrawableParent, GraphicsRendering, MenuItems, Orientation, Orientations } from "./Drawable"
@@ -357,6 +359,14 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
     protected override propagateValue(newValue: LogicValue[]) {
         this.outputValues(this.outputs._all, newValue)
     }
+
+    public override makeTooltip() {
+        const s = S.Components.Custom.tooltip
+        return tooltipContent(mods(b(this.customDef.caption), span(s.titleSuffix)), mods(
+            div(s.desc),
+        ))
+    }
+
 
     // TODO tooltip
 

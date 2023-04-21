@@ -274,6 +274,10 @@ const Strings_fr = {
                 CannotDeleteInUseBy: template("Impossible de supprimer ce composant car il est utilisé dans la définition d’un autre composant (${caption})."),
                 ConfirmDelete: "Voulez-vous vraiment supprimer ce composant personnalisé?",
             },
+            tooltip: {
+                titleSuffix: " (composant personnalisé)",
+                desc: "Ce composant calcule ses sorties selon le circuit personnalisé que vous avez défini.",
+            },
             messages: {
                 EmptySelection: "Aucun composant n’est sélectionné.",
                 NoInput: "Aucune entrée n’est sélectionnée.",
@@ -992,6 +996,10 @@ const Strings_en: Strings = {
                 CannotDeleteInUse: "Cannot delete this custom component because it is in use in the circuit.",
                 CannotDeleteInUseBy: template("Cannot delete this custom component because it is used to define another component (${caption})."),
                 ConfirmDelete: "Are you sure you want to delete this custom component?",
+            },
+            tooltip: {
+                titleSuffix: " (Custom Component)",
+                desc: "This custom component computes its outputs according to the circuit you have defined.",
             },
             messages: {
                 EmptySelection: "No components are selected.",
