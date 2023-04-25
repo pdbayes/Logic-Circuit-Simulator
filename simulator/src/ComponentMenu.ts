@@ -44,7 +44,7 @@ import { TristateBufferArrayDef } from "./components/TristateBufferArray"
 import { a, button, cls, div, emptyMod, raw, span, style, title, type } from "./htmlgen"
 import { ImageName, makeImage, makeSvgHolder } from "./images"
 import { S, Strings } from "./strings"
-import { deepObjectEquals, isArray, isString } from "./utils"
+import { deepObjectEquals, isArray, isString, setVisible } from "./utils"
 
 export type ComponentKey = Strings["ComponentBar"]["Components"]["type"]
 
@@ -245,6 +245,23 @@ export class ComponentMenu {
             }
         }
         this._customComponentSection = defs === undefined ? undefined : this.makeCustomComponentSection(defs)
+    }
+
+    public setCustomComponentsHidden(ids: readonly string[]) {
+        const section = this._customComponentSection
+        if (section === undefined) {
+            return
+        }
+        let anyVisible = false
+        for (const button of section.buttons) {
+            const show = !ids.includes(button.dataset.type!)
+            anyVisible ||= show
+            setVisible(button, show)
+        }
+        setVisible(section.header, anyVisible)
+        if (section.separator !== undefined) {
+            setVisible(section.separator, anyVisible)
+        }
     }
 
     private makeCustomComponentSection(defs: readonly CustomComponentDef[]): HtmlSection | undefined {

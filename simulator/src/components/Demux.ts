@@ -169,13 +169,13 @@ export class Demux extends ParametrizedComponentBase<DemuxRepr> {
 
         // wiring
         if (this._showWiring) {
-            const neutral = this.parent.options.hideWireColors
+            const neutral = this.parent.editor.options.hideWireColors
             const sels = this.inputValues(this.inputs.S)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
                 const selectedOutputs = this.outputs.Z[sel]
                 const anchorDiffX = (right - left) / 3
-                const wireStyleStraight = this.parent.options.wireStyle === WireStyles.straight
+                const wireStyleStraight = this.parent.editor.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < this.inputs.In.length; i++) {
                     g.beginPath()

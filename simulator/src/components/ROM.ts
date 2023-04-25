@@ -178,7 +178,7 @@ export abstract class ROMRAMBase<TRepr extends ROMRAMRepr> extends ParametrizedC
             const addr = this.currentAddress()
             let contentBottom, labelCenter
 
-            if (!this._showContent || !this.canShowContent() || this.parent.options.hideMemoryContent) {
+            if (!this._showContent || !this.canShowContent() || this.parent.editor.options.hideMemoryContent) {
                 g.font = `bold 18px sans-serif`
                 g.fillStyle = COLOR_COMPONENT_BORDER
                 g.textAlign = "center"

@@ -1,11 +1,10 @@
 import * as t from "io-ts"
 import { ComponentList, DrawZIndex } from "../ComponentList"
-import { DrawParams, EditorOptions, LogicEditor } from "../LogicEditor"
+import { DrawParams, LogicEditor } from "../LogicEditor"
 import { type MoveManager } from "../MoveManager"
 import { type NodeManager } from "../NodeManager"
 import { RecalcManager, RedrawManager } from "../RedrawRecalcManager"
 import { type SVGRenderingContext } from "../SVGRenderingContext"
-import { type Timeline } from "../Timeline"
 import { UndoManager } from "../UndoManager"
 import { COLOR_COMPONENT_BORDER, COLOR_MOUSE_OVER, COLOR_MOUSE_OVER_DANGER, ColorString, GRID_STEP, inRect } from "../drawutils"
 import { Modifier, ModifierObject, span, style } from "../htmlgen"
@@ -122,25 +121,28 @@ export interface DrawableParent {
 
     isMainEditor(): this is LogicEditor
     readonly editor: LogicEditor
+    // nice to forward...
+    readonly mode: Mode 
 
-    // implemented everywhere
-    readonly mode: Mode
-    readonly options: Readonly<EditorOptions>
-
-    readonly timeline: Timeline
-    readonly recalcMgr: RecalcManager
+    // implemented as one per (editor + instantiated custom component)
+    readonly components: ComponentList
     readonly nodeMgr: NodeManager
     readonly wireMgr: WireManager
-    readonly components: ComponentList
+    readonly recalcMgr: RecalcManager
 
-    // used with optional calls that are not used in custom components
-    // because they are only related to the display of components
-    readonly redrawMgr?: RedrawManager
-    readonly moveMgr?: MoveManager
-    readonly undoMgr?: UndoManager
-    setDirty?(reason: string): void
-    setToolCursor?(cursor: string | null): void
+    // defined only when editing the main circuit or a custom comp
+    readonly ifEditing:  EditTools | undefined
 
+    stopEditingThis(): void
+    startEditingThis(tools: EditTools): void
+}
+
+export type EditTools = {
+    readonly redrawMgr: RedrawManager
+    readonly moveMgr: MoveManager
+    readonly undoMgr: UndoManager
+    setDirty(reason: string): void
+    setToolCursor(cursor: string | null): void
 }
 
 export abstract class Drawable {
@@ -165,7 +167,7 @@ export abstract class Drawable {
     }
 
     protected setNeedsRedraw(reason: string) {
-        this.parent.redrawMgr?.addReason(reason, this)
+        this.parent.ifEditing?.redrawMgr.addReason(reason, this)
     }
 
     public get drawZIndex(): DrawZIndex {
@@ -601,11 +603,11 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     private tryStartMoving(e: MouseEvent | TouchEvent) {
-        if (this.lockPos || !this.parent.isMainEditor()) {
+        if (this.lockPos) {
             return
         }
         if (this._isMovingWithContext === undefined) {
-            const [offsetX, offsetY] = this.parent.offsetXY(e)
+            const [offsetX, offsetY] = this.parent.editor.offsetXY(e)
             this._isMovingWithContext = {
                 mouseOffsetToPosX: offsetX - this.posX,
                 mouseOffsetToPosY: offsetY - this.posY,
@@ -622,7 +624,7 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
             this._isMovingWithContext = undefined
             wasMoving = true
         }
-        this.parent.moveMgr?.setDrawableStoppedMoving(this, e)
+        this.parent.ifEditing?.moveMgr.setDrawableStoppedMoving(this, e)
         return wasMoving
     }
 
@@ -643,13 +645,13 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
     }
 
     public override mouseDragged(e: MouseEvent | TouchEvent) {
-        if (this.parent.mode >= Mode.CONNECT && !this.lockPos && this.parent.isMainEditor()) {
-            const [x, y] = this.parent.offsetXY(e)
+        if (this.parent.mode >= Mode.CONNECT && !this.lockPos) {
+            const [x, y] = this.parent.editor.offsetXY(e)
             const snapToGrid = !e.metaKey
             const newPos = this.updateSelfPositionIfNeeded(x, y, snapToGrid, e)
             if (newPos !== undefined) { // position changed
                 this.positionChanged()
-                this.parent.moveMgr.setDrawableMoving(this, e)
+                this.parent.ifEditing?.moveMgr.setDrawableMoving(this, e)
             }
         }
     }
@@ -690,9 +692,9 @@ export abstract class DrawableWithDraggablePosition extends DrawableWithPosition
         const newPos = this.tryMakePosition(targetX, targetY, snapToGrid)
         if (newPos !== undefined) {
             let clone
-            if (e.altKey && this.parent.mode >= Mode.DESIGN && this.parent.isMainEditor() && (clone = this.makeClone(true)) !== undefined) {
+            if (e.altKey && this.parent.mode >= Mode.DESIGN && (clone = this.makeClone(true)) !== undefined) {
                 this._isMovingWithContext.createdClone = clone
-                this.parent.eventMgr.setCurrentMouseOverComp(clone)
+                this.parent.editor.eventMgr.setCurrentMouseOverComp(clone)
             } else {
                 this.doSetPosition(...newPos)
             }

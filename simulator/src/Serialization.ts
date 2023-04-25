@@ -6,20 +6,35 @@ import { CurrentFormatVersion, migrateData } from './DataMigration'
 import { LogicEditor } from "./LogicEditor"
 import { NodeMapping } from './NodeManager'
 import { type Component } from "./components/Component"
-import { type CustomComponentDefRepr } from './components/CustomComponent'
+import { type CustomComponent, type CustomComponentDefRepr } from './components/CustomComponent'
 import { DrawableParent } from './components/Drawable'
 import { Wire } from "./components/Wire"
 import { JSONParseObject, isArray, isRecord, isString, keysOf, validateJson } from "./utils"
 
 
 export type Circuit = CommonFields & {
+
+    /** Global circuit options */
     opts?: Record<string, unknown>,
+
+    /** The current subcircuit being edited (but not valided yet) */
+    scratch?: Scratch,
+
+    /** Copy of what was passed through URL parameters */
     userdata?: string | Record<string, unknown> | undefined
+
 } & ComponentAndWires
 
 export type Library = CommonFields & {
     type: "lib",
 }
+
+type Scratch = {
+
+    /** The ID of the component whose scratch space it is */
+    id: string,
+
+} & ComponentAndWires
 
 type CommonFields = {
     v: typeof CurrentFormatVersion,
@@ -27,9 +42,16 @@ type CommonFields = {
 }
 
 type WireRepr = t.TypeOf<typeof Wire.Repr>
+
 export type ComponentAndWires = {
+
+    /** The original reference position these components are from */
     pos?: [number, number],
+
+    /** The components themselves, keyed by their ID */
     components?: Record<string, Record<string, unknown>>,
+
+    /** The wires between the previously listed components */
     wires?: WireRepr[],
 }
 
@@ -182,15 +204,28 @@ class _Serialization {
 
             const isUndoRedoAction = opts?.isUndoRedoAction ?? false
             if (!isUndoRedoAction) {
-                parent.undoMgr.takeSnapshot()
+                parent.editor.editTools.undoMgr.takeSnapshot()
             }
 
             parent.updateCustomComponentButtons()
+
+            // try to load scratch, if any
+            const scratch = parsed.scratch
+            let customComp_
+            if (scratch !== undefined && isRecord(scratch) && isString(scratch.id) && (customComp_ = parent.components.get(scratch.id)) !== undefined) {
+                delete scratch.id
+                const customComp = customComp_ as CustomComponent
+                this.loadCircuit(customComp, scratch, { immediateWirePropagation: true, skipMigration: true })
+
+                // switch editor to the scratch
+                parent.setEditorRoot(customComp)
+            }
+            delete parsed.scratch
         }
 
         const unhandledData = keysOf(parsed)
         if (unhandledData.length !== 0) {
-            console.log("Unloaded data fields: " + unhandledData.join(", "))
+            console.warn("Unloaded data fields: " + unhandledData.join(", "))
         }
 
         return undefined // meaning no error
@@ -278,10 +313,22 @@ class _Serialization {
             v: CurrentFormatVersion,
             opts: editor.nonDefaultOptions(),
             defs: editor.factory.customDefReprs(),
+            scratch: undefined,
             userdata: editor.userdata,
         }
 
-        this.buildComponentReprsInto(dataObject, editor.components.all(), editor.wireMgr.wires)
+        const editorRoot = editor.editorRoot
+        if (!(editorRoot instanceof LogicEditor)) {
+            const customComp = editorRoot as CustomComponent
+            // we save this scratch space, too
+            const scratch: Scratch = {
+                id: customComp.ref ?? "n/a",
+            }
+            this.buildComponentAndWireReprsInto(scratch, editorRoot.components.all(), editorRoot.wireMgr.wires)
+            dataObject.scratch = scratch
+        }
+
+        this.buildComponentAndWireReprsInto(dataObject, editor.components.all(), editor.wireMgr.wires)
         return dataObject
     }
 
@@ -293,7 +340,7 @@ class _Serialization {
         }
     }
 
-    public buildComponentsObject(components: readonly Component[], sourcePos: [number, number] | undefined): ComponentAndWires {
+    public buildComponentsAndWireObject(components: readonly Component[], sourcePos: [number, number] | undefined): ComponentAndWires {
         const dataObject: ComponentAndWires = {}
         if (sourcePos !== undefined) {
             dataObject.pos = sourcePos
@@ -309,11 +356,11 @@ class _Serialization {
                 }
             }
         }
-        this.buildComponentReprsInto(dataObject, components, wires)
+        this.buildComponentAndWireReprsInto(dataObject, components, wires)
         return dataObject
     }
 
-    private buildComponentReprsInto(dataObject: ComponentAndWires, components: Iterable<Component>, wires: readonly Wire[]): void {
+    private buildComponentAndWireReprsInto(dataObject: ComponentAndWires, components: Iterable<Component>, wires: readonly Wire[]): void {
         for (const comp of components) {
             if (dataObject.components === undefined) {
                 dataObject.components = {}
@@ -398,7 +445,7 @@ class _Serialization {
                 let subpart = stringifySmart(def, { maxLength: Infinity })
                 def.circuit = circuit
                 const compparts: string[] = []
-                stringifyComponentAndWiresReprsTo(compparts, { ...circuit }, true)
+                stringifyComponentAndWiresReprsTo(compparts, { ...circuit }, 3)
                 const circuitRepr = compparts.length === 0 ? "{}" : "{\n      " + compparts.join(",\n      ") + "\n    }"
                 subpart = subpart.slice(0, subpart.length - 1) + `, circuit: ` + circuitRepr + "}"
                 defparts.push(subpart)
@@ -407,7 +454,16 @@ class _Serialization {
         }
         delete dataObject.defs
 
-        stringifyComponentAndWiresReprsTo(parts, dataObject, false)
+        const scratch = dataObject.scratch
+        if (scratch !== undefined) {
+            const scratchparts: string[] = []
+            scratchparts.push(`id: ${stringifySmart(scratch.id)}`)
+            stringifyComponentAndWiresReprsTo(scratchparts, { ...scratch }, 2)
+            parts.push(`scratch: {\n    ` + scratchparts.join(",\n    ") + "\n  }")
+        }
+        delete dataObject.scratch
+
+        stringifyComponentAndWiresReprsTo(parts, dataObject, 1)
 
         // loop though the remaining fields
         const unprocessedFields = keysOf(dataObject)
@@ -431,13 +487,13 @@ function stringifyCompactReprTo(parts: string[], container: Record<string, unkno
     delete container[key]
 }
 
-function stringifyComponentAndWiresReprsTo(parts: string[], container: ComponentAndWires, inDef: boolean) {
-    const innerIndent = "  ".repeat(inDef ? 4 : 2)
-    const outerIndent = "  ".repeat(inDef ? 3 : 1)
+function stringifyComponentAndWiresReprsTo(parts: string[], container: ComponentAndWires, outerLevel: number) {
+    const outerIndent = "  ".repeat(outerLevel)
+    const innerIndent = outerIndent + "  "
     const comps = container.components
     let entries
-    if (comps !== undefined) {
 
+    if (comps !== undefined) {
         if (isArray(comps) && comps.length !== 0) {
             // array style
             const subparts: string[] = []
@@ -457,6 +513,7 @@ function stringifyComponentAndWiresReprsTo(parts: string[], container: Component
         }
     }
     delete container.components
+
     stringifyCompactReprTo(parts, container, "wires")
 }
 

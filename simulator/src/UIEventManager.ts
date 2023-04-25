@@ -1,9 +1,11 @@
 import { createPopper, Instance as PopperInstance } from '@popperjs/core'
 import { ButtonDataset } from './ComponentFactory'
 import { DrawZIndex } from './ComponentList'
-import { ComponentBase, ComponentState } from './components/Component'
+import { Component, ComponentBase, ComponentState } from './components/Component'
+import { CustomComponent } from './components/CustomComponent'
 import { Drawable, DrawableWithPosition, MenuData, MenuItem } from "./components/Drawable"
 import { Node } from "./components/Node"
+import { Waypoint, Wire } from './components/Wire'
 import { dist, setColorMouseOverIsDanger } from './drawutils'
 import { applyModifiersTo, button, cls, emptyMod, li, Modifier, ModifierObject, mods, span, type, ul } from './htmlgen'
 import { IconName, makeIcon } from './images'
@@ -160,7 +162,7 @@ export class UIEventManager {
                     this._startHoverTimeoutHandle = null
                 }, 1200)
             }
-            this.editor.redrawMgr.addReason("mouseover changed", null)
+            this.editor.editTools.redrawMgr.addReason("mouseover changed", null)
             // console.log("Over component: ", comp)
         }
     }
@@ -179,10 +181,11 @@ export class UIEventManager {
                     return this._currentMouseOverComp
                 }
             }
+            const root = this.editor.editorRoot
 
             // overlays
             if (!pullingWire) {
-                for (const comp of this.editor.components.withZIndex(DrawZIndex.Overlay)) {
+                for (const comp of root.components.withZIndex(DrawZIndex.Overlay)) {
                     if (comp.isOver(x, y)) {
                         return comp
                     }
@@ -190,7 +193,7 @@ export class UIEventManager {
             }
 
             // normal components or their nodes
-            for (const comp of this.editor.components.withZIndex(DrawZIndex.Normal)) {
+            for (const comp of root.components.withZIndex(DrawZIndex.Normal)) {
                 let nodeOver: Node | null = null
                 for (const node of comp.allNodes()) {
                     if (node.isOver(x, y)) {
@@ -198,7 +201,7 @@ export class UIEventManager {
                         break
                     }
                 }
-                if (nodeOver !== null && (!pullingWire || this.editor.wireMgr.isValidMouseUp(nodeOver))) {
+                if (nodeOver !== null && (!pullingWire || root.wireMgr.isValidMouseUp(nodeOver))) {
                     return nodeOver
                 }
                 if (!pullingWire && comp.isOver(x, y)) {
@@ -208,7 +211,7 @@ export class UIEventManager {
 
             if (!pullingWire) {
                 // wires
-                for (const wire of this.editor.wireMgr.wires) {
+                for (const wire of root.wireMgr.wires) {
                     for (const waypoint of wire.waypoints) {
                         if (waypoint.isOver(x, y)) {
                             return waypoint
@@ -220,7 +223,7 @@ export class UIEventManager {
                 }
 
                 // background elems
-                for (const comp of this.editor.components.withZIndex(DrawZIndex.Background)) {
+                for (const comp of root.components.withZIndex(DrawZIndex.Background)) {
                     if (comp.isOver(x, y)) {
                         return comp
                     }
@@ -236,15 +239,16 @@ export class UIEventManager {
     public selectAll() {
         const sel = new EditorSelection(undefined)
         this.currentSelection = sel
-        for (const comp of this.editor.components.all()) {
+        const root = this.editor.editorRoot
+        for (const comp of root.components.all()) {
             sel.previouslySelectedElements.add(comp)
         }
-        for (const wire of this.editor.wireMgr.wires) {
+        for (const wire of root.wireMgr.wires) {
             for (const waypoint of wire.waypoints) {
                 sel.previouslySelectedElements.add(waypoint)
             }
         }
-        this.editor.redrawMgr.addReason("selected all", null)
+        this.editor.editTools.redrawMgr.addReason("selected all", null)
     }
 
     public toggleSelect(comp: Drawable) {
@@ -254,7 +258,7 @@ export class UIEventManager {
             this.currentSelection = sel
         }
         sel.toggle(comp)
-        this.editor.redrawMgr.addReason("toggled selection", null)
+        this.editor.editTools.redrawMgr.addReason("toggled selection", null)
     }
 
 
@@ -269,21 +273,19 @@ export class UIEventManager {
     }
 
     public makePopper(tooltipHtml: ModifierObject, rect: () => DOMRect) {
-        const tooltipContents = this.editor.html.tooltipContents
-        const tooltipElem = this.editor.html.tooltipElem
+        const { tooltipContents, tooltipElem, mainCanvas } = this.editor.html
         tooltipContents.innerHTML = ""
         tooltipHtml.applyTo(tooltipContents)
         tooltipElem.style.removeProperty("display")
-        const canvas = this.editor.html.mainCanvas
         const popper = createPopper({
             getBoundingClientRect: rect,
-            contextElement: canvas,
+            contextElement: mainCanvas,
         }, tooltipElem, {
             placement: 'right',
             modifiers: [{ name: 'offset', options: { offset: [4, 8] } }],
         })
 
-        const scrollParent = getScrollParent(canvas)
+        const scrollParent = getScrollParent(mainCanvas)
         const scrollListener = () => popper.update()
         scrollParent.addEventListener("scroll", scrollListener)
         const removeListener = () => scrollParent.removeEventListener("scroll", scrollListener)
@@ -394,11 +396,21 @@ export class UIEventManager {
                 return
             }
             switch (e.key) {
-                case "Escape":
-                    editor.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING, false)
-                    editor.wireMgr.tryCancelWire()
-                    e.preventDefault()
+                case "Escape": {
+                    let handled: boolean
+                    handled = editor.eventMgr.tryDeleteComponentsWhere(comp => comp.state === ComponentState.SPAWNING, false) > 0
+                    if (!handled) {
+                        handled = editor.wireMgr.tryCancelWire()
+                    }
+                    if (!handled && this.editor.editorRoot instanceof CustomComponent) {
+                        handled = this.editor.tryCloseCustomComponentEditor()
+                    }
+
+                    if (handled) {
+                        e.preventDefault()
+                    }
                     return
+                }
 
                 case "Backspace":
                 case "Delete": {
@@ -406,14 +418,14 @@ export class UIEventManager {
                     if ((selComp = this.currentSelection?.previouslySelectedElements) !== undefined && selComp.size !== 0) {
                         let anyDeleted = false
                         for (const comp of selComp) {
-                            anyDeleted = editor.tryDeleteDrawable(comp).isChange || anyDeleted
+                            anyDeleted = editor.eventMgr.tryDeleteDrawable(comp).isChange || anyDeleted
                         }
                         if (anyDeleted) {
-                            editor.undoMgr.takeSnapshot()
+                            editor.editTools.undoMgr.takeSnapshot()
                         }
                     } else if ((selComp = this.currentMouseOverComp) !== null) {
-                        const result = editor.tryDeleteDrawable(selComp)
-                        editor.undoMgr.takeSnapshot(result)
+                        const result = editor.eventMgr.tryDeleteDrawable(selComp)
+                        editor.editTools.undoMgr.takeSnapshot(result)
                     }
                     e.preventDefault()
                     return
@@ -458,16 +470,16 @@ export class UIEventManager {
                 case "z":
                     if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
                         if (shift) {
-                            editor.undoMgr.redoOrRepeat()
+                            editor.editTools.undoMgr.redoOrRepeat()
                         } else {
-                            editor.undoMgr.undo()
+                            editor.editTools.undoMgr.undo()
                         }
                         e.preventDefault()
                     }
                     return
                 case "y":
                     if (ctrlOrCommand && !targetIsFieldOrOtherInput(e)) {
-                        editor.undoMgr.redoOrRepeat()
+                        editor.editTools.undoMgr.redoOrRepeat()
                         e.preventDefault()
                     }
                     return
@@ -524,7 +536,7 @@ export class UIEventManager {
                     this._currentMouseDownData = mouseDownData
                     this.setStartDragTimeout(mouseDownData, e)
                 }
-                this.editor.redrawMgr.addReason("mousedown", null)
+                this.editor.editTools.redrawMgr.addReason("mousedown", null)
             } else {
                 // mouse down on background
                 this._currentMouseDownData = {
@@ -573,7 +585,7 @@ export class UIEventManager {
             }
         } else {
             // moving mouse or dragging without a locked component
-            this.updateMouseOver(this.editor.offsetXY(e), this.editor.wireMgr.isAddingWire)
+            this.updateMouseOver(this.editor.offsetXY(e), this.editor.editorRoot.wireMgr.isAddingWire)
         }
     }
 
@@ -610,7 +622,7 @@ export class UIEventManager {
             }
 
             if (change.isChange) {
-                this.editor.undoMgr.takeSnapshot(change)
+                this.editor.editTools.undoMgr.takeSnapshot(change)
             }
 
         } else {
@@ -618,7 +630,7 @@ export class UIEventManager {
             this._currentHandlers.mouseUpOnBackground(e)
         }
         this._currentMouseDownData = null
-        this.editor.redrawMgr.addReason("mouseup", null)
+        this.editor.editTools.redrawMgr.addReason("mouseup", null)
     }
 
     private isDoubleClick(clickedComp: Drawable, e: MouseEvent | TouchEvent) {
@@ -648,7 +660,7 @@ export class UIEventManager {
                 this.editor.setCurrentMouseAction("edit")
                 e.preventDefault()
                 this.editor.eventMgr.currentSelection = undefined
-                const newComponent = editor.factory.makeFromButton(editor, compButton)
+                const newComponent = editor.factory.makeFromButton(editor.editorRoot, compButton)
                 if (newComponent === undefined) {
                     return
                 }
@@ -700,6 +712,28 @@ export class UIEventManager {
                 }
             }))
         }
+    }
+
+    public tryDeleteDrawable(comp: Drawable): InteractionResult {
+        if (comp instanceof ComponentBase) {
+            const numDeleted = this.tryDeleteComponentsWhere(c => c === comp, true)
+            return InteractionResult.fromBoolean(numDeleted !== 0)
+        } else if (comp instanceof Wire) {
+            return this.editor.editorRoot.wireMgr.deleteWire(comp)
+        } else if (comp instanceof Waypoint) {
+            comp.removeFromParent()
+            return InteractionResult.SimpleChange
+        }
+        return InteractionResult.NoChange
+    }
+
+    public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
+        const numDeleted = this.editor.editorRoot.components.tryDeleteWhere(cond, onlyOne)
+        if (numDeleted > 0) {
+            this.clearPopperIfNecessary()
+            this.editor.editTools.redrawMgr.addReason("component(s) deleted", null)
+        }
+        return numDeleted
     }
 
 }
@@ -787,7 +821,7 @@ class EditHandlers extends ToolHandlers {
     }
     public override mouseUpOn(comp: Drawable, e: MouseEvent | TouchEvent) {
         const change = comp.mouseUp(e)
-        this.editor.wireMgr.tryCancelWire()
+        this.editor.editorRoot.wireMgr.tryCancelWire()
         return change
     }
     public override mouseClickedOn(comp: Drawable, e: MouseEvent | TouchEvent) {
@@ -823,7 +857,7 @@ class EditHandlers extends ToolHandlers {
                 // clear selection
                 eventMgr.currentSelection = undefined
             }
-            editor.redrawMgr.addReason("selection rect changed", null)
+            editor.editTools.redrawMgr.addReason("selection rect changed", null)
         }
     }
     public override mouseDraggedOnBackground(e: MouseEvent | TouchEvent) {
@@ -843,7 +877,7 @@ class EditHandlers extends ToolHandlers {
                 } else {
                     rect.width = x - rect.x
                     rect.height = y - rect.y
-                    editor.redrawMgr.addReason("selection rect changed", null)
+                    editor.editTools.redrawMgr.addReason("selection rect changed", null)
                 }
             }
         }
@@ -857,7 +891,7 @@ class EditHandlers extends ToolHandlers {
         const currentSelection = eventMgr.currentSelection
         if (currentSelection !== undefined) {
             currentSelection.finishCurrentRect(this.editor)
-            editor.redrawMgr.addReason("selection rect changed", null)
+            editor.editTools.redrawMgr.addReason("selection rect changed", null)
         }
     }
 
@@ -905,7 +939,7 @@ class EditHandlers extends ToolHandlers {
                         const but = mkButton(item, item.shortcut, item.danger ?? false).render()
                         but.addEventListener("click", this.editor.wrapHandler((itemEvent: MouseEvent | TouchEvent) => {
                             const result = item.action(itemEvent, e)
-                            this.editor.undoMgr.takeSnapshot(result as Exclude<typeof result, void>)
+                            this.editor.editTools.undoMgr.takeSnapshot(result as Exclude<typeof result, void>)
                             this.editor.focus()
                         }))
                         return li(cls("menu-item"), but).render()
@@ -977,7 +1011,7 @@ class DeleteHandlers extends ToolHandlers {
     }
 
     public override mouseClickedOn(comp: Drawable, __: MouseEvent) {
-        return this.editor.tryDeleteDrawable(comp)
+        return this.editor.eventMgr.tryDeleteDrawable(comp)
     }
 }
 

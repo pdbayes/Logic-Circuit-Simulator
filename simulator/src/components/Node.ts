@@ -115,7 +115,7 @@ export abstract class NodeBase<N extends Node> extends DrawableWithPosition {
         const showForced = this._forceValue !== undefined && mode >= Mode.FULL
         const showForcedWarning = mode >= Mode.FULL && !isUnknown(this._value) && !isUnknown(this.value) && this._value !== this.value
         const parentOrientIsVertical = Orientation.isVertical(this.component.orient)
-        const neutral = this.parent.options.hideWireColors
+        const neutral = this.parent.editor.options.hideWireColors
         drawWaypoint(g, ctx, this.posX, this.posY, this.nodeDisplayStyle, this.value, ctx.isMouseOver, neutral, showForced, showForcedWarning, parentOrientIsVertical)
     }
 
@@ -373,7 +373,7 @@ export class NodeOut extends NodeBase<NodeOut> {
     }
 
     protected propagateNewValue(newValue: LogicValue) {
-        const now = this.parent.timeline.logicalTime()
+        const now = this.parent.editor.timeline.logicalTime()
         for (const wire of this._outgoingWires) {
             wire.propagateNewValue(newValue, now)
         }

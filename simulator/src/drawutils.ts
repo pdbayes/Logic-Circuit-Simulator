@@ -123,7 +123,7 @@ export function setColors(darkMode: boolean) {
         for (const editor of LogicEditor.allConnectedEditors) {
             editor.wrapHandler(() => {
                 editor.setDark(darkMode)
-                editor.redrawMgr.addReason("dark/light mode switch", null)
+                editor.editTools.redrawMgr.addReason("dark/light mode switch", null)
             })()
         }
     }
@@ -371,7 +371,7 @@ export function shouldShowNode(nodeOrArray: Node | readonly Node[]): boolean {
         return nodeOrArray.map(shouldShowNode).includes(true)
     }
     const node = nodeOrArray as Exclude<typeof nodeOrArray, readonly Node[]>
-    const editor = node.parent
+    const editor = node.parent.editor
     if (editor.mode <= Mode.TRYOUT && !editor.options.showDisconnectedPins && node.isDisconnected) {
         return false
     }
@@ -383,7 +383,7 @@ export function drawWireLineToComponent(g: GraphicsRendering, node: Node, x1: nu
     if (!shouldShowNode(node)) {
         return
     }
-    const neutral = node.parent.options.hideWireColors
+    const neutral = node.parent.editor.options.hideWireColors
     const x0 = node.posXInParentTransform
     const y0 = node.posYInParentTransform
     drawStraightWireLine(g, x0, y0, x1, y1, node.value, node.color, neutral)

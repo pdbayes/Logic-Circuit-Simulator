@@ -12,7 +12,6 @@
 
 ## Medium priority
 
- * Allow editing custom component
  * High-Z bus logic
  * Add tootips to components, e.g., describe what happens on the next state transition, etc.
  * Save/restore using browser's storage
@@ -37,6 +36,7 @@
 
 ### DONE
 
+ * Allow editing custom component
  * Copy-paste
  * Add external component library by drag-and-drop from file
  * Custom component creation

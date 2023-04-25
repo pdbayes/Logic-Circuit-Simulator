@@ -108,7 +108,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         g.fill()
         g.stroke()
 
-        const valueToShow = this.parent.options.hideOutputColors ? Unknown : input.value
+        const valueToShow = this.parent.editor.options.hideOutputColors ? Unknown : input.value
         g.fillStyle = colorForBoolean(valueToShow)
         g.lineWidth = 4
         g.beginPath()
@@ -138,7 +138,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
             drawWireLineToComponent(g, input, left - 2, input.posYInParentTransform, true)
         }
 
-        const displayValues = this.parent.options.hideOutputColors ? ArrayFillWith(Unknown, this.numBits) : this.value
+        const displayValues = this.parent.editor.options.hideOutputColors ? ArrayFillWith(Unknown, this.numBits) : this.value
 
         // cells
         const drawMouseOver = ctx.isMouseOver && this.parent.mode !== Mode.STATIC
@@ -209,7 +209,7 @@ export class Output extends ParametrizedComponentBase<OutputRepr> {
         }
     }
 
-    private doSetName(name: ComponentName) {
+    public doSetName(name: ComponentName) {
         this._name = name
         this.setNeedsRedraw("name changed")
     }

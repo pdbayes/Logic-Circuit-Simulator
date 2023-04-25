@@ -196,7 +196,7 @@ export class DisplayBar extends DisplayBarBase<DisplayBarRepr, LogicValue> {
     }
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
-        const valueToShow = this.parent.options.hideOutputColors ? Unknown : this.value
+        const valueToShow = this.parent.editor.options.hideOutputColors ? Unknown : this.value
         const background = this._transparent && valueToShow === false
             ? COLOR_TRANSPARENT
             : ledColorForLogicValue(valueToShow, this._color)

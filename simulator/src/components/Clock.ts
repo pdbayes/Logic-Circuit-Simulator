@@ -108,7 +108,7 @@ export class Clock extends InputBase<ClockRepr> {
     }
 
     private tickCallback() {
-        const timeline = this.parent.timeline
+        const timeline = this.parent.editor.timeline
         const [value, nextTick] = this.currentClockValue(timeline.logicalTime())
         this.doSetValue([value])
         if (this.state !== ComponentState.DEAD) {

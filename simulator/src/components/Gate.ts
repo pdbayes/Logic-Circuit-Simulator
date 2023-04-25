@@ -400,7 +400,7 @@ export abstract class GateBase<
             }
         }
 
-        if (this.parent.options.showGateTypes && !isUnknown(type)) {
+        if (this.parent.editor.options.showGateTypes && !isUnknown(type)) {
             const gateShortName = this.gateTypes(this.numBits).props[type].fullShortDesc()[1]
             if (gateShortName !== undefined) {
                 g.fillStyle = COLOR_GATE_NAMES

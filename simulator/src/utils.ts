@@ -357,7 +357,7 @@ export function setDisplay(elem: HTMLElement, display: UIDisplay) {
     }
 }
 
-export function setActive(elem: HTMLButtonElement, active: boolean) {
+export function setActive(elem: HTMLElement, active: boolean) {
     if (active) {
         elem.classList.add("active")
     } else {

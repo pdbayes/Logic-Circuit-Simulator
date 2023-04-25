@@ -137,10 +137,10 @@ const migrateTo: Record<number, (container: Record<string, unknown>) => void> = 
                     if (isRecord(compRepr)) {
                         const newType = newTypeFor(category, compRepr)
                         compRepr.type = newType
-                        components.push(compRepr)
-                        if (newType === "NOT") {
-                            console.log(compRepr)
+                        if (category === "gate" && isString(compRepr.poseAs)) {
+                            compRepr.poseAs = compRepr.poseAs.toLowerCase()
                         }
+                        components.push(compRepr)
                     }
                 }
             }

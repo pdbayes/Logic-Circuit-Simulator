@@ -1,5 +1,4 @@
 import * as t from "io-ts"
-import { LogicEditor } from "../LogicEditor"
 import { COLOR_BACKGROUND, COLOR_COMPONENT_BORDER, GRID_STEP, INPUT_OUTPUT_DIAMETER, circle, colorForBoolean, dist, drawComponentName, drawValueText, drawValueTextCentered, drawWireLineToComponent, inRect, isTrivialNodeName, triangle, useCompact } from "../drawutils"
 import { mods, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
@@ -81,7 +80,7 @@ export abstract class InputBase<
     private doDrawSingle(g: GraphicsRendering, ctx: DrawContext, output: NodeOut) {
         drawWireLineToComponent(g, output, this.posX + 8, this.posY)
 
-        const displayValue = this.parent.options.hideInputColors ? Unknown : output.value
+        const displayValue = this.parent.editor.options.hideInputColors ? Unknown : output.value
 
         const shouldDrawBorder = this.shouldDrawBorder()
         if (shouldDrawBorder) {
@@ -138,7 +137,7 @@ export abstract class InputBase<
             drawWireLineToComponent(g, output, right + 3, output.posYInParentTransform, true)
         }
 
-        const displayValues = this.parent.options.hideInputColors
+        const displayValues = this.parent.editor.options.hideInputColors
             ? ArrayFillWith(Unknown, this.numBits) : this.value
 
         // cells
@@ -401,12 +400,11 @@ export class Input extends InputBase<InputRepr> {
 
         if (this.parent.mode === Mode.STATIC
             || this._isPushButton
-            || this._isConstant
-            || !this.parent.isMainEditor()) {
+            || this._isConstant) {
             return InteractionResult.NoChange
         }
 
-        const i = this.clickedBitIndex(e, this.parent)
+        const i = this.clickedBitIndex(e)
         if (i === -1) {
             return InteractionResult.SimpleChange
         }
@@ -432,9 +430,9 @@ export class Input extends InputBase<InputRepr> {
         return result
     }
 
-    private clickedBitIndex(e: MouseEvent | TouchEvent, editor: LogicEditor): number {
+    private clickedBitIndex(e: MouseEvent | TouchEvent): number {
         const h = this.unrotatedHeight
-        const y = editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
+        const y = this.parent.editor.offsetXYForComponent(e, this)[1] - this.posY + h / 2
         const i = Math.floor(y * this.numBits / h)
         if (i >= 0 && i < this.numBits) {
             return i
@@ -447,9 +445,8 @@ export class Input extends InputBase<InputRepr> {
         if (this.parent.mode !== Mode.STATIC
             && this._isPushButton
             && !this._isConstant
-            && this.parent.isMainEditor()
-            && this.parent.eventMgr.currentSelectionEmpty()
-            && (i = this.clickedBitIndex(e, this.parent)) !== -1) {
+            && this.parent.editor.eventMgr.currentSelectionEmpty()
+            && (i = this.clickedBitIndex(e)) !== -1) {
             this.doSetValueChangingBit(i, v)
         }
     }

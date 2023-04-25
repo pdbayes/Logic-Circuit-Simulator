@@ -44,8 +44,12 @@ export class MoveManager {
         const emptyAfter = this._movingDrawables.size === 0
         if (emptyBefore !== emptyAfter) {
             this.editor.updateCursor(e)
-            this.editor.redrawMgr.addReason("started or stopped moving drawables", null)
+            this.editor.editTools.redrawMgr.addReason("started or stopped moving drawables", null)
         }
+    }
+
+    public clear() {
+        this._movingDrawables.clear()
     }
 
     public dump() {

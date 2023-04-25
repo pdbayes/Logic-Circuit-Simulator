@@ -2,6 +2,7 @@ import { LogicEditor, MouseAction } from "./LogicEditor"
 import { Serialization } from "./Serialization"
 import { TimelineState } from "./Timeline"
 import { UndoState } from "./UndoManager"
+import { CustomComponentDef } from "./components/CustomComponent"
 import { Modifier, a, attr, button, cls, div, emptyMod, i, input, mods, raw, span, style, title, type } from "./htmlgen"
 import { IconName, inlineIconSvgFor } from "./images"
 import { S } from "./strings"
@@ -10,15 +11,21 @@ import { Mode, UIDisplay, setActive, setDisplay, setEnabled, setVisible } from "
 export class TopBar {
 
     private readonly root: HTMLDivElement
+    private readonly alwaysShowCircuitName: boolean
     private _showingCompactUI: boolean = false
 
-    private readonly circuitNameLabel: HTMLSpanElement
+    private readonly circuitNameGroup: HTMLDivElement
+    private _showingCircuitName: boolean = false
+    private _customComponentShown: CustomComponentDef | undefined = undefined
     private readonly dirtyIndicator: HTMLSpanElement
-    private readonly subcircuitChevron: HTMLSpanElement
-    private readonly subcircuitNameLabel: HTMLSpanElement
+    private readonly circuitNameLabel: HTMLSpanElement
+    private readonly mainCircuitTab: HTMLDivElement
+    private readonly customComponentChevron: HTMLSpanElement
+    private readonly customComponentNameLabel: HTMLSpanElement
+    private readonly customComponentTab: HTMLDivElement
 
     private readonly openButton: HTMLButtonElement
-    private readonly closeSubcircuitButton: HTMLButtonElement
+    private readonly closeCustomComponentButton: HTMLButtonElement
     private readonly undoButton: HTMLButtonElement
     private readonly redoButton: HTMLButtonElement
     private readonly downloadButton: HTMLButtonElement
@@ -44,23 +51,35 @@ export class TopBar {
         public readonly editor: LogicEditor,
     ) {
         const s = S.TopBar
+        this.alwaysShowCircuitName = editor.isSingleton
 
-        this.circuitNameLabel = this.makeLink("", this.runSetNameDialog.bind(this))
-        this.circuitNameLabel.style.fontSize = "12pt"
-        this.dirtyIndicator = this.makeLabel("•")
-        this.dirtyIndicator.style.margin = "0"
-        this.dirtyIndicator.style.fontSize = "180%"
-        this.subcircuitChevron = this.makeLabel("❯")
-        this.subcircuitChevron.style.fontSize = "14pt"
-        this.subcircuitNameLabel = this.makeLabel("")
-        this.subcircuitNameLabel.style.fontWeight = "bolder"
-        this.closeSubcircuitButton = this.makeButton("close", s.CloseCircuit,
-            () => {/* TODO */ })
+        this.dirtyIndicator = this.makeLabel(mods(style("margin: 3px 3px 0 -2px; font-size: 20pt"), "•", title(s.DirtyTooltip)))
+        this.circuitNameLabel = this.makeLink(mods("", title(s.CircuitNameTooltip)), this.runSetCircuitNameDialog.bind(this))
+        this.mainCircuitTab = this.makeTab(
+            this.circuitNameLabel,
+        )
+        this.customComponentChevron = this.makeLabel("❯")
+        this.customComponentChevron.style.fontSize = "14pt"
+        this.customComponentNameLabel = this.makeLink(mods("", title(s.CustomComponentCaptionTooltip)), this.runSetCustomComponentCaptionDialog.bind(this))
+        this.customComponentNameLabel.style.fontWeight = "bolder"
+        this.closeCustomComponentButton = this.makeButton("close", s.CloseCircuit, () => editor.tryCloseCustomComponentEditor())
+        this.closeCustomComponentButton.style.padding = "0"
+        this.customComponentTab = this.makeTab(
+            this.closeCustomComponentButton,
+            this.customComponentNameLabel,
+        )
+        this.circuitNameGroup =
+            div(cls("path"), style("flex: none; display: flex; align-items: stretch; margin: -3px 0 -3px -5px; padding: 3px 5px"),
+                this.dirtyIndicator,
+                this.mainCircuitTab,
+                this.customComponentChevron,
+                this.customComponentTab,
+            ).render()
 
         this.undoButton = this.makeButtonWithLabel("undo", s.Undo,
-            () => this.editor.undoMgr.undo())
+            () => this.editor.editTools.undoMgr.undo())
         this.redoButton = this.makeButtonWithLabel("redo", s.Redo,
-            () => this.editor.undoMgr.redoOrRepeat())
+            () => this.editor.editTools.undoMgr.redoOrRepeat())
 
         this.resetButton = this.makeButtonWithLabel("reset", s.Reset,
             () => this.editor.resetCircuit())
@@ -83,17 +102,17 @@ export class TopBar {
         this.timeLabel = this.makeLabel(s.TimeLabel + "0")
         this.timeLabel.style.fontSize = "8pt"
 
-        this.designButton = this.makeButtonWithLabel("edit", s.Design,
+        this.designButton = this.makeButtonWithLabel("mouse", s.Design,
             () => this.editor.setCurrentMouseAction("edit"))
         this.deleteButton = this.makeButtonWithLabel("trash", s.Delete,
             () => this.editor.setCurrentMouseAction("delete"))
-        this.moveButton = this.makeButtonWithLabel("move", s.Move,
+        this.moveButton = this.makeButton("move", s.Move[1],
             () => this.editor.setCurrentMouseAction("move"))
 
         this.flexibleSep = div(style("flex: auto")).render()
 
         this.zoomLevelInput = input(type("number"),
-            style("margin: 0 2px 0 5px; width: 4em"),
+            style("margin: 0 2px 0 0; width: 4em"),
             attr("min", "0"), attr("step", "10"),
             attr("value", String(editor.options.zoom)),
             attr("title", S.Settings.zoomLevel),
@@ -102,21 +121,13 @@ export class TopBar {
             editor.wrapHandler(this.zoomLevelHandler.bind(this)))
 
         const zoomControl = this.makeLabel(mods(
-            span(cls("btnLabel"), S.Settings.zoomLevelField[0]),
             this.zoomLevelInput, S.Settings.zoomLevelField[1]
         ))
 
         this.root =
             div(cls("topBar"), style("flex:none; height: 30px; padding: 3px 5px; display: flex; align-items: stretch;"),
-                div(cls("path"), style("flex: none; display: flex; align-items: stretch; margin: 0; margin: -3px 5px -3px -5px; padding: 3px 5px"),
-                    this.circuitNameLabel,
-                    this.dirtyIndicator,
-                    this.subcircuitChevron,
-                    this.subcircuitNameLabel,
-                    this.closeSubcircuitButton,
-                ),
+                this.circuitNameGroup,
 
-                this.makeSep(),
                 this.undoButton,
                 this.redoButton,
 
@@ -137,18 +148,19 @@ export class TopBar {
                 this.makeSep(true),
                 this.designButton,
                 this.deleteButton,
-                this.moveButton,
 
                 this.flexibleSep,
 
+                this.moveButton,
                 zoomControl,
 
             ).render()
 
         editor.html.centerCol.insertAdjacentElement("afterbegin", this.root)
 
-        editor.undoMgr.onStateChanged = newState => this.setUndoButtonsEnabled(newState)
-        this.setUndoButtonsEnabled(editor.undoMgr.state)
+        const undoMgr = editor.editTools.undoMgr
+        undoMgr.onStateChanged = newState => this.setUndoButtonsEnabled(newState)
+        this.setUndoButtonsEnabled(undoMgr.state)
 
         editor.timeline.onStateChanged = newState => this.setTimelineButtonsVisible(newState)
         this.setTimelineButtonsVisible(editor.timeline.state)
@@ -157,7 +169,7 @@ export class TopBar {
 
         window.addEventListener("resize", this.updateCompactMode.bind(this))
 
-        this.setEditingSubcircuit(undefined)
+        this.setEditingCustomComponent(undefined)
         this.setCircuitName(editor.documentDisplayName)
         this.updateCompactMode()
     }
@@ -165,14 +177,24 @@ export class TopBar {
 
     // Handlers
 
-    private runSetNameDialog() {
+    private runSetCircuitNameDialog() {
         const currentValue = this.editor.options.name ?? ""
         const newName = window.prompt(S.TopBar.SetCircuitName, currentValue)
         if (newName === null || newName === currentValue) {
             return
         }
         this.editor.setCircuitName(newName)
+        this.editor.editTools.undoMgr.takeSnapshot()
+        // will call our own setCircuitName
     }
+
+    private runSetCustomComponentCaptionDialog() {
+        if (this._customComponentShown === undefined) {
+            return
+        }
+        this.editor.factory.runChangeCustomComponentCaptionDialog(this._customComponentShown)
+    }
+
 
     private openHandler() {
         this.editor.runFileChooser("text/plain|image/png|application/json", file => {
@@ -207,7 +229,7 @@ export class TopBar {
 
     private updateCompactMode() {
         const getSepWidth = () => this.flexibleSep.getBoundingClientRect().width
-        const MinSepWidth = 10
+        const MinSepWidth = 5
         const sepWidth = getSepWidth()
         if (!this._showingCompactUI) {
             if (sepWidth <= MinSepWidth) {
@@ -230,6 +252,12 @@ export class TopBar {
         }
     }
 
+    public getActiveTabCoords(): [number, number] {
+        const tab = this._customComponentShown !== undefined ? this.customComponentTab : this.mainCircuitTab
+        const rect = tab.getBoundingClientRect()
+        return [rect.left, rect.right]
+    }
+
     public setButtonStateFromMode(state: { showComponentsAndEditControls: UIDisplay, showReset: boolean }, mode: Mode) {
         setDisplay(this.root, state.showComponentsAndEditControls)
 
@@ -246,8 +274,29 @@ export class TopBar {
         this.updateCompactMode()
     }
 
-    public setCircuitName(name: string) {
-        this.circuitNameLabel.textContent = name
+    public setCircuitName(name: string | undefined) {
+        let show = true
+        if (name !== undefined) {
+            this.circuitNameLabel.textContent = name
+        } else {
+            // either a default name or a hidden 
+            if (this.alwaysShowCircuitName) {
+                this.circuitNameLabel.textContent = this.editor.documentDisplayName
+            } else {
+                show = false
+                this.circuitNameLabel.textContent = ""
+            }
+        }
+
+        this._showingCircuitName = show
+        setVisible(this.circuitNameLabel, show)
+        setVisible(this.dirtyIndicator, show)
+
+        this.updateCircuitNameUI()
+    }
+
+    private updateCircuitNameUI() {
+        setVisible(this.circuitNameGroup, this._showingCircuitName || this._customComponentShown !== undefined)
         this.updateCompactMode()
     }
 
@@ -260,18 +309,28 @@ export class TopBar {
         setEnabled(this.resetButton, dirty)
     }
 
-    public setEditingSubcircuit(subcircuitName: string | undefined) {
-        const showSubcircuitUI = subcircuitName !== undefined
-        setVisible(this.subcircuitChevron, showSubcircuitUI)
-        setVisible(this.subcircuitNameLabel, showSubcircuitUI)
-        setVisible(this.closeSubcircuitButton, showSubcircuitUI)
+    public setEditingCustomComponent(customDef: CustomComponentDef | undefined) {
+        const showSubcircuitUI = customDef !== undefined
+        setVisible(this.customComponentChevron, showSubcircuitUI)
+        setVisible(this.customComponentTab, showSubcircuitUI)
+        setActive(this.mainCircuitTab, !showSubcircuitUI)
+        setActive(this.customComponentTab, showSubcircuitUI)
         if (showSubcircuitUI) {
             this.circuitNameLabel.style.removeProperty("font-weight")
-            this.subcircuitNameLabel.textContent = subcircuitName
+            this.customComponentNameLabel.textContent = customDef.caption
         } else {
             this.circuitNameLabel.style.fontWeight = "bolder"
+            this.customComponentNameLabel.textContent = ""
         }
-        this.updateCompactMode()
+        this._customComponentShown = customDef
+        this.updateCircuitNameUI()
+    }
+
+    public updateCustomComponentCaption() {
+        if (this._customComponentShown !== undefined) {
+            this.customComponentNameLabel.textContent = this._customComponentShown.caption
+            this.updateCompactMode()
+        }
     }
 
     private setTimelineButtonsVisible({ enablesPause, hasCallbacks, isPaused, nextStepDesc }: TimelineState) {
@@ -327,6 +386,10 @@ export class TopBar {
 
 
     // Factory methods
+
+    private makeTab(...modifiers: Modifier[]): HTMLDivElement {
+        return div(cls("barTab"), ...modifiers).render()
+    }
 
     private makeButtonWithLabel(icon: IconName, labelTooltip: [Modifier, string], handler: (e: MouseEvent) => void): HTMLButtonElement {
         return this.makeButton(icon, labelTooltip[1], handler, labelTooltip[0])

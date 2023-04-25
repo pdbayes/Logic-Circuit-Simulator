@@ -93,7 +93,7 @@ export class Waypoint extends DrawableWithDraggablePosition {
             return
         }
 
-        const neutral = this.parent.options.hideWireColors
+        const neutral = this.parent.editor.options.hideWireColors
         drawWaypoint(g, ctx, this.posX, this.posY, NodeStyle.WAYPOINT, this.wire.startNode.value, ctx.isMouseOver, neutral, false, false, false)
     }
 
@@ -151,7 +151,7 @@ export class Wire extends Drawable {
         this._startNode = startNode
         this._endNode = endNode
 
-        const longAgo = -1 - parent.options.propagationDelay // make sure it is fully propagated no matter what
+        const longAgo = -1 - parent.editor.options.propagationDelay // make sure it is fully propagated no matter what
         this._propagatingValues.push([startNode.value, longAgo])
 
         this.setStartNode(startNode)
@@ -237,12 +237,12 @@ export class Wire extends Drawable {
         if (this._propagatingValues[this._propagatingValues.length - 1][0] !== newValue) {
             this._propagatingValues.push([newValue, logicalTime])
         }
-        const propagationDelay = this.customPropagationDelay ?? this.parent.options.propagationDelay
+        const propagationDelay = this.customPropagationDelay ?? this.parent.editor.options.propagationDelay
         if (propagationDelay === 0) {
             this.endNode.value = newValue
         } else {
             const desc = S.Components.Wire.timeline.PropagatingValue.expand({ val: toLogicValueRepr(newValue) })
-            this.parent.timeline.scheduleAt(logicalTime + propagationDelay, () => {
+            this.parent.editor.timeline.scheduleAt(logicalTime + propagationDelay, () => {
                 this.endNode.value = newValue
             }, desc, false)
         }
@@ -366,7 +366,7 @@ export class Wire extends Drawable {
         // the value of the end node
         const isAnimating = this._propagatingValues.length > 1
 
-        const options = this.parent.options
+        const options = this.parent.editor.options
         const propagationDelay = this.customPropagationDelay ?? options.propagationDelay
         const neutral = options.hideWireColors
         const drawTime = ctx.drawParams.drawTime
@@ -378,7 +378,7 @@ export class Wire extends Drawable {
         const lastWaypointData = { posX: this.endNode.posX, posY: this.endNode.posY, orient: this.endNode.wireProlongDirection }
         const allWaypoints = [...this._waypoints, lastWaypointData]
         let svgPathDesc = "M" + prevX + " " + prevY + " "
-        const wireStyle = this.style ?? this.startNode.parent.options.wireStyle
+        const wireStyle = this.style ?? this.startNode.parent.editor.options.wireStyle
         for (let i = 0; i < allWaypoints.length; i++) {
             const waypoint = allWaypoints[i]
             const nextX = waypoint.posX
@@ -439,7 +439,7 @@ export class Wire extends Drawable {
         }
         g.setLineDash(old)
 
-        if (isAnimating && !this.parent.timeline.isPaused) {
+        if (isAnimating && !this.parent.editor.timeline.isPaused) {
             this.setNeedsRedraw("propagating value")
         }
     }
@@ -483,7 +483,7 @@ export class Wire extends Drawable {
         if (this._waypointBeingDragged !== undefined) {
             this._waypointBeingDragged.mouseDragged(e)
         } else {
-            if (this.parent.isMainEditor() && this.parent.eventMgr.currentSelectionEmpty()) {
+            if (this.parent.editor.eventMgr.currentSelectionEmpty()) {
                 const waypoint = this.addWaypointFrom(e)
                 this._waypointBeingDragged = waypoint
                 waypoint.mouseDown(e)
@@ -528,7 +528,7 @@ export class Wire extends Drawable {
                 MenuData.sep(),
                 MenuData.item("timer", s.CustomPropagationDelay.expand({ current: currentPropDelayStr }), (__itemEvent) => {
                     const currentStr = this.customPropagationDelay === undefined ? "" : String(this.customPropagationDelay)
-                    const defaultDelay = String(this.parent.options.propagationDelay)
+                    const defaultDelay = String(this.parent.editor.options.propagationDelay)
                     const message = s.CustomPropagationDelayDesc.expand({ current: defaultDelay })
                     const newValueStr = prompt(message, currentStr)
                     if (newValueStr !== null) {
@@ -818,7 +818,7 @@ export class WireManager {
 
     public draw(g: GraphicsRendering, drawParams: DrawParams) {
         this.removeDeadWires()
-        const useRibbons = this.parent.options.groupParallelWires
+        const useRibbons = this.parent.editor.options.groupParallelWires
         if (useRibbons) {
             for (const ribbon of this._ribbons) {
                 ribbon.draw(g, drawParams)
@@ -848,7 +848,7 @@ export class WireManager {
             const y2 = editor.mouseY
             g.beginPath()
             g.moveTo(x1, y1)
-            if (this.parent.options.wireStyle === WireStyles.straight) {
+            if (this.parent.editor.options.wireStyle === WireStyles.straight) {
                 g.lineTo(x2, y2)
             } else {
                 const deltaX = x2 - x1
@@ -891,7 +891,7 @@ export class WireManager {
             this.offsetWireIfNecessary(wire)
         }
         this.tryMergeWire(wire)
-        this.parent.setDirty?.("added wire")
+        this.parent.ifEditing?.setDirty("added wire")
         return wire
     }
 
@@ -903,7 +903,7 @@ export class WireManager {
             return
         }
         this._wireBeingAddedFrom = node
-        this.parent.setToolCursor?.("crosshair")
+        this.parent.ifEditing?.setToolCursor("crosshair")
     }
 
     public stopDraggingOn(newNode: Node): Wire | undefined {
@@ -958,9 +958,13 @@ export class WireManager {
         }
     }
 
-    public tryCancelWire() {
-        this._wireBeingAddedFrom = undefined
-        this.parent?.setToolCursor?.(null)
+    public tryCancelWire(): boolean {
+        if (this._wireBeingAddedFrom !== undefined) {
+            this._wireBeingAddedFrom = undefined
+            this.parent.ifEditing?.setToolCursor(null)
+            return true
+        }
+        return false
     }
 
     private offsetWireIfNecessary(wire: Wire) {
@@ -1066,7 +1070,7 @@ export class WireManager {
         }
         // remove wire from array
         this._wires.splice(this._wires.indexOf(wire), 1)
-        this.parent.redrawMgr?.addReason("deleted wire", null)
+        this.parent.ifEditing?.redrawMgr.addReason("deleted wire", null)
         return true
     }
 
@@ -1076,7 +1080,7 @@ export class WireManager {
             wire.destroy()
         }
         this._wires.splice(0, this._wires.length)
-        this.parent.redrawMgr?.addReason("deleted wires", null)
+        this.parent.ifEditing?.redrawMgr.addReason("deleted wires", null)
     }
 
 }

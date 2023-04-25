@@ -30,15 +30,16 @@ import { TopBar } from "./TopBar"
 import { EditorSelection, UIEventManager } from "./UIEventManager"
 import { UndoManager } from './UndoManager'
 import { Component, ComponentBase } from "./components/Component"
-import { Drawable, DrawableParent, GraphicsRendering, Orientation } from "./components/Drawable"
+import { CustomComponent } from "./components/CustomComponent"
+import { Drawable, DrawableParent, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
-import { Waypoint, Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
+import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
 import { a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { InteractionResult, KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
+import { KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
 
 
 
@@ -117,6 +118,7 @@ export type DrawParams = {
     highlightColor: string | undefined,
     anythingMoving: boolean,
 }
+
 export class LogicEditor extends HTMLElement implements DrawableParent {
 
     public static _globalListenersInstalled = false
@@ -126,17 +128,39 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         return LogicEditor._allConnectedEditors
     }
 
+    /// Accessible service singletons, defined once per editor ///
+
     public readonly factory = new ComponentFactory(this)
-    public readonly wireMgr: WireManager = new WireManager(this)
-    public readonly nodeMgr = new NodeManager()
-    public readonly timeline = new Timeline(this)
-    public readonly redrawMgr = new RedrawManager()
-    public readonly recalcMgr = new RecalcManager()
-    public readonly moveMgr = new MoveManager(this)
     public readonly eventMgr = new UIEventManager(this)
-    public readonly undoMgr = new UndoManager(this)
+    public readonly timeline = new Timeline(this)
+
+    // passed to an editor root when active
+    public readonly editTools: EditTools = {
+        moveMgr: new MoveManager(this),
+        undoMgr: new UndoManager(this),
+        redrawMgr: new RedrawManager(),
+        setDirty: this.setDirty.bind(this),
+        setToolCursor: this.setToolCursor.bind(this),
+    }
+
+
+    /// DrawableParent implementation ///
+
+    public isMainEditor(): this is LogicEditor { return true }
+    public get editor(): LogicEditor { return this }
 
     public readonly components = new ComponentList()
+    public readonly nodeMgr = new NodeManager()
+    public readonly wireMgr: WireManager = new WireManager(this)
+    public readonly recalcMgr = new RecalcManager()
+
+    private _ifEditing: EditTools | undefined = this.editTools
+    public get ifEditing() { return this._ifEditing }
+    public stopEditingThis() { this._ifEditing = undefined }
+    public startEditingThis(tools: EditTools) { this._ifEditing = tools }
+
+
+    /// Other internal state ///
 
     private _isEmbedded = false
     private _isSingleton = false
@@ -152,6 +176,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     private _toolCursor: string | null = null
     private _highlightedItems: HighlightedItems | undefined = undefined
     private _nextAnimationFrameHandle: number | null = null
+
+    private _editorRoot: DrawableParent = this
+    public get editorRoot() { return this._editorRoot }
 
     public root: ShadowRoot
     public readonly html: {
@@ -226,13 +253,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         dialogPolyfill.registerDialog(html.embedDialog)
     }
 
-    public isMainEditor(): this is LogicEditor {
-        return true
-    }
-
-    public get editor(): LogicEditor {
-        return this
-    }
 
     private elemWithId<E extends Element>(id: string) {
         let elem = this.root.querySelector(`#${id}`)
@@ -296,7 +316,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             optionsHtml.propagationDelayField.valueAsNumber = newOptions.propagationDelay
 
             this.setWindowTitleFrom(newOptions.name)
-            this._topBar?.setCircuitName(this.documentDisplayName)
+            this._topBar?.setCircuitName(this.editor.options.name)
             this._topBar?.setZoomLevel(newOptions.zoom)
 
             optionsHtml.showUserDataLinkContainer.style.display = this.userdata !== undefined ? "initial" : "none"
@@ -304,7 +324,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         this._actualZoomFactor = clampZoom(newOptions.zoom)
 
-        this.redrawMgr.addReason("options changed", null)
+        this.editTools.redrawMgr.addReason("options changed", null)
     }
 
     private setWindowTitleFrom(docName: string | undefined) {
@@ -726,7 +746,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }
             checkbox.addEventListener("change", this.wrapHandler(() => {
                 this._options[optionName] = checkbox.checked
-                this.redrawMgr.addReason("option changed: " + optionName, null)
+                this.editTools.redrawMgr.addReason("option changed: " + optionName, null)
             }))
             const section = div(
                 style("height: 20px"),
@@ -755,7 +775,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         ).render()
         wireStylePopup.addEventListener("change", this.wrapHandler(() => {
             this._options.wireStyle = wireStylePopup.value as WireStyle
-            this.redrawMgr.addReason("wire style changed", null)
+            this.editTools.redrawMgr.addReason("wire style changed", null)
         }))
         optionsZone.appendChild(
             div(
@@ -862,7 +882,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 if (canvasContainer !== undefined) {
                     editor.wrapHandler(() => {
                         editor.setCanvasSize()
-                        editor.redrawMgr.addReason("window resized", null)
+                        editor.editTools.redrawMgr.addReason("window resized", null)
                     })()
                 }
             }
@@ -881,7 +901,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 for (const editor of LogicEditor._allConnectedEditors) {
                     editor.wrapHandler(() => {
                         editor.setCanvasSize()
-                        editor.redrawMgr.addReason("devicePixelRatio changed", null)
+                        editor.editTools.redrawMgr.addReason("devicePixelRatio changed", null)
                     })()
                 }
                 registerPixelRatioListener()
@@ -909,7 +929,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
             // console.log(`Display/interaction is ${wantedModeStr} - ${mode}`)
 
-            this.redrawMgr.addReason("mode changed", null)
+            this.editTools.redrawMgr.addReason("mode changed", null)
 
             // update mode active button
             this.root.querySelectorAll(".sim-mode-tool").forEach((elem) => {
@@ -960,14 +980,14 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     public setCircuitName(name: string | undefined) {
         this._options.name = (name === undefined || name.length === 0) ? undefined : name
-        this._topBar?.setCircuitName(this.documentDisplayName)
+        this._topBar?.setCircuitName(name)
         this.setWindowTitleFrom(this._options.name)
     }
 
     public setZoomLevel(zoom: number) {
         this._options.zoom = zoom
         this._actualZoomFactor = clampZoom(zoom)
-        this.redrawMgr.addReason("zoom level changed", null)
+        this.editTools.redrawMgr.addReason("zoom level changed", null)
     }
 
     public updateCustomComponentButtons() {
@@ -975,6 +995,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             this._menu.updateCustomComponentButtons(this.factory.customDefs())
             this.eventMgr.registerButtonListenersOn(this._menu.allCustomButtons(), true)
         }
+        this._topBar?.updateCustomComponentCaption()
     }
 
     public override focus() {
@@ -1106,6 +1127,28 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         this.editor.tryLoadCircuitFromData()
     }
 
+    public tryCloseCustomComponentEditor() {
+        const editorRoot = this.editor.editorRoot
+        if (!(editorRoot instanceof CustomComponent)) {
+            return false
+        }
+        const def = editorRoot.customDef
+        const error = this.editor.factory.tryModifyCustomComponent(def, editorRoot)
+        if (error !== undefined) {
+            if (error.length !== 0) {
+                window.alert(error)
+            }
+            return true // handled, even if with error
+        }
+        for (const type of this.factory.getCustomComponentTypesWhichUse(def.type)) {
+            // console.log(`Updating custom component type '${type}'`)
+            this.components.updateCustomComponents(type)
+        }
+        this.setEditorRoot(this.editor)
+        this.editTools.undoMgr.takeSnapshot()
+        return true
+    }
+
     public loadCircuitOrLibrary(jsonStringOrObject: string | Record<string, unknown>) {
         this.wrapHandler(
             (jsonStringOrObject: string | Record<string, unknown>) =>
@@ -1130,38 +1173,43 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         this.html.rootDiv.classList.toggle("dark", dark)
     }
 
-    public tryDeleteDrawable(comp: Drawable): InteractionResult {
-        if (comp instanceof ComponentBase) {
-            const numDeleted = this.tryDeleteComponentsWhere(c => c === comp, true)
-            return InteractionResult.fromBoolean(numDeleted !== 0)
-        } else if (comp instanceof Wire) {
-            return this.wireMgr.deleteWire(comp)
-        } else if (comp instanceof Waypoint) {
-            comp.removeFromParent()
-            return InteractionResult.SimpleChange
+    public setEditorRoot(newRoot: DrawableParent) {
+        if (newRoot === this._editorRoot) {
+            return
         }
-        return InteractionResult.NoChange
-    }
 
-    public tryDeleteComponentsWhere(cond: (e: Component) => boolean, onlyOne: boolean) {
-        const numDeleted = this.components.tryDeleteWhere(cond, onlyOne)
-        if (numDeleted > 0) {
-            this.eventMgr.clearPopperIfNecessary()
-            this.redrawMgr.addReason("component(s) deleted", null)
+        if (this._editorRoot !== undefined) {
+            this._editorRoot.stopEditingThis()
         }
-        return numDeleted
+
+        this._editorRoot = newRoot
+        newRoot.startEditingThis(this.editTools)
+
+        const [customComp, typesToHide] = !(newRoot instanceof CustomComponent) ? [undefined, []] : [newRoot, this.factory.getCustomComponentTypesWhichUse(newRoot.customDef.type)]
+
+        this._menu?.setCustomComponentsHidden(typesToHide)
+        this._topBar?.setEditingCustomComponent(customComp?.customDef)
+
+        this._highlightedItems = undefined
+        this.eventMgr.currentSelection = undefined
+        this.eventMgr.clearPopperIfNecessary()
+        this.eventMgr.updateMouseOver([this.mouseX, this.mouseY], false)
+        this.editTools.moveMgr.clear()
+        this.editTools.redrawMgr.addReason("editor context changed", null)
+
+        this.focus()
     }
 
     public setCurrentMouseAction(action: MouseAction) {
         this.setToolCursor(MouseActions.props[action].cursor)
         this._topBar?.setActiveTool(action)
         this.eventMgr.setHandlersFor(action)
-        this.redrawMgr.addReason("mouse action changed", null)
+        this.editTools.redrawMgr.addReason("mouse action changed", null)
     }
 
     public updateCursor(e?: MouseEvent | TouchEvent) {
         this.html.canvasContainer.style.cursor =
-            this.moveMgr.areDrawablesMoving()
+            this.editTools.moveMgr.areDrawablesMoving()
                 ? "grabbing"
                 : this._toolCursor
                 ?? this.eventMgr.currentMouseOverComp?.cursorWhenMouseover(e)
@@ -1481,11 +1529,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const __recalculated = this.recalcMgr.recalcAndPropagateIfNeeded()
 
-        if (this.wireMgr.isAddingWire) {
-            this.redrawMgr.addReason("adding a wire", null)
+        const redrawMgr = this.editTools.redrawMgr
+        if (this._editorRoot.wireMgr.isAddingWire) {
+            redrawMgr.addReason("adding a wire", null)
         }
 
-        const redrawReasons = this.redrawMgr.getReasonsAndClear()
+        const redrawReasons = redrawMgr.getReasonsAndClear()
         if (redrawReasons === undefined) {
             return
         }
@@ -1493,7 +1542,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
         this.doRedraw()
 
-        if (this.redrawMgr.hasReasons()) {
+        if (redrawMgr.hasReasons()) {
             // an animation is running
             this._nextAnimationFrameHandle = requestAnimationFrame(() => {
                 this._nextAnimationFrameHandle = null
@@ -1534,13 +1583,13 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         const start = this.timeline.unadjustedTime()
         this._highlightedItems = { comps: highlightComps, wires: highlightWires, start }
-        this.redrawMgr.addReason("highlighting component", null)
+        this.editTools.redrawMgr.addReason("highlighting component", null)
         this.recalcPropagateAndDrawIfNeeded()
     }
 
     public redraw() {
         this.setCanvasSize()
-        this.redrawMgr.addReason("explicit redraw call", null)
+        this.editTools.redrawMgr.addReason("explicit redraw call", null)
         this.recalcPropagateAndDrawIfNeeded()
     }
 
@@ -1620,13 +1669,14 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 g.shadowBlur = 0 // reset
 
                 // will make it run until alpha is 0
-                this.redrawMgr.addReason("highlight animation", null)
+                this.editTools.redrawMgr.addReason("highlight animation", null)
             }
         }
 
         // draw grid if moving comps
-        // this.moveMgr.dump()
-        const isMovingComponent = this.moveMgr.areDrawablesMoving()
+        const moveMgr = this.editTools.moveMgr
+        // moveMgr.dump()
+        const isMovingComponent = moveMgr.areDrawablesMoving()
         if (isMovingComponent) {
             g.beginGroup("grid")
             const widthAdjusted = width / this._actualZoomFactor
@@ -1648,7 +1698,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         }
 
         // draw guidelines when moving waypoint
-        const singleMovingWayoint = this.moveMgr.getSingleMovingWaypoint()
+        const singleMovingWayoint = moveMgr.getSingleMovingWaypoint()
         if (singleMovingWayoint !== undefined) {
             g.beginGroup("guides")
             const guides = singleMovingWayoint.getPrevAndNextAnchors()
@@ -1671,13 +1721,25 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             g.setTransform(baseTransform)
             g.strokeStyle = COLOR_BORDER
             g.lineWidth = 2
-            g.strokeRect(0, 0, width, height)
             if (this._maxInstanceMode === MAX_MODE_WHEN_SINGLETON && this._mode < this._maxInstanceMode) {
+                g.strokeRect(0, 0, width, height)
                 const h = this.guessAdequateCanvasSize(true)[1]
                 strokeSingleLine(g, 0, h, width, h)
 
                 g.fillStyle = COLOR_BACKGROUND_UNUSED_REGION
                 g.fillRect(0, h, width, height - h)
+            } else {
+                // skip border where the top tab is
+                const myX = this.html.mainCanvas.getBoundingClientRect().x
+                const [x1, x2] = this._topBar?.getActiveTabCoords() ?? [0, 0]
+                g.beginPath()
+                g.moveTo(x1 - myX, 0)
+                g.lineTo(0, 0)
+                g.lineTo(0, height)
+                g.lineTo(width, height)
+                g.lineTo(width, 0)
+                g.lineTo(x2 - myX, 0)
+                g.stroke()
             }
             g.setTransform(contentTransform)
             g.endGroup()
@@ -1695,7 +1757,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             highlightedItems,
             highlightColor,
             currentSelection: undefined,
-            anythingMoving: this.moveMgr.areDrawablesMoving(),
+            anythingMoving: moveMgr.areDrawablesMoving(),
         }
         const currentSelection = this.eventMgr.currentSelection
         drawParams.currentSelection = currentSelection
@@ -1711,28 +1773,30 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }
         }
 
+        const root = this._editorRoot
+
         // draw background components
         g.beginGroup("background")
-        for (const comp of this.components.withZIndex(DrawZIndex.Background)) {
+        for (const comp of root.components.withZIndex(DrawZIndex.Background)) {
             drawComp(comp)
         }
         g.endGroup()
 
         // draw wires
         g.beginGroup("wires")
-        this.wireMgr.draw(g, drawParams) // never show wires as selected
+        root.wireMgr.draw(g, drawParams) // never show wires as selected
         g.endGroup()
 
         // draw normal components
         g.beginGroup("components")
-        for (const comp of this.components.withZIndex(DrawZIndex.Normal)) {
+        for (const comp of root.components.withZIndex(DrawZIndex.Normal)) {
             drawComp(comp)
         }
         g.endGroup()
 
         // draw overlays
         g.beginGroup("overlays")
-        for (const comp of this.components.withZIndex(DrawZIndex.Overlay)) {
+        for (const comp of root.components.withZIndex(DrawZIndex.Overlay)) {
             drawComp(comp)
         }
         g.endGroup()
@@ -1773,7 +1837,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         // ... but then, beware of duplicated custom components if pasting into the same circuit,
         // or find some compatibility criterion for component defs (e.g., number of in/out nodes
         // and names) that would seem enough to determine they are the same (beyond their id/name)
-        const reprs = Serialization.buildComponentsObject(componentsToInclude, [this.mouseX, this.mouseY])
+        const reprs = Serialization.buildComponentsAndWireObject(componentsToInclude, [this.mouseX, this.mouseY])
         if (reprs.components === undefined && reprs.wires === undefined) {
             return false
         }
@@ -1847,7 +1911,7 @@ export class LogicStatic {
     }
 
     public printUndoStack() {
-        this.singleton?.undoMgr.dump()
+        this.singleton?.editTools.undoMgr.dump()
     }
 
     public tests = new Tests()

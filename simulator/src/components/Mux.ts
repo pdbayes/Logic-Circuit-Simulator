@@ -149,13 +149,13 @@ export class Mux extends ParametrizedComponentBase<MuxRepr> {
             const sels = this.inputValues(this.inputs.S)
             const sel = displayValuesFromArray(sels, false)[1]
             if (!isUnknown(sel)) {
-                const neutral = this.parent.options.hideWireColors
+                const neutral = this.parent.editor.options.hideWireColors
                 const selectedInputs = this.inputs.I[sel]
                 const anchorDiffX = (right - left) / 3
-                const wireStyleStraight = this.parent.options.wireStyle === WireStyles.straight
+                const wireStyleStraight = this.parent.editor.options.wireStyle === WireStyles.straight
 
                 for (let i = 0; i < selectedInputs.length; i++) {
-                    this.parent.options.wireStyle
+                    this.parent.editor.options.wireStyle
                     g.beginPath()
                     const fromY = selectedInputs[i].posYInParentTransform
                     const toNode = this.outputs.Z[i]

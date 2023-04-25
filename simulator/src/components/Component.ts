@@ -349,12 +349,12 @@ export abstract class ComponentBase<
 
     public setSpawning() {
         this._state = ComponentState.SPAWNING
-        this.parent.moveMgr?.setDrawableMoving(this)
+        this.parent.ifEditing?.moveMgr.setDrawableMoving(this)
     }
 
     public setSpawned() {
         this._state = ComponentState.SPAWNED
-        this.parent.moveMgr?.setDrawableStoppedMoving(this)
+        this.parent.ifEditing?.moveMgr.setDrawableStoppedMoving(this)
     }
 
     public setInvalid() {
@@ -918,21 +918,16 @@ export abstract class ComponentBase<
         // any component will work, but only inputs and outputs with
         // the same names will be reconnected and others will be lost
 
-        const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => TWires): Map<string, TWires | TWires[]> => {
-            const savedWires: Map<string, TWires | TWires[]> = new Map()
+        const saveWires = <TNode extends NodeBase<any>, TWires>(nodes: readonly TNode[], getWires: (node: TNode) => null | TWires): Map<string, TWires> => {
+            const savedWires: Map<string, TWires> = new Map()
             for (const node of nodes) {
                 const group = node.group
                 const wires = getWires(node)
-                if (group === undefined) {
-                    savedWires.set(node.shortName, wires)
-                } else {
-                    let groupSavedNodes = savedWires.get(group.name) as TWires[]
-                    if (!isArray(groupSavedNodes)) {
-                        groupSavedNodes = new Array(group.nodes.length)
-                        savedWires.set(group.name, groupSavedNodes)
-                    }
-                    groupSavedNodes[group.nodes.indexOf(node)] = wires
+                if (wires === null) {
+                    continue
                 }
+                const keyName = group === undefined ? node.shortName : `${group.name}[${group.nodes.indexOf(node)}]`
+                savedWires.set(keyName, wires)
             }
             return savedWires
         }
@@ -940,32 +935,40 @@ export abstract class ComponentBase<
         const savedWiresIn = saveWires(this.inputs._all, node => node.incomingWire)
         const savedWiresOut = saveWires(this.outputs._all, node => node.outgoingWires)
 
-        const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires | TWires[]>, nodes: readonly TNode[], setWires: (wires: TWires | undefined, node: TNode) => void) => {
+        const restoreNodes = <TNode extends NodeBase<any>, TWires>(savedWires: Map<string, TWires>, nodes: readonly TNode[], setWires: (wires: TWires, node: TNode) => void) => {
             for (const node of nodes) {
                 const group = node.group
                 if (group === undefined) {
-                    const wires = savedWires.get(node.shortName) as TWires | undefined
-                    setWires(wires, node)
+                    // single node
+                    let wires = savedWires.get(node.shortName)
+                    if (wires === undefined) {
+                        // try to restore from array version
+                        wires = savedWires.get(node.shortName + "[0]")
+                    }
+                    if (wires !== undefined) {
+                        setWires(wires, node)
+                    }
                 } else {
-                    const wiresArray = savedWires.get(group.name) as TWires[] | undefined
-                    const wires = wiresArray?.[group.nodes.indexOf(node)]
-                    setWires(wires, node)
+                    // node group
+                    const i = group.nodes.indexOf(node)
+                    let wires = savedWires.get(`${group.name}[${i}]`)
+                    if (wires === undefined && i === 0) {
+                        // try to restore from single version
+                        wires = savedWires.get(group.name)
+                    }
+                    if (wires !== undefined) {
+                        setWires(wires, node)
+                    }
                 }
             }
         }
 
         restoreNodes(savedWiresIn, newComp.inputs._all, (wire, node) => {
-            if (wire === null || wire === undefined) {
-                return
-            }
             wire.setEndNode(node)
         })
 
-        const now = this.parent.timeline.logicalTime()
+        const now = this.parent.editor.timeline.logicalTime()
         restoreNodes(savedWiresOut, newComp.outputs._all, (wires, node) => {
-            if (wires === undefined || wires.length === 0) {
-                return
-            }
             for (const wire of [...wires]) {
                 wire.setStartNode(node, now)
             }
@@ -986,8 +989,8 @@ export abstract class ComponentBase<
         newComp.setSpawned()
 
 
-        this.parent.undoMgr?.takeSnapshot()
-        this.parent.redrawMgr?.addReason("component replaced", newComp)
+        this.parent.ifEditing?.undoMgr.takeSnapshot()
+        this.parent.ifEditing?.redrawMgr.addReason("component replaced", newComp)
 
         return newComp
     }
@@ -1006,9 +1009,9 @@ export abstract class ComponentBase<
     }
 
     public override mouseDown(e: MouseEvent | TouchEvent) {
-        if (this.parent.mode >= Mode.CONNECT && !e.shiftKey && this.parent.isMainEditor()) {
+        if (this.parent.mode >= Mode.CONNECT && !e.shiftKey) {
             // try clearing selection
-            const mvtMgr = this.parent.eventMgr
+            const mvtMgr = this.parent.editor.eventMgr
             let elems
             if (mvtMgr.currentSelection !== undefined
                 && (elems = mvtMgr.currentSelection.previouslySelectedElements).size > 0
@@ -1032,7 +1035,7 @@ export abstract class ComponentBase<
             if (newLinks.length > 0) {
                 this.autoConnected(newLinks)
             }
-            this.parent.setDirty?.("moved component")
+            this.parent.ifEditing?.setDirty("moved component")
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
@@ -1054,8 +1057,8 @@ export abstract class ComponentBase<
     }
 
     public override mouseClicked(e: MouseEvent | TouchEvent): InteractionResult {
-        if (this.parent.mode >= Mode.CONNECT && e.shiftKey && this.parent.isMainEditor()) {
-            this.parent.eventMgr.toggleSelect(this)
+        if (this.parent.mode >= Mode.CONNECT && e.shiftKey) {
+            this.parent.editor.eventMgr.toggleSelect(this)
             return InteractionResult.SimpleChange
         }
         return InteractionResult.NoChange
@@ -1100,13 +1103,9 @@ export abstract class ComponentBase<
     }
 
     public override makeContextMenu(): MenuData | undefined {
-        if (!this.parent.isMainEditor()) {
-            return undefined
-        }
-
         const menuItems: MenuData = []
 
-        const baseItems = this.makeBaseContextMenu(this.parent)
+        const baseItems = this.makeBaseContextMenu(this.parent.editor)
         const specificItems = this.makeComponentSpecificContextMenuItems()
 
         let lastWasSep = true
@@ -1138,8 +1137,9 @@ export abstract class ComponentBase<
     private makeBaseContextMenu(editor: LogicEditor): MenuItems {
         const s = S.Components.Generic.contextMenu
 
+        // only allow to make new custom components in main editor
         const makeNewComponentItems: MenuItems =
-            editor.eventMgr.currentSelectionEmpty() ? [] : [
+            editor.eventMgr.currentSelectionEmpty() || !this.parent.isMainEditor() ? [] : [
                 ["start", MenuData.item("newcomponent", s.MakeNewComponent, () => {
                     const error = editor.factory.tryMakeNewCustomComponent(editor)
                     if (error !== undefined) {
@@ -1168,7 +1168,7 @@ export abstract class ComponentBase<
             ]
 
         const deleteItem = MenuData.item("trash", s.Delete, () => {
-            const deleted = editor.components.tryDelete(this)
+            const deleted = this.parent.components.tryDelete(this)
             if (deleted) {
                 this.setNeedsRedraw("deleted component")
                 return InteractionResult.SimpleChange
@@ -1419,8 +1419,8 @@ export abstract class ParametrizedComponentBase<
         }
 
         const newComp = this.replaceWithNewParams({ [paramName]: newParamValue } as Partial<TParams>)
-        if (newComp !== undefined && this.parent.isMainEditor()) {
-            this.parent.eventMgr.setCurrentMouseOverComp(newComp)
+        if (newComp !== undefined) {
+            this.parent.editor.eventMgr.setCurrentMouseOverComp(newComp)
         }
     }
 

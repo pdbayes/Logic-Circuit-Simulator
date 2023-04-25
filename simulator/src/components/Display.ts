@@ -76,7 +76,7 @@ export class Display extends ParametrizedComponentBase<DisplayRepr> {
     }
 
     private get showAsUnknown() {
-        return this._showAsUnknown || this.parent.options.hideOutputColors
+        return this._showAsUnknown || this.parent.editor.options.hideOutputColors
     }
 
     public override makeTooltip() {

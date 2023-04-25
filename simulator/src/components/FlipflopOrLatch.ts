@@ -78,7 +78,7 @@ export abstract class FlipflopOrLatch<TRepr extends FlipflopOrLatchRepr> extends
         this.doDrawDefault(g, ctx, {
             background: this._isInInvalidState ? COLOR_BACKGROUND_INVALID : undefined,
             drawLabels: () => {
-                if (this._showContent && !this.parent.options.hideMemoryContent) {
+                if (this._showContent && !this.parent.editor.options.hideMemoryContent) {
                     FlipflopOrLatch.drawStoredValue(g, this.value[0], this.posX, this.posY, 26, false)
                 }
             },

@@ -23,6 +23,7 @@ import inputs from '../img/icons/inputs.icon.svg'; // @ts-ignore
 import link from '../img/icons/link.icon.svg'; // @ts-ignore
 import memcontent from '../img/icons/memcontent.icon.svg'; // @ts-ignore
 import memlines from '../img/icons/memlines.icon.svg'; // @ts-ignore
+import mouse from '../img/icons/mouse.icon.svg'; // @ts-ignore
 import move from '../img/icons/move.icon.svg'; // @ts-ignore
 import newcomponent from '../img/icons/newcomponent.icon.svg'; // @ts-ignore
 import none from '../img/icons/none.icon.svg'; // @ts-ignore
@@ -140,6 +141,7 @@ const icons = {
     link,
     memcontent,
     memlines,
+    mouse,
     move,
     newcomponent,
     none,

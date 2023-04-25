@@ -149,7 +149,7 @@ export abstract class RegisterBase<
 
     protected override doDraw(g: GraphicsRendering, ctx: DrawContext) {
         this.doDrawDefault(g, ctx, (ctx) => {
-            if (this._showContent && !this.parent.options.hideMemoryContent) {
+            if (this._showContent && !this.parent.editor.options.hideMemoryContent) {
                 RegisterBase.drawStoredValues(g, ctx, this.outputs.Q, this.posX, Orientation.isVertical(this.orient))
             } else {
                 this.doDrawGenericCaption(g)

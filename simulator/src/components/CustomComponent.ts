@@ -1,4 +1,5 @@
 import * as t from "io-ts"
+import { ComponentFactory } from "../ComponentFactory"
 import { ComponentList } from "../ComponentList"
 import { LogicEditor } from "../LogicEditor"
 import { NodeManager } from "../NodeManager"
@@ -8,9 +9,9 @@ import { Serialization } from "../Serialization"
 import { COLOR_COMPONENT_BORDER } from "../drawutils"
 import { b, div, mods, span, tooltipContent } from "../htmlgen"
 import { S } from "../strings"
-import { ArrayFillUsing, ArrayFillWith, LogicValue, isArray, isString, typeOrUndefined, validateJson } from "../utils"
+import { ArrayFillUsing, ArrayFillWith, InteractionResult, LogicValue, isArray, isString, typeOrUndefined, validateJson } from "../utils"
 import { Component, ComponentBase, ComponentRepr, NodeDesc, NodeGroupDesc, NodeInDesc, NodeOutDesc, NodeRec, defineComponent, groupHorizontal, groupVertical } from "./Component"
-import { DrawContext, DrawableParent, GraphicsRendering, MenuItems, Orientation, Orientations } from "./Drawable"
+import { DrawContext, DrawableParent, EditTools, GraphicsRendering, MenuData, MenuItems, Orientation, Orientations } from "./Drawable"
 import { Input, InputRepr } from "./Input"
 import { NodeIn, NodeOut } from "./Node"
 import { Output, OutputRepr } from "./Output"
@@ -49,8 +50,8 @@ export class CustomComponentDef {
 
     public customId: string
     public readonly circuit: CircuitRepr
-    public readonly numInputs: number
     public readonly insOuts: CustomComponentNodeSpec[]
+    public readonly numInputs: number
     public readonly numOutputs: number
     private readonly numBySide: Record<Orientation, number> = { n: 0, e: 0, s: 0, w: 0 }
     private _caption: string
@@ -127,14 +128,24 @@ export class CustomComponentDef {
     public isValid() { return true }
     public get type() { return CustomComponentPrefix + this.customId }
 
-    public uses(type: string): boolean {
+    public uses(type: string, alsoIndirect: false | [true, ComponentFactory]): boolean {
         const compReprs = this.circuit.components
         if (compReprs === undefined) {
             return false
         }
+        const whitelist: string[] = []
         for (const compRepr of Object.values(compReprs)) {
-            if (compRepr.type === type) {
+            const compType = String(compRepr.type)
+            if (compType === type) {
                 return true
+            } else if (alsoIndirect !== false && compType.startsWith(CustomComponentPrefix) && !whitelist.includes(compType)) {
+                const factory = alsoIndirect[1]
+                // maybe this other custom component uses the type
+                const customId = compType.substring(CustomComponentPrefix.length)
+                if (factory.getCustomDef(customId)?.uses(type, alsoIndirect) ?? false) {
+                    return true
+                }
+                whitelist.push(compType)
             }
         }
         return false
@@ -268,33 +279,45 @@ export class CustomComponentDef {
 }
 
 export const CustomComponentRepr = ComponentRepr(true, true)
-
 export type CustomComponentRepr = t.TypeOf<typeof CustomComponentRepr>
 
 
 export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicValue[]> implements DrawableParent {
 
-    public readonly customDef: CustomComponentDef
+
+    /// Base public properties ///
+
+    private _customDef: CustomComponentDef
+    public get customDef() { return this._customDef }
     public readonly numInputs: number
     public readonly numOutputs: number
 
-    public readonly wireMgr: WireManager = new WireManager(this)
-    public readonly recalcMgr = new RecalcManager()
-    public readonly nodeMgr = new NodeManager()
-    public readonly components = new ComponentList()
+
+    /// DrawableParent implementation ///
 
     public isMainEditor(): this is LogicEditor { return false }
     public get editor() { return this.parent.editor }
     public get mode() { return this.parent.mode }
-    public get options() { return this.parent.options }
-    public get timeline() { return this.parent.timeline }
+
+    public readonly components = new ComponentList()
+    public readonly nodeMgr = new NodeManager()
+    public readonly wireMgr: WireManager = new WireManager(this)
+    public readonly recalcMgr = new RecalcManager()
+
+    private _ifEditing: EditTools | undefined = undefined
+    public get ifEditing() { return this._ifEditing }
+    public stopEditingThis() { this._ifEditing = undefined }
+    public startEditingThis(tools: EditTools) { this._ifEditing = tools }
+
+
+    /// Other internals ///
 
     private _subcircuitInputs: NodeOut[] = []
     private _subcircuitOutputs: NodeIn[] = []
 
     public constructor(parent: DrawableParent, customDef: CustomComponentDef, saved?: CustomComponentRepr) {
         super(parent, customDef.toStandardDef(), saved)
-        this.customDef = customDef
+        this._customDef = customDef
         this.numInputs = this.inputs._all.length
         this.numOutputs = this.outputs._all.length
 
@@ -324,6 +347,10 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
         }
     }
 
+    public override toStringDetails() {
+        return this.customDef?.customId ?? ""
+    }
+
     public toJSON() {
         return this.toJSONBase()
     }
@@ -344,6 +371,12 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
 
     public updateFromDef() {
         // we need to recreate it to regenerate the properties from the new def
+        const newDef = this.editor.factory.getCustomDef(this._customDef.customId)
+        if (newDef === undefined) {
+            console.warn("New custom component definition not found, using old one, but trouble is ahead")
+        } else {
+            this._customDef = newDef
+        }
         this.replaceWithComponent(this.makeClone(false))
     }
 
@@ -381,7 +414,40 @@ export class CustomComponent extends ComponentBase<CustomComponentRepr, LogicVal
     }
 
     protected override makeComponentSpecificContextMenuItems(): MenuItems {
-        return this.makeForceOutputsContextMenuItem()
+        const s = S.Components.Custom.contextMenu
+
+        return [
+            ...this.makeForceOutputsContextMenuItem(),
+            ["mid", MenuData.item("connect", s.ChangeCircuit, () => {
+                this.tryOpenEditor()
+            }, "↩︎")],
+        ]
+    }
+
+    public override keyDown(e: KeyboardEvent): void {
+        if (e.key === "Enter" && !e.altKey) {
+            this.tryOpenEditor()
+        } else {
+            super.keyDown(e)
+        }
+    }
+
+    public override mouseDoubleClicked(e: MouseEvent | TouchEvent) {
+        const result = super.mouseDoubleClicked(e)
+        if (result.isChange) {
+            return result
+        }
+        this.tryOpenEditor()
+        return InteractionResult.SimpleChange
+    }
+
+    private tryOpenEditor() {
+        if (!(this.editor.editorRoot instanceof LogicEditor)) {
+            alert(S.Components.Custom.messages.NotInMainEditor)
+            return
+        }
+        this.editor.setEditorRoot(this)
+        this.editor.editTools.undoMgr.takeSnapshot()
     }
 
 }

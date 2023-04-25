@@ -10,7 +10,7 @@ import { ComparatorDef } from "./components/Comparator"
 import { Component, ComponentBase, ComponentRepr } from "./components/Component"
 import { ControlledInverterDef } from "./components/ControlledInverter"
 import { CounterDef } from "./components/Counter"
-import { CustomComponentDef, CustomComponentDefRepr, CustomComponentPrefix } from "./components/CustomComponent"
+import { CustomComponent, CustomComponentDef, CustomComponentDefRepr, CustomComponentPrefix } from "./components/CustomComponent"
 import { DecoderDef } from "./components/Decoder"
 import { Decoder16SegDef } from "./components/Decoder16Seg"
 import { Decoder7SegDef } from "./components/Decoder7Seg"
@@ -217,6 +217,10 @@ export class ComponentFactory {
 
     // Custom components handling
 
+    public getCustomDef(customId: string): CustomComponentDef | undefined {
+        return this._customComponents.get(customId)
+    }
+
     public customDefs(): CustomComponentDef[] | undefined {
         if (this._customComponents.size === 0) {
             return undefined
@@ -236,16 +240,24 @@ export class ComponentFactory {
         this._customComponents.clear()
     }
 
-    public tryAddCustomDef(defRepr: CustomComponentDefRepr): ComponentMaker<any> | undefined {
+    public getCustomComponentTypesWhichUse(id: string) {
+        const compIds: string[] = [id]
+        for (const def of this._customComponents.values()) {
+            if (def.uses(id, [true, this])) {
+                compIds.push(def.type)
+            }
+        }
+        return compIds
+    }
+
+    public tryAddCustomDef(def: CustomComponentDef, overwrite: boolean): ComponentMaker<any> | undefined {
         // Calling this may change the list of custom defs, we may need to update the UI
-        const id = defRepr.id
-        if (this._customComponents.has(id)) {
-            console.warn(`Could not add custom component with duplicate id '${id}'`)
+        const customid = def.customId
+        if (!overwrite && this._customComponents.has(customid)) {
+            console.warn(`Could not add custom component with duplicate id '${customid}'`)
             return undefined
         }
-
-        const def = new CustomComponentDef(defRepr)
-        this._customComponents.set(id, def)
+        this._customComponents.set(customid, def)
         return def
     }
 
@@ -260,7 +272,7 @@ export class ComponentFactory {
         }
         let numLoaded = 0
         for (const validatedDef of validatedDefs) {
-            const maker = this.tryAddCustomDef(validatedDef)
+            const maker = this.tryAddCustomDef(new CustomComponentDef(validatedDef), false)
             if (maker !== undefined) {
                 numLoaded++
             }
@@ -281,50 +293,10 @@ export class ComponentFactory {
 
         const s = S.Components.Custom.contextMenu
         return [
-            MenuData.item("pen", s.ChangeName, () => {
-                const oldCaption = def.caption
-                const oldType = def.type
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    const newCaption = window.prompt(s.ChangeNamePrompt, oldCaption)
-                    if (newCaption === null || newCaption === oldCaption) {
-                        return
-                    }
-                    if (newCaption.length === 0) {
-                        window.alert(s.ChangeNameEmpty)
-                        continue
-                    }
-                    def.doSetCaption(newCaption)
-                    const oldDefaultCustomId = makeCustomIdFromCaption(oldCaption)
-                    if (def.customId === oldDefaultCustomId) {
-                        // The ID was automatically generated from the caption, so we'll try to update it as well
-                        const newCustomId = makeCustomIdFromCaption(newCaption)
-                        if (!this._customComponents.has(newCustomId)) {
-                            // we can actually change it without conflicts
-                            this._customComponents.delete(oldDefaultCustomId)
-                            def.customId = newCustomId
-                            const newType = def.type
-
-                            // update the type in all custom conponent definitions
-                            for (const compDef of this._customComponents.values()) {
-                                for (const compRepr of Object.values(compDef.circuit.components ?? {})) {
-                                    if (compRepr.type === oldType) {
-                                        compRepr.type = newType
-                                    }
-                                }
-                            }
-                            this._customComponents.set(newCustomId, def)
-                        }
-                    }
-
-                    this.editor.updateCustomComponentButtons()
-                    this.editor.components.updateCustomComponents(oldType) // they still have the old type
-                    break
-                }
-            }, undefined),
+            MenuData.item("pen", s.ChangeName, () => this.runChangeCustomComponentCaptionDialog(def)),
             MenuData.item("connect", s.ChangeCircuit, () => {
-                window.alert(S.Messages.NotImplemented)
-            }, undefined),
+                window.alert(s.EditFromComponentMessage)
+            }),
             MenuData.sep(),
             MenuData.item("trash", s.Delete, () => {
                 if (this.editor.components.contains(id)) {
@@ -332,7 +304,7 @@ export class ComponentFactory {
                     return
                 }
                 for (const compDef of this._customComponents.values()) {
-                    if (compDef.uses(def.type)) {
+                    if (compDef.uses(def.type, false)) {
                         window.alert(s.CannotDeleteInUseBy.expand({ caption: compDef.caption }))
                         return
                     }
@@ -343,6 +315,51 @@ export class ComponentFactory {
                 }
             }, undefined, true),
         ]
+    }
+
+    public runChangeCustomComponentCaptionDialog(def: CustomComponentDef) {
+        const s = S.Components.Custom.contextMenu
+        const oldCaption = def.caption
+        const oldType = def.type
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const newCaption = window.prompt(s.ChangeNamePrompt, oldCaption)
+            if (newCaption === null || newCaption === oldCaption) {
+                return
+            }
+            if (newCaption.length === 0) {
+                window.alert(s.ChangeNameEmpty)
+                continue
+            }
+
+            def.doSetCaption(newCaption)
+            const oldDefaultCustomId = makeCustomIdFromCaption(oldCaption)
+            if (def.customId === oldDefaultCustomId) {
+                // The ID was automatically generated from the caption, so we'll try to update it as well
+                const newCustomId = makeCustomIdFromCaption(newCaption)
+                if (!this._customComponents.has(newCustomId)) {
+                    // we can actually change it without conflicts
+                    this._customComponents.delete(oldDefaultCustomId)
+                    def.customId = newCustomId
+                    const newType = def.type
+
+                    // update the type in all custom conponent definitions
+                    for (const compDef of this._customComponents.values()) {
+                        for (const compRepr of Object.values(compDef.circuit.components ?? {})) {
+                            if (compRepr.type === oldType) {
+                                compRepr.type = newType
+                            }
+                        }
+                    }
+                    this._customComponents.set(newCustomId, def)
+                }
+            }
+            break
+        }
+
+        this.editor.updateCustomComponentButtons()
+        this.editor.components.updateCustomComponents(oldType) // they still have the old type
+        this.editor.focus()
     }
 
     public tryMakeNewCustomComponent(editor: LogicEditor): undefined | string {
@@ -357,12 +374,95 @@ export class ComponentFactory {
             return s.EmptySelection
         }
 
-        const inputs = selectedComps.filter((e): e is Input => e instanceof Input)
+        const checkResult = this.checkComponentsForCustomDef(selectedComps)
+        if (isString(checkResult)) {
+            return checkResult
+        }
+
+        const componentsToInclude = checkResult.components
+
+        let caption
+        const labels = componentsToInclude.filter((e): e is Label => e instanceof Label)
+        if (labels.length !== 1) {
+            caption = window.prompt(s.EnterCaptionPrompt)
+            if (caption === null) {
+                return ""
+            }
+        } else {
+            caption = labels[0].text
+        }
+
+        const id = makeCustomIdFromCaption(caption)
+        if (this._customComponents.has(id)) {
+            return s.ComponentAlreadyExists.expand({ id })
+        }
+
+        const { components, wires } = Serialization.buildComponentsAndWireObject(componentsToInclude, undefined)
+        if (components === undefined || wires === undefined) {
+            return s.NoWires
+        }
+
+        const maker = this.tryAddCustomDef(new CustomComponentDef({
+            id, caption, circuit: { components, wires },
+        }), false)
+        if (maker === undefined) {
+            return ""
+        }
+
+        const customComp = maker.make(editor)
+        customComp.setSpawned()
+        customComp.setPosition(editor.mouseX + customComp.unrotatedWidth / 2 - 5, editor.mouseY, true)
+        editor.eventMgr.currentSelection = undefined
+        editor.eventMgr.setCurrentMouseOverComp(customComp)
+
+        for (const comp of componentsToInclude) {
+            editor.components.tryDelete(comp)
+        }
+
+        return undefined // success
+    }
+
+    public tryModifyCustomComponent(def: CustomComponentDef, defRoot: CustomComponent): undefined | string {
+        const s = S.Components.Custom.messages
+        const components = [...defRoot.components.all()]
+
+        const checkResult = this.checkComponentsForCustomDef(components)
+        if (isString(checkResult)) {
+            return checkResult
+        }
+
+        const newComponents = checkResult.components
+
+        const circuit = Serialization.buildComponentsAndWireObject(newComponents, undefined)
+        if (circuit.components === undefined || circuit.wires === undefined) {
+            return ""
+        }
+
+        const newDef = new CustomComponentDef({
+            id: def.customId,
+            caption: def.caption,
+            circuit: { components: circuit.components, wires: circuit.wires },
+        })
+
+        if (newDef.numInputs !== def.numInputs || newDef.numOutputs !== def.numOutputs) {
+            if (!window.confirm(s.InputsOutputsChanged)) {
+                return "" // cancelled
+            }
+        }
+
+        this.tryAddCustomDef(newDef, true)
+        return undefined // success
+    }
+
+    private checkComponentsForCustomDef(components: Component[]): { components: Component[], inputs: Input[], outputs: Output[] } | string {
+        const s = S.Components.Custom.messages
+
+        const inputs = components.filter((e): e is Input => e instanceof Input)
         if (inputs.length === 0) {
             return s.NoInput
         }
 
-        const outputs = selectedComps.filter((e): e is Output => e instanceof Output)
+        const outputs = components.filter((e): e is Output => e instanceof Output)
         if (outputs.length === 0) {
             return s.NoOutput
         }
@@ -371,11 +471,25 @@ export class ComponentFactory {
         // Check that all inputs and outputs have names
         function checkNames(inOuts: Array<Input | Output>): boolean {
             const names = new Set<string>()
+            const missingNames: Array<Input | Output> = []
             for (const inOut of inOuts) {
-                const name = (inOut as Input | Output).name
-                if (!isString(name) || names.has(name)) {
-                    return false
+                const name = inOut.name
+                if (name === undefined) {
+                    missingNames.push(inOut)
+                } else {
+                    if (!isString(name) || names.has(name)) {
+                        return false
+                    }
+                    names.add(name)
                 }
+            }
+            for (const inOut of missingNames) {
+                const prefix = inOut instanceof Input ? "In" : "Out"
+                let i = 0, name
+                do {
+                    name = `${prefix}${i++}`
+                } while (names.has(name))
+                inOut.doSetName(name)
                 names.add(name)
             }
             return true
@@ -399,7 +513,7 @@ export class ComponentFactory {
             for (const node of comp.outputs._all) {
                 for (const wire of node.outgoingWires) {
                     const otherComp = wire.endNode.component
-                    if (selectedComps.includes(otherComp)
+                    if (components.includes(otherComp)
                         && !componentsToInclude.includes(otherComp)) {
                         componentsToInclude.push(otherComp)
                         queue.push(otherComp)
@@ -418,7 +532,7 @@ export class ComponentFactory {
                 if (wire !== null) {
                     const otherComp = wire.startNode.component
 
-                    if (!selectedComps.includes(otherComp)) {
+                    if (!components.includes(otherComp)) {
                         // this component is missing from the selection
                         if (!missingComponents.includes(otherComp)) {
                             missingComponents.push(otherComp)
@@ -438,7 +552,7 @@ export class ComponentFactory {
             return s.MissingComponents.expand({ list: missingCompsStr })
         }
 
-        const uselessComponents = selectedComps.filter(c =>
+        const uselessComponents = components.filter(c =>
             !componentsToInclude.includes(c)
             // allow disconnected comps that have no inputs or outputs, e.g. labels
             && (c.inputs._all.length !== 0 || c.outputs._all.length !== 0)
@@ -452,39 +566,9 @@ export class ComponentFactory {
             return s.CannotIncludeClock
         }
 
-        let caption
-        const labels = selectedComps.filter((e): e is Label => e instanceof Label)
-        if (labels.length !== 1) {
-            caption = window.prompt(s.EnterCaptionPrompt)
-            if (caption === null) {
-                return ""
-            }
-        } else {
-            caption = labels[0].text
-        }
-        const id = makeCustomIdFromCaption(caption)
-        if (this._customComponents.has(id)) {
-            return s.ComponentAlreadyExists.expand({ id })
-        }
-
-        const { components, wires } = Serialization.buildComponentsObject(componentsToInclude, undefined)
-        if (components === undefined || wires === undefined) {
-            return ""
-        }
-
-        const maker = this.tryAddCustomDef({ id, caption, circuit: { components, wires } })
-        if (maker === undefined) {
-            return ""
-        }
-
-        const customComp = maker.make(editor)
-        customComp.setSpawned()
-        customComp.setPosition(editor.mouseX + customComp.unrotatedWidth / 2 - 5, editor.mouseY, true)
-        editor.eventMgr.currentSelection = undefined
-        editor.eventMgr.setCurrentMouseOverComp(customComp)
-
-        return undefined // success
+        return { components: componentsToInclude, inputs, outputs }
     }
+
 }
 
 
