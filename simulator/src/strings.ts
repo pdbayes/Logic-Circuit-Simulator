@@ -8,10 +8,13 @@ type ComponentStrings = string | [string, string]
 
 export class Template<TPlaceholders extends string[]> {
     public constructor(public readonly templateString: string) { }
-    public expand(values: { [K in TPlaceholders[number]]: any }) {
-        return this.templateString.replace(/\$\{(\w+)\}/g, (placeholder) => {
-            const key = placeholder.slice(2, -1)
-            return String((values as any)[key] ?? "<<" + key + ">>")
+    public expand(values: { [K in TPlaceholders[number]]: unknown }) {
+        return this.templateString.replace(/\$(s?)\{(\w+)(\?(\w*)(:(\w*))?)?\}/g, (match, s, key, plurDecl, plural, singDecl, singular) => {
+            const value = (values as any)[key] as unknown | undefined
+            if (s === "s") {
+                return S.plural(value === undefined ? 0 : Number(value), plural, singular)
+            }
+            return String(value ?? "<<" + key + ">>")
         })
     }
 }
@@ -30,6 +33,7 @@ export function template<TText extends string>(templ: TText) {
 
 
 const Strings_fr = {
+    plural: (n: number, plural?: string, singular?: string) => Math.abs(n) < 2 ? (singular ?? "") : (plural ?? "s"),
     ComponentBar: {
         Labels: {
             More: "Plus",
@@ -199,6 +203,8 @@ const Strings_fr = {
         Move: tuple("Déplacer", "Déplace tout le circuit"),
     },
     Messages: {
+        UnsupportedFileType: template("Type de fichier non pris en charge: ${type}."),
+        LoadedDefinitions: template("${n} composant$s{n} personnalisé$s{n} chargé$s{n}"),
         NotImplemented: "Cette fonctionnalité n’est pas encore implémentée.",
         ReallyCloseWindow: "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?",
         DevelopedBy: "Développé par ",
@@ -245,9 +251,9 @@ const Strings_fr = {
 
                 ShowContent: "Montrer le contenu",
 
-                ParamNumInputs: tuple("Nombre d’entrées", template("${val} entrées")),
-                ParamNumBits: tuple("Nombre de bits", template("${val} bits")),
-                ParamNumWords: tuple("Nombre de lignes", template("${val} lignes")),
+                ParamNumInputs: tuple("Nombre d’entrées", template("${val} entrée$s{val}")),
+                ParamNumBits: tuple("Nombre de bits", template("${val} bit$s{val}")),
+                ParamNumWords: tuple("Nombre de lignes", template("${val} ligne$s{val}")),
             },
 
             InputCarryInDesc: "Cin (retenue précédente)",
@@ -305,7 +311,7 @@ const Strings_fr = {
         },
         AdderArray: {
             tooltip: {
-                title: template("Additionneur à ${numBits} bits"),
+                title: template("Additionneur à ${numBits} bit$s{numBits}"),
                 desc: "Additionne les deux nombres d'entrées A et B avec une retenue d’entrée Cin, et fournit les bits de somme S et une retenue de sortie Cout.",
             },
         },
@@ -377,7 +383,7 @@ const Strings_fr = {
         Decoder: {
             tooltip: {
                 title: "Décodeur binaire",
-                desc: template("Ce décodeur prend en entrée un nombre binaire codé sur ${numFrom} bits et active la sortie correspondante parmi ${numTo} (actuellement, ${n})."),
+                desc: template("Ce décodeur prend en entrée un nombre binaire codé sur ${numFrom} bit$s{numFrom} et active la sortie correspondante parmi ${numTo} (actuellement, ${n})."),
             },
         },
         Decoder7Seg: {
@@ -468,7 +474,7 @@ const Strings_fr = {
         },
         Input: {
             tooltip: {
-                title: template("Entrée (${numBits} bits)"),
+                title: template("Entrée (${numBits} bit$s{numBits})"),
             },
             contextMenu: {
                 LockValue: "Verrouiller cette valeur",
@@ -547,13 +553,13 @@ const Strings_fr = {
                 ShowWiring: "Afficher les connexions",
                 UseZForDisconnected: "Utiliser Z pour sorties déconnectées",
 
-                ParamNumFrom: tuple("Nombre d’entrées", template("${val} entrées")),
-                ParamNumTo: tuple("Nombre de sorties", template("${val} sorties")),
+                ParamNumFrom: tuple("Nombre d’entrées", template("${val} entrée$s{val}")),
+                ParamNumTo: tuple("Nombre de sorties", template("${val} sortie$s{val}")),
             },
         },
         Output: {
             tooltip: {
-                title: template("Sortie (${numBits} bits)"),
+                title: template("Sortie (${numBits} bit$s{numBits})"),
             },
         },
         Display7Seg: {
@@ -604,8 +610,8 @@ const Strings_fr = {
         },
         Display: {
             tooltip: {
-                title: template("Afficheur ${numBits} bits"),
-                desc: tuple(template("Affiche la valeur ${radixStr} de ses ${numBits} entrées, actuellement "), "."),
+                title: template("Afficheur ${numBits} bit$s{numBits}"),
+                desc: tuple(template("Affiche la valeur ${radixStr} de ses ${numBits} entrée$s{numBits}, actuellement "), "."),
 
                 RadixBinary: "binaire",
                 RadixDecimal: "décimale",
@@ -676,7 +682,7 @@ const Strings_fr = {
         RAM: {
             tooltip: {
                 title: "RAM (mémoire vive)",
-                desc: template("Stocke ${numWords} lignes de ${numDataBits} bits."),
+                desc: template("Stocke ${numWords} ligne$s{numWords} de ${numDataBits} bit$s{numDataBits}."),
             },
             contextMenu: {
                 SelectedDataDisplay: "Affichage des données addressées",
@@ -690,13 +696,13 @@ const Strings_fr = {
         ROM: {
             tooltip: {
                 title: "ROM (mémoire morte)",
-                desc: template("Stocke ${numWords} lignes de ${numDataBits} bits."),
+                desc: template("Stocke ${numWords} ligne$s{numWords} de ${numDataBits} bits${numDataBits}."),
             },
         },
         Register: {
             tooltip: {
                 title: "Registre",
-                desc: template("Stocke ${numBits} bits."),
+                desc: template("Stocke ${numBits} bit$s{numBits}."),
             },
             contextMenu: {
                 ParamHasIncDec: "Avec incrémentaiton",
@@ -706,7 +712,7 @@ const Strings_fr = {
         ShiftRegister: {
             tooltip: {
                 title: "Registre à décalage",
-                desc: template("Stocke ${numBits} bits et les décale à chaque activation."),
+                desc: template("Stocke ${numBits} bit$s{numBits} et les décale à chaque activation."),
             },
         },
         ControlledInverter: {
@@ -760,6 +766,7 @@ const Strings_fr = {
 }
 
 const Strings_en: Strings = {
+    plural: (n: number, plural?: string, singular?: string) => Math.abs(n) === 1 ? (singular ?? "") : (plural ?? "s"),
     ComponentBar: {
         SectionNames: {
             InputOutput: "Input/ Output",
@@ -929,6 +936,8 @@ const Strings_en: Strings = {
         Move: tuple("Move", "Move the whole circuit"),
     },
     Messages: {
+        UnsupportedFileType: template("Unsupported file type: ${type}."),
+        LoadedDefinitions: template("Loaded ${n} custom component definition$s{n}"),
         NotImplemented: "This feature is not implemented yet.",
         ReallyCloseWindow: "Do you really want to close the window without saving the changes?",
         DevelopedBy: "Developed by",
@@ -975,9 +984,9 @@ const Strings_en: Strings = {
 
                 ShowContent: "Show Content",
 
-                ParamNumInputs: tuple("Number of Inputs", template("${val} Inputs")),
-                ParamNumBits: tuple("Number of Bits", template("${val} Bits")),
-                ParamNumWords: tuple("Number of Lines", template("${val} Lines")),
+                ParamNumInputs: tuple("Number of Inputs", template("${val} Input$s{val}")),
+                ParamNumBits: tuple("Number of Bits", template("${val} Bit$s{val}")),
+                ParamNumWords: tuple("Number of Lines", template("${val} Line$s{val}")),
             },
 
             InputCarryInDesc: "Cin (Previous Carry)",
@@ -1107,7 +1116,7 @@ const Strings_en: Strings = {
         Decoder: {
             tooltip: {
                 title: "Binary Decoder",
-                desc: template("Takes as input a binary number coded on ${numFrom} bits and activates the corresponding output among ${numTo} (currently, ${n})."),
+                desc: template("Takes as input a binary number coded on ${numFrom} bit$s{numFrom} and activates the corresponding output among ${numTo} (currently, ${n})."),
             },
         },
         Decoder7Seg: {
@@ -1276,8 +1285,8 @@ const Strings_en: Strings = {
                 ShowWiring: "Show Internal Wiring",
                 UseZForDisconnected: "Use Z For Disconnected Pins",
 
-                ParamNumFrom: tuple("Number of Inputs", template("${val} Inputs")),
-                ParamNumTo: tuple("Number of Outputs", template("${val} Outputs")),
+                ParamNumFrom: tuple("Number of Inputs", template("${val} Input$s{val}")),
+                ParamNumTo: tuple("Number of Outputs", template("${val} Output$s{val}")),
             },
         },
         Output: {
@@ -1334,7 +1343,7 @@ const Strings_en: Strings = {
         Display: {
             tooltip: {
                 title: template("${numBits}-Bit Display"),
-                desc: tuple(template("Displays the ${radixStr} value of its ${numBits} inputs, which is currently "), "."),
+                desc: tuple(template("Displays the ${radixStr} value of its ${numBits} input$s{numBits}, which is currently "), "."),
 
                 RadixBinary: "binary",
                 RadixDecimal: "decimal",
@@ -1406,7 +1415,7 @@ const Strings_en: Strings = {
         RAM: {
             tooltip: {
                 title: "RAM (Random-Access Memory)",
-                desc: template("Stores ${numWords} rows of ${numDataBits} bits."),
+                desc: template("Stores ${numWords} row$s{numWords} of ${numDataBits} bit$s{numDataBits}."),
             },
             contextMenu: {
                 SelectedDataDisplay: "Addressed Data Display",
@@ -1420,13 +1429,13 @@ const Strings_en: Strings = {
         ROM: {
             tooltip: {
                 title: "ROM (Read-Only Memory)",
-                desc: template("Stores ${numWords} rows of ${numDataBits} bits."),
+                desc: template("Stores ${numWords} row$s{numWords} of ${numDataBits} bit$s{numDataBits}."),
             },
         },
         Register: {
             tooltip: {
                 title: "Register",
-                desc: template("Stores ${numBits} bits."),
+                desc: template("Stores ${numBits} bit$s{numBits}."),
             },
             contextMenu: {
                 ParamHasIncDec: "With Increment/Decrement",
@@ -1436,7 +1445,7 @@ const Strings_en: Strings = {
         ShiftRegister: {
             tooltip: {
                 title: "Shift Register",
-                desc: template("Stores ${numBits} bits and shifts them left or right at each activation."),
+                desc: template("Stores ${numBits} bit$s{numBits} and shifts them left or right at each activation."),
             },
         },
         ControlledInverter: {

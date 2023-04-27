@@ -19,6 +19,7 @@ import * as pngMeta from 'png-metadata-writer'
 import { ComponentFactory } from "./ComponentFactory"
 import { ComponentList, DrawZIndex } from "./ComponentList"
 import { ComponentMenu } from "./ComponentMenu"
+import { MessageBar } from "./MessageBar"
 import { MoveManager } from "./MoveManager"
 import { NodeManager } from "./NodeManager"
 import { RecalcManager, RedrawManager } from "./RedrawRecalcManager"
@@ -36,7 +37,7 @@ import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
-import { a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
+import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
 import { KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
@@ -173,6 +174,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
     private _menu: ComponentMenu | undefined = undefined
     private _topBar: TopBar | undefined = undefined
+    private _messageBar: MessageBar | undefined = undefined
     private _toolCursor: string | null = null
     private _highlightedItems: HighlightedItems | undefined = undefined
     private _nextAnimationFrameHandle: number | null = null
@@ -624,6 +626,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         this._topBar = new TopBar(this)
         this._menu = new ComponentMenu(this.html.leftToolbar, this._options.showOnly)
+        this._messageBar = new MessageBar(this)
 
         // TODO move this to the Def of LabelRect to be cleaner
         const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-type=rect]")
@@ -1053,7 +1056,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             reader.readAsText(file, "utf-8")
 
         } else {
-            console.warn("Unsupported file type", file.type)
+            this.showMessage(S.Messages.UnsupportedFileType.expand({ type: file.type }))
         }
     }
 
@@ -1214,6 +1217,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                 : this._toolCursor
                 ?? this.eventMgr.currentMouseOverComp?.cursorWhenMouseover(e)
                 ?? "default"
+    }
+
+    public showMessage(msg: Modifier) {
+        this._messageBar?.showMessage(msg, 2000)
+        // console.log(String(msg))
     }
 
     public lengthOfPath(svgPathDesc: string): number {

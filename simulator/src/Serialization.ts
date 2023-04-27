@@ -9,6 +9,7 @@ import { type Component } from "./components/Component"
 import { type CustomComponent, type CustomComponentDefRepr } from './components/CustomComponent'
 import { DrawableParent } from './components/Drawable'
 import { Wire } from "./components/Wire"
+import { S } from './strings'
 import { JSONParseObject, isArray, isRecord, isString, keysOf, validateJson } from "./utils"
 
 
@@ -135,7 +136,7 @@ class _Serialization {
         migrateData(parsed)
         const numLoaded = editor.factory.tryLoadCustomDefsFrom(parsed.defs)
         editor.updateCustomComponentButtons()
-        console.log(`Loaded ${numLoaded} custom component definitions`)
+        editor.showMessage(S.Messages.LoadedDefinitions.expand({ n: numLoaded }))
         return undefined // no error
     }
 

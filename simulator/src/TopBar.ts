@@ -112,7 +112,7 @@ export class TopBar {
         this.flexibleSep = div(style("flex: auto")).render()
 
         this.zoomLevelInput = input(type("number"),
-            style("margin: 0 2px 0 0; width: 4em"),
+            style("margin: 0 2px 0 0; width: 4em; background-color: inherit;"),
             attr("min", "0"), attr("step", "10"),
             attr("value", String(editor.options.zoom)),
             attr("title", S.Settings.zoomLevel),

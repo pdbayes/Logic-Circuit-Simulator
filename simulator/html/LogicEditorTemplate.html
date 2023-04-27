@@ -12,12 +12,10 @@
 
     <div id="centerCol" style="flex: auto; display: flex; flex-direction: column; justify-content: stretch;">
 
-        <div id="canvas-sim" style="flex: auto; position: relative; display: flex; align-items: stretch; min-width: 0; max-width: 100%;">
+        <div id="canvas-sim" style="flex: auto; position: relative; display: flex; align-items: stretch; min-width: 0; max-width: 100%; overflow: hidden;">
 
-            <!-- Simulator Canvas -->
             <canvas id="mainCanvas" tabindex="0" style="flex:auto"></canvas>
 
-            <!-- In-Canvas Toolbar -->
             <div style="padding: 5px;
             position: absolute; top: 10px; right: 10px;display:flex; flex-direction: column; align-items: flex-end;">
                 <div class="sim-toolbar-right" style="margin-bottom: 15px; display: none;" id="modeChangeMenu">
