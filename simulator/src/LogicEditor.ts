@@ -504,6 +504,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             }
             setColors(darkModeQuery.matches)
 
+            // reexport some libs
+            window.JSON5 = JSON5
+
             // make load function available globally
             window.Logic.singleton = this
             window.load = this.loadCircuitOrLibrary.bind(this)
@@ -1420,6 +1423,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (this._isSingleton) {
             history.pushState(null, "", this.fullUrlForMode(MAX_MODE_WHEN_SINGLETON, compressedUriSafeJson))
             this.clearDirty()
+            this.showMessage(S.Messages.SavedToUrl)
         }
     }
 
@@ -1923,6 +1927,8 @@ export class LogicStatic {
     }
 
     public tests = new Tests()
+
+    public Serialization = Serialization
 
 }
 

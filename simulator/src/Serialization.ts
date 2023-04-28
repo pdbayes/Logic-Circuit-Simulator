@@ -446,7 +446,7 @@ class _Serialization {
                 let subpart = stringifySmart(def, { maxLength: Infinity })
                 def.circuit = circuit
                 const compparts: string[] = []
-                stringifyComponentAndWiresReprsTo(compparts, { ...circuit }, 3)
+                stringifyComponentAndWiresReprsTo(compparts, { ...circuit }, 3, true)
                 const circuitRepr = compparts.length === 0 ? "{}" : "{\n      " + compparts.join(",\n      ") + "\n    }"
                 subpart = subpart.slice(0, subpart.length - 1) + `, circuit: ` + circuitRepr + "}"
                 defparts.push(subpart)
@@ -459,12 +459,12 @@ class _Serialization {
         if (scratch !== undefined) {
             const scratchparts: string[] = []
             scratchparts.push(`id: ${stringifySmart(scratch.id)}`)
-            stringifyComponentAndWiresReprsTo(scratchparts, { ...scratch }, 2)
+            stringifyComponentAndWiresReprsTo(scratchparts, { ...scratch }, 2, false)
             parts.push(`scratch: {\n    ` + scratchparts.join(",\n    ") + "\n  }")
         }
         delete dataObject.scratch
 
-        stringifyComponentAndWiresReprsTo(parts, dataObject, 1)
+        stringifyComponentAndWiresReprsTo(parts, dataObject, 1, false)
 
         // loop though the remaining fields
         const unprocessedFields = keysOf(dataObject)
@@ -488,7 +488,7 @@ function stringifyCompactReprTo(parts: string[], container: Record<string, unkno
     delete container[key]
 }
 
-function stringifyComponentAndWiresReprsTo(parts: string[], container: ComponentAndWires, outerLevel: number) {
+function stringifyComponentAndWiresReprsTo(parts: string[], container: ComponentAndWires, outerLevel: number, noWireDelay: boolean) {
     const outerIndent = "  ".repeat(outerLevel)
     const innerIndent = outerIndent + "  "
     const comps = container.components
@@ -515,7 +515,27 @@ function stringifyComponentAndWiresReprsTo(parts: string[], container: Component
     }
     delete container.components
 
+    if (noWireDelay && container.wires !== undefined) {
+        for (const wire of container.wires) {
+            const wireOpts = wire[2]
+            if (wireOpts !== undefined) {
+                delete wireOpts.propagationDelay
+                if (allValuesUndefined(wireOpts)) {
+                    wire.splice(2, 1)
+                }
+            }
+        }
+    }
     stringifyCompactReprTo(parts, container, "wires")
+}
+
+function allValuesUndefined(obj: Record<string, unknown>): boolean {
+    for (const value of Object.values(obj)) {
+        if (value !== undefined) {
+            return false
+        }
+    }
+    return true
 }
 
 

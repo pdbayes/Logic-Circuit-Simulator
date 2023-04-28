@@ -1,9 +1,12 @@
+import JSON5 from "json5"
 import { gallery } from "../gallery"
 import { LogicStatic } from "../LogicEditor"
 import { Timestamp } from "../Timeline"
 
 declare global {
     interface Window {
+
+        JSON5: typeof JSON5
 
         Logic: LogicStatic
 

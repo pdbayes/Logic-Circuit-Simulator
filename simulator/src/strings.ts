@@ -205,6 +205,7 @@ const Strings_fr = {
     Messages: {
         UnsupportedFileType: template("Type de fichier non pris en charge: ${type}."),
         LoadedDefinitions: template("${n} composant$s{n} personnalisé$s{n} chargé$s{n}"),
+        SavedToUrl: "Circuit enregistré dans l’URL",
         NotImplemented: "Cette fonctionnalité n’est pas encore implémentée.",
         ReallyCloseWindow: "Voulez-vous vraiment fermer la fenêtre sans prendre en compte les derniers changements?",
         DevelopedBy: "Développé par ",
@@ -938,6 +939,7 @@ const Strings_en: Strings = {
     Messages: {
         UnsupportedFileType: template("Unsupported file type: ${type}."),
         LoadedDefinitions: template("Loaded ${n} custom component definition$s{n}"),
+        SavedToUrl: "Circuit saved to URL",
         NotImplemented: "This feature is not implemented yet.",
         ReallyCloseWindow: "Do you really want to close the window without saving the changes?",
         DevelopedBy: "Developed by",
