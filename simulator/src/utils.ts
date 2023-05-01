@@ -312,6 +312,18 @@ export function isEmbeddedInIframe(): boolean {
     }
 }
 
+export function onVisible(element: HTMLElement, callback: () => void) {
+    new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.intersectionRatio > 0) {
+                callback()
+                observer.disconnect()
+                return
+            }
+        })
+    }).observe(element)
+}
+
 export function setEnabled(elem: HTMLButtonElement, enabled: boolean) {
     if (enabled) {
         elem.removeAttribute("disabled")

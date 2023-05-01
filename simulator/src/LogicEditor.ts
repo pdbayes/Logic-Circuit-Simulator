@@ -40,7 +40,7 @@ import { gallery } from './gallery'
 import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
+import { KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, onVisible, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
 
 
 
@@ -832,6 +832,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         // this is called once here to set the initial transform and size before the first draw, and again later
         this.setCanvasSize()
+
+        // force redraw the first time the canvas is visible; this also sets the size
+        onVisible(this.html.canvasContainer, () => {
+            this.redraw()
+        })
 
         this.tryLoadCircuitFromData()
         // also triggers redraw, should be last thing called here
