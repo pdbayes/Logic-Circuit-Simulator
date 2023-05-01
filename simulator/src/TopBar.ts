@@ -305,7 +305,7 @@ export class TopBar {
     }
 
     public setDirty(dirty: boolean) {
-        this.dirtyIndicator.style.visibility = dirty ? "visible" : "hidden"
+        this.dirtyIndicator.style.visibility = dirty ? "inherit" : "hidden"
         setEnabled(this.resetButton, dirty)
     }
 

@@ -32,7 +32,7 @@ import { EditorSelection, UIEventManager } from "./UIEventManager"
 import { UndoManager } from './UndoManager'
 import { Component, ComponentBase } from "./components/Component"
 import { CustomComponent } from "./components/CustomComponent"
-import { Drawable, DrawableParent, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
+import { Drawable, DrawableParent, DrawableWithPosition, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
@@ -1328,7 +1328,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     private guessAdequateCanvasSize(applyZoom: boolean): [number, number] {
         let rightmostX = Number.NEGATIVE_INFINITY, leftmostX = Number.POSITIVE_INFINITY
         let lowestY = Number.NEGATIVE_INFINITY, highestY = Number.POSITIVE_INFINITY
-        for (const comp of this.components.all()) {
+        const drawables: DrawableWithPosition[] = [...this.components.all()]
+        for (const wire of this.wireMgr.wires) {
+            drawables.push(...wire.waypoints)
+        }
+        for (const comp of drawables) {
             const cx = comp.posX
             const width = comp.width
             const left = cx - width / 2
