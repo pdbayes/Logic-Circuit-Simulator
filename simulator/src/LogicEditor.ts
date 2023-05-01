@@ -40,7 +40,7 @@ import { gallery } from './gallery'
 import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
 import { DefaultLang, S, getLang, isLang, setLang } from "./strings"
-import { KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, onVisible, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
+import { InBrowser, KeysOfByType, RichStringEnum, UIDisplay, copyToClipboard, formatString, getURLParameter, isArray, isEmbeddedInIframe, isFalsyString, isString, isTruthyString, onVisible, pasteFromClipboard, setDisplay, setVisible, showModal, toggleVisible } from "./utils"
 
 
 
@@ -228,7 +228,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         super()
 
         this.root = this.attachShadow({ mode: 'open' })
-        this.root.appendChild(template.content.cloneNode(true) as HTMLElement)
+        this.root.appendChild(window.Logic.template.content.cloneNode(true) as HTMLElement)
 
         const html: typeof this.html = {
             rootDiv: this.elemWithId("logicEditorRoot"),
@@ -710,7 +710,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                             copyLinkDiv
                         ).render()
 
-                    switchToModeDiv.addEventListener("click", this.wrapHandler(() => this.setMode(buttonMode)))
+                    switchToModeDiv.addEventListener("click", () => this.setMode(buttonMode))
 
                     return switchToModeDiv
                 })
@@ -977,6 +977,8 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             // const showTxGates = mode >= Mode.FULL && (showOnly === undefined || showOnly.includes("TX") || showOnly.includes("TXA"))
             // const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
             // setVisible(txGateButton, showTxGates)
+
+            this.focus()
 
         })()
     }
@@ -1911,6 +1913,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
 export class LogicStatic {
 
+    public constructor(
+        public readonly template: HTMLTemplateElement,
+    ) { }
+
     public singleton: LogicEditor | undefined
 
     public highlight(diagramRefs: string | string[], componentRefs: string | string[]) {
@@ -1941,36 +1947,43 @@ export class LogicStatic {
 
 }
 
-const template = (() => {
-    const template = document.createElement('template')
-    template.innerHTML = LogicEditorTemplate
-    const styles = [LogicEditorCSS, DialogPolyfillCSS]
-    template.content.querySelector("#inlineStyle")!.innerHTML = styles.join("\n\n\n")
 
-    template.content.querySelectorAll("i.svgicon").forEach((_iconElem) => {
-        const iconElem = _iconElem as HTMLElement
-        const iconName = iconElem.dataset.icon ?? "question"
-        if (isIconName(iconName)) {
-            iconElem.innerHTML = inlineIconSvgFor(iconName)
-        } else {
-            console.log(`Unknown icon name '${iconName}'`)
-        }
-    })
-    return template
-})()
-// cannot be in setup function because 'template' var is not assigned until that func returns
-// and promotion of elems occurs during this 'customElements.define' call
-window.Logic = new LogicStatic()
-window.customElements.define('logic-editor', LogicEditor)
-document.addEventListener("toggle", e => {
-    if (!(e.target instanceof HTMLDetailsElement)) {
-        return
-    }
-    if (e.target.open) {
-        e.target.querySelectorAll("logic-editor").forEach(el => {
-            if (el instanceof LogicEditor) {
-                el.redraw()
+if (InBrowser) {
+    // cannot be in setup function because 'template' var is not assigned until that func returns
+    // and promotion of elems occurs during this 'customElements.define' call
+    const template = (() => {
+        const template = document.createElement('template')
+        template.innerHTML = LogicEditorTemplate
+        const styles = [LogicEditorCSS, DialogPolyfillCSS]
+        template.content.querySelector("#inlineStyle")!.innerHTML = styles.join("\n\n\n")
+
+        template.content.querySelectorAll("i.svgicon").forEach((_iconElem) => {
+            const iconElem = _iconElem as HTMLElement
+            const iconName = iconElem.dataset.icon ?? "question"
+            if (isIconName(iconName)) {
+                iconElem.innerHTML = inlineIconSvgFor(iconName)
+            } else {
+                console.log(`Unknown icon name '${iconName}'`)
             }
         })
-    }
-}, true)
+        return template
+    })()
+    window.Logic = new LogicStatic(template)
+    window.customElements.define('logic-editor', LogicEditor)
+    document.addEventListener("toggle", e => {
+        if (!(e.target instanceof HTMLDetailsElement)) {
+            return
+        }
+        if (e.target.open) {
+            e.target.querySelectorAll("logic-editor").forEach(el => {
+                if (el instanceof LogicEditor) {
+                    el.redraw()
+                }
+            })
+        }
+    }, true)
+
+} else {
+    // TODO
+    console.log("cli")
+}

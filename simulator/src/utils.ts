@@ -7,6 +7,8 @@ import { Add } from "ts-arithmetic"
 export type Dict<T> = Record<string, T | undefined>
 export type TimeoutHandle = NodeJS.Timeout
 
+export const InBrowser = typeof window !== 'undefined'
+
 // Better types for an Object.keys() replacement
 export function keysOf<K extends keyof any>(d: Record<K, any>): K[]
 export function keysOf<K extends {}>(o: K): (keyof K)[]

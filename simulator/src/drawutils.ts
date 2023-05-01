@@ -4,7 +4,7 @@ import { DrawContext, DrawContextExt, GraphicsRendering, HasPosition, Orientatio
 import { Node, WireColor } from "./components/Node"
 import { RectangleColor } from "./components/Rectangle"
 import { LogicEditor } from "./LogicEditor"
-import { EdgeTrigger, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { EdgeTrigger, InBrowser, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 
 
 //
@@ -241,6 +241,9 @@ function doSetColors(darkMode: boolean) {
 }
 
 function createStripedPattern(background: ColorString, stripeColor: string) {
+    if (!InBrowser) {
+        return null!
+    }
     const canvas = document.createElement("canvas")
     const step = 4
     canvas.width = 2 * step
