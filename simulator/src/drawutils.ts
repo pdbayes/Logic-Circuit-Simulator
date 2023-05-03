@@ -117,7 +117,7 @@ export let PATTERN_STRIPED_GRAY: CanvasPattern
 let _currentModeIsDark = false
 doSetColors(_currentModeIsDark)
 
-export function setColors(darkMode: boolean) {
+export function setDarkMode(darkMode: boolean) {
     if (darkMode !== _currentModeIsDark) {
         doSetColors(darkMode)
         for (const editor of LogicEditor.allConnectedEditors) {

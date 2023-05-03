@@ -35,7 +35,7 @@ import { CustomComponent } from "./components/CustomComponent"
 import { Drawable, DrawableParent, DrawableWithPosition, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setColors, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setDarkMode, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
 import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
@@ -500,9 +500,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             // singletons manage their dark mode according to system settings
             const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
             darkModeQuery.onchange = () => {
-                setColors(darkModeQuery.matches)
+                setDarkMode(darkModeQuery.matches)
             }
-            setColors(darkModeQuery.matches)
+            setDarkMode(darkModeQuery.matches)
 
             // reexport some libs
             window.JSON5 = JSON5
@@ -922,7 +922,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         document.body.addEventListener("themechanged", (e) => {
             const isDark = Boolean((e as any).detail?.is_dark_theme)
-            setColors(isDark)
+            setDarkMode(isDark)
         })
 
         LogicEditor._globalListenersInstalled = true
@@ -1497,11 +1497,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             const g = LogicEditor.getGraphics(tmpCanvas)
             const wasDark = isDarkMode()
             if (wasDark) {
-                setColors(false)
+                setDarkMode(false)
             }
             this.doDrawWithContext(g, width, height, transform, transform, true, true)
             if (wasDark) {
-                setColors(true)
+                setDarkMode(true)
             }
             tmpCanvas.toBlob(resolve, 'image/png')
             tmpCanvas.remove()
@@ -1941,9 +1941,11 @@ export class LogicStatic {
         this.singleton?.editTools.undoMgr.dump()
     }
 
-    public tests = new Tests()
+    public readonly tests = new Tests()
 
-    public Serialization = Serialization
+    public readonly Serialization = Serialization
+
+    public readonly setDarkMode = setDarkMode
 
 }
 
