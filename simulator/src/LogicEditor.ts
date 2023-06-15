@@ -710,7 +710,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
                             copyLinkDiv
                         ).render()
 
-                    switchToModeDiv.addEventListener("click", () => this.setMode(buttonMode))
+                    switchToModeDiv.addEventListener("click", () => this.setMode(buttonMode, true))
 
                     return switchToModeDiv
                 })
@@ -928,7 +928,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         LogicEditor._globalListenersInstalled = true
     }
 
-    public setMode(mode: Mode) {
+    public setMode(mode: Mode, doSetFocus: boolean) {
         this.wrapHandler(() => {
             let wantedModeStr = Mode[mode]
             if (mode > this._maxInstanceMode) {
@@ -978,7 +978,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             // const txGateButton = this.root.querySelector("button[data-type=TXA]") as HTMLElement
             // setVisible(txGateButton, showTxGates)
 
-            this.focus()
+            if (doSetFocus) {
+                this.focus()
+            }
 
         })()
     }
@@ -988,7 +990,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         if (modeStr !== null && (modeStr = modeStr.toUpperCase()) in Mode) {
             mode = (Mode as any)[modeStr]
         }
-        this.setMode(mode)
+        this.setMode(mode, false)
     }
 
     public setCircuitName(name: string | undefined) {
