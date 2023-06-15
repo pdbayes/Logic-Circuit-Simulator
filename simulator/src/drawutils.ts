@@ -4,7 +4,7 @@ import { DrawContext, DrawContextExt, GraphicsRendering, HasPosition, Orientatio
 import { Node, WireColor } from "./components/Node"
 import { RectangleColor } from "./components/Rectangle"
 import { LogicEditor } from "./LogicEditor"
-import { EdgeTrigger, InBrowser, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
+import { EdgeTrigger, FixedArray, FixedArrayAssert, InBrowser, isArray, isHighImpedance, isNumber, isString, isUnknown, LogicValue, Mode, Unknown } from "./utils"
 
 
 //
@@ -310,6 +310,27 @@ export function colorForFraction(fraction: number): ColorString {
     ]
     return ColorString(c)
 }
+
+export function parseColorToRGBA(col: string): FixedArray<number, 4> | undefined {
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = 1
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, 1, 1)
+    // In order to detect invalid values,
+    // we can't rely on col being in the same format as what fillStyle is computed as,
+    // but we can ask it to implicitly compute a normalized value twice and compare.
+    ctx.fillStyle = '#000'
+    ctx.fillStyle = col
+    const computed = ctx.fillStyle
+    ctx.fillStyle = '#fff'
+    ctx.fillStyle = col
+    if (computed !== ctx.fillStyle) {
+        return undefined
+    }
+    ctx.fillRect(0, 0, 1, 1)
+    return FixedArrayAssert([...ctx.getImageData(0, 0, 1, 1).data], 4)
+}
+
 
 
 //

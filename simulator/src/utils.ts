@@ -272,6 +272,13 @@ export function FixedArrayMap<U, Arr extends readonly any[]>(items: Arr, fn: (it
     return items.map(fn) as any
 }
 
+export function FixedArrayAssert<T, N extends number>(arr: readonly T[], n: N): FixedArray<T, N> {
+    if (arr.length !== n) {
+        throw new Error(`FixedArrayAssert: expected length ${n}, got ${arr.length}`)
+    }
+    return arr as any
+}
+
 
 // JSON
 

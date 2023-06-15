@@ -35,7 +35,7 @@ import { CustomComponent } from "./components/CustomComponent"
 import { Drawable, DrawableParent, DrawableWithPosition, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, setDarkMode, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, parseColorToRGBA, setDarkMode, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
 import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
@@ -1947,7 +1947,21 @@ export class LogicStatic {
 
     public readonly Serialization = Serialization
 
-    public readonly setDarkMode = setDarkMode
+    public setDarkMode(mode: boolean | string) {
+        if (mode === "auto") {
+            mode = window.matchMedia("(prefers-color-scheme: dark)").matches
+        } else if (mode === "false") {
+            mode = false
+        } else if (isString(mode)) {
+            const col = parseColorToRGBA(mode)
+            if (col !== undefined) {
+                const rgbaString = col[3] === 255 ? `rgb(${col[0]}, ${col[1]}, ${col[2]})` : `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${col[3] / 255})`
+                // TODO take over this color
+                console.log(`Will use new background color '${rgbaString}'`)
+            }
+        }
+        setDarkMode(Boolean(mode))
+    }
 
 }
 
