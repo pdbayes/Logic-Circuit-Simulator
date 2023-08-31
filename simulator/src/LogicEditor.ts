@@ -194,7 +194,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         tooltipElem: HTMLElement,
         tooltipContents: HTMLElement,
         mainContextMenu: HTMLElement,
-        hiddenPath: SVGPathElement,
         fileChooser: HTMLInputElement,
         optionsZone: HTMLElement,
         embedDialog: HTMLDialogElement,
@@ -242,7 +241,6 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             tooltipContents: this.elemWithId("tooltipContents"),
             mainContextMenu: this.elemWithId("mainContextMenu"),
             optionsZone: this.elemWithId("optionsZone"),
-            hiddenPath: this.elemWithId("hiddenPath"),
             fileChooser: this.elemWithId("fileChooser"),
             embedDialog: this.elemWithId("embedDialog"),
             embedUrl: this.elemWithId("embedUrl"),
@@ -1237,8 +1235,8 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public lengthOfPath(svgPathDesc: string): number {
-        const p = this.html.hiddenPath
-        p.setAttribute("d", svgPathDesc)
+        const p = document.createElementNS('http://www.w3.org/2000/svg', "path")
+        p.setAttributeNS(null, "d", svgPathDesc)
         const length = p.getTotalLength()
         // console.log(`p=${svgPathDesc}, l=${length}`)
         return length
