@@ -891,6 +891,7 @@ export class WireManager {
             this.offsetWireIfNecessary(wire)
         }
         this.tryMergeWire(wire)
+        this.parent.ifEditing?.setToolCursor(null)
         this.parent.ifEditing?.setDirty("added wire")
         return wire
     }

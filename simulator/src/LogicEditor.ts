@@ -1221,12 +1221,13 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public updateCursor(e?: MouseEvent | TouchEvent) {
-        this.html.canvasContainer.style.cursor =
+        const cursor =
             this.editTools.moveMgr.areDrawablesMoving()
                 ? "grabbing"
                 : this._toolCursor
                 ?? this.eventMgr.currentMouseOverComp?.cursorWhenMouseover(e)
                 ?? "default"
+        this.html.canvasContainer.style.cursor = cursor
     }
 
     public showMessage(msg: Modifier) {
@@ -1235,6 +1236,8 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
     }
 
     public lengthOfPath(svgPathDesc: string): number {
+        // we have to recreate a new path each time, otherwise
+        // Firefox caches the length and returns the same value
         const p = document.createElementNS('http://www.w3.org/2000/svg', "path")
         p.setAttributeNS(null, "d", svgPathDesc)
         const length = p.getTotalLength()
