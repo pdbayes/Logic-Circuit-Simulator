@@ -356,6 +356,9 @@ const Strings_fr = {
             },
             contextMenu: {
                 Period: "Période",
+                CustomPeriod: "Autre",
+                SetPeriodMillis: "Entrez la période de l’horloge en millisecondes:",
+                InvalidPeriod: "La période doit être un nombre entier positif.",
                 ReplaceWithInput: "Remplacer par entrée",
             },
             timeline: {
@@ -1090,6 +1093,9 @@ const Strings_en: Strings = {
             },
             contextMenu: {
                 Period: "Period",
+                CustomPeriod: "Other",
+                SetPeriodMillis: "Enter the period in milliseconds:",
+                InvalidPeriod: "The period must be a positive number.",
                 ReplaceWithInput: "Replace with Input",
             },
             timeline: {

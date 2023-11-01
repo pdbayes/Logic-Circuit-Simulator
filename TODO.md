@@ -35,7 +35,8 @@
 
 
 ### DONE
-
+ 
+ * Allow non-preset clock periods
  * Allow editing custom component
  * Copy-paste
  * Add external component library by drag-and-drop from file
