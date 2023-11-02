@@ -35,7 +35,7 @@ import { CustomComponent } from "./components/CustomComponent"
 import { Drawable, DrawableParent, DrawableWithPosition, EditTools, GraphicsRendering, Orientation } from "./components/Drawable"
 import { Rectangle, RectangleDef } from "./components/Rectangle"
 import { Wire, WireManager, WireStyle, WireStyles } from "./components/Wire"
-import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, clampZoom, isDarkMode, parseColorToRGBA, setDarkMode, strokeSingleLine } from "./drawutils"
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_UNUSED_REGION, COLOR_BORDER, COLOR_COMPONENT_BORDER, COLOR_GRID_LINES, COLOR_GRID_LINES_GUIDES, GRID_STEP, USER_COLORS, clampZoom, isDarkMode, parseColorToRGBA, setDarkMode, strokeSingleLine } from "./drawutils"
 import { gallery } from './gallery'
 import { Modifier, a, attr, attrBuilder, cls, div, emptyMod, href, input, label, option, select, span, style, target, title, type } from "./htmlgen"
 import { inlineIconSvgFor, isIconName, makeIcon } from "./images"
@@ -498,9 +498,9 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             // singletons manage their dark mode according to system settings
             const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
             darkModeQuery.onchange = () => {
-                setDarkMode(darkModeQuery.matches)
+                setDarkMode(darkModeQuery.matches, false)
             }
-            setDarkMode(darkModeQuery.matches)
+            setDarkMode(darkModeQuery.matches, true)
 
             // reexport some libs
             window.JSON5 = JSON5
@@ -920,8 +920,20 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
 
         document.body.addEventListener("themechanged", (e) => {
             const isDark = Boolean((e as any).detail?.is_dark_theme)
-            setDarkMode(isDark)
+            setDarkMode(isDark, false)
         })
+
+        const mkdocsThemeObserver = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === "attributes" && mutation.attributeName === "data-md-color-switching" && document.body.getAttribute("data-md-color-switching") === null) {
+                    const newBackgroundColor = getComputedStyle(document.body).backgroundColor
+                    console.log("Logic: looks like new background color is " + newBackgroundColor)
+                    window.Logic.setDarkMode(newBackgroundColor)
+                }
+            })
+        })
+
+        mkdocsThemeObserver.observe(document.body, { attributes: true })
 
         LogicEditor._globalListenersInstalled = true
     }
@@ -1500,11 +1512,11 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             const g = LogicEditor.getGraphics(tmpCanvas)
             const wasDark = isDarkMode()
             if (wasDark) {
-                setDarkMode(false)
+                setDarkMode(false, false)
             }
             this.doDrawWithContext(g, width, height, transform, transform, true, true)
             if (wasDark) {
-                setDarkMode(true)
+                setDarkMode(true, false)
             }
             tmpCanvas.toBlob(resolve, 'image/png')
             tmpCanvas.remove()
@@ -1957,11 +1969,13 @@ export class LogicStatic {
             const col = parseColorToRGBA(mode)
             if (col !== undefined) {
                 const rgbaString = col[3] === 255 ? `rgb(${col[0]}, ${col[1]}, ${col[2]})` : `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${col[3] / 255})`
-                // TODO take over this color
-                console.log(`Will use new background color '${rgbaString}'`)
+                USER_COLORS.COLOR_BACKGROUND = rgbaString
+                const looksDark = col[0] + col[1] + col[2] < 3 * 128
+                console.log(`Will use '${rgbaString}' as background color, interpreted as a ${looksDark ? "dark" : "light"} theme`)
+                mode = looksDark
             }
         }
-        setDarkMode(Boolean(mode))
+        setDarkMode(Boolean(mode), true)
     }
 
 }
