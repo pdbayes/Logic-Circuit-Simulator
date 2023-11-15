@@ -214,7 +214,7 @@ export class ComponentMenu {
             }
         }
 
-        if (showOnlyBuf !== undefined && showOnlyBuf.length > 0) {
+        if (showOnlyBuf !== undefined && showOnlyBuf.filter(s => !s.endsWith("*")).length > 0) {
             console.log(`ERROR Supposed to show unknown elems: ${showOnlyBuf.join("; ")}`)
         }
     }
@@ -409,17 +409,32 @@ function makeButton(typeStr: string, normallyHidden: boolean, componentIds: stri
 function shouldShow(componentIds: string[], showOnly: string[]) {
     let visible = false
     for (const componentId of componentIds) {
-        if (showOnly.includes(componentId)) {
-            visible = true
-            const ind = showOnly.indexOf(componentId)
-            showOnly.splice(ind, 1)
-            break
+        for (const showOnlySpec of showOnly) {
+            const [isMatch, isWildcard] = matchesSpec(showOnlySpec, componentId)
+            if (isMatch) {
+                visible = true
+                if (!isWildcard) {
+                    const ind = showOnly.indexOf(componentId)
+                    showOnly.splice(ind, 1)
+                }
+                break
+            }
         }
     }
 
     // console.log(`buttonId '${buttonId}' is visible: ${visible}`)
 
     return visible
+
+    function matchesSpec(showOnlySpec: string, componentId: string) {
+        if (showOnlySpec === componentId) {
+            return [true, false]
+        }
+        if (showOnlySpec.endsWith("*") && componentId.startsWith(showOnlySpec.slice(0, -1))) {
+            return [true, true]
+        }
+        return [false, false]
+    }
 }
 
 
