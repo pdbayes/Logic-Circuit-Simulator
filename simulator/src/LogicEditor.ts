@@ -632,7 +632,10 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         // TODO move this to the Def of LabelRect to be cleaner
         const groupButton = this.html.leftToolbar.querySelector("button.sim-component-button[data-type=rect]")
         if (groupButton === null) {
-            console.log("ERROR: Could not find group button")
+            if (this._options.showOnly === undefined) {
+                // else, it was probably hidden on purpose
+                console.log("ERROR: Could not find group button")
+            }
         } else {
             groupButton.addEventListener("mousedown", this.wrapHandler(e => {
                 const selectedComps = this.eventMgr.currentSelection?.previouslySelectedElements || new Set()

@@ -135,7 +135,7 @@ const componentsMenu: Array<Section> = [{
         GateNDef.button({ type: "xnor", bits: 4 }, "xnor4", { compat: "xnor4", visible: ifShowOnly }),
 
         ControlledInverterDef.button({ bits: 4 }, "ControlledInverter", { compat: "switched-inverter", visible: withButton }),
-        GateArrayDef.button({ type: "and", bits: 4 }, "GateArray", { visible: withButton }),
+        GateArrayDef.button({ type: "and", bits: 4 }, "GateArray", { compat: "quad-gate", visible: withButton }),
         TristateBufferArrayDef.button({ bits: 4 }, "TristateBufferArray", { visible: withButton }),
 
     ],
@@ -159,6 +159,7 @@ const componentsMenu: Array<Section> = [{
         ALUDef.button({ bits: 4, ext: false }, "ALU"),
 
         MuxDef.button({ from: 4, to: 2 }, "Mux"),
+        MuxDef.button({ from: 8, to: 4 }, "Mux", { visible: ifShowOnly }),
         DemuxDef.button({ from: 2, to: 4 }, "Demux"),
 
         LatchSRDef.button("LatchSR"),
