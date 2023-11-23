@@ -559,6 +559,7 @@ const Strings_fr = {
 
                 ParamNumFrom: tuple("Nombre d’entrées", template("${val} entrée$s{val}")),
                 ParamNumTo: tuple("Nombre de sorties", template("${val} sortie$s{val}")),
+                ParamControlAtBottom: "Bits de contrôle en bas",
             },
         },
         Output: {
@@ -1295,6 +1296,7 @@ const Strings_en: Strings = {
 
                 ParamNumFrom: tuple("Number of Inputs", template("${val} Input$s{val}")),
                 ParamNumTo: tuple("Number of Outputs", template("${val} Output$s{val}")),
+                ParamControlAtBottom: "Control Bits at Bottom",
             },
         },
         Output: {
