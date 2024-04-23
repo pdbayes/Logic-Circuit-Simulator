@@ -84,6 +84,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     showGateTypes: false,
     showDisconnectedPins: false,
     wireStyle: WireStyles.auto as WireStyle,
+    animateWires: false,
     hideWireColors: false,
     hideInputColors: false,
     hideOutputColors: false,
@@ -113,6 +114,7 @@ type HighlightedItems = { comps: Component[], wires: Wire[], start: number }
 
 export type DrawParams = {
     drawTime: number,
+    drawTimeAnimationFraction: number | undefined,
     currentMouseOverComp: Drawable | null,
     currentSelection: EditorSelection | undefined,
     highlightedItems: HighlightedItems | undefined,
@@ -207,6 +209,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         showGateTypesCheckbox: HTMLInputElement,
         showDisconnectedPinsCheckbox: HTMLInputElement,
         wireStylePopup: HTMLSelectElement,
+        animateWiresCheckbox: HTMLInputElement,
         hideWireColorsCheckbox: HTMLInputElement,
         hideInputColorsCheckbox: HTMLInputElement,
         hideOutputColorsCheckbox: HTMLInputElement,
@@ -304,6 +307,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         let optionsHtml
 
         if ((optionsHtml = this.optionsHtml) !== undefined) {
+            optionsHtml.animateWiresCheckbox.checked = newOptions.animateWires
             optionsHtml.hideWireColorsCheckbox.checked = newOptions.hideWireColors
             optionsHtml.hideInputColorsCheckbox.checked = newOptions.hideInputColors
             optionsHtml.hideOutputColorsCheckbox.checked = newOptions.hideOutputColors
@@ -766,6 +770,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             return checkbox
         }
 
+        const animateWiresCheckbox = makeCheckbox("animateWires", S.Settings.animateWires)
         const hideWireColorsCheckbox = makeCheckbox("hideWireColors", S.Settings.hideWireColors)
         const hideInputColorsCheckbox = makeCheckbox("hideInputColors", S.Settings.hideInputColors)
         const hideOutputColorsCheckbox = makeCheckbox("hideOutputColors", S.Settings.hideOutputColors)
@@ -818,6 +823,7 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         optionsZone.appendChild(showUserDataLinkContainer)
 
         this.optionsHtml = {
+            animateWiresCheckbox,
             hideWireColorsCheckbox,
             hideInputColorsCheckbox,
             hideOutputColorsCheckbox,
@@ -1575,15 +1581,16 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
             redrawMgr.addReason("adding a wire", null)
         }
 
+        const animateWires = this._options.animateWires
         const redrawReasons = redrawMgr.getReasonsAndClear()
-        if (redrawReasons === undefined) {
+        if (redrawReasons === undefined && !animateWires) {
             return
         }
 
         // console.log("Drawing " + (__recalculated ? "with" : "without") + " recalc, reasons:\n    " + redrawReasons)
         this.doRedraw()
 
-        if (redrawMgr.hasReasons()) {
+        if (animateWires || redrawMgr.hasReasons()) {
             // an animation is running
             this._nextAnimationFrameHandle = requestAnimationFrame(() => {
                 this._nextAnimationFrameHandle = null
@@ -1790,10 +1797,12 @@ export class LogicEditor extends HTMLElement implements DrawableParent {
         // g.scale(currentScale, currentScale)
 
         const drawTime = this.timeline.logicalTime()
+        const drawTimeAnimationFraction = !this._options.animateWires ? undefined : (drawTime / 1000) % 1
         g.strokeStyle = COLOR_COMPONENT_BORDER
         const currentMouseOverComp = this.eventMgr.currentMouseOverComp
         const drawParams: DrawParams = {
             drawTime,
+            drawTimeAnimationFraction,
             currentMouseOverComp,
             highlightedItems,
             highlightColor,
