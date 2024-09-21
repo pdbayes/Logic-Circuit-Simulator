@@ -5,7 +5,7 @@
     "@popperjs/core": "^2.9.1",
     "bezier-js": "^6.1.0",
     "dialog-polyfill": "^0.5.6",
-    "electron": "^21.1.1",
+    "electron": "^32.1.2",
     "file-saver": "^2.0.5",
     "fp-ts": "^2.13.1",
     "io-ts": "^2.2.16",
